@@ -1,0 +1,22 @@
+[package]
+name = "game_ddgc_headless"
+version = "0.1.0"
+edition = "2021"
+description = "DDGC headless migration — real game content migrated onto the turn-based roguelike framework"
+
+[lib]
+name = "game_ddgc_headless"
+path = "src/lib.rs"
+
+[[bin]]
+name = "game_ddgc_headless"
+path = "src/main.rs"
+
+[dependencies]
+framework_rules = { path = "../../frameworks/framework_turn_based_roguelike/crates/framework_rules" }
+framework_combat = { path = "../../frameworks/framework_turn_based_roguelike/crates/framework_combat" }
+framework_progression = { path = "../../frameworks/framework_turn_based_roguelike/crates/framework_progression" }
+framework_viewmodels = { path = "../../frameworks/framework_turn_based_roguelike/crates/framework_viewmodels" }
+framework_ai = { path = "../../frameworks/framework_turn_based_roguelike/crates/framework_ai" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
