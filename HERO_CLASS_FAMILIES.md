@@ -44,11 +44,11 @@ Chaos value is stored 0–200 (displayed as −100 to +100). Mode switching thre
 
 | Family | Base ID | White ID (+1) | Black ID (+2) | DDGC Data Files | Skills (base) | Migration Status |
 |---|---|---|---|---|---|---|
-| Alchemist | `alchemist` | `alchemist1` | `alchemist2` | Alchemist.bytes, Alchemist1.bytes, Alchemist2.bytes | heal_multi, heal_single, miss_single, stress_multi, burn_skill, push_skill, push_self | Not started |
-| Diviner | `diviner` | `diviner1` | `diviner2` | Diviner.bytes, Diviner1.bytes, Diviner2.bytes | duality_fate, repel, blessed_evasion, pull_skill, survive, draw_stick, karmic_cycle | Not started |
-| Hunter | `hunter` | `hunter1` | `hunter2` | Hunter.bytes, Hunter1.bytes, Hunter2.bytes | mark_skill, pull_skill, aoe_skill, stun_skill, ignore_def_skill, bleed_skill, buff_skill | Not started |
-| Shaman | `shaman` | `shaman1` | `shaman2` | Shaman.bytes, Shaman1.bytes, Shaman2.bytes | frozen_skill, burn_skill, bleed_skill, direct_hit_1, direct_hit_2, stun_skill, buff_self | Not started |
-| Tank | `tank` | `tank1` | `tank2` | Tank.bytes, Tank1.bytes, Tank2.bytes | protect_skill, attack_reduce, taunt_skill, active_riposte, blood_oath, stun_skill, regression | Not started |
+| Alchemist | `alchemist` | `alchemist1` | `alchemist2` | Alchemist.bytes, Alchemist1.bytes, Alchemist2.bytes | heal_multi, heal_single, miss_single, stress_multi, burn_skill, push_skill, push_self | Migrated |
+| Diviner | `diviner` | `diviner1` | `diviner2` | Diviner.bytes, Diviner1.bytes, Diviner2.bytes | duality_fate, repel, blessed_evasion, pull_skill, survive, draw_stick, karmic_cycle | Migrated |
+| Hunter | `hunter` | `hunter1` | `hunter2` | Hunter.bytes, Hunter1.bytes, Hunter2.bytes | mark_skill, pull_skill, aoe_skill, stun_skill, ignore_def_skill, bleed_skill, buff_skill | Migrated |
+| Shaman | `shaman` | `shaman1` | `shaman2` | Shaman.bytes, Shaman1.bytes, Shaman2.bytes | frozen_skill, burn_skill, bleed_skill, direct_hit_1, direct_hit_2, stun_skill, buff_self | Migrated |
+| Tank | `tank` | `tank1` | `tank2` | Tank.bytes, Tank1.bytes, Tank2.bytes | protect_skill, attack_reduce, taunt_skill, active_riposte, blood_oath, stun_skill, regression | Migrated |
 
 ## Variant Skill Differences
 
