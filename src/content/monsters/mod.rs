@@ -48,6 +48,9 @@ pub mod rotten_fruit_b;
 pub mod rotten_fruit_c;
 pub mod skeletal_tiller;
 pub mod vegetable;
+pub mod necrodrake_embryosac;
+pub mod egg_membrane_empty;
+pub mod egg_membrane_full;
 
 use crate::content::ContentPack;
 
@@ -293,6 +296,24 @@ pub fn register_content(pack: &mut ContentPack) {
     // K34: Vegetable (US-435)
     pack.register_archetype(vegetable::archetype());
     for skill in vegetable::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K35: Necrodrake Embryosac (US-436)
+    pack.register_archetype(necrodrake_embryosac::archetype());
+    for skill in necrodrake_embryosac::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K35: Egg Membrane Empty (US-436)
+    pack.register_archetype(egg_membrane_empty::archetype());
+    for skill in egg_membrane_empty::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K35: Egg Membrane Full (US-436)
+    pack.register_archetype(egg_membrane_full::archetype());
+    for skill in egg_membrane_full::skill_pack() {
         pack.register_skill(skill);
     }
 }

@@ -866,6 +866,25 @@ pub fn xuanwu_boss_packs() -> Vec<EncounterPack> {
                 },
             ],
         },
+        EncounterPack {
+            id: PackId::new("xuanwu_boss_necrodrake_embryosac"),
+            dungeon: Dungeon::XuanWu,
+            pack_type: PackType::Boss,
+            slots: vec![
+                FamilySlot {
+                    family_id: FamilyId::new("egg_membrane_empty"),
+                    count: 1,
+                },
+                FamilySlot {
+                    family_id: FamilyId::new("necrodrake_embryosac"),
+                    count: 1,
+                },
+                FamilySlot {
+                    family_id: FamilyId::new("egg_membrane_empty"),
+                    count: 1,
+                },
+            ],
+        },
     ]
 }
 

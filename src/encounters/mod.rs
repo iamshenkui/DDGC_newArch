@@ -367,4 +367,27 @@ mod tests {
             "skeletal_tiller boss pack must contain vegetable"
         );
     }
+
+    #[test]
+    fn xuanwu_boss_necrodrake_embryosac_pack_is_correct() {
+        let registry = build_packs_registry();
+
+        let pack = registry
+            .get("xuanwu_boss_necrodrake_embryosac")
+            .expect("xuanwu_boss_necrodrake_embryosac should exist");
+
+        assert_eq!(pack.dungeon, Dungeon::XuanWu);
+        assert_eq!(pack.pack_type, PackType::Boss);
+        assert_eq!(pack.total_units(), 3, "necrodrake_embryosac boss pack should have 3 units");
+
+        let family_ids: Vec<&str> = pack.family_ids().iter().map(|id| id.0.as_str()).collect();
+        assert!(
+            family_ids.contains(&"necrodrake_embryosac"),
+            "necrodrake_embryosac boss pack must contain necrodrake_embryosac"
+        );
+        assert!(
+            family_ids.contains(&"egg_membrane_empty"),
+            "necrodrake_embryosac boss pack must contain egg_membrane_empty"
+        );
+    }
 }

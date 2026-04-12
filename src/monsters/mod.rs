@@ -668,6 +668,45 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Vegetable".to_string(),
     });
 
+    // K35: Necrodrake Embryosac (US-436)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("necrodrake_embryosac"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Summoner,
+        monster_type: MonsterType::Man,
+        skill_ids: vec![
+            SkillId::new("requiem_stillbirth"),
+            SkillId::new("placental_tap"),
+            SkillId::new("untimely_progeny"),
+            SkillId::new("doom_symbiosis"),
+            SkillId::new("ecdysis_metamorphosis"),
+        ],
+        archetype_name: "Necrodrake Embryosac".to_string(),
+    });
+
+    // K35: Egg Membrane Empty (US-436)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("egg_membrane_empty"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Support,
+        monster_type: MonsterType::Cauldron,
+        skill_ids: vec![SkillId::new("captor_empty")],
+        archetype_name: "Egg Membrane Empty".to_string(),
+    });
+
+    // K35: Egg Membrane Full (US-436)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("egg_membrane_full"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Support,
+        monster_type: MonsterType::Cauldron,
+        skill_ids: vec![SkillId::new("captor_full")],
+        archetype_name: "Egg Membrane Full".to_string(),
+    });
+
     registry
 }
 
@@ -1953,5 +1992,72 @@ mod tests {
             skill_ids.contains(&"briar_intimidation"),
             "vegetable must have briar_intimidation"
         );
+    }
+
+    #[test]
+    fn registry_resolves_necrodrake_embryosac() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("necrodrake_embryosac")
+            .expect("necrodrake_embryosac should be registered");
+
+        assert_eq!(family.id.0, "necrodrake_embryosac");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Summoner);
+        assert_eq!(family.monster_type, MonsterType::Man);
+        assert_eq!(family.archetype_name, "Necrodrake Embryosac");
+        assert_eq!(family.skill_ids.len(), 5);
+    }
+
+    #[test]
+    fn registry_necrodrake_embryosac_has_untimely_progeny_and_doom_symbiosis() {
+        let registry = build_registry();
+
+        let family = registry.get("necrodrake_embryosac").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"untimely_progeny"),
+            "necrodrake_embryosac must have untimely_progeny"
+        );
+        assert!(
+            skill_ids.contains(&"doom_symbiosis"),
+            "necrodrake_embryosac must have doom_symbiosis"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_egg_membrane_empty() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("egg_membrane_empty")
+            .expect("egg_membrane_empty should be registered");
+
+        assert_eq!(family.id.0, "egg_membrane_empty");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Support);
+        assert_eq!(family.monster_type, MonsterType::Cauldron);
+        assert_eq!(family.archetype_name, "Egg Membrane Empty");
+        assert_eq!(family.skill_ids.len(), 1);
+    }
+
+    #[test]
+    fn registry_resolves_egg_membrane_full() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("egg_membrane_full")
+            .expect("egg_membrane_full should be registered");
+
+        assert_eq!(family.id.0, "egg_membrane_full");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Support);
+        assert_eq!(family.monster_type, MonsterType::Cauldron);
+        assert_eq!(family.archetype_name, "Egg Membrane Full");
+        assert_eq!(family.skill_ids.len(), 1);
     }
 }
