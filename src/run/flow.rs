@@ -14,6 +14,8 @@ use framework_progression::generation::{DefaultRoomGenerator, FloorConfig, RoomG
 use framework_progression::rooms::{RoomId, RoomKind};
 use framework_progression::run::{Run, RunId, RunResult};
 
+use crate::encounters::Dungeon;
+use crate::run::encounters::EncounterResolver;
 use crate::run::rewards::{self, PostBattleUpdate};
 
 /// DDGC-appropriate room weights for floor generation.
@@ -32,6 +34,7 @@ const DDGC_ROOM_WEIGHTS: &[(RoomKind, f64)] = &[
 pub struct DdgcRunConfig {
     pub seed: u64,
     pub room_count: u32,
+    pub dungeon: Dungeon,
 }
 
 impl Default for DdgcRunConfig {
@@ -39,6 +42,7 @@ impl Default for DdgcRunConfig {
         DdgcRunConfig {
             seed: 42,
             room_count: 3,
+            dungeon: Dungeon::QingLong,
         }
     }
 }
@@ -82,9 +86,9 @@ pub struct DdgcRunResult {
 /// Run a minimal DDGC run slice.
 ///
 /// Generates a deterministic floor with DDGC room weights, then progresses
-/// through each room in sequence. Combat/Boss rooms trigger a battle;
-/// other rooms are auto-cleared. Post-battle rewards are applied after
-/// each combat room is cleared.
+/// through each room in sequence. Combat rooms resolve through the encounter
+/// pack registry; Boss rooms still use a combat proxy (boss packs not wired yet).
+/// Post-battle rewards are applied after each combat room is cleared.
 pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
     let gen = DefaultRoomGenerator;
     let floor_config = FloorConfig::new(
@@ -98,19 +102,57 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
     let mut run = Run::new(RunId(1), vec![FloorId(0)], config.seed);
     let mut state = DdgcRunState::new();
 
+    // Build the encounter resolver once — reuse for all combat rooms
+    let resolver = EncounterResolver::new();
+
     // Progress through rooms in floor order
     let room_ids = floor.rooms.clone();
-    for room_id in room_ids {
+    for (room_idx, room_id) in room_ids.iter().enumerate() {
         // Enter the room
-        run.enter_room(&mut floor, room_id).unwrap();
-        state.visited_rooms.push(room_id);
+        run.enter_room(&mut floor, *room_id).unwrap();
+        state.visited_rooms.push(*room_id);
 
-        let room_kind = floor.rooms_map[&room_id].kind.clone();
+        let room_kind = floor.rooms_map[room_id].kind.clone();
 
         // Handle room by type
         match &room_kind {
-            RoomKind::Combat | RoomKind::Boss => {
-                // Run a battle using the first_battle scenario as a combat proxy
+            RoomKind::Combat => {
+                // Resolve combat room through encounter pack registry
+                let battle_result = match resolver.resolve_pack(
+                    config.dungeon,
+                    room_idx as u32,
+                    config.seed,
+                    false, // Combat rooms use room packs
+                ) {
+                    Some(pack) => resolver.run_battle(pack, room_idx as u64 + 1),
+                    None => {
+                        // Fallback: no pack found for this dungeon — should not happen
+                        // for the four core dungeons but handled gracefully
+                        let fallback = crate::scenarios::first_battle::run_first_battle();
+                        crate::run::encounters::EncounterBattleResult {
+                            winner: fallback.winner,
+                            turns: fallback.turns,
+                            trace: fallback.trace,
+                            pack_id: "fallback".to_string(),
+                        }
+                    }
+                };
+
+                if battle_result.winner == Some(CombatSide::Ally) {
+                    state.battles_won += 1;
+                } else {
+                    state.battles_lost += 1;
+                }
+
+                // Clear the room
+                run.clear_room(&mut floor).unwrap();
+
+                // Apply post-battle rewards
+                let update = rewards::compute_post_battle_update(&room_kind);
+                apply_reward(&mut state, &update);
+            }
+            RoomKind::Boss => {
+                // Boss rooms still use the first_battle proxy until boss packs are wired (K30+)
                 let battle_result = crate::scenarios::first_battle::run_first_battle();
 
                 if battle_result.winner == Some(CombatSide::Ally) {
@@ -199,6 +241,7 @@ mod tests {
         let config = DdgcRunConfig {
             seed: 99,
             room_count: 10,
+            dungeon: Dungeon::QingLong,
         };
         let result = run_ddgc_slice(&config);
 
