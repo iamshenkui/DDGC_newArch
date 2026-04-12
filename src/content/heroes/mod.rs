@@ -9,3 +9,4 @@ pub mod diviner;
 pub mod hunter;
 pub mod shaman;
 pub mod tank;
+pub mod white;

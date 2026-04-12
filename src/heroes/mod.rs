@@ -7,6 +7,8 @@
 
 pub mod base;
 pub mod families;
+pub mod white;
 
 pub use base::*;
 pub use families::*;
+pub use white::*;
