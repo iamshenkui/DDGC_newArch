@@ -37,6 +37,22 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Mantis Magic Flower".to_string(),
     });
 
+    // K5: Mantis Spiny Flower (US-406)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("mantis_spiny_flower"),
+        dungeon: Dungeon::QingLong,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Controller,
+        monster_type: MonsterType::Beast,
+        skill_ids: vec![
+            SkillId::new("ignore_armor"),
+            SkillId::new("crowd_bleed"),
+            SkillId::new("normal_attack"),
+            SkillId::new("move"),
+        ],
+        archetype_name: "Mantis Spiny Flower".to_string(),
+    });
+
     registry
 }
 
@@ -74,6 +90,39 @@ mod tests {
         assert!(
             skill_ids.contains(&"crowd_bleed"),
             "mantis_magic_flower must have crowd_bleed skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_mantis_spiny_flower() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("mantis_spiny_flower")
+            .expect("mantis_spiny_flower should be registered");
+
+        assert_eq!(family.id.0, "mantis_spiny_flower");
+        assert_eq!(family.dungeon, Dungeon::QingLong);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Controller);
+        assert_eq!(family.monster_type, MonsterType::Beast);
+        assert_eq!(family.archetype_name, "Mantis Spiny Flower");
+        assert_eq!(family.skill_ids.len(), 4);
+    }
+
+    #[test]
+    fn registry_mantis_spiny_flower_has_ignore_armor_and_crowd_bleed() {
+        let registry = build_registry();
+
+        let family = registry.get("mantis_spiny_flower").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"ignore_armor"),
+            "mantis_spiny_flower must have ignore_armor skill"
+        );
+        assert!(
+            skill_ids.contains(&"crowd_bleed"),
+            "mantis_spiny_flower must have crowd_bleed skill"
         );
     }
 }

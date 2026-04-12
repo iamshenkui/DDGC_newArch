@@ -9,6 +9,7 @@
 //! declaration here and a registration call in `register_content`.
 
 pub mod mantis_magic_flower;
+pub mod mantis_spiny_flower;
 
 use crate::content::ContentPack;
 
@@ -20,6 +21,12 @@ pub fn register_content(pack: &mut ContentPack) {
     // K4: Mantis Magic Flower (US-405)
     pack.register_archetype(mantis_magic_flower::archetype());
     for skill in mantis_magic_flower::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K5: Mantis Spiny Flower (US-406)
+    pack.register_archetype(mantis_spiny_flower::archetype());
+    for skill in mantis_spiny_flower::skill_pack() {
         pack.register_skill(skill);
     }
 }
