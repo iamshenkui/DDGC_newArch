@@ -24,6 +24,7 @@ pub mod moth_mimicry_a;
 pub mod moth_mimicry_b;
 pub mod robber_melee;
 pub mod robber_ranged;
+pub mod snake_water;
 pub mod tiger_sword;
 pub mod unicorn_beetle_a;
 pub mod unicorn_beetle_b;
@@ -146,6 +147,12 @@ pub fn register_content(pack: &mut ContentPack) {
     // K22: Lantern (US-423)
     pack.register_archetype(lantern::archetype());
     for skill in lantern::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K23: Snake Water (US-424)
+    pack.register_archetype(snake_water::archetype());
+    for skill in snake_water::skill_pack() {
         pack.register_skill(skill);
     }
 }

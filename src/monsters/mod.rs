@@ -317,6 +317,21 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Lantern".to_string(),
     });
 
+    // K23: Snake Water (US-424)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("snake_water"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Controller,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("stun"),
+            SkillId::new("poison_fang"),
+            SkillId::new("move"),
+        ],
+        archetype_name: "Snake Water".to_string(),
+    });
+
     registry
 }
 
@@ -956,6 +971,39 @@ mod tests {
         assert!(
             skill_ids.contains(&"burn_attack"),
             "lantern must have burn_attack skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_snake_water() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("snake_water")
+            .expect("snake_water should be registered");
+
+        assert_eq!(family.id.0, "snake_water");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Controller);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Snake Water");
+        assert_eq!(family.skill_ids.len(), 3);
+    }
+
+    #[test]
+    fn registry_snake_water_has_stun_and_poison_fang() {
+        let registry = build_registry();
+
+        let family = registry.get("snake_water").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"stun"),
+            "snake_water must have stun skill"
+        );
+        assert!(
+            skill_ids.contains(&"poison_fang"),
+            "snake_water must have poison_fang skill"
         );
     }
 }
