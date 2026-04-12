@@ -7,7 +7,7 @@
 
 use framework_combat::effects::{EffectCondition, EffectNode};
 use framework_combat::skills::{SkillDefinition, SkillId};
-use framework_combat::targeting::{SlotRange, TargetSelector};
+use framework_combat::targeting::TargetSelector;
 
 // ── Crusader Skills ───────────────────────────────────────────────────────
 
@@ -15,11 +15,14 @@ use framework_combat::targeting::{SlotRange, TargetSelector};
 ///
 /// DDGC reference: hits ranks 1–2, moderate damage, no cooldown.
 /// Damage averaged from DDGC range (8–15) → 12.
+/// Uses `AllEnemies` because the framework's `ByPosition` is side-blind
+/// (targets absolute slot indices regardless of team). Rank-based targeting
+/// is a game-gap — see MIGRATION_BLOCKERS.md B-006.
 pub fn crusading_strike() -> SkillDefinition {
     SkillDefinition::new(
         SkillId::new("crusading_strike"),
         vec![EffectNode::damage(12.0)],
-        TargetSelector::ByPosition(SlotRange::new(0, 1)), // front 2 ranks
+        TargetSelector::AllEnemies,
         1,
         None,
     )
@@ -63,6 +66,7 @@ pub fn divine_grace() -> SkillDefinition {
 ///
 /// DDGC reference: hits rank 1–2, low damage + bleed status.
 /// Damage averaged from DDGC range (4–8) → 6.
+/// Uses `AllEnemies` because `ByPosition` is side-blind (B-006).
 pub fn rend() -> SkillDefinition {
     SkillDefinition::new(
         SkillId::new("rend"),
@@ -70,7 +74,7 @@ pub fn rend() -> SkillDefinition {
             EffectNode::damage(6.0),
             EffectNode::apply_status("bleed", Some(3)),
         ],
-        TargetSelector::ByPosition(SlotRange::new(0, 1)),
+        TargetSelector::AllEnemies,
         1,
         None,
     )
@@ -83,6 +87,7 @@ pub fn rend() -> SkillDefinition {
 /// DDGC reference: hits rank 1, high damage, 60% stun chance.
 /// Damage averaged from DDGC range (10–18) → 14.
 /// Stun approximated via EffectCondition::Probability.
+/// Uses `AllEnemies` because `ByPosition` is side-blind (B-006).
 pub fn skull_bash() -> SkillDefinition {
     SkillDefinition::new(
         SkillId::new("skull_bash"),
@@ -91,7 +96,7 @@ pub fn skull_bash() -> SkillDefinition {
             EffectNode::apply_status("stun", Some(1))
                 .with_condition(EffectCondition::Probability(0.60)),
         ],
-        TargetSelector::ByPosition(SlotRange::new(0, 0)), // rank 1 only
+        TargetSelector::AllEnemies,
         1,
         Some(3),
     )
@@ -140,9 +145,9 @@ mod tests {
     }
 
     #[test]
-    fn crusading_strike_targets_front_ranks() {
+    fn crusading_strike_targets_enemies() {
         let skill = crusading_strike();
-        assert!(matches!(skill.target_selector, TargetSelector::ByPosition(_)));
+        assert!(matches!(skill.target_selector, TargetSelector::AllEnemies));
         assert_eq!(skill.action_cost, 1);
         assert!(skill.cooldown.is_none());
     }
