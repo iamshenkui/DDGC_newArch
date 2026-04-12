@@ -10,6 +10,7 @@
 
 pub mod alligator_yangtze;
 pub mod dry_tree_genie;
+pub mod fox_fire;
 pub mod ghost_fire_assist;
 pub mod ghost_fire_damage;
 pub mod lizard;
@@ -125,6 +126,12 @@ pub fn register_content(pack: &mut ContentPack) {
     // K19: Ghost Fire Damage (US-420)
     pack.register_archetype(ghost_fire_damage::archetype());
     for skill in ghost_fire_damage::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K20: Fox Fire (US-421)
+    pack.register_archetype(fox_fire::archetype());
+    for skill in fox_fire::skill_pack() {
         pack.register_skill(skill);
     }
 }

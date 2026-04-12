@@ -272,6 +272,22 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Ghost Fire Damage".to_string(),
     });
 
+    // K20: Fox Fire (US-421)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("fox_fire"),
+        dungeon: Dungeon::ZhuQue,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Bruiser,
+        monster_type: MonsterType::Beast,
+        skill_ids: vec![
+            SkillId::new("bite"),
+            SkillId::new("vomit"),
+            SkillId::new("protect"),
+            SkillId::new("move"),
+        ],
+        archetype_name: "Fox Fire".to_string(),
+    });
+
     registry
 }
 
@@ -812,6 +828,39 @@ mod tests {
         assert!(
             skill_ids.contains(&"ghost_fire_split"),
             "ghost_fire_damage must have ghost_fire_split skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_fox_fire() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("fox_fire")
+            .expect("fox_fire should be registered");
+
+        assert_eq!(family.id.0, "fox_fire");
+        assert_eq!(family.dungeon, Dungeon::ZhuQue);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Bruiser);
+        assert_eq!(family.monster_type, MonsterType::Beast);
+        assert_eq!(family.archetype_name, "Fox Fire");
+        assert_eq!(family.skill_ids.len(), 4);
+    }
+
+    #[test]
+    fn registry_fox_fire_has_bite_and_protect() {
+        let registry = build_registry();
+
+        let family = registry.get("fox_fire").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"bite"),
+            "fox_fire must have bite skill"
+        );
+        assert!(
+            skill_ids.contains(&"protect"),
+            "fox_fire must have protect skill"
         );
     }
 }
