@@ -1,0 +1,51 @@
+{
+  "scenario": "hero_variant_switch",
+  "description": "Proves that family identity survives chaos-mode variant switching for all 5 DDGC hero families",
+  "families": [
+    {
+      "base_id": "alchemist",
+      "display_name": "Alchemist",
+      "transitions": [
+        { "from_chaos": 100, "from_variant": "alchemist", "to_chaos": 150, "to_variant": "alchemist1", "family_preserved": true },
+        { "from_chaos": 150, "from_variant": "alchemist1", "to_chaos": 30, "to_variant": "alchemist2", "family_preserved": true },
+        { "from_chaos": 30, "from_variant": "alchemist2", "to_chaos": 100, "to_variant": "alchemist", "family_preserved": true }
+      ]
+    },
+    {
+      "base_id": "diviner",
+      "display_name": "Diviner",
+      "transitions": [
+        { "from_chaos": 100, "from_variant": "diviner", "to_chaos": 150, "to_variant": "diviner1", "family_preserved": true },
+        { "from_chaos": 150, "from_variant": "diviner1", "to_chaos": 30, "to_variant": "diviner2", "family_preserved": true },
+        { "from_chaos": 30, "from_variant": "diviner2", "to_chaos": 100, "to_variant": "diviner", "family_preserved": true }
+      ]
+    },
+    {
+      "base_id": "hunter",
+      "display_name": "Hunter",
+      "transitions": [
+        { "from_chaos": 100, "from_variant": "hunter", "to_chaos": 150, "to_variant": "hunter1", "family_preserved": true },
+        { "from_chaos": 150, "from_variant": "hunter1", "to_chaos": 30, "to_variant": "hunter2", "family_preserved": true },
+        { "from_chaos": 30, "from_variant": "hunter2", "to_chaos": 100, "to_variant": "hunter", "family_preserved": true }
+      ]
+    },
+    {
+      "base_id": "shaman",
+      "display_name": "Shaman",
+      "transitions": [
+        { "from_chaos": 100, "from_variant": "shaman", "to_chaos": 150, "to_variant": "shaman1", "family_preserved": true },
+        { "from_chaos": 150, "from_variant": "shaman1", "to_chaos": 30, "to_variant": "shaman2", "family_preserved": true },
+        { "from_chaos": 30, "from_variant": "shaman2", "to_chaos": 100, "to_variant": "shaman", "family_preserved": true }
+      ]
+    },
+    {
+      "base_id": "tank",
+      "display_name": "Tank",
+      "transitions": [
+        { "from_chaos": 100, "from_variant": "tank", "to_chaos": 150, "to_variant": "tank1", "family_preserved": true },
+        { "from_chaos": 150, "from_variant": "tank1", "to_chaos": 30, "to_variant": "tank2", "family_preserved": true },
+        { "from_chaos": 30, "from_variant": "tank2", "to_chaos": 100, "to_variant": "tank", "family_preserved": true }
+      ]
+    }
+  ]
+}
