@@ -332,6 +332,23 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Snake Water".to_string(),
     });
 
+    // K24: Water Grass (US-425)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("water_grass"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Controller,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("stun"),
+            SkillId::new("puncture"),
+            SkillId::new("attack_crowd"),
+            SkillId::new("convolve"),
+            SkillId::new("move"),
+        ],
+        archetype_name: "Water Grass".to_string(),
+    });
+
     registry
 }
 
@@ -1004,6 +1021,43 @@ mod tests {
         assert!(
             skill_ids.contains(&"poison_fang"),
             "snake_water must have poison_fang skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_water_grass() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("water_grass")
+            .expect("water_grass should be registered");
+
+        assert_eq!(family.id.0, "water_grass");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Controller);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Water Grass");
+        assert_eq!(family.skill_ids.len(), 5);
+    }
+
+    #[test]
+    fn registry_water_grass_has_stun_and_puncture_and_convolve() {
+        let registry = build_registry();
+
+        let family = registry.get("water_grass").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"stun"),
+            "water_grass must have stun skill"
+        );
+        assert!(
+            skill_ids.contains(&"puncture"),
+            "water_grass must have puncture skill"
+        );
+        assert!(
+            skill_ids.contains(&"convolve"),
+            "water_grass must have convolve skill"
         );
     }
 }

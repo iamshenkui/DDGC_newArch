@@ -28,6 +28,7 @@ pub mod snake_water;
 pub mod tiger_sword;
 pub mod unicorn_beetle_a;
 pub mod unicorn_beetle_b;
+pub mod water_grass;
 
 use crate::content::ContentPack;
 
@@ -153,6 +154,12 @@ pub fn register_content(pack: &mut ContentPack) {
     // K23: Snake Water (US-424)
     pack.register_archetype(snake_water::archetype());
     for skill in snake_water::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K24: Water Grass (US-425)
+    pack.register_archetype(water_grass::archetype());
+    for skill in water_grass::skill_pack() {
         pack.register_skill(skill);
     }
 }
