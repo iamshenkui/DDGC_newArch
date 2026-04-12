@@ -104,6 +104,25 @@ These were considered for framework patches but rejected as game-specific:
 
 ---
 
+## Feedback Loop Process
+
+When a migration blocker is discovered:
+
+1. **Record** the blocker in the Active Blockers section with ID, classification, batch, description, and proposed resolution.
+2. **Classify** as `core-gap`, `framework-gap`, or `game-gap`:
+   - `core-gap` / `framework-gap`: the framework genuinely lacks a capability that would benefit *any* consumer, not just DDGC.
+   - `game-gap`: the framework provides the building blocks; DDGC-specific logic belongs in the game layer.
+3. **If core-gap or framework-gap**: patch the appropriate crate *and* add a regression test in that crate's test suite. The test must verify the generic capability, not DDGC-specific behavior.
+4. **If game-gap**: implement in `game_ddgc_headless/src/`. No framework changes.
+5. **If a backflow request is rejected**: document it in the Rejected Backflow Requests table with the rejection reason.
+6. **Verify**: no DDGC-specific constants, types, or rule branches exist in framework or core crates. The integration test `no_ddgc_content_in_framework_crates` enforces this at build time.
+
+### Regression Test Requirement
+
+Every core-gap or framework-gap patch **must** include a regression test in the patched crate's test suite. The test verifies the generic capability (e.g., "attributes support arbitrary string keys" not "stress attribute works"). No test in a framework crate may reference DDGC-specific names (Crusader, Vestal, bone_soldier, necromancer, DDGC, stress as a game concept, etc.).
+
+---
+
 ## Blocker Summary
 
 | ID | Classification | Batch | Status |
