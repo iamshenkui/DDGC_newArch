@@ -178,6 +178,22 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Tiger Sword".to_string(),
     });
 
+    // K14: Lizard (US-415)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("lizard"),
+        dungeon: Dungeon::BaiHu,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Controller,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("stun"),
+            SkillId::new("intimidate"),
+            SkillId::new("stress"),
+            SkillId::new("move"),
+        ],
+        archetype_name: "Lizard".to_string(),
+    });
+
     registry
 }
 
@@ -516,6 +532,43 @@ mod tests {
         assert!(
             skill_ids.contains(&"pull"),
             "tiger_sword must have pull skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_lizard() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("lizard")
+            .expect("lizard should be registered");
+
+        assert_eq!(family.id.0, "lizard");
+        assert_eq!(family.dungeon, Dungeon::BaiHu);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Controller);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Lizard");
+        assert_eq!(family.skill_ids.len(), 4);
+    }
+
+    #[test]
+    fn registry_lizard_has_stun_and_intimidate_and_stress() {
+        let registry = build_registry();
+
+        let family = registry.get("lizard").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"stun"),
+            "lizard must have stun skill"
+        );
+        assert!(
+            skill_ids.contains(&"intimidate"),
+            "lizard must have intimidate skill"
+        );
+        assert!(
+            skill_ids.contains(&"stress"),
+            "lizard must have stress skill"
         );
     }
 }

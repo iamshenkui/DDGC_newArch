@@ -9,6 +9,7 @@
 //! declaration here and a registration call in `register_content`.
 
 pub mod dry_tree_genie;
+pub mod lizard;
 pub mod mantis_magic_flower;
 pub mod mantis_spiny_flower;
 pub mod mantis_walking_flower;
@@ -83,6 +84,12 @@ pub fn register_content(pack: &mut ContentPack) {
     // K13: Tiger Sword (US-414)
     pack.register_archetype(tiger_sword::archetype());
     for skill in tiger_sword::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K14: Lizard (US-415)
+    pack.register_archetype(lizard::archetype());
+    for skill in lizard::skill_pack() {
         pack.register_skill(skill);
     }
 }
