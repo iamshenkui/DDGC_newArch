@@ -12,6 +12,7 @@ pub mod dry_tree_genie;
 pub mod mantis_magic_flower;
 pub mod mantis_spiny_flower;
 pub mod mantis_walking_flower;
+pub mod metal_armor;
 pub mod moth_mimicry_a;
 pub mod moth_mimicry_b;
 pub mod robber_melee;
@@ -69,6 +70,12 @@ pub fn register_content(pack: &mut ContentPack) {
     // K11: Robber Ranged (US-412)
     pack.register_archetype(robber_ranged::archetype());
     for skill in robber_ranged::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K12: Metal Armor (US-413)
+    pack.register_archetype(metal_armor::archetype());
+    for skill in metal_armor::skill_pack() {
         pack.register_skill(skill);
     }
 }

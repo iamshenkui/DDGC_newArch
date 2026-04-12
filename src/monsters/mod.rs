@@ -147,6 +147,22 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Robber Ranged".to_string(),
     });
 
+    // K12: Metal Armor (US-413)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("metal_armor"),
+        dungeon: Dungeon::BaiHu,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Tank,
+        monster_type: MonsterType::Unholy,
+        skill_ids: vec![
+            SkillId::new("stun"),
+            SkillId::new("bleed"),
+            SkillId::new("normal_attack"),
+            SkillId::new("move"),
+        ],
+        archetype_name: "Metal Armor".to_string(),
+    });
+
     registry
 }
 
@@ -419,6 +435,39 @@ mod tests {
         assert!(
             skill_ids.contains(&"multiple_shot"),
             "robber_ranged must have multiple_shot skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_metal_armor() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("metal_armor")
+            .expect("metal_armor should be registered");
+
+        assert_eq!(family.id.0, "metal_armor");
+        assert_eq!(family.dungeon, Dungeon::BaiHu);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Tank);
+        assert_eq!(family.monster_type, MonsterType::Unholy);
+        assert_eq!(family.archetype_name, "Metal Armor");
+        assert_eq!(family.skill_ids.len(), 4);
+    }
+
+    #[test]
+    fn registry_metal_armor_has_stun_and_bleed() {
+        let registry = build_registry();
+
+        let family = registry.get("metal_armor").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"stun"),
+            "metal_armor must have stun skill"
+        );
+        assert!(
+            skill_ids.contains(&"bleed"),
+            "metal_armor must have bleed skill"
         );
     }
 }
