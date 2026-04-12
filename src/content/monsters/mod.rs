@@ -13,6 +13,7 @@ pub mod dry_tree_genie;
 pub mod fox_fire;
 pub mod ghost_fire_assist;
 pub mod ghost_fire_damage;
+pub mod lantern;
 pub mod lizard;
 pub mod mantis_magic_flower;
 pub mod mantis_spiny_flower;
@@ -139,6 +140,12 @@ pub fn register_content(pack: &mut ContentPack) {
     // K21: Moth Fire (US-422)
     pack.register_archetype(moth_fire::archetype());
     for skill in moth_fire::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K22: Lantern (US-423)
+    pack.register_archetype(lantern::archetype());
+    for skill in lantern::skill_pack() {
         pack.register_skill(skill);
     }
 }

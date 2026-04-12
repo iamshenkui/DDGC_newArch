@@ -303,6 +303,20 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Moth Fire".to_string(),
     });
 
+    // K22: Lantern (US-423)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("lantern"),
+        dungeon: Dungeon::ZhuQue,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Ranged,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("stress"),
+            SkillId::new("burn_attack"),
+        ],
+        archetype_name: "Lantern".to_string(),
+    });
+
     registry
 }
 
@@ -909,6 +923,39 @@ mod tests {
         assert!(
             skill_ids.contains(&"fly_into_fire"),
             "moth_fire must have fly_into_fire skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_lantern() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("lantern")
+            .expect("lantern should be registered");
+
+        assert_eq!(family.id.0, "lantern");
+        assert_eq!(family.dungeon, Dungeon::ZhuQue);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Ranged);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Lantern");
+        assert_eq!(family.skill_ids.len(), 2);
+    }
+
+    #[test]
+    fn registry_lantern_has_stress_and_burn_attack() {
+        let registry = build_registry();
+
+        let family = registry.get("lantern").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"stress"),
+            "lantern must have stress skill"
+        );
+        assert!(
+            skill_ids.contains(&"burn_attack"),
+            "lantern must have burn_attack skill"
         );
     }
 }
