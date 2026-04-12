@@ -7,7 +7,9 @@
 pub mod heroes;
 pub mod monsters;
 pub mod skills;
+pub mod statuses;
 
 pub use heroes::*;
 pub use monsters::*;
 pub use skills::*;
+pub use statuses::*;
