@@ -82,6 +82,72 @@ pub fn horror(stress_per_tick: f64, duration: u32) -> StatusEffect {
     )
 }
 
+/// Burn — fire damage-over-time that stacks up to 3 times.
+///
+/// DDGC reference: deals N fire damage per tick, duration 3 turns.
+/// Functionally similar to bleed but represents fire damage.
+pub fn burn(damage_per_tick: f64, duration: u32) -> StatusEffect {
+    StatusEffect::new(
+        StatusKind::new("burn"),
+        Some(duration),
+        vec![Modifier::new(
+            ModifierSource::Status,
+            AttributeKey::new(ATTR_HEALTH),
+            AttributeValue(-damage_per_tick),
+            0,
+            Some(duration),
+        )],
+        StackRule::Stack { max: 3 },
+    )
+}
+
+/// Frozen — ice damage-over-time that stacks up to 3 times.
+///
+/// DDGC reference: deals N ice damage per tick, duration 3 turns.
+/// Functionally similar to bleed but represents ice/frozen damage.
+pub fn frozen(damage_per_tick: f64, duration: u32) -> StatusEffect {
+    StatusEffect::new(
+        StatusKind::new("frozen"),
+        Some(duration),
+        vec![Modifier::new(
+            ModifierSource::Status,
+            AttributeKey::new(ATTR_HEALTH),
+            AttributeValue(-damage_per_tick),
+            0,
+            Some(duration),
+        )],
+        StackRule::Stack { max: 3 },
+    )
+}
+
+/// Tagged — marker status for mark/tag mechanics.
+///
+/// DDGC reference: tagged status enables conditional effects (Hunter's mark
+/// system, Tank's self-mark). Duration typically 2–3 rounds.
+/// No modifier — game-layer code checks for "tagged" status kind.
+pub fn tagged(duration: u32) -> StatusEffect {
+    StatusEffect::new(
+        StatusKind::new("tagged"),
+        Some(duration),
+        vec![],
+        StackRule::Replace,
+    )
+}
+
+/// Guard — marker status for protection/guard mechanics.
+///
+/// DDGC reference: Tank's protect skill guards an ally for 3 rounds,
+/// reducing their incoming damage by 20%.
+/// No modifier — game-layer code applies damage reduction when guard is active.
+pub fn guard(duration: u32) -> StatusEffect {
+    StatusEffect::new(
+        StatusKind::new("guard"),
+        Some(duration),
+        vec![],
+        StackRule::Replace,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

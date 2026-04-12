@@ -1,10 +1,11 @@
-//! DDGC migrated content — actors, skills, and statuses.
+//! DDGC migrated content — actors, skills, statuses, and hero content.
 //!
 //! All DDGC-specific content lives here. No DDGC constants go into
 //! framework crates. This module provides factory functions and a
 //! `ContentPack` that bundles everything the game layer needs.
 
 pub mod actors;
+pub mod heroes;
 pub mod skills;
 pub mod statuses;
 
@@ -51,21 +52,53 @@ impl Default for ContentPack {
     fn default() -> Self {
         let mut pack = ContentPack::new();
 
-        // Ally archetypes — player squad slice
+        // Ally archetypes — legacy tutorial heroes
         pack.register_archetype(actors::crusader());
         pack.register_archetype(actors::vestal());
+
+        // Ally archetypes — recruitable hero class families (base variants)
+        pack.register_archetype(heroes::alchemist::archetype());
+        pack.register_archetype(heroes::diviner::archetype());
+        pack.register_archetype(heroes::hunter::archetype());
+        pack.register_archetype(heroes::shaman::archetype());
+        pack.register_archetype(heroes::tank::archetype());
 
         // Enemy archetypes
         pack.register_archetype(actors::bone_soldier());
         pack.register_archetype(actors::necromancer());
 
-        // Skills (5+ migrated)
+        // Skills — legacy tutorial skills
         pack.register_skill(skills::crusading_strike());
         pack.register_skill(skills::holy_lance());
         pack.register_skill(skills::divine_grace());
         pack.register_skill(skills::rend());
         pack.register_skill(skills::skull_bash());
         pack.register_skill(skills::grave_bash());
+
+        // Skills — Alchemist base skill pack
+        for skill in heroes::alchemist::skill_pack() {
+            pack.register_skill(skill);
+        }
+
+        // Skills — Diviner base skill pack
+        for skill in heroes::diviner::skill_pack() {
+            pack.register_skill(skill);
+        }
+
+        // Skills — Hunter base skill pack
+        for skill in heroes::hunter::skill_pack() {
+            pack.register_skill(skill);
+        }
+
+        // Skills — Shaman base skill pack
+        for skill in heroes::shaman::skill_pack() {
+            pack.register_skill(skill);
+        }
+
+        // Skills — Tank base skill pack
+        for skill in heroes::tank::skill_pack() {
+            pack.register_skill(skill);
+        }
 
         pack
     }
