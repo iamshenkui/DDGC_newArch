@@ -6,6 +6,8 @@
 
 pub mod heroes;
 pub mod monsters;
+pub mod skills;
 
 pub use heroes::*;
 pub use monsters::*;
+pub use skills::*;
