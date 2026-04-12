@@ -69,6 +69,22 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Mantis Walking Flower".to_string(),
     });
 
+    // K7: Dry Tree Genie (US-408)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("dry_tree_genie"),
+        dungeon: Dungeon::QingLong,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Ranged,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("bleed"),
+            SkillId::new("slow_crowd"),
+            SkillId::new("stress"),
+            SkillId::new("move"),
+        ],
+        archetype_name: "Dry Tree Genie".to_string(),
+    });
+
     registry
 }
 
@@ -172,6 +188,43 @@ mod tests {
         assert!(
             skill_ids.contains(&"crowd_bleed"),
             "mantis_walking_flower must have crowd_bleed skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_dry_tree_genie() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("dry_tree_genie")
+            .expect("dry_tree_genie should be registered");
+
+        assert_eq!(family.id.0, "dry_tree_genie");
+        assert_eq!(family.dungeon, Dungeon::QingLong);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Ranged);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Dry Tree Genie");
+        assert_eq!(family.skill_ids.len(), 4);
+    }
+
+    #[test]
+    fn registry_dry_tree_genie_has_bleed_and_slow_crowd_and_stress() {
+        let registry = build_registry();
+
+        let family = registry.get("dry_tree_genie").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"bleed"),
+            "dry_tree_genie must have bleed skill"
+        );
+        assert!(
+            skill_ids.contains(&"slow_crowd"),
+            "dry_tree_genie must have slow_crowd skill"
+        );
+        assert!(
+            skill_ids.contains(&"stress"),
+            "dry_tree_genie must have stress skill"
         );
     }
 }

@@ -8,6 +8,7 @@
 //! the `ContentPack`. Future family migration slices add their submodule
 //! declaration here and a registration call in `register_content`.
 
+pub mod dry_tree_genie;
 pub mod mantis_magic_flower;
 pub mod mantis_spiny_flower;
 pub mod mantis_walking_flower;
@@ -34,6 +35,12 @@ pub fn register_content(pack: &mut ContentPack) {
     // K6: Mantis Walking Flower (US-407)
     pack.register_archetype(mantis_walking_flower::archetype());
     for skill in mantis_walking_flower::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K7: Dry Tree Genie (US-408)
+    pack.register_archetype(dry_tree_genie::archetype());
+    for skill in dry_tree_genie::skill_pack() {
         pack.register_skill(skill);
     }
 }
