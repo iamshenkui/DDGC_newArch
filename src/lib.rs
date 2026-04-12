@@ -5,6 +5,7 @@
 
 pub mod content;
 pub mod heroes;
+pub mod monsters;
 pub mod parity;
 pub mod run;
 pub mod scenarios;
