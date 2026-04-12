@@ -349,6 +349,22 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Water Grass".to_string(),
     });
 
+    // K25: Monkey Water (US-426)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("monkey_water"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Bruiser,
+        monster_type: MonsterType::Unholy,
+        skill_ids: vec![
+            SkillId::new("base_melee"),
+            SkillId::new("rush"),
+            SkillId::new("stress"),
+            SkillId::new("move"),
+        ],
+        archetype_name: "Monkey Water".to_string(),
+    });
+
     registry
 }
 
@@ -1058,6 +1074,39 @@ mod tests {
         assert!(
             skill_ids.contains(&"convolve"),
             "water_grass must have convolve skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_monkey_water() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("monkey_water")
+            .expect("monkey_water should be registered");
+
+        assert_eq!(family.id.0, "monkey_water");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Bruiser);
+        assert_eq!(family.monster_type, MonsterType::Unholy);
+        assert_eq!(family.archetype_name, "Monkey Water");
+        assert_eq!(family.skill_ids.len(), 4);
+    }
+
+    #[test]
+    fn registry_monkey_water_has_rush_and_stress() {
+        let registry = build_registry();
+
+        let family = registry.get("monkey_water").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"rush"),
+            "monkey_water must have rush skill"
+        );
+        assert!(
+            skill_ids.contains(&"stress"),
+            "monkey_water must have stress skill"
         );
     }
 }
