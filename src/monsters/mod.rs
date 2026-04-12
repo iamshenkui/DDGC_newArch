@@ -707,6 +707,65 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Egg Membrane Full".to_string(),
     });
 
+    // K36: Gambler (US-437)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("gambler"),
+        dungeon: Dungeon::ZhuQue,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Summoner,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("dice_thousand"),
+            SkillId::new("hollow_victory"),
+            SkillId::new("card_doomsday"),
+            SkillId::new("jackpot_requiem"),
+            SkillId::new("summon_mahjong"),
+        ],
+        archetype_name: "Gambler".to_string(),
+    });
+
+    // K36: Mahjong Red (US-437)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("mahjong_red"),
+        dungeon: Dungeon::ZhuQue,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Skirmisher,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("lucky_charity"),
+            SkillId::new("fortune_ante"),
+        ],
+        archetype_name: "Mahjong Red".to_string(),
+    });
+
+    // K36: Mahjong Green (US-437)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("mahjong_green"),
+        dungeon: Dungeon::ZhuQue,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Support,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("fa_cai_blessing"),
+            SkillId::new("high_roller"),
+        ],
+        archetype_name: "Mahjong Green".to_string(),
+    });
+
+    // K36: Mahjong White (US-437)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("mahjong_white"),
+        dungeon: Dungeon::ZhuQue,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Controller,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("joyful_bonus"),
+            SkillId::new("triple_tile_invite"),
+        ],
+        archetype_name: "Mahjong White".to_string(),
+    });
+
     registry
 }
 

@@ -51,6 +51,10 @@ pub mod vegetable;
 pub mod necrodrake_embryosac;
 pub mod egg_membrane_empty;
 pub mod egg_membrane_full;
+pub mod gambler;
+pub mod mahjong_green;
+pub mod mahjong_red;
+pub mod mahjong_white;
 
 use crate::content::ContentPack;
 
@@ -314,6 +318,30 @@ pub fn register_content(pack: &mut ContentPack) {
     // K35: Egg Membrane Full (US-436)
     pack.register_archetype(egg_membrane_full::archetype());
     for skill in egg_membrane_full::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K36: Gambler (US-437)
+    pack.register_archetype(gambler::archetype());
+    for skill in gambler::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K36: Mahjong Red (US-437)
+    pack.register_archetype(mahjong_red::archetype());
+    for skill in mahjong_red::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K36: Mahjong Green (US-437)
+    pack.register_archetype(mahjong_green::archetype());
+    for skill in mahjong_green::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K36: Mahjong White (US-437)
+    pack.register_archetype(mahjong_white::archetype());
+    for skill in mahjong_white::skill_pack() {
         pack.register_skill(skill);
     }
 }

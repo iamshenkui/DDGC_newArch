@@ -779,6 +779,17 @@ pub fn zhuque_boss_packs() -> Vec<EncounterPack> {
                 },
             ],
         },
+        EncounterPack {
+            id: PackId::new("zhuque_boss_gambler"),
+            dungeon: Dungeon::ZhuQue,
+            pack_type: PackType::Boss,
+            slots: vec![
+                FamilySlot {
+                    family_id: FamilyId::new("gambler"),
+                    count: 1,
+                },
+            ],
+        },
     ]
 }
 

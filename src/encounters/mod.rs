@@ -269,6 +269,25 @@ mod tests {
     }
 
     #[test]
+    fn zhuque_boss_gambler_pack_is_correct() {
+        let registry = build_packs_registry();
+
+        let pack = registry
+            .get("zhuque_boss_gambler")
+            .expect("zhuque_boss_gambler should exist");
+
+        assert_eq!(pack.dungeon, Dungeon::ZhuQue);
+        assert_eq!(pack.pack_type, PackType::Boss);
+        assert_eq!(pack.total_units(), 1, "gambler boss pack starts with 1 unit (mahjong summoned mid-fight)");
+
+        let family_ids: Vec<&str> = pack.family_ids().iter().map(|id| id.0.as_str()).collect();
+        assert!(
+            family_ids.contains(&"gambler"),
+            "gambler boss pack must contain gambler"
+        );
+    }
+
+    #[test]
     fn baihu_boss_white_tiger_pack_is_correct() {
         let registry = build_packs_registry();
 
