@@ -70,6 +70,13 @@ impl Default for ContentPack {
         pack.register_archetype(heroes::white::shaman_archetype());
         pack.register_archetype(heroes::white::tank_archetype());
 
+        // Ally archetypes — recruitable hero class families (black variants)
+        pack.register_archetype(heroes::black::alchemist_archetype());
+        pack.register_archetype(heroes::black::diviner_archetype());
+        pack.register_archetype(heroes::black::hunter_archetype());
+        pack.register_archetype(heroes::black::shaman_archetype());
+        pack.register_archetype(heroes::black::tank_archetype());
+
         // Enemy archetypes
         pack.register_archetype(actors::bone_soldier());
         pack.register_archetype(actors::necromancer());
@@ -129,6 +136,31 @@ impl Default for ContentPack {
 
         // Skills — Tank white skill pack
         for skill in heroes::white::tank_skill_pack() {
+            pack.register_skill(skill);
+        }
+
+        // Skills — Alchemist black skill pack
+        for skill in heroes::black::alchemist_skill_pack() {
+            pack.register_skill(skill);
+        }
+
+        // Skills — Diviner black skill pack
+        for skill in heroes::black::diviner_skill_pack() {
+            pack.register_skill(skill);
+        }
+
+        // Skills — Hunter black skill pack
+        for skill in heroes::black::hunter_skill_pack() {
+            pack.register_skill(skill);
+        }
+
+        // Skills — Shaman black skill pack
+        for skill in heroes::black::shaman_skill_pack() {
+            pack.register_skill(skill);
+        }
+
+        // Skills — Tank black skill pack
+        for skill in heroes::black::tank_skill_pack() {
             pack.register_skill(skill);
         }
 

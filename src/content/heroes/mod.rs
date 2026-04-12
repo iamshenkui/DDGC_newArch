@@ -5,6 +5,7 @@
 //! and skills for the game layer.
 
 pub mod alchemist;
+pub mod black;
 pub mod diviner;
 pub mod hunter;
 pub mod shaman;
