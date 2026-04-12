@@ -257,6 +257,21 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Ghost Fire Assist".to_string(),
     });
 
+    // K19: Ghost Fire Damage (US-420)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("ghost_fire_damage"),
+        dungeon: Dungeon::ZhuQue,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Ranged,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("stress"),
+            SkillId::new("burn_attack"),
+            SkillId::new("ghost_fire_split"),
+        ],
+        archetype_name: "Ghost Fire Damage".to_string(),
+    });
+
     registry
 }
 
@@ -764,6 +779,39 @@ mod tests {
         assert!(
             skill_ids.contains(&"ghost_fire_split"),
             "ghost_fire_assist must have ghost_fire_split skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_ghost_fire_damage() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("ghost_fire_damage")
+            .expect("ghost_fire_damage should be registered");
+
+        assert_eq!(family.id.0, "ghost_fire_damage");
+        assert_eq!(family.dungeon, Dungeon::ZhuQue);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Ranged);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Ghost Fire Damage");
+        assert_eq!(family.skill_ids.len(), 3);
+    }
+
+    #[test]
+    fn registry_ghost_fire_damage_has_burn_attack_and_ghost_fire_split() {
+        let registry = build_registry();
+
+        let family = registry.get("ghost_fire_damage").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"burn_attack"),
+            "ghost_fire_damage must have burn_attack skill"
+        );
+        assert!(
+            skill_ids.contains(&"ghost_fire_split"),
+            "ghost_fire_damage must have ghost_fire_split skill"
         );
     }
 }
