@@ -915,6 +915,25 @@ pub fn xuanwu_boss_packs() -> Vec<EncounterPack> {
                 },
             ],
         },
+        EncounterPack {
+            id: PackId::new("xuanwu_boss_frostvein_clam"),
+            dungeon: Dungeon::XuanWu,
+            pack_type: PackType::Boss,
+            slots: vec![
+                FamilySlot {
+                    family_id: FamilyId::new("pearlkin_opalescent"),
+                    count: 1,
+                },
+                FamilySlot {
+                    family_id: FamilyId::new("pearlkin_flawed"),
+                    count: 1,
+                },
+                FamilySlot {
+                    family_id: FamilyId::new("frostvein_clam"),
+                    count: 1,
+                },
+            ],
+        },
     ]
 }
 

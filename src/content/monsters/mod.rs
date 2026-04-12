@@ -59,6 +59,9 @@ pub mod sc_blow;
 pub mod sc_bow;
 pub mod sc_pluck;
 pub mod scorchthroat_chanteuse;
+pub mod frostvein_clam;
+pub mod pearlkin_opalescent;
+pub mod pearlkin_flawed;
 
 use crate::content::ContentPack;
 
@@ -370,6 +373,24 @@ pub fn register_content(pack: &mut ContentPack) {
     // K37: SC Pluck (US-438)
     pack.register_archetype(sc_pluck::archetype());
     for skill in sc_pluck::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K38: Frostvein Clam (US-439)
+    pack.register_archetype(frostvein_clam::archetype());
+    for skill in frostvein_clam::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K38: Pearlkin Opalescent (US-439)
+    pack.register_archetype(pearlkin_opalescent::archetype());
+    for skill in pearlkin_opalescent::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K38: Pearlkin Flawed (US-439)
+    pack.register_archetype(pearlkin_flawed::archetype());
+    for skill in pearlkin_flawed::skill_pack() {
         pack.register_skill(skill);
     }
 }

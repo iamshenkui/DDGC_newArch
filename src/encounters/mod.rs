@@ -436,4 +436,31 @@ mod tests {
             "scorchthroat_chanteuse boss pack must contain sc_bow"
         );
     }
+
+    #[test]
+    fn xuanwu_boss_frostvein_clam_pack_is_correct() {
+        let registry = build_packs_registry();
+
+        let pack = registry
+            .get("xuanwu_boss_frostvein_clam")
+            .expect("xuanwu_boss_frostvein_clam should exist");
+
+        assert_eq!(pack.dungeon, Dungeon::XuanWu);
+        assert_eq!(pack.pack_type, PackType::Boss);
+        assert_eq!(pack.total_units(), 3, "frostvein_clam boss pack should have 3 units (clam + opalescent + flawed)");
+
+        let family_ids: Vec<&str> = pack.family_ids().iter().map(|id| id.0.as_str()).collect();
+        assert!(
+            family_ids.contains(&"frostvein_clam"),
+            "frostvein_clam boss pack must contain frostvein_clam"
+        );
+        assert!(
+            family_ids.contains(&"pearlkin_opalescent"),
+            "frostvein_clam boss pack must contain pearlkin_opalescent"
+        );
+        assert!(
+            family_ids.contains(&"pearlkin_flawed"),
+            "frostvein_clam boss pack must contain pearlkin_flawed"
+        );
+    }
 }

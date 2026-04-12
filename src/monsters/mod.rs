@@ -825,6 +825,51 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "SC Pluck".to_string(),
     });
 
+    // K38: Frostvein Clam (US-439)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("frostvein_clam"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Summoner,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("glacial_torrent"),
+            SkillId::new("abyssal_glare"),
+            SkillId::new("nacreous_homunculus"),
+            SkillId::new("prismatic_clench"),
+            SkillId::new("clam_riposte"),
+        ],
+        archetype_name: "Frostvein Clam".to_string(),
+    });
+
+    // K38: Pearlkin Opalescent (US-439)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("pearlkin_opalescent"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Support,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("po_debuff"),
+            SkillId::new("po_damage"),
+        ],
+        archetype_name: "Pearlkin Opalescent".to_string(),
+    });
+
+    // K38: Pearlkin Flawed (US-439)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("pearlkin_flawed"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Controller,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("fracture_lure"),
+            SkillId::new("shattered_revelation"),
+        ],
+        archetype_name: "Pearlkin Flawed".to_string(),
+    });
+
     registry
 }
 
@@ -2297,5 +2342,70 @@ mod tests {
             skill_ids.contains(&"ossein_arsonist_lyre"),
             "sc_pluck must have ossein_arsonist_lyre skill"
         );
+    }
+
+    #[test]
+    fn registry_resolves_frostvein_clam() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("frostvein_clam")
+            .expect("frostvein_clam should be registered");
+
+        assert_eq!(family.id.0, "frostvein_clam");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Summoner);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Frostvein Clam");
+        assert_eq!(family.skill_ids.len(), 5);
+    }
+
+    #[test]
+    fn registry_frostvein_clam_has_riposte_and_summon() {
+        let registry = build_registry();
+
+        let family = registry.get("frostvein_clam").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"prismatic_clench"),
+            "frostvein_clam must have prismatic_clench (riposte) skill"
+        );
+        assert!(
+            skill_ids.contains(&"nacreous_homunculus"),
+            "frostvein_clam must have nacreous_homunculus (summon) skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_pearlkin_opalescent() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("pearlkin_opalescent")
+            .expect("pearlkin_opalescent should be registered");
+
+        assert_eq!(family.id.0, "pearlkin_opalescent");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Support);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Pearlkin Opalescent");
+    }
+
+    #[test]
+    fn registry_resolves_pearlkin_flawed() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("pearlkin_flawed")
+            .expect("pearlkin_flawed should be registered");
+
+        assert_eq!(family.id.0, "pearlkin_flawed");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Controller);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Pearlkin Flawed");
     }
 }
