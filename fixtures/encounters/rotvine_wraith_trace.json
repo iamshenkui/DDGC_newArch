@@ -1,0 +1,265 @@
+{
+  "scenario": "xuanwu_boss_rotvine_wraith",
+  "winner": "Ally",
+  "turns": 7,
+  "entries": [
+    {
+      "turn": 1,
+      "actor": 1,
+      "action": "active_riposte",
+      "targets": [
+        10,
+        11,
+        12
+      ],
+      "effects": [
+        {
+          "kind": "Damage",
+          "target": 10,
+          "value": 16.0
+        },
+        {
+          "kind": "Damage",
+          "target": 11,
+          "value": 16.0
+        },
+        {
+          "kind": "Damage",
+          "target": 12,
+          "value": 16.0
+        }
+      ],
+      "snapshot": {
+        "1": 192.0,
+        "2": 152.0,
+        "3": 135.0,
+        "4": 160.0,
+        "10": 134.0,
+        "11": 14.0,
+        "12": 14.0
+      }
+    },
+    {
+      "turn": 2,
+      "actor": 2,
+      "action": "ignore_def_skill",
+      "targets": [
+        10,
+        11,
+        12
+      ],
+      "effects": [
+        {
+          "kind": "Damage",
+          "target": 10,
+          "value": 40.0
+        },
+        {
+          "kind": "Damage",
+          "target": 11,
+          "value": 40.0
+        },
+        {
+          "kind": "Damage",
+          "target": 12,
+          "value": 40.0
+        }
+      ],
+      "snapshot": {
+        "1": 192.0,
+        "2": 152.0,
+        "3": 135.0,
+        "4": 160.0,
+        "10": 94.0,
+        "11": 0.0,
+        "12": 0.0
+      }
+    },
+    {
+      "turn": 3,
+      "actor": 3,
+      "action": "direct_hit_1",
+      "targets": [
+        10,
+        11,
+        12
+      ],
+      "effects": [
+        {
+          "kind": "Damage",
+          "target": 10,
+          "value": 39.0
+        },
+        {
+          "kind": "Damage",
+          "target": 11,
+          "value": 39.0
+        },
+        {
+          "kind": "Damage",
+          "target": 12,
+          "value": 39.0
+        }
+      ],
+      "snapshot": {
+        "1": 192.0,
+        "2": 152.0,
+        "3": 135.0,
+        "4": 160.0,
+        "10": 55.0,
+        "11": 0.0,
+        "12": 0.0
+      }
+    },
+    {
+      "turn": 4,
+      "actor": 4,
+      "action": "duality_fate",
+      "targets": [
+        10,
+        11,
+        12
+      ],
+      "effects": [
+        {
+          "kind": "Damage",
+          "target": 10,
+          "value": 9.0
+        },
+        {
+          "kind": "Damage",
+          "target": 11,
+          "value": 9.0
+        },
+        {
+          "kind": "Damage",
+          "target": 12,
+          "value": 9.0
+        }
+      ],
+      "snapshot": {
+        "1": 192.0,
+        "2": 152.0,
+        "3": 135.0,
+        "4": 160.0,
+        "10": 46.0,
+        "11": 0.0,
+        "12": 0.0
+      }
+    },
+    {
+      "turn": 5,
+      "actor": 10,
+      "action": "cadaver_bloom",
+      "targets": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "effects": [
+        {
+          "kind": "Damage",
+          "target": 1,
+          "value": 5.5
+        },
+        {
+          "kind": "Damage",
+          "target": 2,
+          "value": 5.5
+        },
+        {
+          "kind": "Damage",
+          "target": 3,
+          "value": 5.5
+        },
+        {
+          "kind": "Damage",
+          "target": 4,
+          "value": 5.5
+        }
+      ],
+      "snapshot": {
+        "1": 186.5,
+        "2": 146.5,
+        "3": 129.5,
+        "4": 154.5,
+        "10": 46.0,
+        "11": 0.0,
+        "12": 0.0
+      }
+    },
+    {
+      "turn": 6,
+      "actor": 1,
+      "action": "active_riposte",
+      "targets": [
+        10,
+        11,
+        12
+      ],
+      "effects": [
+        {
+          "kind": "Damage",
+          "target": 10,
+          "value": 16.0
+        },
+        {
+          "kind": "Damage",
+          "target": 11,
+          "value": 16.0
+        },
+        {
+          "kind": "Damage",
+          "target": 12,
+          "value": 16.0
+        }
+      ],
+      "snapshot": {
+        "1": 186.5,
+        "2": 146.5,
+        "3": 129.5,
+        "4": 154.5,
+        "10": 30.0,
+        "11": 0.0,
+        "12": 0.0
+      }
+    },
+    {
+      "turn": 7,
+      "actor": 2,
+      "action": "ignore_def_skill",
+      "targets": [
+        10,
+        11,
+        12
+      ],
+      "effects": [
+        {
+          "kind": "Damage",
+          "target": 10,
+          "value": 40.0
+        },
+        {
+          "kind": "Damage",
+          "target": 11,
+          "value": 40.0
+        },
+        {
+          "kind": "Damage",
+          "target": 12,
+          "value": 40.0
+        }
+      ],
+      "snapshot": {
+        "1": 186.5,
+        "2": 146.5,
+        "3": 129.5,
+        "4": 154.5,
+        "10": 0.0,
+        "11": 0.0,
+        "12": 0.0
+      }
+    }
+  ]
+}

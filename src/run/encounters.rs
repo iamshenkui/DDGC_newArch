@@ -240,10 +240,11 @@ impl EncounterResolver {
                 }
             };
 
-            // Resolve targets
-            let targets = skill
+            // Resolve targets — sorted by ActorId for deterministic trace output
+            let mut targets = skill
                 .target_selector
                 .resolve(current_actor, &formation, &actors, &side_lookup);
+            targets.sort_by_key(|t| t.0);
 
             if targets.is_empty() {
                 let cmd = CombatCommand::Wait {
