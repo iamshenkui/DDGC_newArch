@@ -226,6 +226,22 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Unicorn Beetle B".to_string(),
     });
 
+    // K17: Alligator Yangtze (US-418)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("alligator_yangtze"),
+        dungeon: Dungeon::BaiHu,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Bruiser,
+        monster_type: MonsterType::Beast,
+        skill_ids: vec![
+            SkillId::new("normal_attack"),
+            SkillId::new("bleed"),
+            SkillId::new("mark_riposte"),
+            SkillId::new("riposte1"),
+        ],
+        archetype_name: "Alligator Yangtze".to_string(),
+    });
+
     registry
 }
 
@@ -667,6 +683,39 @@ mod tests {
         assert!(
             skill_ids.contains(&"stress"),
             "unicorn_beetle_B must have stress skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_alligator_yangtze() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("alligator_yangtze")
+            .expect("alligator_yangtze should be registered");
+
+        assert_eq!(family.id.0, "alligator_yangtze");
+        assert_eq!(family.dungeon, Dungeon::BaiHu);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Bruiser);
+        assert_eq!(family.monster_type, MonsterType::Beast);
+        assert_eq!(family.archetype_name, "Alligator Yangtze");
+        assert_eq!(family.skill_ids.len(), 4);
+    }
+
+    #[test]
+    fn registry_alligator_yangtze_has_bleed_and_riposte() {
+        let registry = build_registry();
+
+        let family = registry.get("alligator_yangtze").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"bleed"),
+            "alligator_yangtze must have bleed skill"
+        );
+        assert!(
+            skill_ids.contains(&"mark_riposte"),
+            "alligator_yangtze must have mark_riposte skill"
         );
     }
 }

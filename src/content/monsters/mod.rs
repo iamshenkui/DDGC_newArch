@@ -8,6 +8,7 @@
 //! the `ContentPack`. Future family migration slices add their submodule
 //! declaration here and a registration call in `register_content`.
 
+pub mod alligator_yangtze;
 pub mod dry_tree_genie;
 pub mod lizard;
 pub mod mantis_magic_flower;
@@ -104,6 +105,12 @@ pub fn register_content(pack: &mut ContentPack) {
     // K16: Unicorn Beetle B (US-417)
     pack.register_archetype(unicorn_beetle_b::archetype());
     for skill in unicorn_beetle_b::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K17: Alligator Yangtze (US-418)
+    pack.register_archetype(alligator_yangtze::archetype());
+    for skill in alligator_yangtze::skill_pack() {
         pack.register_skill(skill);
     }
 }
