@@ -4,6 +4,7 @@
 //! framework using only public framework APIs.
 
 pub mod content;
+pub mod encounters;
 pub mod heroes;
 pub mod monsters;
 pub mod parity;
