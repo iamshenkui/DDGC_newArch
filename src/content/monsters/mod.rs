@@ -14,6 +14,7 @@ pub mod mantis_spiny_flower;
 pub mod mantis_walking_flower;
 pub mod moth_mimicry_a;
 pub mod moth_mimicry_b;
+pub mod robber_melee;
 
 use crate::content::ContentPack;
 
@@ -55,6 +56,12 @@ pub fn register_content(pack: &mut ContentPack) {
     // K9: Moth Mimicry B (US-410)
     pack.register_archetype(moth_mimicry_b::archetype());
     for skill in moth_mimicry_b::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K10: Robber Melee (US-411)
+    pack.register_archetype(robber_melee::archetype());
+    for skill in robber_melee::skill_pack() {
         pack.register_skill(skill);
     }
 }

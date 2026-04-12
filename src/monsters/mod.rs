@@ -115,6 +115,22 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Moth Mimicry B".to_string(),
     });
 
+    // K10: Robber Melee (US-411)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("robber_melee"),
+        dungeon: Dungeon::QingLong,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Skirmisher,
+        monster_type: MonsterType::Man,
+        skill_ids: vec![
+            SkillId::new("normal_attack"),
+            SkillId::new("bleed"),
+            SkillId::new("smoke_bomb"),
+            SkillId::new("move"),
+        ],
+        archetype_name: "Robber Melee".to_string(),
+    });
+
     registry
 }
 
@@ -321,6 +337,39 @@ mod tests {
         assert!(
             skill_ids.contains(&"stress_crowd"),
             "moth_mimicry_B must have stress_crowd skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_robber_melee() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("robber_melee")
+            .expect("robber_melee should be registered");
+
+        assert_eq!(family.id.0, "robber_melee");
+        assert_eq!(family.dungeon, Dungeon::QingLong);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Skirmisher);
+        assert_eq!(family.monster_type, MonsterType::Man);
+        assert_eq!(family.archetype_name, "Robber Melee");
+        assert_eq!(family.skill_ids.len(), 4);
+    }
+
+    #[test]
+    fn registry_robber_melee_has_smoke_bomb_and_bleed() {
+        let registry = build_registry();
+
+        let family = registry.get("robber_melee").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"smoke_bomb"),
+            "robber_melee must have smoke_bomb skill"
+        );
+        assert!(
+            skill_ids.contains(&"bleed"),
+            "robber_melee must have bleed skill"
         );
     }
 }
