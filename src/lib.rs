@@ -4,6 +4,7 @@
 //! framework using only public framework APIs.
 
 pub mod content;
+pub mod heroes;
 pub mod parity;
 pub mod run;
 pub mod scenarios;
