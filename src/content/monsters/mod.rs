@@ -8,15 +8,18 @@
 //! the `ContentPack`. Future family migration slices add their submodule
 //! declaration here and a registration call in `register_content`.
 
+pub mod mantis_magic_flower;
+
 use crate::content::ContentPack;
 
 /// Register all migrated monster family content into the content pack.
 ///
 /// Each family migration slice (US-405 through US-426 for commons,
 /// US-430 through US-441 for bosses) adds a registration call here.
-/// Until families are migrated, this function is a no-op.
-pub fn register_content(_pack: &mut ContentPack) {
-    // Family registrations will be added by individual migration slices:
-    // pack.register_archetype(mantis_magic_flower::archetype());
-    // for skill in mantis_magic_flower::skill_pack() { pack.register_skill(skill); }
+pub fn register_content(pack: &mut ContentPack) {
+    // K4: Mantis Magic Flower (US-405)
+    pack.register_archetype(mantis_magic_flower::archetype());
+    for skill in mantis_magic_flower::skill_pack() {
+        pack.register_skill(skill);
+    }
 }

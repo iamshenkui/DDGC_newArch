@@ -7,7 +7,7 @@
 //! DDGC uses exactly two tiers — Common and Boss — with no intermediate "elite"
 //! classification. This registry models that faithfully.
 
-use framework_combat::skills::SkillId;
+pub use framework_combat::skills::SkillId;
 use std::collections::HashMap;
 
 // ── Dungeon Classification ──────────────────────────────────────────────────
