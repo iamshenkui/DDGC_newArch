@@ -12,6 +12,7 @@
 pub mod base;
 pub mod black;
 pub mod families;
+pub mod recruitment;
 pub mod skills;
 pub mod statuses;
 pub mod white;
@@ -19,6 +20,10 @@ pub mod white;
 pub use base::*;
 pub use black::*;
 pub use families::*;
+pub use recruitment::{
+    hero_class_identity, hero_matches_any_class_requirement, hero_matches_class_requirement,
+    is_base_recruit_class, normalize_recruit_class_id, HeroClassIdentity, RecruitPool,
+};
 pub use skills::FamilySkillResolver;
 pub use statuses::{FamilyStatusRegistry, FamilyStatusSemantics, VariantStatusProfile};
 pub use white::*;
