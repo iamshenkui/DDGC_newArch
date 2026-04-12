@@ -131,6 +131,22 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Robber Melee".to_string(),
     });
 
+    // K11: Robber Ranged (US-412)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("robber_ranged"),
+        dungeon: Dungeon::QingLong,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Skirmisher,
+        monster_type: MonsterType::Man,
+        skill_ids: vec![
+            SkillId::new("normal_attack"),
+            SkillId::new("multiple_shot"),
+            SkillId::new("throw_stone"),
+            SkillId::new("move"),
+        ],
+        archetype_name: "Robber Ranged".to_string(),
+    });
+
     registry
 }
 
@@ -370,6 +386,39 @@ mod tests {
         assert!(
             skill_ids.contains(&"bleed"),
             "robber_melee must have bleed skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_robber_ranged() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("robber_ranged")
+            .expect("robber_ranged should be registered");
+
+        assert_eq!(family.id.0, "robber_ranged");
+        assert_eq!(family.dungeon, Dungeon::QingLong);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Skirmisher);
+        assert_eq!(family.monster_type, MonsterType::Man);
+        assert_eq!(family.archetype_name, "Robber Ranged");
+        assert_eq!(family.skill_ids.len(), 4);
+    }
+
+    #[test]
+    fn registry_robber_ranged_has_throw_stone_and_multiple_shot() {
+        let registry = build_registry();
+
+        let family = registry.get("robber_ranged").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"throw_stone"),
+            "robber_ranged must have throw_stone skill"
+        );
+        assert!(
+            skill_ids.contains(&"multiple_shot"),
+            "robber_ranged must have multiple_shot skill"
         );
     }
 }
