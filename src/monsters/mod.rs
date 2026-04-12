@@ -100,6 +100,21 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Moth Mimicry A".to_string(),
     });
 
+    // K9: Moth Mimicry B (US-410)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("moth_mimicry_B"),
+        dungeon: Dungeon::QingLong,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Ranged,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("poison"),
+            SkillId::new("stress"),
+            SkillId::new("stress_crowd"),
+        ],
+        archetype_name: "Moth Mimicry B".to_string(),
+    });
+
     registry
 }
 
@@ -273,6 +288,39 @@ mod tests {
         assert!(
             skill_ids.contains(&"stress_poison"),
             "moth_mimicry_A must have stress_poison skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_moth_mimicry_b() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("moth_mimicry_B")
+            .expect("moth_mimicry_B should be registered");
+
+        assert_eq!(family.id.0, "moth_mimicry_B");
+        assert_eq!(family.dungeon, Dungeon::QingLong);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Ranged);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Moth Mimicry B");
+        assert_eq!(family.skill_ids.len(), 3);
+    }
+
+    #[test]
+    fn registry_moth_mimicry_b_has_poison_and_stress_crowd() {
+        let registry = build_registry();
+
+        let family = registry.get("moth_mimicry_B").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"poison"),
+            "moth_mimicry_B must have poison skill"
+        );
+        assert!(
+            skill_ids.contains(&"stress_crowd"),
+            "moth_mimicry_B must have stress_crowd skill"
         );
     }
 }
