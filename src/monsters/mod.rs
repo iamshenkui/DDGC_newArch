@@ -163,6 +163,21 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Metal Armor".to_string(),
     });
 
+    // K13: Tiger Sword (US-414)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("tiger_sword"),
+        dungeon: Dungeon::BaiHu,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Bruiser,
+        monster_type: MonsterType::Unholy,
+        skill_ids: vec![
+            SkillId::new("normal_attack"),
+            SkillId::new("pull"),
+            SkillId::new("move"),
+        ],
+        archetype_name: "Tiger Sword".to_string(),
+    });
+
     registry
 }
 
@@ -468,6 +483,39 @@ mod tests {
         assert!(
             skill_ids.contains(&"bleed"),
             "metal_armor must have bleed skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_tiger_sword() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("tiger_sword")
+            .expect("tiger_sword should be registered");
+
+        assert_eq!(family.id.0, "tiger_sword");
+        assert_eq!(family.dungeon, Dungeon::BaiHu);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Bruiser);
+        assert_eq!(family.monster_type, MonsterType::Unholy);
+        assert_eq!(family.archetype_name, "Tiger Sword");
+        assert_eq!(family.skill_ids.len(), 3);
+    }
+
+    #[test]
+    fn registry_tiger_sword_has_normal_attack_and_pull() {
+        let registry = build_registry();
+
+        let family = registry.get("tiger_sword").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"normal_attack"),
+            "tiger_sword must have normal_attack skill"
+        );
+        assert!(
+            skill_ids.contains(&"pull"),
+            "tiger_sword must have pull skill"
         );
     }
 }

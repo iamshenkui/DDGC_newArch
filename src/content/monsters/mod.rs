@@ -17,6 +17,7 @@ pub mod moth_mimicry_a;
 pub mod moth_mimicry_b;
 pub mod robber_melee;
 pub mod robber_ranged;
+pub mod tiger_sword;
 
 use crate::content::ContentPack;
 
@@ -76,6 +77,12 @@ pub fn register_content(pack: &mut ContentPack) {
     // K12: Metal Armor (US-413)
     pack.register_archetype(metal_armor::archetype());
     for skill in metal_armor::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K13: Tiger Sword (US-414)
+    pack.register_archetype(tiger_sword::archetype());
+    for skill in tiger_sword::skill_pack() {
         pack.register_skill(skill);
     }
 }
