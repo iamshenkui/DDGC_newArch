@@ -782,6 +782,34 @@ pub fn zhuque_boss_packs() -> Vec<EncounterPack> {
     ]
 }
 
+/// BaiHu boss encounter packs.
+///
+/// Currently includes only the white_tiger boss pack. Future boss migration
+/// slices will add additional boss packs (black_tortoise).
+pub fn baihu_boss_packs() -> Vec<EncounterPack> {
+    vec![
+        EncounterPack {
+            id: PackId::new("baihu_boss_white_tiger"),
+            dungeon: Dungeon::BaiHu,
+            pack_type: PackType::Boss,
+            slots: vec![
+                FamilySlot {
+                    family_id: FamilyId::new("white_tiger_A"),
+                    count: 1,
+                },
+                FamilySlot {
+                    family_id: FamilyId::new("white_tiger_B"),
+                    count: 1,
+                },
+                FamilySlot {
+                    family_id: FamilyId::new("white_tiger_terrain"),
+                    count: 1,
+                },
+            ],
+        },
+    ]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

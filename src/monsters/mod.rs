@@ -473,6 +473,72 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Vermilion Bird Tail B".to_string(),
     });
 
+    // K31: White Tiger C (US-432)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("white_tiger_C"),
+        dungeon: Dungeon::BaiHu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Summoner,
+        monster_type: MonsterType::Beast,
+        skill_ids: vec![
+            SkillId::new("thunder_lightning"),
+            SkillId::new("paw"),
+            SkillId::new("raging_fire"),
+            SkillId::new("true_strike"),
+            SkillId::new("jump"),
+            SkillId::new("deter_stress"),
+            SkillId::new("deter_def"),
+        ],
+        archetype_name: "White Tiger C".to_string(),
+    });
+
+    // K31: White Tiger A (US-432)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("white_tiger_A"),
+        dungeon: Dungeon::BaiHu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Support,
+        monster_type: MonsterType::Beast,
+        skill_ids: vec![
+            SkillId::new("drag"),
+            SkillId::new("angry_eyes"),
+            SkillId::new("pounce"),
+            SkillId::new("pounce_bite"),
+            SkillId::new("jump"),
+        ],
+        archetype_name: "White Tiger A".to_string(),
+    });
+
+    // K31: White Tiger B (US-432)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("white_tiger_B"),
+        dungeon: Dungeon::BaiHu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Controller,
+        monster_type: MonsterType::Beast,
+        skill_ids: vec![
+            SkillId::new("allow_return"),
+            SkillId::new("fire_soul_shadow"),
+            SkillId::new("tiger_swing"),
+            SkillId::new("thunder_shadow"),
+            SkillId::new("jump"),
+        ],
+        archetype_name: "White Tiger B".to_string(),
+    });
+
+    // K31: White Tiger Terrain (US-432)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("white_tiger_terrain"),
+        dungeon: Dungeon::BaiHu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Support,
+        monster_type: MonsterType::Corpse,
+        skill_ids: vec![
+            SkillId::new("occupy"),
+        ],
+        archetype_name: "White Tiger Terrain".to_string(),
+    });
+
     registry
 }
 
@@ -1413,6 +1479,138 @@ mod tests {
         assert!(
             skill_ids.contains(&"heaven_falls"),
             "vermilion_bird_tail_B must have heaven_falls skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_white_tiger_c() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("white_tiger_C")
+            .expect("white_tiger_C should be registered");
+
+        assert_eq!(family.id.0, "white_tiger_C");
+        assert_eq!(family.dungeon, Dungeon::BaiHu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Summoner);
+        assert_eq!(family.monster_type, MonsterType::Beast);
+        assert_eq!(family.archetype_name, "White Tiger C");
+        assert_eq!(family.skill_ids.len(), 7);
+    }
+
+    #[test]
+    fn registry_white_tiger_c_has_paw_and_storm_control() {
+        let registry = build_registry();
+
+        let family = registry.get("white_tiger_C").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"paw"),
+            "white_tiger_C must have paw skill"
+        );
+        assert!(
+            skill_ids.contains(&"thunder_lightning"),
+            "white_tiger_C must have thunder_lightning skill"
+        );
+        assert!(
+            skill_ids.contains(&"jump"),
+            "white_tiger_C must have jump skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_white_tiger_a() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("white_tiger_A")
+            .expect("white_tiger_A should be registered");
+
+        assert_eq!(family.id.0, "white_tiger_A");
+        assert_eq!(family.dungeon, Dungeon::BaiHu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Support);
+        assert_eq!(family.monster_type, MonsterType::Beast);
+        assert_eq!(family.archetype_name, "White Tiger A");
+        assert_eq!(family.skill_ids.len(), 5);
+    }
+
+    #[test]
+    fn registry_white_tiger_a_has_drag_and_pounce() {
+        let registry = build_registry();
+
+        let family = registry.get("white_tiger_A").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"drag"),
+            "white_tiger_A must have drag skill"
+        );
+        assert!(
+            skill_ids.contains(&"pounce"),
+            "white_tiger_A must have pounce skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_white_tiger_b() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("white_tiger_B")
+            .expect("white_tiger_B should be registered");
+
+        assert_eq!(family.id.0, "white_tiger_B");
+        assert_eq!(family.dungeon, Dungeon::BaiHu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Controller);
+        assert_eq!(family.monster_type, MonsterType::Beast);
+        assert_eq!(family.archetype_name, "White Tiger B");
+        assert_eq!(family.skill_ids.len(), 5);
+    }
+
+    #[test]
+    fn registry_white_tiger_b_has_fire_soul_shadow_and_tiger_swing() {
+        let registry = build_registry();
+
+        let family = registry.get("white_tiger_B").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"fire_soul_shadow"),
+            "white_tiger_B must have fire_soul_shadow skill"
+        );
+        assert!(
+            skill_ids.contains(&"tiger_swing"),
+            "white_tiger_B must have tiger_swing skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_white_tiger_terrain() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("white_tiger_terrain")
+            .expect("white_tiger_terrain should be registered");
+
+        assert_eq!(family.id.0, "white_tiger_terrain");
+        assert_eq!(family.dungeon, Dungeon::BaiHu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Support);
+        assert_eq!(family.monster_type, MonsterType::Corpse);
+        assert_eq!(family.archetype_name, "White Tiger Terrain");
+        assert_eq!(family.skill_ids.len(), 1);
+    }
+
+    #[test]
+    fn registry_white_tiger_terrain_has_occupy_skill() {
+        let registry = build_registry();
+
+        let family = registry.get("white_tiger_terrain").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"occupy"),
+            "white_tiger_terrain must have occupy skill"
         );
     }
 }

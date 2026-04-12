@@ -48,6 +48,10 @@ pub fn build_packs_registry() -> EncounterPackRegistry {
         registry.register(pack);
     }
 
+    for pack in packs::baihu_boss_packs() {
+        registry.register(pack);
+    }
+
     registry
 }
 
@@ -257,6 +261,33 @@ mod tests {
         assert!(
             family_ids.contains(&"vermilion_bird_tail_B"),
             "vermilion_bird boss pack must contain vermilion_bird_tail_B"
+        );
+    }
+
+    #[test]
+    fn baihu_boss_white_tiger_pack_is_correct() {
+        let registry = build_packs_registry();
+
+        let pack = registry
+            .get("baihu_boss_white_tiger")
+            .expect("baihu_boss_white_tiger should exist");
+
+        assert_eq!(pack.dungeon, Dungeon::BaiHu);
+        assert_eq!(pack.pack_type, PackType::Boss);
+        assert_eq!(pack.total_units(), 3, "white_tiger boss pack should have 3 units");
+
+        let family_ids: Vec<&str> = pack.family_ids().iter().map(|id| id.0.as_str()).collect();
+        assert!(
+            family_ids.contains(&"white_tiger_A"),
+            "white_tiger boss pack must contain white_tiger_A"
+        );
+        assert!(
+            family_ids.contains(&"white_tiger_B"),
+            "white_tiger boss pack must contain white_tiger_B"
+        );
+        assert!(
+            family_ids.contains(&"white_tiger_terrain"),
+            "white_tiger boss pack must contain white_tiger_terrain"
         );
     }
 }

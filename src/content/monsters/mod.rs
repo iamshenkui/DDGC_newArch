@@ -36,6 +36,10 @@ pub mod monkey_water;
 pub mod vermilion_bird;
 pub mod vermilion_bird_tail_a;
 pub mod vermilion_bird_tail_b;
+pub mod white_tiger_a;
+pub mod white_tiger_b;
+pub mod white_tiger_c;
+pub mod white_tiger_terrain;
 
 use crate::content::ContentPack;
 
@@ -209,6 +213,30 @@ pub fn register_content(pack: &mut ContentPack) {
     // K30: Vermilion Bird Tail B (US-431)
     pack.register_archetype(vermilion_bird_tail_b::archetype());
     for skill in vermilion_bird_tail_b::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K31: White Tiger C (US-432)
+    pack.register_archetype(white_tiger_c::archetype());
+    for skill in white_tiger_c::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K31: White Tiger A (US-432)
+    pack.register_archetype(white_tiger_a::archetype());
+    for skill in white_tiger_a::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K31: White Tiger B (US-432)
+    pack.register_archetype(white_tiger_b::archetype());
+    for skill in white_tiger_b::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K31: White Tiger Terrain (US-432)
+    pack.register_archetype(white_tiger_terrain::archetype());
+    for skill in white_tiger_terrain::skill_pack() {
         pack.register_skill(skill);
     }
 }
