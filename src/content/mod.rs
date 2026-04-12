@@ -6,6 +6,7 @@
 
 pub mod actors;
 pub mod heroes;
+pub mod monsters;
 pub mod skills;
 pub mod statuses;
 
@@ -80,6 +81,9 @@ impl Default for ContentPack {
         // Enemy archetypes
         pack.register_archetype(actors::bone_soldier());
         pack.register_archetype(actors::necromancer());
+
+        // Monster family content — each migration slice adds a registration here
+        monsters::register_content(&mut pack);
 
         // Skills — legacy tutorial skills
         pack.register_skill(skills::crusading_strike());
