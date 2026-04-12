@@ -55,6 +55,10 @@ pub mod gambler;
 pub mod mahjong_green;
 pub mod mahjong_red;
 pub mod mahjong_white;
+pub mod sc_blow;
+pub mod sc_bow;
+pub mod sc_pluck;
+pub mod scorchthroat_chanteuse;
 
 use crate::content::ContentPack;
 
@@ -342,6 +346,30 @@ pub fn register_content(pack: &mut ContentPack) {
     // K36: Mahjong White (US-437)
     pack.register_archetype(mahjong_white::archetype());
     for skill in mahjong_white::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K37: Scorchthroat Chanteuse (US-438)
+    pack.register_archetype(scorchthroat_chanteuse::archetype());
+    for skill in scorchthroat_chanteuse::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K37: SC Blow (US-438)
+    pack.register_archetype(sc_blow::archetype());
+    for skill in sc_blow::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K37: SC Bow (US-438)
+    pack.register_archetype(sc_bow::archetype());
+    for skill in sc_bow::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K37: SC Pluck (US-438)
+    pack.register_archetype(sc_pluck::archetype());
+    for skill in sc_pluck::skill_pack() {
         pack.register_skill(skill);
     }
 }

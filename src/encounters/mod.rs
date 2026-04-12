@@ -409,4 +409,31 @@ mod tests {
             "necrodrake_embryosac boss pack must contain egg_membrane_empty"
         );
     }
+
+    #[test]
+    fn xuanwu_boss_scorchthroat_chanteuse_pack_is_correct() {
+        let registry = build_packs_registry();
+
+        let pack = registry
+            .get("xuanwu_boss_scorchthroat_chanteuse")
+            .expect("xuanwu_boss_scorchthroat_chanteuse should exist");
+
+        assert_eq!(pack.dungeon, Dungeon::XuanWu);
+        assert_eq!(pack.pack_type, PackType::Boss);
+        assert_eq!(pack.total_units(), 3, "scorchthroat_chanteuse boss pack should have 3 units (chanteuse + sc_blow + sc_bow)");
+
+        let family_ids: Vec<&str> = pack.family_ids().iter().map(|id| id.0.as_str()).collect();
+        assert!(
+            family_ids.contains(&"scorchthroat_chanteuse"),
+            "scorchthroat_chanteuse boss pack must contain scorchthroat_chanteuse"
+        );
+        assert!(
+            family_ids.contains(&"sc_blow"),
+            "scorchthroat_chanteuse boss pack must contain sc_blow"
+        );
+        assert!(
+            family_ids.contains(&"sc_bow"),
+            "scorchthroat_chanteuse boss pack must contain sc_bow"
+        );
+    }
 }

@@ -766,6 +766,65 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Mahjong White".to_string(),
     });
 
+    // K37: Scorchthroat Chanteuse (US-438)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("scorchthroat_chanteuse"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Summoner,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("cremona_last_chord"),
+            SkillId::new("pyre_resonance"),
+            SkillId::new("ashen_communion"),
+            SkillId::new("encore_embers"),
+            SkillId::new("move"),
+        ],
+        archetype_name: "Scorchthroat Chanteuse".to_string(),
+    });
+
+    // K37: SC Blow (US-438)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("sc_blow"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Skirmisher,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("grindbone_lament"),
+            SkillId::new("move"),
+        ],
+        archetype_name: "SC Blow".to_string(),
+    });
+
+    // K37: SC Bow (US-438)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("sc_bow"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Skirmisher,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("crematorium_bowstring"),
+            SkillId::new("move"),
+        ],
+        archetype_name: "SC Bow".to_string(),
+    });
+
+    // K37: SC Pluck (US-438)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("sc_pluck"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Controller,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("ossein_arsonist_lyre"),
+            SkillId::new("move"),
+        ],
+        archetype_name: "SC Pluck".to_string(),
+    });
+
     registry
 }
 
@@ -2118,5 +2177,125 @@ mod tests {
         assert_eq!(family.monster_type, MonsterType::Cauldron);
         assert_eq!(family.archetype_name, "Egg Membrane Full");
         assert_eq!(family.skill_ids.len(), 1);
+    }
+
+    #[test]
+    fn registry_resolves_scorchthroat_chanteuse() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("scorchthroat_chanteuse")
+            .expect("scorchthroat_chanteuse should be registered");
+
+        assert_eq!(family.id.0, "scorchthroat_chanteuse");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Summoner);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Scorchthroat Chanteuse");
+        assert_eq!(family.skill_ids.len(), 5);
+    }
+
+    #[test]
+    fn registry_scorchthroat_chanteuse_has_encore_embers_and_burn() {
+        let registry = build_registry();
+
+        let family = registry.get("scorchthroat_chanteuse").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"encore_embers"),
+            "scorchthroat_chanteuse must have encore_embers skill"
+        );
+        assert!(
+            skill_ids.contains(&"pyre_resonance"),
+            "scorchthroat_chanteuse must have pyre_resonance skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_sc_blow() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("sc_blow")
+            .expect("sc_blow should be registered");
+
+        assert_eq!(family.id.0, "sc_blow");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Skirmisher);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "SC Blow");
+        assert_eq!(family.skill_ids.len(), 2);
+    }
+
+    #[test]
+    fn registry_sc_blow_has_stress_skill() {
+        let registry = build_registry();
+
+        let family = registry.get("sc_blow").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"grindbone_lament"),
+            "sc_blow must have grindbone_lament skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_sc_bow() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("sc_bow")
+            .expect("sc_bow should be registered");
+
+        assert_eq!(family.id.0, "sc_bow");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Skirmisher);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "SC Bow");
+        assert_eq!(family.skill_ids.len(), 2);
+    }
+
+    #[test]
+    fn registry_sc_bow_has_damage_skill() {
+        let registry = build_registry();
+
+        let family = registry.get("sc_bow").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"crematorium_bowstring"),
+            "sc_bow must have crematorium_bowstring skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_sc_pluck() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("sc_pluck")
+            .expect("sc_pluck should be registered");
+
+        assert_eq!(family.id.0, "sc_pluck");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Controller);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "SC Pluck");
+        assert_eq!(family.skill_ids.len(), 2);
+    }
+
+    #[test]
+    fn registry_sc_pluck_has_burn_skill() {
+        let registry = build_registry();
+
+        let family = registry.get("sc_pluck").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"ossein_arsonist_lyre"),
+            "sc_pluck must have ossein_arsonist_lyre skill"
+        );
     }
 }

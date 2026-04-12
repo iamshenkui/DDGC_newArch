@@ -896,6 +896,25 @@ pub fn xuanwu_boss_packs() -> Vec<EncounterPack> {
                 },
             ],
         },
+        EncounterPack {
+            id: PackId::new("xuanwu_boss_scorchthroat_chanteuse"),
+            dungeon: Dungeon::XuanWu,
+            pack_type: PackType::Boss,
+            slots: vec![
+                FamilySlot {
+                    family_id: FamilyId::new("sc_blow"),
+                    count: 1,
+                },
+                FamilySlot {
+                    family_id: FamilyId::new("scorchthroat_chanteuse"),
+                    count: 1,
+                },
+                FamilySlot {
+                    family_id: FamilyId::new("sc_bow"),
+                    count: 1,
+                },
+            ],
+        },
     ]
 }
 
