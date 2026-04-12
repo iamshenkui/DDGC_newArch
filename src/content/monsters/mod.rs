@@ -33,6 +33,9 @@ pub mod unicorn_beetle_a;
 pub mod unicorn_beetle_b;
 pub mod water_grass;
 pub mod monkey_water;
+pub mod vermilion_bird;
+pub mod vermilion_bird_tail_a;
+pub mod vermilion_bird_tail_b;
 
 use crate::content::ContentPack;
 
@@ -188,6 +191,24 @@ pub fn register_content(pack: &mut ContentPack) {
     // K29: Azure Dragon Ball Wind (US-430)
     pack.register_archetype(azure_dragon_ball_wind::archetype());
     for skill in azure_dragon_ball_wind::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K30: Vermilion Bird (US-431)
+    pack.register_archetype(vermilion_bird::archetype());
+    for skill in vermilion_bird::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K30: Vermilion Bird Tail A (US-431)
+    pack.register_archetype(vermilion_bird_tail_a::archetype());
+    for skill in vermilion_bird_tail_a::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K30: Vermilion Bird Tail B (US-431)
+    pack.register_archetype(vermilion_bird_tail_b::archetype());
+    for skill in vermilion_bird_tail_b::skill_pack() {
         pack.register_skill(skill);
     }
 }

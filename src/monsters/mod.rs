@@ -418,6 +418,61 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Azure Dragon Ball Wind".to_string(),
     });
 
+    // K30: Vermilion Bird (US-431)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("vermilion_bird"),
+        dungeon: Dungeon::ZhuQue,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Summoner,
+        monster_type: MonsterType::Beast,
+        skill_ids: vec![
+            SkillId::new("singing_loudly"),
+            SkillId::new("ruin"),
+            SkillId::new("ruin1"),
+            SkillId::new("precise_pecking"),
+            SkillId::new("iron_feather"),
+            SkillId::new("bide"),
+            SkillId::new("calm_nerves"),
+            SkillId::new("explosion"),
+        ],
+        archetype_name: "Vermilion Bird".to_string(),
+    });
+
+    // K30: Vermilion Bird Tail A (US-431)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("vermilion_bird_tail_A"),
+        dungeon: Dungeon::ZhuQue,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Support,
+        monster_type: MonsterType::Beast,
+        skill_ids: vec![
+            SkillId::new("deterrence"),
+            SkillId::new("confused"),
+            SkillId::new("ignore_def"),
+            SkillId::new("protect"),
+        ],
+        archetype_name: "Vermilion Bird Tail A".to_string(),
+    });
+
+    // K30: Vermilion Bird Tail B (US-431)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("vermilion_bird_tail_B"),
+        dungeon: Dungeon::ZhuQue,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Controller,
+        monster_type: MonsterType::Beast,
+        skill_ids: vec![
+            SkillId::new("follow"),
+            SkillId::new("follow1"),
+            SkillId::new("run_water"),
+            SkillId::new("run_water1"),
+            SkillId::new("heaven_falls"),
+            SkillId::new("heaven_falls1"),
+            SkillId::new("iron_feather_with"),
+        ],
+        archetype_name: "Vermilion Bird Tail B".to_string(),
+    });
+
     registry
 }
 
@@ -1259,6 +1314,105 @@ mod tests {
         assert!(
             skill_ids.contains(&"wind_shuffle"),
             "azure_dragon_ball_wind must have wind_shuffle skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_vermilion_bird() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("vermilion_bird")
+            .expect("vermilion_bird should be registered");
+
+        assert_eq!(family.id.0, "vermilion_bird");
+        assert_eq!(family.dungeon, Dungeon::ZhuQue);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Summoner);
+        assert_eq!(family.monster_type, MonsterType::Beast);
+        assert_eq!(family.archetype_name, "Vermilion Bird");
+        assert_eq!(family.skill_ids.len(), 8);
+    }
+
+    #[test]
+    fn registry_vermilion_bird_has_ruin_and_explosion() {
+        let registry = build_registry();
+
+        let family = registry.get("vermilion_bird").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"ruin"),
+            "vermilion_bird must have ruin skill"
+        );
+        assert!(
+            skill_ids.contains(&"explosion"),
+            "vermilion_bird must have explosion skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_vermilion_bird_tail_a() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("vermilion_bird_tail_A")
+            .expect("vermilion_bird_tail_A should be registered");
+
+        assert_eq!(family.id.0, "vermilion_bird_tail_A");
+        assert_eq!(family.dungeon, Dungeon::ZhuQue);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Support);
+        assert_eq!(family.monster_type, MonsterType::Beast);
+        assert_eq!(family.archetype_name, "Vermilion Bird Tail A");
+        assert_eq!(family.skill_ids.len(), 4);
+    }
+
+    #[test]
+    fn registry_vermilion_bird_tail_a_has_deterrence_and_protect() {
+        let registry = build_registry();
+
+        let family = registry.get("vermilion_bird_tail_A").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"deterrence"),
+            "vermilion_bird_tail_A must have deterrence skill"
+        );
+        assert!(
+            skill_ids.contains(&"protect"),
+            "vermilion_bird_tail_A must have protect skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_vermilion_bird_tail_b() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("vermilion_bird_tail_B")
+            .expect("vermilion_bird_tail_B should be registered");
+
+        assert_eq!(family.id.0, "vermilion_bird_tail_B");
+        assert_eq!(family.dungeon, Dungeon::ZhuQue);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Controller);
+        assert_eq!(family.monster_type, MonsterType::Beast);
+        assert_eq!(family.archetype_name, "Vermilion Bird Tail B");
+        assert_eq!(family.skill_ids.len(), 7);
+    }
+
+    #[test]
+    fn registry_vermilion_bird_tail_b_has_follow_and_heaven_falls() {
+        let registry = build_registry();
+
+        let family = registry.get("vermilion_bird_tail_B").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"follow"),
+            "vermilion_bird_tail_B must have follow skill"
+        );
+        assert!(
+            skill_ids.contains(&"heaven_falls"),
+            "vermilion_bird_tail_B must have heaven_falls skill"
         );
     }
 }

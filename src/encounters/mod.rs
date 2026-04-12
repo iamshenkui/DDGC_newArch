@@ -44,6 +44,10 @@ pub fn build_packs_registry() -> EncounterPackRegistry {
         registry.register(pack);
     }
 
+    for pack in packs::zhuque_boss_packs() {
+        registry.register(pack);
+    }
+
     registry
 }
 
@@ -226,6 +230,33 @@ mod tests {
         assert!(
             family_ids.contains(&"azure_dragon_ball_wind"),
             "azure_dragon boss pack must contain azure_dragon_ball_wind"
+        );
+    }
+
+    #[test]
+    fn zhuque_boss_vermilion_bird_pack_is_correct() {
+        let registry = build_packs_registry();
+
+        let pack = registry
+            .get("zhuque_boss_vermilion_bird")
+            .expect("zhuque_boss_vermilion_bird should exist");
+
+        assert_eq!(pack.dungeon, Dungeon::ZhuQue);
+        assert_eq!(pack.pack_type, PackType::Boss);
+        assert_eq!(pack.total_units(), 3, "vermilion_bird boss pack should have 3 units");
+
+        let family_ids: Vec<&str> = pack.family_ids().iter().map(|id| id.0.as_str()).collect();
+        assert!(
+            family_ids.contains(&"vermilion_bird"),
+            "vermilion_bird boss pack must contain vermilion_bird"
+        );
+        assert!(
+            family_ids.contains(&"vermilion_bird_tail_A"),
+            "vermilion_bird boss pack must contain vermilion_bird_tail_A"
+        );
+        assert!(
+            family_ids.contains(&"vermilion_bird_tail_B"),
+            "vermilion_bird boss pack must contain vermilion_bird_tail_B"
         );
     }
 }

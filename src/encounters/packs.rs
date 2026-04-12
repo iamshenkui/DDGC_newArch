@@ -754,6 +754,34 @@ pub fn qinglong_boss_packs() -> Vec<EncounterPack> {
     ]
 }
 
+/// ZhuQue boss encounter packs.
+///
+/// Currently includes only the vermilion_bird boss pack. Future boss migration
+/// slices will add additional boss packs.
+pub fn zhuque_boss_packs() -> Vec<EncounterPack> {
+    vec![
+        EncounterPack {
+            id: PackId::new("zhuque_boss_vermilion_bird"),
+            dungeon: Dungeon::ZhuQue,
+            pack_type: PackType::Boss,
+            slots: vec![
+                FamilySlot {
+                    family_id: FamilyId::new("vermilion_bird"),
+                    count: 1,
+                },
+                FamilySlot {
+                    family_id: FamilyId::new("vermilion_bird_tail_A"),
+                    count: 1,
+                },
+                FamilySlot {
+                    family_id: FamilyId::new("vermilion_bird_tail_B"),
+                    count: 1,
+                },
+            ],
+        },
+    ]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
