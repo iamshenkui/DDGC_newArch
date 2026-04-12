@@ -539,6 +539,46 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "White Tiger Terrain".to_string(),
     });
 
+    // K32: Black Tortoise A (US-433)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("black_tortoise_A"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Tank,
+        monster_type: MonsterType::Beast,
+        skill_ids: vec![
+            SkillId::new("tortoise_call_roll"),
+            SkillId::new("tortoise_rain_spray"),
+            SkillId::new("ice_spike"),
+            SkillId::new("hunger_cold"),
+            SkillId::new("inner_battle"),
+            SkillId::new("near_mountain_river"),
+            SkillId::new("hunger_cold_1"),
+            SkillId::new("unexpectedly"),
+        ],
+        archetype_name: "Black Tortoise A".to_string(),
+    });
+
+    // K32: Black Tortoise B (US-433)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("black_tortoise_B"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Controller,
+        monster_type: MonsterType::Beast,
+        skill_ids: vec![
+            SkillId::new("snake_call_roll"),
+            SkillId::new("snake_rain_spray"),
+            SkillId::new("freezing_cold"),
+            SkillId::new("benefits_stress"),
+            SkillId::new("fangs_sprayed"),
+            SkillId::new("armor"),
+            SkillId::new("fangs_sprayed_1"),
+            SkillId::new("snake_bites"),
+        ],
+        archetype_name: "Black Tortoise B".to_string(),
+    });
+
     registry
 }
 
@@ -1611,6 +1651,72 @@ mod tests {
         assert!(
             skill_ids.contains(&"occupy"),
             "white_tiger_terrain must have occupy skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_black_tortoise_a() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("black_tortoise_A")
+            .expect("black_tortoise_A should be registered");
+
+        assert_eq!(family.id.0, "black_tortoise_A");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Tank);
+        assert_eq!(family.monster_type, MonsterType::Beast);
+        assert_eq!(family.archetype_name, "Black Tortoise A");
+        assert_eq!(family.skill_ids.len(), 8);
+    }
+
+    #[test]
+    fn registry_black_tortoise_a_has_tortoise_mark_and_share_damage() {
+        let registry = build_registry();
+
+        let family = registry.get("black_tortoise_A").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"tortoise_call_roll"),
+            "black_tortoise_A must have tortoise_call_roll skill"
+        );
+        assert!(
+            skill_ids.contains(&"near_mountain_river"),
+            "black_tortoise_A must have near_mountain_river skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_black_tortoise_b() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("black_tortoise_B")
+            .expect("black_tortoise_B should be registered");
+
+        assert_eq!(family.id.0, "black_tortoise_B");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Controller);
+        assert_eq!(family.monster_type, MonsterType::Beast);
+        assert_eq!(family.archetype_name, "Black Tortoise B");
+        assert_eq!(family.skill_ids.len(), 8);
+    }
+
+    #[test]
+    fn registry_black_tortoise_b_has_snake_mark_and_share_damage() {
+        let registry = build_registry();
+
+        let family = registry.get("black_tortoise_B").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"snake_call_roll"),
+            "black_tortoise_B must have snake_call_roll skill"
+        );
+        assert!(
+            skill_ids.contains(&"armor"),
+            "black_tortoise_B must have armor skill"
         );
     }
 }

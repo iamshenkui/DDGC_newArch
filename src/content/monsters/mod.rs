@@ -12,6 +12,8 @@ pub mod alligator_yangtze;
 pub mod azure_dragon;
 pub mod azure_dragon_ball_thunder;
 pub mod azure_dragon_ball_wind;
+pub mod black_tortoise_a;
+pub mod black_tortoise_b;
 pub mod dry_tree_genie;
 pub mod fox_fire;
 pub mod ghost_fire_assist;
@@ -237,6 +239,18 @@ pub fn register_content(pack: &mut ContentPack) {
     // K31: White Tiger Terrain (US-432)
     pack.register_archetype(white_tiger_terrain::archetype());
     for skill in white_tiger_terrain::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K32: Black Tortoise A (US-433)
+    pack.register_archetype(black_tortoise_a::archetype());
+    for skill in black_tortoise_a::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K32: Black Tortoise B (US-433)
+    pack.register_archetype(black_tortoise_b::archetype());
+    for skill in black_tortoise_b::skill_pack() {
         pack.register_skill(skill);
     }
 }

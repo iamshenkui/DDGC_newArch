@@ -52,6 +52,10 @@ pub fn build_packs_registry() -> EncounterPackRegistry {
         registry.register(pack);
     }
 
+    for pack in packs::xuanwu_boss_packs() {
+        registry.register(pack);
+    }
+
     registry
 }
 
@@ -288,6 +292,29 @@ mod tests {
         assert!(
             family_ids.contains(&"white_tiger_terrain"),
             "white_tiger boss pack must contain white_tiger_terrain"
+        );
+    }
+
+    #[test]
+    fn xuanwu_boss_black_tortoise_pack_is_correct() {
+        let registry = build_packs_registry();
+
+        let pack = registry
+            .get("xuanwu_boss_black_tortoise")
+            .expect("xuanwu_boss_black_tortoise should exist");
+
+        assert_eq!(pack.dungeon, Dungeon::XuanWu);
+        assert_eq!(pack.pack_type, PackType::Boss);
+        assert_eq!(pack.total_units(), 2, "black_tortoise boss pack should have 2 units");
+
+        let family_ids: Vec<&str> = pack.family_ids().iter().map(|id| id.0.as_str()).collect();
+        assert!(
+            family_ids.contains(&"black_tortoise_A"),
+            "black_tortoise boss pack must contain black_tortoise_A"
+        );
+        assert!(
+            family_ids.contains(&"black_tortoise_B"),
+            "black_tortoise boss pack must contain black_tortoise_B"
         );
     }
 }

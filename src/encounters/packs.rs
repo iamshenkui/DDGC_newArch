@@ -810,6 +810,31 @@ pub fn baihu_boss_packs() -> Vec<EncounterPack> {
     ]
 }
 
+/// XuanWu boss encounter packs.
+///
+/// Currently includes only the black_tortoise boss pack. The black_tortoise
+/// is a dual-body composite boss: the Tortoise body (A) and Snake body (B)
+/// appear together as a coordinated pair.
+pub fn xuanwu_boss_packs() -> Vec<EncounterPack> {
+    vec![
+        EncounterPack {
+            id: PackId::new("xuanwu_boss_black_tortoise"),
+            dungeon: Dungeon::XuanWu,
+            pack_type: PackType::Boss,
+            slots: vec![
+                FamilySlot {
+                    family_id: FamilyId::new("black_tortoise_A"),
+                    count: 1,
+                },
+                FamilySlot {
+                    family_id: FamilyId::new("black_tortoise_B"),
+                    count: 1,
+                },
+            ],
+        },
+    ]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
