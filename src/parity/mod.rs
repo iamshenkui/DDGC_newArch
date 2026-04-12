@@ -5,5 +5,7 @@
 //! DDGC behavioral expectations that must hold in the headless migration.
 
 pub mod heroes;
+pub mod monsters;
 
 pub use heroes::*;
+pub use monsters::*;
