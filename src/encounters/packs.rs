@@ -851,6 +851,21 @@ pub fn xuanwu_boss_packs() -> Vec<EncounterPack> {
                 },
             ],
         },
+        EncounterPack {
+            id: PackId::new("xuanwu_boss_skeletal_tiller"),
+            dungeon: Dungeon::XuanWu,
+            pack_type: PackType::Boss,
+            slots: vec![
+                FamilySlot {
+                    family_id: FamilyId::new("skeletal_tiller"),
+                    count: 1,
+                },
+                FamilySlot {
+                    family_id: FamilyId::new("vegetable"),
+                    count: 1,
+                },
+            ],
+        },
     ]
 }
 

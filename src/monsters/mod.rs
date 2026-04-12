@@ -636,6 +636,38 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Rotten Fruit C".to_string(),
     });
 
+    // K34: Skeletal Tiller (US-435)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("skeletal_tiller"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Summoner,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("bone_reforge"),
+            SkillId::new("famine_reaping"),
+            SkillId::new("scarecrow_shriek"),
+            SkillId::new("grave_tug"),
+            SkillId::new("tiller_crop_rot_claw"),
+        ],
+        archetype_name: "Skeletal Tiller".to_string(),
+    });
+
+    // K34: Vegetable (US-435)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("vegetable"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Skirmisher,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("briar_intimidation"),
+            SkillId::new("vegetable_crop_rot_claw"),
+            SkillId::new("vegetable_move"),
+        ],
+        archetype_name: "Vegetable".to_string(),
+    });
+
     registry
 }
 
@@ -1859,5 +1891,67 @@ mod tests {
         assert_eq!(family.monster_type, MonsterType::Eldritch);
         assert_eq!(family.archetype_name, "Rotten Fruit C");
         assert_eq!(family.skill_ids.len(), 1);
+    }
+
+    #[test]
+    fn registry_resolves_skeletal_tiller() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("skeletal_tiller")
+            .expect("skeletal_tiller should be registered");
+
+        assert_eq!(family.id.0, "skeletal_tiller");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Summoner);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Skeletal Tiller");
+        assert_eq!(family.skill_ids.len(), 5);
+    }
+
+    #[test]
+    fn registry_skeletal_tiller_has_bone_reforge_and_famine_reaping() {
+        let registry = build_registry();
+
+        let family = registry.get("skeletal_tiller").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"bone_reforge"),
+            "skeletal_tiller must have bone_reforge"
+        );
+        assert!(
+            skill_ids.contains(&"famine_reaping"),
+            "skeletal_tiller must have famine_reaping"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_vegetable() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("vegetable")
+            .expect("vegetable should be registered");
+
+        assert_eq!(family.id.0, "vegetable");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Skirmisher);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Vegetable");
+        assert_eq!(family.skill_ids.len(), 3);
+    }
+
+    #[test]
+    fn registry_vegetable_has_briar_intimidation() {
+        let registry = build_registry();
+
+        let family = registry.get("vegetable").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"briar_intimidation"),
+            "vegetable must have briar_intimidation"
+        );
     }
 }

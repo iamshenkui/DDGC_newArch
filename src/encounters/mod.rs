@@ -344,4 +344,27 @@ mod tests {
             "rotvine_wraith boss pack must contain rotten_fruit_B"
         );
     }
+
+    #[test]
+    fn xuanwu_boss_skeletal_tiller_pack_is_correct() {
+        let registry = build_packs_registry();
+
+        let pack = registry
+            .get("xuanwu_boss_skeletal_tiller")
+            .expect("xuanwu_boss_skeletal_tiller should exist");
+
+        assert_eq!(pack.dungeon, Dungeon::XuanWu);
+        assert_eq!(pack.pack_type, PackType::Boss);
+        assert_eq!(pack.total_units(), 2, "skeletal_tiller boss pack should have 2 units");
+
+        let family_ids: Vec<&str> = pack.family_ids().iter().map(|id| id.0.as_str()).collect();
+        assert!(
+            family_ids.contains(&"skeletal_tiller"),
+            "skeletal_tiller boss pack must contain skeletal_tiller"
+        );
+        assert!(
+            family_ids.contains(&"vegetable"),
+            "skeletal_tiller boss pack must contain vegetable"
+        );
+    }
 }

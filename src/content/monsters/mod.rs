@@ -46,6 +46,8 @@ pub mod rotvine_wraith;
 pub mod rotten_fruit_a;
 pub mod rotten_fruit_b;
 pub mod rotten_fruit_c;
+pub mod skeletal_tiller;
+pub mod vegetable;
 
 use crate::content::ContentPack;
 
@@ -279,6 +281,18 @@ pub fn register_content(pack: &mut ContentPack) {
     // K33: Rotten Fruit C (US-434)
     pack.register_archetype(rotten_fruit_c::archetype());
     for skill in rotten_fruit_c::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K34: Skeletal Tiller (US-435)
+    pack.register_archetype(skeletal_tiller::archetype());
+    for skill in skeletal_tiller::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K34: Vegetable (US-435)
+    pack.register_archetype(vegetable::archetype());
+    for skill in vegetable::skill_pack() {
         pack.register_skill(skill);
     }
 }
