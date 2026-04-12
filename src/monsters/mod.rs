@@ -210,6 +210,22 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Unicorn Beetle A".to_string(),
     });
 
+    // K16: Unicorn Beetle B (US-417)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("unicorn_beetle_B"),
+        dungeon: Dungeon::BaiHu,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Ranged,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("normal_attack"),
+            SkillId::new("bleed"),
+            SkillId::new("stress"),
+            SkillId::new("move"),
+        ],
+        archetype_name: "Unicorn Beetle B".to_string(),
+    });
+
     registry
 }
 
@@ -618,6 +634,39 @@ mod tests {
         assert!(
             skill_ids.contains(&"bleed_crowd"),
             "unicorn_beetle_A must have bleed_crowd skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_unicorn_beetle_b() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("unicorn_beetle_B")
+            .expect("unicorn_beetle_B should be registered");
+
+        assert_eq!(family.id.0, "unicorn_beetle_B");
+        assert_eq!(family.dungeon, Dungeon::BaiHu);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Ranged);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Unicorn Beetle B");
+        assert_eq!(family.skill_ids.len(), 4);
+    }
+
+    #[test]
+    fn registry_unicorn_beetle_b_has_bleed_and_stress() {
+        let registry = build_registry();
+
+        let family = registry.get("unicorn_beetle_B").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"bleed"),
+            "unicorn_beetle_B must have bleed skill"
+        );
+        assert!(
+            skill_ids.contains(&"stress"),
+            "unicorn_beetle_B must have stress skill"
         );
     }
 }
