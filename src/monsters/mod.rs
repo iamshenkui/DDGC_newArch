@@ -242,6 +242,21 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Alligator Yangtze".to_string(),
     });
 
+    // K18: Ghost Fire Assist (US-419)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("ghost_fire_assist"),
+        dungeon: Dungeon::ZhuQue,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Support,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("assist"),
+            SkillId::new("buff_self"),
+            SkillId::new("ghost_fire_split"),
+        ],
+        archetype_name: "Ghost Fire Assist".to_string(),
+    });
+
     registry
 }
 
@@ -716,6 +731,39 @@ mod tests {
         assert!(
             skill_ids.contains(&"mark_riposte"),
             "alligator_yangtze must have mark_riposte skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_ghost_fire_assist() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("ghost_fire_assist")
+            .expect("ghost_fire_assist should be registered");
+
+        assert_eq!(family.id.0, "ghost_fire_assist");
+        assert_eq!(family.dungeon, Dungeon::ZhuQue);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Support);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Ghost Fire Assist");
+        assert_eq!(family.skill_ids.len(), 3);
+    }
+
+    #[test]
+    fn registry_ghost_fire_assist_has_assist_and_ghost_fire_split() {
+        let registry = build_registry();
+
+        let family = registry.get("ghost_fire_assist").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"assist"),
+            "ghost_fire_assist must have assist skill"
+        );
+        assert!(
+            skill_ids.contains(&"ghost_fire_split"),
+            "ghost_fire_assist must have ghost_fire_split skill"
         );
     }
 }

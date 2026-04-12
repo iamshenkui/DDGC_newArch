@@ -10,6 +10,7 @@
 
 pub mod alligator_yangtze;
 pub mod dry_tree_genie;
+pub mod ghost_fire_assist;
 pub mod lizard;
 pub mod mantis_magic_flower;
 pub mod mantis_spiny_flower;
@@ -111,6 +112,12 @@ pub fn register_content(pack: &mut ContentPack) {
     // K17: Alligator Yangtze (US-418)
     pack.register_archetype(alligator_yangtze::archetype());
     for skill in alligator_yangtze::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K18: Ghost Fire Assist (US-419)
+    pack.register_archetype(ghost_fire_assist::archetype());
+    for skill in ghost_fire_assist::skill_pack() {
         pack.register_skill(skill);
     }
 }
