@@ -9,6 +9,9 @@
 //! declaration here and a registration call in `register_content`.
 
 pub mod alligator_yangtze;
+pub mod azure_dragon;
+pub mod azure_dragon_ball_thunder;
+pub mod azure_dragon_ball_wind;
 pub mod dry_tree_genie;
 pub mod fox_fire;
 pub mod ghost_fire_assist;
@@ -167,6 +170,24 @@ pub fn register_content(pack: &mut ContentPack) {
     // K25: Monkey Water (US-426)
     pack.register_archetype(monkey_water::archetype());
     for skill in monkey_water::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K29: Azure Dragon (US-430)
+    pack.register_archetype(azure_dragon::archetype());
+    for skill in azure_dragon::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K29: Azure Dragon Ball Thunder (US-430)
+    pack.register_archetype(azure_dragon_ball_thunder::archetype());
+    for skill in azure_dragon_ball_thunder::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K29: Azure Dragon Ball Wind (US-430)
+    pack.register_archetype(azure_dragon_ball_wind::archetype());
+    for skill in azure_dragon_ball_wind::skill_pack() {
         pack.register_skill(skill);
     }
 }

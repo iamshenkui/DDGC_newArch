@@ -365,6 +365,59 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Monkey Water".to_string(),
     });
 
+    // K29: Azure Dragon (US-430)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("azure_dragon"),
+        dungeon: Dungeon::QingLong,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Summoner,
+        monster_type: MonsterType::Beast,
+        skill_ids: vec![
+            SkillId::new("bloodscale_reaping"),
+            SkillId::new("dragonfear_crash"),
+            SkillId::new("summit_relocation"),
+            SkillId::new("soulfog_enthrall"),
+            SkillId::new("dragoncry_storm"),
+            SkillId::new("volt_tyranny"),
+            SkillId::new("voltic_baptism"),
+            SkillId::new("capricious_skies"),
+            SkillId::new("swap_dragon_ball"),
+            SkillId::new("swap_dragon_ball_other"),
+            SkillId::new("swap_dragon_ball_summon"),
+        ],
+        archetype_name: "Azure Dragon".to_string(),
+    });
+
+    // K29: Azure Dragon Ball Thunder (US-430)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("azure_dragon_ball_thunder"),
+        dungeon: Dungeon::QingLong,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Support,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("thunder_buff_magic"),
+            SkillId::new("thunder_buff_stress"),
+            SkillId::new("thunder_stress_attack"),
+        ],
+        archetype_name: "Azure Dragon Ball Thunder".to_string(),
+    });
+
+    // K29: Azure Dragon Ball Wind (US-430)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("azure_dragon_ball_wind"),
+        dungeon: Dungeon::QingLong,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Support,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("wind_buff_acc"),
+            SkillId::new("wind_shuffle"),
+            SkillId::new("wind_buff_physic"),
+        ],
+        archetype_name: "Azure Dragon Ball Wind".to_string(),
+    });
+
     registry
 }
 
@@ -1107,6 +1160,105 @@ mod tests {
         assert!(
             skill_ids.contains(&"stress"),
             "monkey_water must have stress skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_azure_dragon() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("azure_dragon")
+            .expect("azure_dragon should be registered");
+
+        assert_eq!(family.id.0, "azure_dragon");
+        assert_eq!(family.dungeon, Dungeon::QingLong);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Summoner);
+        assert_eq!(family.monster_type, MonsterType::Beast);
+        assert_eq!(family.archetype_name, "Azure Dragon");
+        assert_eq!(family.skill_ids.len(), 11);
+    }
+
+    #[test]
+    fn registry_azure_dragon_has_summon_ball_and_volt_tyranny() {
+        let registry = build_registry();
+
+        let family = registry.get("azure_dragon").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"swap_dragon_ball_summon"),
+            "azure_dragon must have swap_dragon_ball_summon skill"
+        );
+        assert!(
+            skill_ids.contains(&"volt_tyranny"),
+            "azure_dragon must have volt_tyranny skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_azure_dragon_ball_thunder() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("azure_dragon_ball_thunder")
+            .expect("azure_dragon_ball_thunder should be registered");
+
+        assert_eq!(family.id.0, "azure_dragon_ball_thunder");
+        assert_eq!(family.dungeon, Dungeon::QingLong);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Support);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Azure Dragon Ball Thunder");
+        assert_eq!(family.skill_ids.len(), 3);
+    }
+
+    #[test]
+    fn registry_azure_dragon_ball_thunder_has_buff_and_stress() {
+        let registry = build_registry();
+
+        let family = registry.get("azure_dragon_ball_thunder").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"thunder_buff_magic"),
+            "azure_dragon_ball_thunder must have thunder_buff_magic skill"
+        );
+        assert!(
+            skill_ids.contains(&"thunder_stress_attack"),
+            "azure_dragon_ball_thunder must have thunder_stress_attack skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_azure_dragon_ball_wind() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("azure_dragon_ball_wind")
+            .expect("azure_dragon_ball_wind should be registered");
+
+        assert_eq!(family.id.0, "azure_dragon_ball_wind");
+        assert_eq!(family.dungeon, Dungeon::QingLong);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Support);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Azure Dragon Ball Wind");
+        assert_eq!(family.skill_ids.len(), 3);
+    }
+
+    #[test]
+    fn registry_azure_dragon_ball_wind_has_buff_and_shuffle() {
+        let registry = build_registry();
+
+        let family = registry.get("azure_dragon_ball_wind").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"wind_buff_acc"),
+            "azure_dragon_ball_wind must have wind_buff_acc skill"
+        );
+        assert!(
+            skill_ids.contains(&"wind_shuffle"),
+            "azure_dragon_ball_wind must have wind_shuffle skill"
         );
     }
 }

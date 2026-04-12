@@ -17,14 +17,17 @@ pub use crate::monsters::families::{Dungeon, FamilyId};
 
 /// Type of encounter pack, matching DDGC dungeon generation categories.
 ///
-/// DDGC distinguishes between "hall" (corridor) and "room" encounter tables
-/// within each mash (difficulty tier). This enum captures that distinction.
+/// DDGC distinguishes between "hall" (corridor), "room" encounter tables,
+/// and "boss" encounters within each dungeon. This enum captures that
+/// distinction.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PackType {
     /// Corridor encounter — typically 1-3 enemies, lighter pressure.
     Hall,
     /// Room encounter — typically 2-4 enemies, higher threat density.
     Room,
+    /// Boss encounter — boss + boss parts, highest threat.
+    Boss,
 }
 
 // ── Pack ID ──────────────────────────────────────────────────────────────────
@@ -719,6 +722,34 @@ pub fn xuanwu_packs() -> Vec<EncounterPack> {
                 family_id: FamilyId::new("monkey_water"),
                 count: 4,
             }],
+        },
+    ]
+}
+
+/// Boss encounter packs for the QingLong dungeon.
+///
+/// Currently includes only the azure_dragon boss pack. Future boss migration
+/// slices (US-430 onwards) will add additional boss packs.
+pub fn qinglong_boss_packs() -> Vec<EncounterPack> {
+    vec![
+        EncounterPack {
+            id: PackId::new("qinglong_boss_azure_dragon"),
+            dungeon: Dungeon::QingLong,
+            pack_type: PackType::Boss,
+            slots: vec![
+                FamilySlot {
+                    family_id: FamilyId::new("azure_dragon_ball_thunder"),
+                    count: 1,
+                },
+                FamilySlot {
+                    family_id: FamilyId::new("azure_dragon"),
+                    count: 1,
+                },
+                FamilySlot {
+                    family_id: FamilyId::new("azure_dragon_ball_wind"),
+                    count: 1,
+                },
+            ],
         },
     ]
 }

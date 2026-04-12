@@ -12,11 +12,10 @@ pub mod packs;
 
 pub use packs::*;
 
-/// Build the common encounter pack registry with packs for all four dungeons.
+/// Build the encounter pack registry with common and boss packs for all four dungeons.
 ///
-/// This function registers hall and room packs for QingLong, BaiHu, ZhuQue,
-/// and XuanWu. Boss packs are NOT included here — they will be added in
-/// the boss migration slices (K29/K30+).
+/// This function registers hall, room, and boss packs for QingLong, BaiHu, ZhuQue,
+/// and XuanWu. Boss packs are added incrementally as boss families are migrated.
 pub fn build_packs_registry() -> EncounterPackRegistry {
     let mut registry = EncounterPackRegistry::new();
 
@@ -37,6 +36,11 @@ pub fn build_packs_registry() -> EncounterPackRegistry {
 
     // XuanWu (玄武 — Water Depths)
     for pack in packs::xuanwu_packs() {
+        registry.register(pack);
+    }
+
+    // Boss packs — added incrementally as boss families are migrated
+    for pack in packs::qinglong_boss_packs() {
         registry.register(pack);
     }
 
@@ -184,5 +188,44 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn encounter_pack_registry_has_boss_packs() {
+        let registry = build_packs_registry();
+
+        let boss_packs = registry.by_type(PackType::Boss);
+
+        assert!(
+            !boss_packs.is_empty(),
+            "Registry should have boss packs"
+        );
+    }
+
+    #[test]
+    fn qinglong_boss_azure_dragon_pack_is_correct() {
+        let registry = build_packs_registry();
+
+        let pack = registry
+            .get("qinglong_boss_azure_dragon")
+            .expect("qinglong_boss_azure_dragon should exist");
+
+        assert_eq!(pack.dungeon, Dungeon::QingLong);
+        assert_eq!(pack.pack_type, PackType::Boss);
+        assert_eq!(pack.total_units(), 3, "azure_dragon boss pack should have 3 units");
+
+        let family_ids: Vec<&str> = pack.family_ids().iter().map(|id| id.0.as_str()).collect();
+        assert!(
+            family_ids.contains(&"azure_dragon"),
+            "azure_dragon boss pack must contain azure_dragon"
+        );
+        assert!(
+            family_ids.contains(&"azure_dragon_ball_thunder"),
+            "azure_dragon boss pack must contain azure_dragon_ball_thunder"
+        );
+        assert!(
+            family_ids.contains(&"azure_dragon_ball_wind"),
+            "azure_dragon boss pack must contain azure_dragon_ball_wind"
+        );
     }
 }
