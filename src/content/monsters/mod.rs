@@ -10,6 +10,7 @@
 
 pub mod mantis_magic_flower;
 pub mod mantis_spiny_flower;
+pub mod mantis_walking_flower;
 
 use crate::content::ContentPack;
 
@@ -27,6 +28,12 @@ pub fn register_content(pack: &mut ContentPack) {
     // K5: Mantis Spiny Flower (US-406)
     pack.register_archetype(mantis_spiny_flower::archetype());
     for skill in mantis_spiny_flower::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K6: Mantis Walking Flower (US-407)
+    pack.register_archetype(mantis_walking_flower::archetype());
+    for skill in mantis_walking_flower::skill_pack() {
         pack.register_skill(skill);
     }
 }

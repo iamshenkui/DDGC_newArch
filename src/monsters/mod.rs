@@ -53,6 +53,22 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Mantis Spiny Flower".to_string(),
     });
 
+    // K6: Mantis Walking Flower (US-407)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("mantis_walking_flower"),
+        dungeon: Dungeon::QingLong,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Controller,
+        monster_type: MonsterType::Beast,
+        skill_ids: vec![
+            SkillId::new("weak"),
+            SkillId::new("crowd_bleed"),
+            SkillId::new("normal_attack"),
+            SkillId::new("move"),
+        ],
+        archetype_name: "Mantis Walking Flower".to_string(),
+    });
+
     registry
 }
 
@@ -123,6 +139,39 @@ mod tests {
         assert!(
             skill_ids.contains(&"crowd_bleed"),
             "mantis_spiny_flower must have crowd_bleed skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_mantis_walking_flower() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("mantis_walking_flower")
+            .expect("mantis_walking_flower should be registered");
+
+        assert_eq!(family.id.0, "mantis_walking_flower");
+        assert_eq!(family.dungeon, Dungeon::QingLong);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Controller);
+        assert_eq!(family.monster_type, MonsterType::Beast);
+        assert_eq!(family.archetype_name, "Mantis Walking Flower");
+        assert_eq!(family.skill_ids.len(), 4);
+    }
+
+    #[test]
+    fn registry_mantis_walking_flower_has_weak_and_crowd_bleed() {
+        let registry = build_registry();
+
+        let family = registry.get("mantis_walking_flower").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"weak"),
+            "mantis_walking_flower must have weak skill"
+        );
+        assert!(
+            skill_ids.contains(&"crowd_bleed"),
+            "mantis_walking_flower must have crowd_bleed skill"
         );
     }
 }
