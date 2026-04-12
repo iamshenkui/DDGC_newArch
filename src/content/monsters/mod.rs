@@ -18,6 +18,7 @@ pub mod mantis_magic_flower;
 pub mod mantis_spiny_flower;
 pub mod mantis_walking_flower;
 pub mod metal_armor;
+pub mod moth_fire;
 pub mod moth_mimicry_a;
 pub mod moth_mimicry_b;
 pub mod robber_melee;
@@ -132,6 +133,12 @@ pub fn register_content(pack: &mut ContentPack) {
     // K20: Fox Fire (US-421)
     pack.register_archetype(fox_fire::archetype());
     for skill in fox_fire::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K21: Moth Fire (US-422)
+    pack.register_archetype(moth_fire::archetype());
+    for skill in moth_fire::skill_pack() {
         pack.register_skill(skill);
     }
 }

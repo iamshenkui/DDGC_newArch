@@ -288,6 +288,21 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Fox Fire".to_string(),
     });
 
+    // K21: Moth Fire (US-422)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("moth_fire"),
+        dungeon: Dungeon::ZhuQue,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Ranged,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("stress_attack"),
+            SkillId::new("cocoon"),
+            SkillId::new("fly_into_fire"),
+        ],
+        archetype_name: "Moth Fire".to_string(),
+    });
+
     registry
 }
 
@@ -861,6 +876,39 @@ mod tests {
         assert!(
             skill_ids.contains(&"protect"),
             "fox_fire must have protect skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_moth_fire() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("moth_fire")
+            .expect("moth_fire should be registered");
+
+        assert_eq!(family.id.0, "moth_fire");
+        assert_eq!(family.dungeon, Dungeon::ZhuQue);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Ranged);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Moth Fire");
+        assert_eq!(family.skill_ids.len(), 3);
+    }
+
+    #[test]
+    fn registry_moth_fire_has_cocoon_and_fly_into_fire() {
+        let registry = build_registry();
+
+        let family = registry.get("moth_fire").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"cocoon"),
+            "moth_fire must have cocoon skill"
+        );
+        assert!(
+            skill_ids.contains(&"fly_into_fire"),
+            "moth_fire must have fly_into_fire skill"
         );
     }
 }
