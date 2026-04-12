@@ -56,6 +56,10 @@ pub fn build_packs_registry() -> EncounterPackRegistry {
         registry.register(pack);
     }
 
+    for pack in packs::cross_boss_packs() {
+        registry.register(pack);
+    }
+
     registry
 }
 
@@ -153,10 +157,11 @@ mod tests {
         let baihu_count = registry.by_dungeon(Dungeon::BaiHu).len();
         let zhuque_count = registry.by_dungeon(Dungeon::ZhuQue).len();
         let xuanwu_count = registry.by_dungeon(Dungeon::XuanWu).len();
+        let cross_count = registry.by_dungeon(Dungeon::Cross).len();
 
         assert_eq!(
             registry.len(),
-            qinglong_count + baihu_count + zhuque_count + xuanwu_count,
+            qinglong_count + baihu_count + zhuque_count + xuanwu_count + cross_count,
             "Total pack count should equal sum of per-dungeon counts"
         );
     }
@@ -461,6 +466,29 @@ mod tests {
         assert!(
             family_ids.contains(&"pearlkin_flawed"),
             "frostvein_clam boss pack must contain pearlkin_flawed"
+        );
+    }
+
+    #[test]
+    fn cross_boss_bloodthirsty_assassin_pack_is_correct() {
+        let registry = build_packs_registry();
+
+        let pack = registry
+            .get("cross_boss_bloodthirsty_assassin")
+            .expect("cross_boss_bloodthirsty_assassin should exist");
+
+        assert_eq!(pack.dungeon, Dungeon::Cross);
+        assert_eq!(pack.pack_type, PackType::Boss);
+        assert_eq!(pack.total_units(), 2, "bloodthirsty_assassin boss pack should have 2 units (assassin + shadow)");
+
+        let family_ids: Vec<&str> = pack.family_ids().iter().map(|id| id.0.as_str()).collect();
+        assert!(
+            family_ids.contains(&"bloodthirsty_assassin"),
+            "bloodthirsty_assassin boss pack must contain bloodthirsty_assassin"
+        );
+        assert!(
+            family_ids.contains(&"bloodthirsty_shadow"),
+            "bloodthirsty_assassin boss pack must contain bloodthirsty_shadow"
         );
     }
 }

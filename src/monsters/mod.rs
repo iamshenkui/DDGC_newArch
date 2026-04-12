@@ -870,6 +870,37 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Pearlkin Flawed".to_string(),
     });
 
+    // K39: Bloodthirsty Assassin (US-440)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("bloodthirsty_assassin"),
+        dungeon: Dungeon::Cross,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Bruiser,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("bloodstrike_ambush"),
+            SkillId::new("phantom_lunge"),
+            SkillId::new("crimson_duet"),
+            SkillId::new("scarlet_guillotine"),
+        ],
+        archetype_name: "Bloodthirsty Assassin".to_string(),
+    });
+
+    // K39: Bloodthirsty Shadow (US-440)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("bloodthirsty_shadow"),
+        dungeon: Dungeon::Cross,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Support,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("haemogorging_aura"),
+            SkillId::new("phantom_resonance"),
+            SkillId::new("umbral_cyclone"),
+        ],
+        archetype_name: "Bloodthirsty Shadow".to_string(),
+    });
+
     registry
 }
 
@@ -2407,5 +2438,75 @@ mod tests {
         assert_eq!(family.role, FamilyRole::Controller);
         assert_eq!(family.monster_type, MonsterType::Eldritch);
         assert_eq!(family.archetype_name, "Pearlkin Flawed");
+    }
+
+    #[test]
+    fn registry_resolves_bloodthirsty_assassin() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("bloodthirsty_assassin")
+            .expect("bloodthirsty_assassin should be registered");
+
+        assert_eq!(family.id.0, "bloodthirsty_assassin");
+        assert_eq!(family.dungeon, Dungeon::Cross);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Bruiser);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Bloodthirsty Assassin");
+    }
+
+    #[test]
+    fn registry_bloodthirsty_assassin_has_crimson_duet_and_scarlet_guillotine() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("bloodthirsty_assassin")
+            .expect("bloodthirsty_assassin should be registered");
+
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"crimson_duet"),
+            "bloodthirsty_assassin must have crimson_duet (HP-averaging) skill"
+        );
+        assert!(
+            skill_ids.contains(&"scarlet_guillotine"),
+            "bloodthirsty_assassin must have scarlet_guillotine (ignore-def finisher) skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_bloodthirsty_shadow() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("bloodthirsty_shadow")
+            .expect("bloodthirsty_shadow should be registered");
+
+        assert_eq!(family.id.0, "bloodthirsty_shadow");
+        assert_eq!(family.dungeon, Dungeon::Cross);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Support);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Bloodthirsty Shadow");
+    }
+
+    #[test]
+    fn registry_bloodthirsty_shadow_has_stress_and_buff_skills() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("bloodthirsty_shadow")
+            .expect("bloodthirsty_shadow should be registered");
+
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"haemogorging_aura"),
+            "bloodthirsty_shadow must have haemogorging_aura (stress) skill"
+        );
+        assert!(
+            skill_ids.contains(&"phantom_resonance"),
+            "bloodthirsty_shadow must have phantom_resonance (buff) skill"
+        );
     }
 }

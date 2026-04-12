@@ -62,6 +62,8 @@ pub mod scorchthroat_chanteuse;
 pub mod frostvein_clam;
 pub mod pearlkin_opalescent;
 pub mod pearlkin_flawed;
+pub mod bloodthirsty_assassin;
+pub mod bloodthirsty_shadow;
 
 use crate::content::ContentPack;
 
@@ -391,6 +393,18 @@ pub fn register_content(pack: &mut ContentPack) {
     // K38: Pearlkin Flawed (US-439)
     pack.register_archetype(pearlkin_flawed::archetype());
     for skill in pearlkin_flawed::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K39: Bloodthirsty Assassin (US-440)
+    pack.register_archetype(bloodthirsty_assassin::archetype());
+    for skill in bloodthirsty_assassin::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K39: Bloodthirsty Shadow (US-440)
+    pack.register_archetype(bloodthirsty_shadow::archetype());
+    for skill in bloodthirsty_shadow::skill_pack() {
         pack.register_skill(skill);
     }
 }

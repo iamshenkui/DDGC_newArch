@@ -937,6 +937,32 @@ pub fn xuanwu_boss_packs() -> Vec<EncounterPack> {
     ]
 }
 
+/// Cross-dungeon boss encounter packs.
+///
+/// Includes the bloodthirsty_assassin boss pack. The bloodthirsty_assassin
+/// is a paired boss that fights alongside bloodthirsty_shadow — the assassin
+/// is the primary damage dealer while the shadow provides stress pressure
+/// and buffs. The crimson_duet skill averages HP between the two.
+pub fn cross_boss_packs() -> Vec<EncounterPack> {
+    vec![
+        EncounterPack {
+            id: PackId::new("cross_boss_bloodthirsty_assassin"),
+            dungeon: Dungeon::Cross,
+            pack_type: PackType::Boss,
+            slots: vec![
+                FamilySlot {
+                    family_id: FamilyId::new("bloodthirsty_assassin"),
+                    count: 1,
+                },
+                FamilySlot {
+                    family_id: FamilyId::new("bloodthirsty_shadow"),
+                    count: 1,
+                },
+            ],
+        },
+    ]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
