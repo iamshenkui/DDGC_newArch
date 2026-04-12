@@ -64,6 +64,7 @@ pub mod pearlkin_opalescent;
 pub mod pearlkin_flawed;
 pub mod bloodthirsty_assassin;
 pub mod bloodthirsty_shadow;
+pub mod glutton_pawnshop;
 
 use crate::content::ContentPack;
 
@@ -405,6 +406,12 @@ pub fn register_content(pack: &mut ContentPack) {
     // K39: Bloodthirsty Shadow (US-440)
     pack.register_archetype(bloodthirsty_shadow::archetype());
     for skill in bloodthirsty_shadow::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K40: Glutton Pawnshop (US-441)
+    pack.register_archetype(glutton_pawnshop::archetype());
+    for skill in glutton_pawnshop::skill_pack() {
         pack.register_skill(skill);
     }
 }

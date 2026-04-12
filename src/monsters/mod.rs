@@ -901,6 +901,22 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Bloodthirsty Shadow".to_string(),
     });
 
+    // K40: Glutton Pawnshop (US-441)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("glutton_pawnshop"),
+        dungeon: Dungeon::Cross,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Controller,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("flesh_usury_contract"),
+            SkillId::new("compound_agony"),
+            SkillId::new("invitation"),
+            SkillId::new("foreclosed_wail"),
+        ],
+        archetype_name: "Glutton Pawnshop".to_string(),
+    });
+
     registry
 }
 
@@ -2507,6 +2523,41 @@ mod tests {
         assert!(
             skill_ids.contains(&"phantom_resonance"),
             "bloodthirsty_shadow must have phantom_resonance (buff) skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_glutton_pawnshop() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("glutton_pawnshop")
+            .expect("glutton_pawnshop should be registered");
+
+        assert_eq!(family.id.0, "glutton_pawnshop");
+        assert_eq!(family.dungeon, Dungeon::Cross);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Controller);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Glutton Pawnshop");
+    }
+
+    #[test]
+    fn registry_glutton_pawnshop_has_control_and_tag_skills() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("glutton_pawnshop")
+            .expect("glutton_pawnshop should be registered");
+
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"flesh_usury_contract"),
+            "glutton_pawnshop must have flesh_usury_contract (gp_control) skill"
+        );
+        assert!(
+            skill_ids.contains(&"compound_agony"),
+            "glutton_pawnshop must have compound_agony (tag-based debuff) skill"
         );
     }
 }
