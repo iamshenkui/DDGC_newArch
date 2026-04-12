@@ -19,6 +19,7 @@ pub mod moth_mimicry_b;
 pub mod robber_melee;
 pub mod robber_ranged;
 pub mod tiger_sword;
+pub mod unicorn_beetle_a;
 
 use crate::content::ContentPack;
 
@@ -90,6 +91,12 @@ pub fn register_content(pack: &mut ContentPack) {
     // K14: Lizard (US-415)
     pack.register_archetype(lizard::archetype());
     for skill in lizard::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K15: Unicorn Beetle A (US-416)
+    pack.register_archetype(unicorn_beetle_a::archetype());
+    for skill in unicorn_beetle_a::skill_pack() {
         pack.register_skill(skill);
     }
 }

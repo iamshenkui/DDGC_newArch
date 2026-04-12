@@ -194,6 +194,22 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Lizard".to_string(),
     });
 
+    // K15: Unicorn Beetle A (US-416)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("unicorn_beetle_A"),
+        dungeon: Dungeon::BaiHu,
+        tier: MonsterTier::Common,
+        role: FamilyRole::Ranged,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("normal_attack"),
+            SkillId::new("bleed"),
+            SkillId::new("bleed_crowd"),
+            SkillId::new("move"),
+        ],
+        archetype_name: "Unicorn Beetle A".to_string(),
+    });
+
     registry
 }
 
@@ -569,6 +585,39 @@ mod tests {
         assert!(
             skill_ids.contains(&"stress"),
             "lizard must have stress skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_unicorn_beetle_a() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("unicorn_beetle_A")
+            .expect("unicorn_beetle_A should be registered");
+
+        assert_eq!(family.id.0, "unicorn_beetle_A");
+        assert_eq!(family.dungeon, Dungeon::BaiHu);
+        assert_eq!(family.tier, MonsterTier::Common);
+        assert_eq!(family.role, FamilyRole::Ranged);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Unicorn Beetle A");
+        assert_eq!(family.skill_ids.len(), 4);
+    }
+
+    #[test]
+    fn registry_unicorn_beetle_a_has_bleed_and_bleed_crowd() {
+        let registry = build_registry();
+
+        let family = registry.get("unicorn_beetle_A").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"bleed"),
+            "unicorn_beetle_A must have bleed skill"
+        );
+        assert!(
+            skill_ids.contains(&"bleed_crowd"),
+            "unicorn_beetle_A must have bleed_crowd skill"
         );
     }
 }
