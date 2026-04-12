@@ -12,6 +12,7 @@ pub mod dry_tree_genie;
 pub mod mantis_magic_flower;
 pub mod mantis_spiny_flower;
 pub mod mantis_walking_flower;
+pub mod moth_mimicry_a;
 
 use crate::content::ContentPack;
 
@@ -41,6 +42,12 @@ pub fn register_content(pack: &mut ContentPack) {
     // K7: Dry Tree Genie (US-408)
     pack.register_archetype(dry_tree_genie::archetype());
     for skill in dry_tree_genie::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K8: Moth Mimicry A (US-409)
+    pack.register_archetype(moth_mimicry_a::archetype());
+    for skill in moth_mimicry_a::skill_pack() {
         pack.register_skill(skill);
     }
 }
