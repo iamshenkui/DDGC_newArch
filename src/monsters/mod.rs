@@ -579,6 +579,63 @@ pub fn build_registry() -> MonsterFamilyRegistry {
         archetype_name: "Black Tortoise B".to_string(),
     });
 
+    // K33: Rotvine Wraith (US-434)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("rotvine_wraith"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Summoner,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("cadaver_bloom"),
+            SkillId::new("rotvine_snare"),
+            SkillId::new("sepsis_strangulate"),
+            SkillId::new("telluric_resurrect"),
+            SkillId::new("carrion_sowing"),
+            SkillId::new("move"),
+        ],
+        archetype_name: "Rotvine Wraith".to_string(),
+    });
+
+    // K33: Rotten Fruit A (US-434)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("rotten_fruit_A"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Support,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("absorbed"),
+        ],
+        archetype_name: "Rotten Fruit A".to_string(),
+    });
+
+    // K33: Rotten Fruit B (US-434)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("rotten_fruit_B"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Skirmisher,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("fruit_explosion"),
+        ],
+        archetype_name: "Rotten Fruit B".to_string(),
+    });
+
+    // K33: Rotten Fruit C (US-434)
+    registry.register(MonsterFamily {
+        id: FamilyId::new("rotten_fruit_C"),
+        dungeon: Dungeon::XuanWu,
+        tier: MonsterTier::Boss,
+        role: FamilyRole::Controller,
+        monster_type: MonsterType::Eldritch,
+        skill_ids: vec![
+            SkillId::new("fruit_stress_explosion"),
+        ],
+        archetype_name: "Rotten Fruit C".to_string(),
+    });
+
     registry
 }
 
@@ -1718,5 +1775,89 @@ mod tests {
             skill_ids.contains(&"armor"),
             "black_tortoise_B must have armor skill"
         );
+    }
+
+    #[test]
+    fn registry_resolves_rotvine_wraith() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("rotvine_wraith")
+            .expect("rotvine_wraith should be registered");
+
+        assert_eq!(family.id.0, "rotvine_wraith");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Summoner);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Rotvine Wraith");
+        assert_eq!(family.skill_ids.len(), 6);
+    }
+
+    #[test]
+    fn registry_rotvine_wraith_has_carrion_sowing_and_sepsis_strangulate() {
+        let registry = build_registry();
+
+        let family = registry.get("rotvine_wraith").unwrap();
+        let skill_ids: Vec<&str> = family.skill_ids.iter().map(|s| s.0.as_str()).collect();
+        assert!(
+            skill_ids.contains(&"carrion_sowing"),
+            "rotvine_wraith must have carrion_sowing skill"
+        );
+        assert!(
+            skill_ids.contains(&"sepsis_strangulate"),
+            "rotvine_wraith must have sepsis_strangulate skill"
+        );
+    }
+
+    #[test]
+    fn registry_resolves_rotten_fruit_a() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("rotten_fruit_A")
+            .expect("rotten_fruit_A should be registered");
+
+        assert_eq!(family.id.0, "rotten_fruit_A");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Support);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Rotten Fruit A");
+        assert_eq!(family.skill_ids.len(), 1);
+    }
+
+    #[test]
+    fn registry_resolves_rotten_fruit_b() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("rotten_fruit_B")
+            .expect("rotten_fruit_B should be registered");
+
+        assert_eq!(family.id.0, "rotten_fruit_B");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Skirmisher);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Rotten Fruit B");
+        assert_eq!(family.skill_ids.len(), 1);
+    }
+
+    #[test]
+    fn registry_resolves_rotten_fruit_c() {
+        let registry = build_registry();
+
+        let family = registry
+            .get("rotten_fruit_C")
+            .expect("rotten_fruit_C should be registered");
+
+        assert_eq!(family.id.0, "rotten_fruit_C");
+        assert_eq!(family.dungeon, Dungeon::XuanWu);
+        assert_eq!(family.tier, MonsterTier::Boss);
+        assert_eq!(family.role, FamilyRole::Controller);
+        assert_eq!(family.monster_type, MonsterType::Eldritch);
+        assert_eq!(family.archetype_name, "Rotten Fruit C");
+        assert_eq!(family.skill_ids.len(), 1);
     }
 }

@@ -317,4 +317,31 @@ mod tests {
             "black_tortoise boss pack must contain black_tortoise_B"
         );
     }
+
+    #[test]
+    fn xuanwu_boss_rotvine_wraith_pack_is_correct() {
+        let registry = build_packs_registry();
+
+        let pack = registry
+            .get("xuanwu_boss_rotvine_wraith")
+            .expect("xuanwu_boss_rotvine_wraith should exist");
+
+        assert_eq!(pack.dungeon, Dungeon::XuanWu);
+        assert_eq!(pack.pack_type, PackType::Boss);
+        assert_eq!(pack.total_units(), 3, "rotvine_wraith boss pack should have 3 units");
+
+        let family_ids: Vec<&str> = pack.family_ids().iter().map(|id| id.0.as_str()).collect();
+        assert!(
+            family_ids.contains(&"rotvine_wraith"),
+            "rotvine_wraith boss pack must contain rotvine_wraith"
+        );
+        assert!(
+            family_ids.contains(&"rotten_fruit_A"),
+            "rotvine_wraith boss pack must contain rotten_fruit_A"
+        );
+        assert!(
+            family_ids.contains(&"rotten_fruit_B"),
+            "rotvine_wraith boss pack must contain rotten_fruit_B"
+        );
+    }
 }

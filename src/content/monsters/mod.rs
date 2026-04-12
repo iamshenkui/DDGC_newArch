@@ -42,6 +42,10 @@ pub mod white_tiger_a;
 pub mod white_tiger_b;
 pub mod white_tiger_c;
 pub mod white_tiger_terrain;
+pub mod rotvine_wraith;
+pub mod rotten_fruit_a;
+pub mod rotten_fruit_b;
+pub mod rotten_fruit_c;
 
 use crate::content::ContentPack;
 
@@ -251,6 +255,30 @@ pub fn register_content(pack: &mut ContentPack) {
     // K32: Black Tortoise B (US-433)
     pack.register_archetype(black_tortoise_b::archetype());
     for skill in black_tortoise_b::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K33: Rotvine Wraith (US-434)
+    pack.register_archetype(rotvine_wraith::archetype());
+    for skill in rotvine_wraith::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K33: Rotten Fruit A (US-434)
+    pack.register_archetype(rotten_fruit_a::archetype());
+    for skill in rotten_fruit_a::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K33: Rotten Fruit B (US-434)
+    pack.register_archetype(rotten_fruit_b::archetype());
+    for skill in rotten_fruit_b::skill_pack() {
+        pack.register_skill(skill);
+    }
+
+    // K33: Rotten Fruit C (US-434)
+    pack.register_archetype(rotten_fruit_c::archetype());
+    for skill in rotten_fruit_c::skill_pack() {
         pack.register_skill(skill);
     }
 }

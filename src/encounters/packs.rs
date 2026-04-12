@@ -812,9 +812,9 @@ pub fn baihu_boss_packs() -> Vec<EncounterPack> {
 
 /// XuanWu boss encounter packs.
 ///
-/// Currently includes only the black_tortoise boss pack. The black_tortoise
-/// is a dual-body composite boss: the Tortoise body (A) and Snake body (B)
-/// appear together as a coordinated pair.
+/// Includes the black_tortoise and rotvine_wraith boss packs. The black_tortoise
+/// is a dual-body composite boss (Tortoise A + Snake B). The rotvine_wraith
+/// is a summon-control boss that continuously re-summons rotten_fruit minions.
 pub fn xuanwu_boss_packs() -> Vec<EncounterPack> {
     vec![
         EncounterPack {
@@ -828,6 +828,25 @@ pub fn xuanwu_boss_packs() -> Vec<EncounterPack> {
                 },
                 FamilySlot {
                     family_id: FamilyId::new("black_tortoise_B"),
+                    count: 1,
+                },
+            ],
+        },
+        EncounterPack {
+            id: PackId::new("xuanwu_boss_rotvine_wraith"),
+            dungeon: Dungeon::XuanWu,
+            pack_type: PackType::Boss,
+            slots: vec![
+                FamilySlot {
+                    family_id: FamilyId::new("rotvine_wraith"),
+                    count: 1,
+                },
+                FamilySlot {
+                    family_id: FamilyId::new("rotten_fruit_A"),
+                    count: 1,
+                },
+                FamilySlot {
+                    family_id: FamilyId::new("rotten_fruit_B"),
                     count: 1,
                 },
             ],
