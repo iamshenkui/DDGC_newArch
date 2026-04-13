@@ -59,6 +59,9 @@
 - Controller-mechanic bosses (glutton_pawnshop) use `FamilyRole::Controller` and apply tag-based debuffs via `apply_status("gp_control"/"gp_tag_bleed"/"gp_tag_blight"/"gp_tag_debuff", Some(N))` — the conditional tag-trigger behavior is a game-gap
 - The `$1234` conditional targeting notation (targets heroes with specific marks/tags) is approximated as `AllEnemies` — same game-gap as `#1234` AoE and `~1234` AoE
 - Target resolution from `TargetSelector::AllEnemies`/`AllAllies` returns targets in HashMap-iteration order — must sort by ActorId for deterministic trace output
+- `EncounterResolver` is the primary entry point for gameplay battles — both `main.rs` and `flow.rs` use `resolve_pack()` for combat and `resolve_boss_pack()` for boss rooms
+- The `first_battle` scenario module and Bone Soldier/Necromancer archetypes are legacy content — kept for parity tests and transitional fallback, but no longer used in any gameplay entry point
+- Fallback battle paths use `pack_id: "fallback_transitional"` to distinguish from real encounter battles in traces
 
 ## 2026-04-13 - US-402
 - Implemented the MonsterFamily registry schema in `src/monsters/families.rs`
