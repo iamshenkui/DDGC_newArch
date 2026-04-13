@@ -1,0 +1,412 @@
+# Ralph Progress Log
+Started: Sun Apr 12 20:57:42 CST 2026
+---
+
+## Codebase Patterns
+- SEMANTIC_PARITY.md and SEMANTIC_GAPS.md are the parity vocabulary docs; all parity stories reference them
+- MIGRATION_BLOCKERS.md is the authoritative source for blocker classification; SEMANTIC_GAPS.md cross-references it
+- game_ddgc_headless uses `cargo check` for typecheck and `cargo test` for tests
+- DDGC hero stats come from equipment .bytes files, not base class definitions — heroes have zero base stats; level 0 weapon/armor apply all combat attributes
+- DDGC .bytes files are actually plaintext (despite extension) — use `strings` or direct reads
+- Skill damage values are calculated as: base_weapon_avg × damage_modifier_percent (e.g., -50% = half, -100% = zero, 0% = full)
+- All skills use TargetSelector::AllEnemies or AllAllies — single-target selection is a known game-gap (B-006)
+- Utility-only skills (self-move, self-buff, oracle) approximated as heal(1.0) placeholder — framework has no movement or buff EffectNodes
+- ContentPack registers all hero archetypes and skill packs — new hero content goes in src/content/heroes/
+- BaseHeroVariant in src/heroes/base.rs connects family class_id to content via match dispatch
+- White variant skill IDs use "w_{base_id}_{skill_name}" pattern — ensures ContentPack uniqueness and avoids collision with base skills
+- Black variant skill IDs use "b_{base_id}_{skill_name}" pattern — same convention as white, ensures uniqueness across all variant types
+- DDGC white (+1) and black (+2) variants have identical base stats to their base counterparts — differences are exclusively in skill effect chains
+- EffectNode does not implement PartialEq — use effect count comparison to verify skill differences in tests
+- Conditional/procedural effects (divine count, mark refresh, % chance secondary DoT) approximated as guaranteed effects within framework constraints
+- FamilySkillResolver in src/heroes/skills.rs dispatches (base_id, chaos_mode) to variant content modules — same match pattern as BaseHeroVariant/WhiteHeroVariant/BlackHeroVariant
+- FamilyStatusRegistry derives variant status profiles from skill definitions at runtime — not hardcoded, stays in sync with content changes
+- Diviner base variant has zero ApplyStatus effects (all damage/heal) — white/black variants add tagged and stun statuses
+- DDGC monsters have no "elite" tier — only Common (size 1, 1 turn/rd) and Boss (size 2+, 2-3 turns/rd, tag="boss")
+- Common monsters use difficulty tiers (_1/_2/_3) scaling HP ~1.4×/1.8× and SPD +1/+2 per tier
+- DDGC monster data files are .txt DSL format under Assets/Resources/Data/Monsters/ — not JSON/YAML
+- Boss encounters use 7 structural patterns: shared_health, multi_body, multi_phase, captor, summon, controller, paired
+- Monster .txt files specify enemy_type (beast/eldritch/unholy/man/cauldron/corpse), optional tag/shared_health/riposte_skill/controller fields
+
+## 2026-04-12 - US-001
+- Verified SEMANTIC_PARITY.md and SEMANTIC_GAPS.md already exist and meet all acceptance criteria
+- All 6 terminology terms defined (semantic parity, structural translation, game gap, framework gap, acceptable approximation, unacceptable semantic drift)
+- Player-observable behavior boundary defined (observable: damage output, turn order, status application; internal: class hierarchy, method dispatch)
+- SEMANTIC_GAPS.md has all 5 section headers (Hero, Monster, Skill, Status, Cross-system) and all 4 pre-identified gap entries
+- Typecheck passes
+- Files: games/game_ddgc_headless/SEMANTIC_PARITY.md, games/game_ddgc_headless/SEMANTIC_GAPS.md, scripts/ralph/prd.json
+- **Learnings for future iterations:**
+  - SEMANTIC_PARITY.md and SEMANTIC_GAPS.md were already committed on the branch — verify file existence before assuming work is needed
+  - The `tasks/` directory is untracked and not related to parity stories
+  - game_ddgc_headless compiles cleanly with `cargo check`
+---
+
+## 2026-04-12 - US-002
+- Created src/parity/mod.rs with `pub mod heroes;` and `pub use heroes::*;`
+- Created src/parity/heroes.rs with HeroParityFixture struct containing HeroExpectation for crusader and vestal
+- Added `pub mod parity;` to src/lib.rs after existing module declarations
+- Created tests/hero_semantic_parity.rs with 4 tests (all passing):
+  - hero_role_identity_is_preserved
+  - hero_position_preference_is_preserved
+  - hero_resource_semantics_are_preserved
+  - hero_skill_access_constraints_match_original_intent
+- All 28 unit tests + 4 parity tests pass; typecheck clean
+- Files: src/parity/mod.rs, src/parity/heroes.rs, src/lib.rs, tests/hero_semantic_parity.rs
+- **Learnings for future iterations:**
+  - When iterating over `&[&str]` and passing to `impl Into<String>`, must dereference with `*skill_name` to avoid `&&str` type mismatch
+  - Parity fixtures use `HeroExpectation` structs with min/max bounds; parity tests assert archetype values fall within those bounds
+  - Integration tests go in `tests/` directory at crate root (auto-discovered by Cargo)
+  - The parity module scaffold (mod.rs) is ready for subsequent stories to add `pub mod monsters;`, `pub mod skills;`, `pub mod statuses;`
+---
+
+## 2026-04-12 - US-003
+- Created src/parity/monsters.rs with MonsterParityFixture struct containing MonsterExpectation for bone_soldier and necromancer
+- Updated src/parity/mod.rs with `pub mod monsters;` and `pub use monsters::*;`
+- Created tests/monster_semantic_parity.rs with 4 tests (all passing):
+  - monster_role_identity_is_preserved
+  - monster_skill_preference_is_preserved
+  - boss_behavior_is_not_flattened
+  - monster_position_logic_matches_original_intent
+- Typecheck clean, all tests pass
+- Files: src/parity/monsters.rs, src/parity/mod.rs, tests/monster_semantic_parity.rs
+- **Learnings for future iterations:**
+  - Skill effect inspection uses `matches!(e.kind, EffectKind::ApplyStatus)` to check effect types
+  - Conditional apply_status effects have `!e.conditions.is_empty()` — this distinguishes from unconditional status effects
+  - Boss vs regular enemy differentiation tested via: skill count, HP ratio, cooldown threshold
+---
+
+## 2026-04-12 - US-004
+- Created src/parity/skills.rs with SkillParityFixture struct containing SkillExpectation for all 6 skills
+- SkillExpectation uses TargetSelectorPattern enum (AllEnemies/AllAllies) to avoid framework type coupling in fixtures
+- EffectExpectation enum distinguishes Damage, Heal, ApplyStatus, ConditionalApplyStatus for effect chain verification
+- Updated src/parity/mod.rs with `pub mod skills;` and `pub use skills::*;`
+- Created tests/skill_semantic_parity.rs with 4 tests (all passing):
+  - skill_targeting_semantics_are_preserved
+  - skill_position_constraints_are_preserved
+  - skill_effect_chain_semantics_are_preserved
+  - skill_usage_restrictions_match_original_intent
+- Typecheck clean, all tests pass
+- Files: src/parity/skills.rs, src/parity/mod.rs, tests/skill_semantic_parity.rs
+- **Learnings for future iterations:**
+  - Parity fixture enums (TargetSelectorPattern, EffectExpectation) decouple fixture definitions from framework types, allowing pattern matching in tests while keeping fixtures self-contained
+  - SkillParityFixture::all() returns `&[SkillExpectation; 6]` for easy iteration over all expectations
+  - ConditionalApplyStatus is detected by `matches!(kind, ApplyStatus) && !conditions.is_empty()`
+---
+
+## 2026-04-12 - US-005
+- Created src/parity/statuses.rs with StatusParityFixture struct containing StatusExpectation for bleed, stun, riposte, horror
+- StatusExpectation stores kind, stack_rule, and has_modifiers flag
+- Updated src/parity/mod.rs with `pub mod statuses;` and `pub use statuses::*;`
+- Created tests/status_semantic_parity.rs with 4 tests (all passing):
+  - status_stack_rules_are_preserved
+  - status_tick_timing_is_preserved
+  - reactive_status_semantics_are_preserved
+  - status_interacts_with_resources_as_expected
+- All 44 tests pass (28 unit + 16 parity); typecheck clean
+- Files: src/parity/statuses.rs, src/parity/mod.rs, tests/status_semantic_parity.rs
+- **Learnings for future iterations:**
+  - StatusContainer::tick() returns Vec<StatusEffect> of expired statuses; empty if none expired
+  - Status with duration=Some(1) expires on the very first tick() call
+  - Status with duration=Some(3) requires 3 tick() calls before expiring
+  - active().values().any() pattern for checking marker status presence
+  - bleed modifier reduces ATTR_HEALTH (negative value), horror modifier increases ATTR_STRESS (positive value)
+  - Both statuses can be active simultaneously on the same actor and independently modify their respective attributes
+---
+
+## 2026-04-12 - US-006
+- Created fixtures/semantic_battles/ directory and first_battle_trace.json golden trace
+- Golden trace generated from run_first_battle().trace.to_json() — 4-turn battle, Ally wins
+- Created tests/semantic_parity_trace.rs with 3 tests (all passing):
+  - semantic_fixture_battle_trace_is_stable: byte-identical traces + matches committed golden
+  - semantic_fixture_preserves_role_and_skill_identity: Crusader only uses crusading_strike, Bone Soldier only uses rend
+  - semantic_fixture_preserves_status_timing: documents expected absence of status_tick entries (apply_status not auto-executed)
+- All 47 tests pass (28 unit + 19 parity); typecheck clean
+- Files: fixtures/semantic_battles/first_battle_trace.json, tests/semantic_parity_trace.rs
+- **Learnings for future iterations:**
+  - BattleTrace is serializable via serde (Serialize + Deserialize + PartialEq) — enables `include_str!` for golden trace comparison
+  - The resolver does not auto-execute apply_status EffectNodes — status attachment is a game-layer concern
+  - Golden trace uses `include_str!` for compile-time inclusion and `serde_json::from_str` for deserialization
+  - The first_battle scenario has no status_tick entries because rend's apply_status effect is not processed by the battle loop
+---
+
+## 2026-04-12 - US-007
+- Rewrote SEMANTIC_GAPS.md with structured gap entries SG-001 through SG-004
+- Each gap now has: Gap ID, Classification, Description (original vs migration), Reason, Tracking (blocker ID)
+- SG-001: Damage range averaging (B-006) — acceptable approximation
+- SG-002: BuffRule condition system downgrade (B-004) — deferred parity work
+- SG-003: Reactive hooks in game layer (B-008) — acceptable approximation
+- SG-004: Skill usage limits in game state (B-005) — deferred parity work
+- No gap classified as unacceptable semantic drift
+- Added Classification Summary table at bottom of document
+- Typecheck passes
+- Files: SEMANTIC_GAPS.md
+- **Learnings for future iterations:**
+  - SEMANTIC_GAPS.md gap entries follow a structured format: Gap ID, Classification, Description, Reason, Tracking
+  - Classification values: "acceptable approximation", "deferred parity work", "unacceptable semantic drift"
+  - Two of the four gaps are acceptable approximations (damage averaging, reactive markers); two are deferred parity work (conditions, usage limits)
+  - The summary table at the end provides a quick classification overview
+---
+
+## Codebase Patterns
+- SEMANTIC_PARITY.md and SEMANTIC_GAPS.md are the parity vocabulary docs; all parity stories reference them
+- MIGRATION_BLOCKERS.md is the authoritative source for blocker classification; SEMANTIC_GAPS.md cross-references it
+- game_ddgc_headless uses `cargo check` for typecheck and `cargo test` for tests
+- When iterating over `&[&str]` and passing to `impl Into<String>`, must dereference with `*skill_name` to avoid `&&str` type mismatch
+- Integration tests go in `tests/` directory at crate root (auto-discovered by Cargo)
+- Parity fixture enums (TargetSelectorPattern, EffectExpectation) decouple fixture definitions from framework types
+- StatusContainer::tick() returns Vec<StatusEffect> of expired statuses; status with duration=Some(1) expires on first tick()
+- BattleTrace is serde-serializable — use `include_str!` + `serde_json::from_str` for golden trace comparison
+- The resolver does not auto-execute apply_status EffectNodes — status attachment is game-layer concern
+- DDGC has 5 recruitable hero class families: alchemist, diviner, hunter, shaman, tank — each with base/white(+1)/black(+2) variants
+- CharacterHelper::GetBaseHeroClassId strips trailing digit suffix; GetChaosHeroClassId appends "1" (white) or "2" (black)
+- Chaos mode thresholds: stored < 50 → black, stored >= 150 → white, else normal
+- Recruitment only uses base class IDs (no suffix); variant IDs normalize back to base
+- Each variant shares skill IDs with base but has variant-specific effect chains or stat scaling
+- plague_doctor and vestal are legacy tutorial IDs, not part of the recruitable pool
+- The heroes module is separate from content module — heroes owns family/variant identity, content owns archetype/skill/status definitions
+- HeroFamilyRegistry uses HashMap<&'static str, usize> — all 3 variant IDs map to same family index for O(1) lookup
+
+## 2026-04-12 - US-301
+- Created HERO_CLASS_FAMILIES.md with complete inventory of all 5 recruitable hero class families
+- Documented base/white/black variant ID mapping for each family (alchemist, diviner, hunter, shaman, tank)
+- Included Variant Mapping Behavior section referencing CharacterHelper::GetBaseHeroClassId and GetChaosHeroClassId
+- Included Chaos Mode Thresholds section (stored < 50 → black, 50–149 → normal, >= 150 → white)
+- Included Recruitment Semantics section (base-only recruitment, normalization, class requirement matching)
+- Included Variant Skill Differences table documenting variant-specific effect chains
+- Included Migration Status column (all "Not started") and Upgrade Trees section
+- Noted legacy references (plague_doctor, vestal) are not part of recruitable pool
+- Typecheck passes, all 47 tests pass
+- Files: games/game_ddgc_headless/HERO_CLASS_FAMILIES.md, scripts/ralph/prd.json
+- **Learnings for future iterations:**
+  - DDGC hero data files are .bytes format under Assets/Resources/Data/Heroes/Info/ — use `strings` to extract readable content
+  - Each hero family has 3 .bytes files (base, +1, +2) and 3 .upgrades.json files
+  - All 5 families share the same 7-skill template structure but with different skill IDs and effect chains per variant
+  - The existing game_ddgc_headless codebase already has crusader and vestal archetypes — these map to tank and diviner families respectively in the DDGC naming
+  - StageCoach.GeneratePurchaseInfo registers all 3 variant upgrade trees (base, +1, +2) for every hero
+---
+
+## 2026-04-12 - US-302
+- Created src/heroes/mod.rs as hero family module entrypoint (pub mod families; pub use families::*;)
+- Created src/heroes/families.rs with HeroClassFamily registry and normalization helpers:
+  - ChaosMode enum (Normal, White, Black) with from_chaos_value(stored_value: u32) matching DDGC thresholds
+  - HeroClassFamily struct with base_id, white_id, black_id, display_name fields
+  - HeroClassFamily::variant_id(mode) resolves chaos mode to variant ID
+  - HeroFamilyRegistry with HashMap-based lookup by base or variant ID
+  - HeroFamilyRegistry::normalize_to_base() strips variant suffix back to base ID
+  - HeroFamilyRegistry::resolve_variant_id(base_id, chaos_value) maps chaos to variant without framework internals
+- Added `pub mod heroes;` to src/lib.rs after existing module declarations
+- Created tests/hero_family_registry.rs with 3 tests (all passing):
+  - family_registry_maps_base_white_black_variants: verifies all 5 families have correct base/white/black mapping and chaos resolution
+  - family_registry_normalizes_variant_to_base: verifies variant→base normalization and chaos threshold boundaries
+  - family_registry_rejects_unknown_variant: verifies unknown IDs, wrong suffixes, partial matches, and empty strings return None
+- All 50 tests pass (28 unit + 19 parity + 3 family registry); typecheck clean
+- Files: src/heroes/mod.rs, src/heroes/families.rs, src/lib.rs, tests/hero_family_registry.rs
+- **Learnings for future iterations:**
+  - HeroFamilyRegistry uses HashMap<&'static str, usize> for O(1) lookup — all 3 variant IDs (base, white, black) map to the same family index
+  - ChaosMode::from_chaos_value uses u32 threshold boundaries: < 50 → Black, 50–149 → Normal, >= 150 → White
+  - The heroes module is separate from the content module — heroes focuses on family/variant identity, content on archetype/skill/status definitions
+  - Subsequent stories (US-303, US-304, US-305) will add base.rs, white.rs, black.rs to the heroes module
+---
+
+## 2026-04-12 - US-303
+- Created src/heroes/base.rs with BaseHeroVariant struct and all_base_variants() for all 5 families
+- BaseHeroVariant connects family class_id to content (archetype, skill_pack) via match dispatch
+- BaseHeroVariant::is_recruitable() checks against HeroFamilyRegistry (mirrors DDGC IsBaseRecruitHeroClass)
+- Created src/content/heroes/ directory with per-hero modules:
+  - alchemist.rs: archetype (HP 139, atk 26, spd 5) + 7 skills (heal_multi, heal_single, miss_single, stress_multi, burn_skill, push_skill, push_self)
+  - diviner.rs: archetype (HP 160, atk 36, spd 5, dodge 5%) + 7 skills (duality_fate, repel, blessed_evasion, pull_skill, survive, draw_stick, karmic_cycle)
+  - hunter.rs: archetype (HP 152, atk 40, spd 6, dodge 5%) + 7 skills (mark_skill, pull_skill, aoe_skill, stun_skill, ignore_def_skill, bleed_skill, buff_skill)
+  - shaman.rs: archetype (HP 135, atk 39, spd 5) + 7 skills (frozen_skill, burn_skill, bleed_skill, direct_hit_1, direct_hit_2, stun_skill, buff_self)
+  - tank.rs: archetype (HP 192, atk 31, spd 7) + 7 skills (protect_skill, attack_reduce, taunt_skill, active_riposte, blood_oath, stun_skill, regression)
+- All archetypes use level 0 base stats from DDGC .bytes equipment data
+- Added burn, frozen, tagged, guard status factory functions to src/content/statuses.rs
+- Updated ContentPack::default() to register all 5 hero archetypes and 35 hero skills
+- Updated src/heroes/mod.rs to add pub mod base
+- Updated src/content/mod.rs to add pub mod heroes
+- Created tests/hero_base_variants.rs with 3 tests (all passing):
+  - all_base_hero_variants_build_valid_actors: verifies positive health, speed, stress=0, health<=max_health
+  - all_base_hero_variants_have_skill_packs: verifies 7 skills per family, all validate
+  - all_base_hero_variants_are_recruitable: verifies all base IDs in HeroFamilyRegistry
+- All 53 tests pass (28 unit + 25 integration); typecheck clean
+- Files: src/heroes/base.rs, src/heroes/mod.rs, src/content/heroes/{mod,alchemist,diviner,hunter,shaman,tank}.rs, src/content/mod.rs, src/content/statuses.rs, tests/hero_base_variants.rs
+- **Learnings for future iterations:**
+  - DDGC hero stats come entirely from equipment .bytes files (level 0 base = weapon + armor at upgrade level 0), not from HeroClass base definitions
+  - Skill damage = base_weapon_avg × damage_modifier (e.g., Alchemist burn_skill: avg(17,34)×1.0=26, push_skill: avg(17,34)×0.33≈9)
+  - DDGC .bytes files are actually plaintext despite the extension — readable directly
+  - All 35 hero skills use only AllEnemies or AllAllies targets — single-target is game-gap B-006
+  - Utility-only skills (self-move, self-buff, oracle) approximated as heal(1.0) placeholder since framework has no movement or buff EffectNodes
+  - Conditional effects (Hunter's mark-dependent bleed, Tank's self-tag conditional damage) simplified to unconditional application
+  - protect_skill uses apply_status("guard", Some(3)) targeting AllAllies — guard is a marker status in statuses.rs
+  - marked/tagged status uses "tagged" as the status name (consistent across Hunter mark_skill and Tank active_riposte)
+  - ContentPack now has 9 archetypes (4 legacy + 5 hero families) and 41 skills (6 legacy + 35 hero)
+---
+
+## 2026-04-12 - US-304
+- Created src/heroes/white.rs with WhiteHeroVariant struct and all_white_variants() for all 5 families
+- WhiteHeroVariant has archetype(), skill_pack(), is_white_variant(registry), and base_variant() methods
+- Created src/content/heroes/white.rs with all 5 families' white variant archetypes and skill packs (35 skills total)
+- White variant skill IDs use "w_{base_id}_{skill_name}" pattern to ensure ContentPack uniqueness
+- White variant archetypes share same stats as base but have "(White)" suffix in name
+- White variant skill differences modeled within framework capabilities:
+  - Alchemist White: heal_multi 18 vs 10, heal_single adds stress heal, burn_skill adds self-heal, push_skill adds tagged, push_self heals 12 vs 1
+  - Diviner White: duality_fate/repel/pull/karmic_cycle add tagged (divine tracker), blessed_evasion adds bleed, survive heals HP+stress
+  - Hunter White: mark_skill tagged duration 3 vs 2, pull/aoe add minor mark (tagged), stun/ignore_def/bleed add mark refresh (tagged), buff_skill heals 20 vs 1
+  - Shaman White: frozen_skill adds burn, burn_skill adds bleed, bleed_skill adds frozen (cross-DoT), direct_hit_1/2 add self-heal, stun_skill adds frozen
+  - Tank White: protect_skill adds tagged (damage bonus), attack_reduce 20 vs 16, taunt_skill 35 vs 31, active_riposte 20 vs 16, blood_oath bleed 4 vs 3, stun_skill 18 vs 16, regression 20 vs 10
+- Updated src/heroes/mod.rs to add pub mod white and pub use white::*
+- Updated src/content/heroes/mod.rs to add pub mod white
+- Updated ContentPack::default() to register 5 white variant archetypes and 35 white variant skills
+- Created tests/hero_white_variants.rs with 3 tests (all passing):
+  - all_white_hero_variants_build_valid_actors: verifies positive health, speed, stress=0, health<=max
+  - white_variants_differ_from_base_where_expected: verifies at least one skill per family has different effect count
+  - white_mode_maps_to_suffix_one_variant: verifies chaos 150→white, white IDs end with "1", normal/black chaos don't resolve to white
+- All 56 tests pass (28 unit + 28 integration); typecheck clean
+- Files: src/heroes/white.rs, src/heroes/mod.rs, src/content/heroes/white.rs, src/content/heroes/mod.rs, src/content/mod.rs, tests/hero_white_variants.rs
+- **Learnings for future iterations:**
+  - White variant content lives in src/content/heroes/white.rs — a single file with all 5 families, organized by section headers
+  - White variant skill IDs use "w_{base_id}_{skill_name}" pattern to avoid collision with base skills and across families
+  - EffectNode does not implement PartialEq — can't compare skill effects directly; use effect count comparison instead
+  - White variant archetypes share identical stats with base (DDGC data confirms no stat differences between base and +1 variants)
+  - ContentPack now has 14 archetypes (4 legacy + 5 base + 5 white) and 76 skills (6 legacy + 35 base + 35 white)
+  - DDGC white variant differences are exclusively in skill effects — stat lines, resistances, and weapon data are identical between base and +1
+  - Conditional/procedural effects (divine count, mark refresh, 75% chance secondary DoT) are approximated as guaranteed effects within framework constraints
+---
+
+## 2026-04-12 - US-305
+- Created src/heroes/black.rs with BlackHeroVariant struct and all_black_variants() for all 5 families
+- BlackHeroVariant has archetype(), skill_pack(), is_black_variant(registry), and base_variant() methods
+- Created src/content/heroes/black.rs with all 5 families' black variant archetypes and skill packs (35 skills total)
+- Black variant skill IDs use "b_{base_id}_{skill_name}" pattern to ensure ContentPack uniqueness
+- Black variant archetypes share same stats as base but have "(Black)" suffix in name
+- Black variant skill differences modeled within framework capabilities:
+  - Alchemist Black: heal_multi adds stress heal (2), heal_single adds dodge heal, miss_single improved heal(3), stress_multi adds dodge heal, burn_skill adds self-heal, push_skill adds tagged (damage receive debuff), push_self stress heal receive (heal 3)
+  - Diviner Black: duality_fate/repel add tagged (anti-divination), blessed_evasion adds tagged (debuff removal), pull_skill adds stun + tagged, survive adds HP+stress heal, draw_stick improved oracle (heal 2), karmic_cycle adds tagged (divine clearing)
+  - Hunter Black: mark_skill same tagged pattern, pull/aoe add tagged (marked interactions), stun adds tagged (marked stun chance), ignore_def adds tagged (marked ignore), bleed_skill stronger bleed duration 4 vs 3 (150% multiplier), buff_skill improved heal(3)
+  - Shaman Black: frozen/burn/bleed_skill higher damage 24 vs 10 (magic_dmg -37.5% vs base -75%), direct_hit_1 same 39, direct_hit_2 much higher damage 59 (+50% mod) with tagged (self-weak), stun_skill higher damage 26 vs 13 (-33.5% vs -67%), buff_self improved heal(2)
+  - Tank Black: protect_skill adds tagged (damage receive + remove DoT), attack_reduce adds tagged (self-mark), taunt_skill adds tagged (self-mark + mark target), active_riposte adds tagged, blood_oath adds tagged (self-conditional bleed), stun_skill adds tagged (remove DoT), regression adds heal(2) (self stress heal)
+- Updated src/heroes/mod.rs to add pub mod black and pub use black::*
+- Updated src/content/heroes/mod.rs to add pub mod black
+- Updated ContentPack::default() to register 5 black variant archetypes and 35 black variant skills
+- Created tests/hero_black_variants.rs with 3 tests (all passing):
+  - all_black_hero_variants_build_valid_actors: verifies positive health, speed, stress=0, health<=max
+  - black_variants_differ_from_base_where_expected: verifies at least one skill per family has different effect count
+  - black_mode_maps_to_suffix_two_variant: verifies chaos <50 → black, black IDs end with "2", normal/white chaos don't resolve to black
+- All 59 tests pass (28 unit + 31 integration); typecheck clean
+- Files: src/heroes/black.rs, src/heroes/mod.rs, src/content/heroes/black.rs, src/content/heroes/mod.rs, src/content/mod.rs, tests/hero_black_variants.rs
+- **Learnings for future iterations:**
+  - Black variant skill IDs use "b_{base_id}_{skill_name}" pattern — follows the same convention as white's "w_" prefix
+  - DDGC black variant damage modifiers differ significantly from base for Shaman: -37.5% vs -75% (2.4x damage multiplier on DoT skills)
+  - DDGC black variant direct_hit_2 for Shaman uses +50% magic damage (avg 59 vs base 39) — the only variant with a positive damage modifier
+  - Black variants add more structural effects (stun, tagged, heal) rather than modifying existing effect values — effect count differences are reliable for test comparison
+  - ContentPack now has 19 archetypes (4 legacy + 5 base + 5 white + 5 black) and 111 skills (6 legacy + 35 base + 35 white + 35 black)
+  - DDGC black variant differences are exclusively in skill effects — stat lines are identical between base and +2
+  - Tank2 black variant introduces self-conditional bleed (blood_oath) and marked-self-remove-dot (stun_skill) — these are new interaction patterns not seen in white variants
+---
+
+## 2026-04-12 - US-306
+- Created src/heroes/skills.rs with FamilySkillResolver for variant-aware skill pack resolution
+  - resolve_skill_pack(base_id, chaos_mode) dispatches to correct content module (base/white/black)
+  - resolve_skill_pack_by_chaos(base_id, chaos_value) convenience wrapper
+  - extract_status_kinds() and count_apply_status() utility functions for status analysis
+- Created src/heroes/statuses.rs with FamilyStatusRegistry for variant-aware status semantics
+  - VariantStatusProfile tracks status_kinds, apply_status_count, total_effect_count per variant
+  - FamilyStatusSemantics compares profiles across base/white/black; is_variant_differentiated() checks per-status differentiation
+  - FamilyStatusRegistry derives profiles from actual skill packs (not hardcoded)
+- Updated src/heroes/mod.rs to add pub mod skills, pub mod statuses with selective re-exports
+- Created tests/hero_family_skill_status.rs with 3 tests (all passing):
+  - family_skill_packs_are_variant_aware: verifies distinct skill IDs per variant, all validate, all have 7 skills
+  - family_status_semantics_are_variant_aware: verifies variant status profiles differ, diviner base has zero status kinds (all damage/heal), white/black add tagged/stun
+  - family_variant_skills_preserve_original_intent: verifies effect counts differ per variant, total effects differ
+- All 62 tests pass (28 unit + 34 integration); typecheck clean
+- Files: src/heroes/skills.rs, src/heroes/statuses.rs, src/heroes/mod.rs, tests/hero_family_skill_status.rs
+- **Learnings for future iterations:**
+  - Diviner base variant has zero ApplyStatus effects — all skills are damage/heal only; white/black variants add tagged and stun statuses
+  - FamilyStatusRegistry derives profiles by inspecting skill definitions at runtime, not from hardcoded data — keeps status tracking in sync with content
+  - extract_status_kinds() returns sorted Vec for deterministic test comparison
+  - FamilySkillResolver dispatch uses the same match pattern as BaseHeroVariant/WhiteHeroVariant/BlackHeroVariant — consistent content routing
+  - Variant status differentiation is most visible in: Diviner (base→zero, white/black add tagged/stun), Shaman (cross-DoT in white), Tank (self-mark in black)
+---
+
+## 2026-04-12 - US-307
+- Created src/heroes/recruitment.rs with DDGC recruitment and class requirement semantics:
+  - is_base_recruit_class() mirrors CharacterHelper.IsBaseRecruitHeroClass — only base IDs are recruitable
+  - normalize_recruit_class_id() mirrors CharacterHelper.NormalizeRecruitHeroClassId — strips variant suffix
+  - HeroClassIdentity holds raw class_id and chaos_class_id (mirrors Hero.ClassStringId/ChaosClassId)
+  - hero_matches_class_requirement() mirrors CharacterHelper.HeroMatchesClassRequirement — checks all 3 class representations
+  - hero_matches_any_class_requirement() mirrors HeroMatchesAnyClassRequirement — empty list = no restriction
+  - RecruitPool filters registry to base-only IDs (mirrors StageCoach.GetRecruitableHeroClasses)
+  - hero_class_identity() builds identity from base_id + chaos_mode + registry
+- Updated src/heroes/mod.rs to add pub mod recruitment with re-exports
+- Created tests/hero_recruitment.rs with 3 tests (all passing):
+  - recruitment_uses_base_class_ids_only: verifies RecruitPool contains only base IDs, variant IDs excluded
+  - hero_matches_base_and_current_variant_requirements: verifies 3-way matching (class/base/chaos) per DDGC contract
+  - variant_ids_normalize_back_to_base: verifies normalize_recruit_class_id strips suffixes, unknown returns None
+- All 65 tests pass (28 unit + 37 integration); typecheck clean
+- Files: src/heroes/recruitment.rs, src/heroes/mod.rs, tests/hero_recruitment.rs
+- **Learnings for future iterations:**
+  - DDGC HeroMatchesClassRequirement checks 3 representations: raw class ID, base class ID, current chaos variant ID — all must match for trinket/building requirements
+  - IsBaseRecruitHeroClass is simply: normalize_to_base(id) == id — a predicate, not a lookup
+  - HeroMatchesAnyClassRequirement treats empty requirements list as "no restriction" (returns true) — important for trinkets with no class requirements
+  - RecruitPool is derived from HeroFamilyRegistry at construction time — stays in sync with registry changes
+  - HeroClassIdentity separates the "stored" class ID from the "active chaos" class ID, matching DDGC's Hero.ClassStringId vs Hero.ChaosClassId distinction
+---
+
+## 2026-04-12 - US-308
+- Created tests/hero_family_semantic_parity.rs with all_hero_families_have_base_white_black_variants test
+  - Verifies all 5 families have base/white/black variants with valid actors, skill packs, and registry membership
+  - Cross-variant consistency checks: all three variant IDs resolve to same family, normalization works, recruitment correct
+  - Status semantics are variant-aware for every family, chaos mode resolution correct for all variants
+- Created tests/hero_variant_trace.rs with 2 tests:
+  - hero_variant_switching_preserves_family_identity: full chaos cycle (normal→white→black→normal) for each family, verifying variant resolution, normalization, class requirement matching, skill pack availability, and family lookup consistency
+  - hero_variant_trace_is_stable: loads golden trace fixture, replays all transitions, verifies live-generated trace matches committed golden
+- Created fixtures/hero_families/variant_switch_trace.json golden trace
+  - All 5 families with 3 transitions each (normal→white, white→black, black→normal)
+  - Each transition records from_chaos, from_variant, to_chaos, to_variant, family_preserved
+- All 68 tests pass (28 unit + 40 integration); typecheck clean
+- Files: tests/hero_family_semantic_parity.rs, tests/hero_variant_trace.rs, fixtures/hero_families/variant_switch_trace.json, scripts/ralph/prd.json
+- **Learnings for future iterations:**
+  - Golden trace comparison uses serde_json::to_string_pretty on both live and golden — ensures formatting consistency
+  - VariantSwitchTrace types need both Deserialize (for loading golden) and Serialize (for generating live comparison)
+  - hero_variant_switching_preserves_family_identity test exercises the full recruitment module (hero_class_identity + hero_matches_class_requirement) during variant transitions — good integration coverage
+  - The all_hero_families_have_base_white_black_variants test is the single most comprehensive cross-cutting assertion — it checks registry, recruitment, skills, status, actors, and normalization in one test
+  - The golden trace must be regenerated whenever the registry changes (adds/removes families or changes variant IDs)
+---
+
+## 2026-04-12 - US-309
+- Verified all acceptance criteria for the all-family hero migration baseline:
+  - All 5 hero families (alchemist, diviner, hunter, shaman, tank) present in HeroFamilyRegistry
+  - All families have base, white, and black variants registered and building valid actors
+  - Recruitment uses only base class IDs (RecruitPool), variant switching via chaos thresholds
+  - cargo test: 68 tests pass (28 unit + 40 integration)
+  - cargo run: exits 0, battle and run slices execute correctly
+- Updated HERO_CLASS_FAMILIES.md migration status from "Not started" to "Migrated" for all 5 families
+- No new code changes — this story validates that the J0-J7 migration stack produces a complete, runnable baseline
+- Files: HERO_CLASS_FAMILIES.md
+- **Learnings for future iterations:**
+  - The all-family migration baseline is complete — future work can build on top of the hero registry for run/UI/roster features
+  - HERO_CLASS_FAMILIES.md migration status column now accurately reflects implementation state
+  - The project runs end-to-end with all 19 hero archetypes (4 legacy + 5 base + 5 white + 5 black) and 111 skills registered
+  - All 68 tests are stable and cover the full migration surface (registry, variants, skills, status, recruitment, traces)
+---
+
+## 2026-04-12 - US-401
+- Created MONSTER_FAMILIES.md with complete DDGC monster family inventory
+- Documented all 21 common monster families (4 dungeon regions × multiple families each) with role, type, tier, HP, SPD, skills, and source references
+- Documented all 13 boss families with multi-part mechanics (shared health, multi-body, multi-phase, captor, summon, controller, paired, riposte)
+- Documented all 21 boss part/minion units with parent boss references
+- Included difficulty scaling pattern (_1/_2/_3 tiers), monster data file format reference, and migration priority ordering
+- Recorded that DDGC has no explicit "elite" tier — only Common (size 1, no tag) and Boss (tag "boss", size 2+)
+- All 68 tests pass; typecheck clean
+- Files: games/game_ddgc_headless/MONSTER_FAMILIES.md
+- **Learnings for future iterations:**
+  - DDGC monsters have no "elite" classification — only Common (size 1, 1 turn/round) and Boss (size 2+, 2-3 turns/round, tag="boss")
+  - Common families use difficulty tiers with _1/_2/_3 suffixes scaling HP ~1.4×/1.8× and SPD +1/+2
+  - Boss encounter structures include 7 distinct patterns: shared_health, multi-body, multi-phase, captor, summon, controller, and paired
+  - Monster data files use a custom DSL format with `name:`, `type:`, `art:`, `info:` blocks — not JSON or YAML
+  - Each monster has `enemy_type` (beast/eldritch/unholy/man/cauldron/corpse), `monster_brain` ID, and optional `tag`, `shared_health`, `riposte_skill`, `controller` fields
+  - Boss multi-part units (balls, tails, shadows, eggs) are separate monster files with their own stats but appear only in the context of their parent boss encounter
+  - The existing `bone_soldier` and `necromancer` in actors.rs are generic DD placeholders, not DDGC families — all DDGC monster migration is outstanding
+  - Alligator Yangtze and Frostvein Clam both have `riposte_skill` — this is a mechanic the framework will need to handle
+  - Ghost Fire (assist/damage) is a single family that splits on death into the opposite variant — unique self-summon mechanic
+  - Glutton Pawnshop is size 3 (the largest monster) and has a `controller:` block — unique control mechanic
+  - Necrodrake Embryosac uses `CaptureNe` effect to imprison heroes in `egg_membrane_full` (Cauldron type) — unique captor mechanic
+---

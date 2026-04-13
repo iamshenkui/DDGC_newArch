@@ -1,0 +1,593 @@
+{
+  "project": "game_ddgc_headless",
+  "branchName": "ralph/ddgc-monster-family-micro-slices",
+  "description": "K0-K44 DDGC Monster And Encounter Micro-Slices \u2014 decompose enemy migration into very small, family-level steps so Claude can migrate one registry unit, one monster family, or one encounter wiring slice at a time.",
+  "userStories": [
+    {
+      "id": "US-401",
+      "title": "K0: Lock the monster family inventory baseline",
+      "description": "As a developer, I need the DDGC monster inventory frozen as the migration source of truth so every later step can target an explicit family instead of a vague enemy bucket.",
+      "acceptanceCriteria": [
+        "games/game_ddgc_headless/MONSTER_FAMILIES.md exists",
+        "The inventory distinguishes common families, bosses, and boss-only parts or minions",
+        "The inventory is sufficient to drive one-family-per-step migration"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Already complete. This stays as the source document for all micro-slices below."
+    },
+    {
+      "id": "US-402",
+      "title": "K1: Add monster registry schema",
+      "description": "As a developer, I need a MonsterFamily registry schema so each future story can register exactly one DDGC family with typed role, tier, dungeon, and skill-pack metadata.",
+      "acceptanceCriteria": [
+        "games/game_ddgc_headless/src/monsters/families.rs exists",
+        "The registry exposes family id, dungeon, tier, role, archetype builder, and skill ids",
+        "The registry explicitly models DDGC common and boss tiers without inventing a fake elite tier"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Keep the type system minimal and DDGC-faithful."
+    },
+    {
+      "id": "US-403",
+      "title": "K2: Add monster registry smoke tests",
+      "description": "As a developer, I need registry smoke tests so structural drift is caught before any single family migration starts piling on top of a broken lookup layer.",
+      "acceptanceCriteria": [
+        "Tests monster_family_registry_builds, monster_family_registry_exposes_dungeon_tags, and monster_family_registry_exposes_skill_ids exist",
+        "The tests compile against the new registry API",
+        "cargo test --manifest-path games/game_ddgc_headless/Cargo.toml monster_family_registry exits 0"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "This should be a tiny structural slice before content migration."
+    },
+    {
+      "id": "US-404",
+      "title": "K3: Wire monster content module entrypoints",
+      "description": "As a developer, I need the monster content module wired into the crate so later one-family slices can add new files without touching unrelated systems each time.",
+      "acceptanceCriteria": [
+        "games/game_ddgc_headless/src/content/monsters/ directory exists",
+        "Monster registry builders can resolve family-local content modules",
+        "The crate typechecks after introducing the monster content entrypoints"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "This is plumbing only; do not migrate multiple families here."
+    },
+    {
+      "id": "US-405",
+      "title": "K4: Migrate mantis_magic_flower family",
+      "description": "As a developer, I need mantis_magic_flower migrated as its own family slice so poison plus crowd-bleed semantics are preserved independently of the other mantis variants.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for mantis_magic_flower",
+        "The registry can resolve mantis_magic_flower",
+        "A focused test proves poison plus crowd-bleed identity is preserved"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-406",
+      "title": "K5: Migrate mantis_spiny_flower family",
+      "description": "As a developer, I need mantis_spiny_flower migrated separately so armor-piercing blight behavior does not get flattened into a generic mantis template.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for mantis_spiny_flower",
+        "The registry can resolve mantis_spiny_flower",
+        "A focused test proves ignore-armor plus crowd-bleed identity is preserved"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-407",
+      "title": "K6: Migrate mantis_walking_flower family",
+      "description": "As a developer, I need mantis_walking_flower migrated separately so weak-plus-bleed debuff identity survives without being merged with the other mantis records.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for mantis_walking_flower",
+        "The registry can resolve mantis_walking_flower",
+        "A focused test proves weak plus crowd-bleed identity is preserved"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-408",
+      "title": "K7: Migrate dry_tree_genie family",
+      "description": "As a developer, I need dry_tree_genie migrated as its own slice so ranged bleed, slow crowd pressure, and stress identity can be validated directly.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for dry_tree_genie",
+        "The registry can resolve dry_tree_genie",
+        "A focused test proves bleed, slow-crowd, and stress identity is preserved"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-409",
+      "title": "K8: Migrate moth_mimicry_A family",
+      "description": "As a developer, I need moth_mimicry_A migrated independently so its ranged blight profile is not conflated with the other moth branch.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for moth_mimicry_A",
+        "The registry can resolve moth_mimicry_A",
+        "A focused test proves poison plus stress-poison identity is preserved"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-410",
+      "title": "K9: Migrate moth_mimicry_B family",
+      "description": "As a developer, I need moth_mimicry_B migrated independently so AoE stress behavior is not flattened into the same profile as moth_mimicry_A.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for moth_mimicry_B",
+        "The registry can resolve moth_mimicry_B",
+        "A focused test proves poison plus crowd-stress identity is preserved"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-411",
+      "title": "K10: Migrate robber_melee family",
+      "description": "As a developer, I need robber_melee migrated independently so the fragile melee-stun-debuff profile can be tested without being lost inside a generic robber bucket.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for robber_melee",
+        "The registry can resolve robber_melee",
+        "A focused test proves low-HP melee control identity is preserved"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-412",
+      "title": "K11: Migrate robber_ranged family",
+      "description": "As a developer, I need robber_ranged migrated independently so the ranged multi-shot and stun profile can be validated apart from the melee robber.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for robber_ranged",
+        "The registry can resolve robber_ranged",
+        "A focused test proves low-HP ranged stun identity is preserved"
+      ],
+      "priority": 12,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-413",
+      "title": "K12: Migrate metal_armor family",
+      "description": "As a developer, I need metal_armor migrated independently so high-protection melee control can be preserved as a tank family instead of a generic frontliner.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for metal_armor",
+        "The registry can resolve metal_armor",
+        "A focused test proves high-prot stun-plus-bleed identity is preserved"
+      ],
+      "priority": 13,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-414",
+      "title": "K13: Migrate tiger_sword family",
+      "description": "As a developer, I need tiger_sword migrated independently so heavy melee plus pull semantics are preserved as their own threat profile.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for tiger_sword",
+        "The registry can resolve tiger_sword",
+        "A focused test proves heavy-hit plus pull identity is preserved"
+      ],
+      "priority": 14,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-415",
+      "title": "K14: Migrate lizard family",
+      "description": "As a developer, I need lizard migrated independently so its fast stun-plus-stress skirmisher behavior can be validated on its own.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for lizard",
+        "The registry can resolve lizard",
+        "A focused test proves fast control plus stress identity is preserved"
+      ],
+      "priority": 15,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-416",
+      "title": "K15: Migrate unicorn_beetle_A family",
+      "description": "As a developer, I need unicorn_beetle_A migrated independently so ranged bleed pressure is preserved separately from the stress-oriented beetle variant.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for unicorn_beetle_A",
+        "The registry can resolve unicorn_beetle_A",
+        "A focused test proves ranged bleed identity is preserved"
+      ],
+      "priority": 16,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-417",
+      "title": "K16: Migrate unicorn_beetle_B family",
+      "description": "As a developer, I need unicorn_beetle_B migrated independently so ranged bleed plus stress behavior is preserved separately from unicorn_beetle_A.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for unicorn_beetle_B",
+        "The registry can resolve unicorn_beetle_B",
+        "A focused test proves ranged bleed plus stress identity is preserved"
+      ],
+      "priority": 17,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-418",
+      "title": "K17: Migrate alligator_yangtze family",
+      "description": "As a developer, I need alligator_yangtze migrated independently so bruiser plus riposte semantics are preserved as their own family identity.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for alligator_yangtze",
+        "The registry can resolve alligator_yangtze",
+        "A focused test proves bruiser plus riposte identity is preserved"
+      ],
+      "priority": 18,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-419",
+      "title": "K18: Migrate ghost_fire_assist family",
+      "description": "As a developer, I need ghost_fire_assist migrated independently so ally-buff and self-split-on-death semantics are preserved without being merged into the damage ghost-fire variant.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for ghost_fire_assist",
+        "The registry can resolve ghost_fire_assist",
+        "A focused test proves assist plus split-on-death identity is preserved"
+      ],
+      "priority": 19,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-420",
+      "title": "K19: Migrate ghost_fire_damage family",
+      "description": "As a developer, I need ghost_fire_damage migrated independently so burn plus stress plus split-on-death behavior is preserved separately from the support variant.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for ghost_fire_damage",
+        "The registry can resolve ghost_fire_damage",
+        "A focused test proves burn plus stress plus split-on-death identity is preserved"
+      ],
+      "priority": 20,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-421",
+      "title": "K20: Migrate fox_fire family",
+      "description": "As a developer, I need fox_fire migrated independently so bleed, burn-debuff vomit, and ally-guard semantics remain a distinct defensive bruiser profile.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for fox_fire",
+        "The registry can resolve fox_fire",
+        "A focused test proves bleed plus burn debuff plus guard identity is preserved"
+      ],
+      "priority": 21,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-422",
+      "title": "K21: Migrate moth_fire family",
+      "description": "As a developer, I need moth_fire migrated independently so stress attack, cocoon defense-heal cycle, and fire dive behavior survive as one coherent family.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for moth_fire",
+        "The registry can resolve moth_fire",
+        "A focused test proves cocoon cycle plus fire pressure identity is preserved"
+      ],
+      "priority": 22,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-423",
+      "title": "K22: Migrate lantern family",
+      "description": "As a developer, I need lantern migrated independently so magic burn plus stress pressure is preserved as its own ranged threat profile.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for lantern",
+        "The registry can resolve lantern",
+        "A focused test proves ranged burn plus stress identity is preserved"
+      ],
+      "priority": 23,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-424",
+      "title": "K23: Migrate snake_water family",
+      "description": "As a developer, I need snake_water migrated independently so stun plus poison-fang identity remains a clear water-dungeon control family.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for snake_water",
+        "The registry can resolve snake_water",
+        "A focused test proves stun plus blight identity is preserved"
+      ],
+      "priority": 24,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-425",
+      "title": "K24: Migrate water_grass family",
+      "description": "As a developer, I need water_grass migrated independently so its five-skill control kit does not get flattened into a generic plant enemy.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for water_grass",
+        "The registry can resolve water_grass",
+        "A focused test proves stun, bleed, crowd attack, and pull identity is preserved"
+      ],
+      "priority": 25,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-426",
+      "title": "K25: Migrate monkey_water family",
+      "description": "As a developer, I need monkey_water migrated independently so charge, stress-tag melee, and bruiser behavior are preserved as their own family identity.",
+      "acceptanceCriteria": [
+        "A dedicated monster content definition exists for monkey_water",
+        "The registry can resolve monkey_water",
+        "A focused test proves rush plus stress identity is preserved"
+      ],
+      "priority": 26,
+      "passes": true,
+      "notes": "Single-family slice."
+    },
+    {
+      "id": "US-427",
+      "title": "K26: Add common monster family parity fixtures",
+      "description": "As a developer, I need a parity layer for the migrated common families so the first 22 content slices are protected by reusable assertions instead of ad hoc tests only.",
+      "acceptanceCriteria": [
+        "games/game_ddgc_headless/src/parity/monster_families.rs exists",
+        "games/game_ddgc_headless/tests/monster_family_semantic_parity.rs exists",
+        "The parity layer covers at least one identity assertion for every migrated common family"
+      ],
+      "priority": 27,
+      "passes": true,
+      "notes": "This is the first consolidation step after all common families exist."
+    },
+    {
+      "id": "US-428",
+      "title": "K27: Build common encounter pack registry",
+      "description": "As a developer, I need common encounter packs grouped by dungeon so run flow can consume real DDGC enemy groups instead of one-off test fights.",
+      "acceptanceCriteria": [
+        "games/game_ddgc_headless/src/encounters/mod.rs exists",
+        "games/game_ddgc_headless/src/encounters/packs.rs exists",
+        "At least one common encounter pack exists for QingLong, BaiHu, ZhuQue, and XuanWu"
+      ],
+      "priority": 28,
+      "passes": true,
+      "notes": "Keep this limited to common encounters only."
+    },
+    {
+      "id": "US-429",
+      "title": "K28: Integrate common encounter packs into combat rooms",
+      "description": "As a developer, I need combat rooms to resolve through the common encounter registry so the progression layer starts consuming migrated DDGC families.",
+      "acceptanceCriteria": [
+        "games/game_ddgc_headless/src/run/encounters.rs exists",
+        "Combat rooms resolve to common encounter packs rather than a single hard-coded battle",
+        "A test proves room-to-common-encounter mapping is deterministic"
+      ],
+      "priority": 29,
+      "passes": true,
+      "notes": "Do not wire boss rooms yet."
+    },
+    {
+      "id": "US-430",
+      "title": "K29: Migrate azure_dragon boss family",
+      "description": "As a developer, I need azure_dragon migrated as its own boss slice so shared-health ball mechanics and storm-control behavior are preserved together.",
+      "acceptanceCriteria": [
+        "A dedicated boss content definition exists for azure_dragon",
+        "Required boss-part units for azure_dragon are modeled or stubbed through the encounter layer",
+        "A focused test proves shared-health plus summon-ball semantics are preserved"
+      ],
+      "priority": 30,
+      "passes": true,
+      "notes": "Single-boss slice."
+    },
+    {
+      "id": "US-431",
+      "title": "K30: Migrate vermilion_bird boss family",
+      "description": "As a developer, I need vermilion_bird migrated as its own boss slice so shared-health tail parts and burn-heal cycle semantics are preserved together.",
+      "acceptanceCriteria": [
+        "A dedicated boss content definition exists for vermilion_bird",
+        "Required tail-part units for vermilion_bird are modeled or stubbed through the encounter layer",
+        "A focused test proves shared-health plus burn-heal cycle semantics are preserved"
+      ],
+      "priority": 31,
+      "passes": true,
+      "notes": "Single-boss slice."
+    },
+    {
+      "id": "US-432",
+      "title": "K31: Migrate white_tiger boss family",
+      "description": "As a developer, I need white_tiger migrated as its own boss slice so clone-phase and three-turn final-form semantics are preserved instead of collapsed into one stat block.",
+      "acceptanceCriteria": [
+        "A dedicated boss content definition exists for white_tiger_C or equivalent family root",
+        "Required clone and terrain units for white_tiger are modeled or stubbed through the encounter layer",
+        "A focused test proves multi-phase turn-economy semantics are preserved"
+      ],
+      "priority": 32,
+      "passes": true,
+      "notes": "Single-boss slice."
+    },
+    {
+      "id": "US-433",
+      "title": "K32: Migrate black_tortoise boss family",
+      "description": "As a developer, I need black_tortoise migrated as one composite boss slice so twin-body coordination and shared-damage behavior stay coherent across turtle and snake bodies.",
+      "acceptanceCriteria": [
+        "A dedicated boss content definition exists for the black_tortoise composite family",
+        "Both A and B bodies are represented through the encounter layer",
+        "A focused test proves dual-body coordination and shared-damage semantics are preserved"
+      ],
+      "priority": 33,
+      "passes": true,
+      "notes": "Composite single-boss slice."
+    },
+    {
+      "id": "US-434",
+      "title": "K33: Migrate rotvine_wraith boss family",
+      "description": "As a developer, I need rotvine_wraith migrated as its own boss slice so summon-fruit plus burn-mark-control behavior is preserved together.",
+      "acceptanceCriteria": [
+        "A dedicated boss content definition exists for rotvine_wraith",
+        "Required rotten_fruit units are modeled or stubbed through the encounter layer",
+        "A focused test proves summon-fruit plus control semantics are preserved"
+      ],
+      "priority": 34,
+      "passes": true,
+      "notes": "Single-boss slice."
+    },
+    {
+      "id": "US-435",
+      "title": "K34: Migrate skeletal_tiller boss family",
+      "description": "As a developer, I need skeletal_tiller migrated as its own boss slice so summon-vegetable plus frozen-and-stress pressure is preserved together.",
+      "acceptanceCriteria": [
+        "A dedicated boss content definition exists for skeletal_tiller",
+        "The vegetable summon unit is modeled or stubbed through the encounter layer",
+        "A focused test proves summon plus frozen-stress identity is preserved"
+      ],
+      "priority": 35,
+      "passes": true,
+      "notes": "Single-boss slice."
+    },
+    {
+      "id": "US-436",
+      "title": "K35: Migrate necrodrake_embryosac boss family",
+      "description": "As a developer, I need necrodrake_embryosac migrated as its own boss slice so the captor vessel mechanic is preserved instead of being replaced by plain damage skills.",
+      "acceptanceCriteria": [
+        "A dedicated boss content definition exists for necrodrake_embryosac",
+        "The egg_membrane capture units are modeled or stubbed through the encounter layer",
+        "A focused test proves capture-and-release semantics are preserved"
+      ],
+      "priority": 36,
+      "passes": true,
+      "notes": "Single-boss slice."
+    },
+    {
+      "id": "US-437",
+      "title": "K36: Migrate gambler boss family",
+      "description": "As a developer, I need gambler migrated as its own boss slice so mahjong summons and random-pressure mechanics are preserved together.",
+      "acceptanceCriteria": [
+        "A dedicated boss content definition exists for gambler",
+        "The mahjong summon units are modeled or stubbed through the encounter layer",
+        "A focused test proves summon plus random-pressure identity is preserved"
+      ],
+      "priority": 37,
+      "passes": true,
+      "notes": "Single-boss slice."
+    },
+    {
+      "id": "US-438",
+      "title": "K37: Migrate scorchthroat_chanteuse boss family",
+      "description": "As a developer, I need scorchthroat_chanteuse migrated as its own boss slice so summon-instrument and burn-magic pressure are preserved together.",
+      "acceptanceCriteria": [
+        "A dedicated boss content definition exists for scorchthroat_chanteuse",
+        "The instrument summon units are modeled or stubbed through the encounter layer",
+        "A focused test proves summon plus burn-stress identity is preserved"
+      ],
+      "priority": 38,
+      "passes": true,
+      "notes": "Single-boss slice."
+    },
+    {
+      "id": "US-439",
+      "title": "K38: Migrate frostvein_clam boss family",
+      "description": "As a developer, I need frostvein_clam migrated as its own boss slice so riposte and pearlkin summon semantics are preserved together.",
+      "acceptanceCriteria": [
+        "A dedicated boss content definition exists for frostvein_clam",
+        "The pearlkin summon units are modeled or stubbed through the encounter layer",
+        "A focused test proves riposte plus summon semantics are preserved"
+      ],
+      "priority": 39,
+      "passes": true,
+      "notes": "Single-boss slice."
+    },
+    {
+      "id": "US-440",
+      "title": "K39: Migrate bloodthirsty_assassin boss family",
+      "description": "As a developer, I need bloodthirsty_assassin migrated as its own boss slice so paired-shadow and HP-averaging semantics remain intact.",
+      "acceptanceCriteria": [
+        "A dedicated boss content definition exists for bloodthirsty_assassin",
+        "The paired shadow unit is modeled or stubbed through the encounter layer",
+        "A focused test proves paired-boss and HP-averaging semantics are preserved"
+      ],
+      "priority": 40,
+      "passes": true,
+      "notes": "Single-boss slice."
+    },
+    {
+      "id": "US-441",
+      "title": "K40: Migrate glutton_pawnshop boss family",
+      "description": "As a developer, I need glutton_pawnshop migrated as its own boss slice so controller mechanics and tag-driven debuff logic stay intact.",
+      "acceptanceCriteria": [
+        "A dedicated boss content definition exists for glutton_pawnshop",
+        "Controller and tag-based effects are represented or explicitly ledgered as game-gap work",
+        "A focused test proves controller-plus-tag semantics are preserved or consciously ledgered"
+      ],
+      "priority": 41,
+      "passes": true,
+      "notes": "Single-boss slice."
+    },
+    {
+      "id": "US-442",
+      "title": "K41: Add boss encounter parity and golden traces",
+      "description": "As a developer, I need boss-specific parity fixtures and traces so future changes cannot silently flatten shared-health, summon, multi-body, or control mechanics.",
+      "acceptanceCriteria": [
+        "games/game_ddgc_headless/tests/encounter_trace.rs exists",
+        "games/game_ddgc_headless/fixtures/encounters/ directory exists",
+        "At least one trace exists for a shared-health boss, a summon boss, and a paired or multi-body boss"
+      ],
+      "priority": 42,
+      "passes": true,
+      "notes": "This is the boss-side consolidation step."
+    },
+    {
+      "id": "US-443",
+      "title": "K42: Integrate boss encounter packs into boss rooms",
+      "description": "As a developer, I need boss rooms to resolve through real DDGC boss encounter packs so run flow stops treating bosses as generic combat rooms with bigger rewards.",
+      "acceptanceCriteria": [
+        "Boss rooms resolve to migrated DDGC boss encounter packs",
+        "A test proves boss-room mapping is deterministic and uses the encounter registry",
+        "cargo run --manifest-path games/game_ddgc_headless/Cargo.toml exercises the new boss-room path without crashing"
+      ],
+      "priority": 43,
+      "passes": false,
+      "notes": "Wire boss rooms only after at least one boss encounter path exists."
+    },
+    {
+      "id": "US-444",
+      "title": "K43: Replace placeholder enemies in gameplay entrypoints",
+      "description": "As a developer, I need gameplay entrypoints to stop depending on Bone Soldier and Necromancer placeholders once real DDGC common and boss packs exist.",
+      "acceptanceCriteria": [
+        "Primary gameplay entrypoints no longer rely on placeholder Bone Soldier or Necromancer content for migrated rooms",
+        "Any remaining placeholder use is isolated to legacy tests or explicitly marked transitional",
+        "A focused test proves migrated encounter content is now the default path"
+      ],
+      "priority": 44,
+      "passes": false,
+      "notes": "This is the cleanup slice before final verification."
+    },
+    {
+      "id": "US-445",
+      "title": "K44: Deliver the enemy-side migration baseline",
+      "description": "As a developer, I need the enemy-side baseline closed out so DDGC headless is no longer hero-complete but enemy-placeholder driven.",
+      "acceptanceCriteria": [
+        "Common monster families are registered through the family registry",
+        "Encounter packs drive combat rooms and at least one boss-room path",
+        "cargo test --manifest-path games/game_ddgc_headless/Cargo.toml exits 0",
+        "cargo run --manifest-path games/game_ddgc_headless/Cargo.toml exits 0"
+      ],
+      "priority": 45,
+      "passes": false,
+      "notes": "Close the phase only after the micro-slices above have converged."
+    }
+  ]
+}
