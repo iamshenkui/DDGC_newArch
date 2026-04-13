@@ -1,8 +1,8 @@
 //! DDGC run flow — room-by-room dungeon progression.
 //!
 //! Generates a floor using `DefaultRoomGenerator` with DDGC room weights,
-//! then drives the run through each room in sequence. Combat/Boss rooms
-//! trigger a battle (using the first_battle scenario as a combat proxy).
+//! then drives the run through each room in sequence. Combat rooms and
+//! boss rooms resolve through the DDGC encounter pack registry.
 //! Post-battle rewards are applied after clearing combat rooms.
 //!
 //! This is the Batch 5 migration: the new stack proves it can handle
@@ -127,13 +127,14 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
                     Some(pack) => resolver.run_battle(pack, room_idx as u64 + 1),
                     None => {
                         // Fallback: no pack found for this dungeon — should not happen
-                        // for the four core dungeons but handled gracefully
+                        // for the four core DDGC dungeons. This path is transitional
+                        // and only triggers for dungeons without migrated encounter packs.
                         let fallback = crate::scenarios::first_battle::run_first_battle();
                         crate::run::encounters::EncounterBattleResult {
                             winner: fallback.winner,
                             turns: fallback.turns,
                             trace: fallback.trace,
-                            pack_id: "fallback".to_string(),
+                            pack_id: "fallback_transitional".to_string(),
                         }
                     }
                 };
@@ -160,13 +161,14 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
                 ) {
                     Some(pack) => resolver.run_battle(pack, room_idx as u64 + 1),
                     None => {
-                        // Fallback: no boss pack found for this dungeon — use first_battle proxy
+                        // Fallback: no boss pack found for this dungeon — transitional.
+                        // This only triggers for dungeons without migrated boss packs.
                         let fallback = crate::scenarios::first_battle::run_first_battle();
                         crate::run::encounters::EncounterBattleResult {
                             winner: fallback.winner,
                             turns: fallback.turns,
                             trace: fallback.trace,
-                            pack_id: "fallback".to_string(),
+                            pack_id: "fallback_transitional".to_string(),
                         }
                     }
                 };
@@ -349,5 +351,48 @@ mod tests {
             result.state.battles_won > 0,
             "Should have won at least one battle"
         );
+    }
+
+    #[test]
+    fn migrated_encounter_content_is_default_path_for_all_dungeons() {
+        // Proves that the four core DDGC dungeons resolve combat and boss rooms
+        // through the migrated encounter pack registry (not placeholder content).
+        // This is the acceptance test for K43: gameplay entrypoints no longer
+        // depend on Bone Soldier or Necromancer placeholders.
+        use crate::run::encounters::EncounterResolver;
+        use crate::encounters::PackType;
+
+        let resolver = EncounterResolver::new();
+
+        for dungeon in [Dungeon::QingLong, Dungeon::BaiHu, Dungeon::ZhuQue, Dungeon::XuanWu] {
+            // Combat rooms must resolve through encounter registry
+            let combat_pack = resolver.resolve_pack(dungeon, 0, 42, false);
+            assert!(
+                combat_pack.is_some(),
+                "{:?} combat room should resolve through encounter registry",
+                dungeon
+            );
+            let pack = combat_pack.unwrap();
+            assert_ne!(
+                pack.pack_type,
+                PackType::Boss,
+                "{:?} combat room should not resolve to boss pack",
+                dungeon
+            );
+
+            // Boss rooms must resolve through encounter registry
+            let boss_pack = resolver.resolve_boss_pack(dungeon, 0, 42);
+            assert!(
+                boss_pack.is_some(),
+                "{:?} boss room should resolve through encounter registry",
+                dungeon
+            );
+            assert_eq!(
+                boss_pack.unwrap().pack_type,
+                PackType::Boss,
+                "{:?} boss room should resolve to boss pack",
+                dungeon
+            );
+        }
     }
 }
