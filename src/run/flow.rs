@@ -87,7 +87,7 @@ pub struct DdgcRunResult {
 ///
 /// Generates a deterministic floor with DDGC room weights, then progresses
 /// through each room in sequence. Combat rooms resolve through the encounter
-/// pack registry; Boss rooms still use a combat proxy (boss packs not wired yet).
+/// pack registry; Boss rooms resolve through the boss encounter registry.
 /// Post-battle rewards are applied after each combat room is cleared.
 pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
     let gen = DefaultRoomGenerator;
@@ -152,8 +152,24 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
                 apply_reward(&mut state, &update);
             }
             RoomKind::Boss => {
-                // Boss rooms still use the first_battle proxy until boss packs are wired (K30+)
-                let battle_result = crate::scenarios::first_battle::run_first_battle();
+                // Boss rooms resolve through the boss encounter pack registry
+                let battle_result = match resolver.resolve_boss_pack(
+                    config.dungeon,
+                    room_idx as u32,
+                    config.seed,
+                ) {
+                    Some(pack) => resolver.run_battle(pack, room_idx as u64 + 1),
+                    None => {
+                        // Fallback: no boss pack found for this dungeon — use first_battle proxy
+                        let fallback = crate::scenarios::first_battle::run_first_battle();
+                        crate::run::encounters::EncounterBattleResult {
+                            winner: fallback.winner,
+                            turns: fallback.turns,
+                            trace: fallback.trace,
+                            pack_id: "fallback".to_string(),
+                        }
+                    }
+                };
 
                 if battle_result.winner == Some(CombatSide::Ally) {
                     state.battles_won += 1;
@@ -294,7 +310,7 @@ mod tests {
             "Stress change should match combat + boss rewards"
         );
 
-        // No battles should be lost (first_battle always results in Ally victory)
+        // No battles should be lost (DDGC-scale heroes should defeat all encounter packs)
         assert_eq!(
             result.state.battles_lost, 0,
             "No battles should be lost in this scenario"
