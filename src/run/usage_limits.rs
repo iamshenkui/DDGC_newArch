@@ -26,8 +26,12 @@ pub fn ddgc_usage_limits() -> HashMap<String, UsageLimit> {
         UsageLimit::per_turn(2),
     );
 
-    // Add more skill limits here as migrated content reveals them
-    // limits.insert("fireball".to_string(), UsageLimit::per_battle(1));
+    // Example: duality_fate has a per-battle limit of 1 use
+    // Diviner's signature skill is rare (once per encounter) in DDGC
+    limits.insert(
+        "duality_fate".to_string(),
+        UsageLimit::per_battle(1),
+    );
 
     limits
 }
@@ -49,6 +53,15 @@ mod tests {
         let limit = limit.unwrap();
         assert_eq!(limit.scope, UsageScope::Turn);
         assert_eq!(limit.max_uses, 2);
+    }
+
+    #[test]
+    fn duality_fate_has_per_battle_limit() {
+        let limit = get_usage_limit(&SkillId::new("duality_fate"));
+        assert!(limit.is_some());
+        let limit = limit.unwrap();
+        assert_eq!(limit.scope, UsageScope::Battle);
+        assert_eq!(limit.max_uses, 1);
     }
 
     #[test]

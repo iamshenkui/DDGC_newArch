@@ -654,4 +654,84 @@ mod tests {
         let heal_limit = UsageLimit::per_turn(3);
         assert!(counters.can_use(actor, &heal, heal_limit), "Heal should not be affected by fireball limit");
     }
+
+    // ── Per-battle enforcement tests (US-514) ─────────────────────────────────────
+
+    #[test]
+    fn per_battle_limit_allows_only_one_use() {
+        let mut counters = SkillUsageCounters::new();
+        let actor = ActorId(1);
+        let skill = SkillId::new("duality_fate");
+        let limit = UsageLimit::per_battle(1);
+
+        // First use - should be allowed
+        assert!(counters.can_use(actor, &skill, limit), "First use should be allowed");
+        counters.record_usage(actor, skill.clone(), UsageScope::Battle);
+
+        // Second use - should be blocked (over limit)
+        assert!(!counters.can_use(actor, &skill, limit), "Second use should be blocked");
+    }
+
+    #[test]
+    fn per_battle_limit_not_affected_by_turn_reset() {
+        let mut counters = SkillUsageCounters::new();
+        let actor = ActorId(1);
+        let skill = SkillId::new("duality_fate");
+        let limit = UsageLimit::per_battle(1);
+
+        // Use skill up to limit
+        counters.record_usage(actor, skill.clone(), UsageScope::Battle);
+        assert!(!counters.can_use(actor, &skill, limit), "Should be at limit");
+
+        // Turn reset should NOT restore battle-scoped skill
+        counters.reset_turn_scope(actor);
+        assert!(!counters.can_use(actor, &skill, limit), "Turn reset should not affect battle limit");
+    }
+
+    #[test]
+    fn per_battle_limit_resets_at_battle_boundary() {
+        let mut counters = SkillUsageCounters::new();
+        let actor = ActorId(1);
+        let skill = SkillId::new("duality_fate");
+        let limit = UsageLimit::per_battle(1);
+
+        // Use skill up to limit
+        counters.record_usage(actor, skill.clone(), UsageScope::Battle);
+        assert!(!counters.can_use(actor, &skill, limit), "Should be at limit");
+
+        // Simulate battle end - reset battle scope
+        counters.reset_battle_scope(actor);
+
+        // After battle reset, should be able to use again
+        assert!(counters.can_use(actor, &skill, limit), "Should be able to use after battle reset");
+    }
+
+    #[test]
+    fn per_battle_and_per_turn_limits_are_independent() {
+        let mut counters = SkillUsageCounters::new();
+        let actor = ActorId(1);
+        let skill = SkillId::new("fireball");
+
+        // Set up per-turn and per-battle limits for the same skill
+        let turn_limit = UsageLimit::per_turn(2);
+        let battle_limit = UsageLimit::per_battle(1);
+
+        // Use skill once per turn
+        counters.record_usage(actor, skill.clone(), UsageScope::Turn);
+        counters.record_usage(actor, skill.clone(), UsageScope::Battle);
+
+        // Turn limit should block third turn use
+        counters.record_usage(actor, skill.clone(), UsageScope::Turn);
+        assert!(!counters.can_use(actor, &skill, turn_limit), "Turn limit should be reached");
+
+        // But battle limit was already hit
+        assert!(!counters.can_use(actor, &skill, battle_limit), "Battle limit already hit");
+
+        // Reset turn scope
+        counters.reset_turn_scope(actor);
+
+        // Now turn is available but battle is not
+        assert!(counters.can_use(actor, &skill, turn_limit), "Turn limit should reset");
+        assert!(!counters.can_use(actor, &skill, battle_limit), "Battle limit still hit");
+    }
 }
