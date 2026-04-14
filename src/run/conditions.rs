@@ -972,6 +972,188 @@ mod adapter_tests {
     }
 
     #[test]
+    fn deaths_door_condition_passes_when_actor_at_deaths_door() {
+        // This test proves DeathsDoor returns Pass when actor HP < 50%
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        // Actor at deaths door: 20/100 HP = 20% < 50%
+        let mut actor = ActorAggregate::new(ActorId(1));
+        actor.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(20.0));
+        actor.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx = ConditionContext::new(
+            ActorId(1),
+            vec![],
+            0,
+            &actors,
+            &side_lookup,
+            Dungeon::QingLong,
+        );
+
+        let adapter = ConditionAdapter::new(&ctx);
+
+        // 20/100 = 0.2 < 0.5, so at deaths door → Pass
+        let cond = DdgcCondition::DeathsDoor;
+        assert_eq!(
+            adapter.evaluate_ddgc(&cond),
+            ConditionResult::Pass,
+            "DeathsDoor should pass when HP is 20/100 (20% < 50%)"
+        );
+    }
+
+    #[test]
+    fn deaths_door_by_tag_returns_pass_when_at_deaths_door() {
+        // This test proves evaluate_by_tag("ddgc_deaths_door") returns Pass when actor HP < 50%
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        // Actor at deaths door: 30/100 HP = 30% < 50%
+        let mut actor = ActorAggregate::new(ActorId(1));
+        actor.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(30.0));
+        actor.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx = ConditionContext::new(
+            ActorId(1),
+            vec![],
+            0,
+            &actors,
+            &side_lookup,
+            Dungeon::QingLong,
+        );
+
+        let adapter = ConditionAdapter::new(&ctx);
+
+        // 30/100 = 0.3 < 0.5, so at deaths door → Pass
+        let result = adapter.evaluate_by_tag("ddgc_deaths_door");
+        assert_eq!(
+            result,
+            ConditionResult::Pass,
+            "evaluate_by_tag(\"ddgc_deaths_door\") should pass when HP is 30/100 (30% < 50%)"
+        );
+    }
+
+    #[test]
+    fn deaths_door_by_tag_returns_fail_when_not_at_deaths_door() {
+        // This test proves evaluate_by_tag("ddgc_deaths_door") returns Fail when actor HP >= 50%
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        // Actor NOT at deaths door: 60/100 HP = 60% >= 50%
+        let mut actor = ActorAggregate::new(ActorId(1));
+        actor.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(60.0));
+        actor.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx = ConditionContext::new(
+            ActorId(1),
+            vec![],
+            0,
+            &actors,
+            &side_lookup,
+            Dungeon::QingLong,
+        );
+
+        let adapter = ConditionAdapter::new(&ctx);
+
+        // 60/100 = 0.6 >= 0.5, so NOT at deaths door → Fail
+        let result = adapter.evaluate_by_tag("ddgc_deaths_door");
+        assert_eq!(
+            result,
+            ConditionResult::Fail,
+            "evaluate_by_tag(\"ddgc_deaths_door\") should fail when HP is 60/100 (60% >= 50%)"
+        );
+    }
+
+    #[test]
+    fn deaths_door_effect_changes_outcome_across_threshold_boundary() {
+        // This is the key acceptance test for US-607: same effect (DeathsDoor condition),
+        // different HP states, proving the effect changes outcome across the threshold boundary.
+
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        // Low-HP actor (at deaths door: 20 HP out of 100 = 20%)
+        let mut low_hp_ally = ActorAggregate::new(ActorId(1));
+        low_hp_ally.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(20.0));
+        low_hp_ally.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), low_hp_ally);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        // High-HP actor (NOT at deaths door: 80 HP out of 100 = 80%)
+        let mut high_hp_ally = ActorAggregate::new(ActorId(2));
+        high_hp_ally.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(80.0));
+        high_hp_ally.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(2), high_hp_ally);
+        side_lookup.insert(ActorId(2), CombatSide::Ally);
+
+        // Low-HP context (actor 1, HP 20/100 = 20% < 50%)
+        let ctx_low = ConditionContext::new(
+            ActorId(1),
+            vec![],
+            0,
+            &actors,
+            &side_lookup,
+            Dungeon::QingLong,
+        );
+        let adapter_low = ConditionAdapter::new(&ctx_low);
+
+        // High-HP context (actor 2, HP 80/100 = 80% >= 50%)
+        let ctx_high = ConditionContext::new(
+            ActorId(2),
+            vec![],
+            0,
+            &actors,
+            &side_lookup,
+            Dungeon::QingLong,
+        );
+        let adapter_high = ConditionAdapter::new(&ctx_high);
+
+        // Same condition tag: ddgc_deaths_door
+        // Low HP (20% < 50%) → Pass
+        let result_low = adapter_low.evaluate_by_tag("ddgc_deaths_door");
+        assert_eq!(
+            result_low,
+            ConditionResult::Pass,
+            "Low-HP actor (20/100 = 20%) should pass DeathsDoor condition"
+        );
+
+        // High HP (80% >= 50%) → Fail
+        let result_high = adapter_high.evaluate_by_tag("ddgc_deaths_door");
+        assert_eq!(
+            result_high,
+            ConditionResult::Fail,
+            "High-HP actor (80/100 = 80%) should fail DeathsDoor condition"
+        );
+
+        // The same condition tag produces different outcomes based on HP level
+        assert_ne!(
+            result_low, result_high,
+            "Same DeathsDoor condition tag should produce different outcomes across HP threshold boundary"
+        );
+    }
+
+    #[test]
     fn adapter_evaluates_ddgc_target_has_status_condition() {
         let (adapter, _, _) = make_adapter_context();
 
