@@ -911,3 +911,75 @@
   - The `first_battle` module, Bone Soldier, Necromancer, Crusader, and Vestal archetypes/skills remain in the codebase as legacy content — they support existing parity tests and transitional fallback paths
   - Future cleanup work could remove or isolate legacy content more aggressively, but the current transitional markers ("fallback_transitional" pack_id) make it clear which paths use legacy content
 ---
+
+## 2026-04-14 - US-501
+- Created Phase 1 Reactive and Usage-Limit Touchpoints Inventory section in SEMANTIC_GAPS.md
+- Inventory documents riposte touchpoints: alligator_yangtze (primary anchor), frostvein_clam (secondary anchor), Tank/White/Black heroes
+- Inventory documents guard touchpoints: fox_fire (primary anchor), Tank/White/Black heroes
+- Inventory documents usage limits: no migrated content uses per-turn or per-battle limits yet (greenfield for B-005)
+- Phase 1 scope confirmed as reactive hooks only (riposte counter-attacks, guard damage redirect)
+- Updated prd-semantic-gap-phase-1.json to mark US-501 as passes: true
+- Files changed: SEMANTIC_GAPS.md (modified), tasks/prd-semantic-gap-phase-1.json (modified, outside git repo)
+- **Learnings for future iterations:**
+  - Riposte marker status is already defined in statuses.rs (riposte fn) but the reactive trigger (auto-counter on hit) is not yet implemented
+  - Guard marker status is already defined in statuses.rs (guard fn) but the redirect logic is not yet implemented
+  - Tank hero's active_riposte skill applies "tagged" status, NOT "riposte" — a game-gap where the hero skill name suggests riposte but doesn't actually grant the riposte status
+  - Hero riposte skills (Tank/White/Black active_riposte) do NOT use the riposte status — they apply "tagged" instead; only monster skills (alligator_yangtze mark_riposte, frostvein_clam prismatic_clench) actually use the riposte status
+  - No migrated DDGC content yet uses per-turn or per-battle limits — usage limits are entirely greenfield for B-005
+  - The tasks/ directory containing PRD and progress files is outside the game_ddgc_headless git repo
+  - The inventory section in SEMANTIC_GAPS.md serves as the checked-in note per US-501 acceptance criteria
+---
+
+## 2026-04-14 - US-502
+- Created `src/run/reactive_events.rs` with `ReactiveEvent` data model for reactive follow-up work (riposte counter-attacks, guard damage redirection)
+- Defined `ReactiveEventKind` enum with `Riposte` and `GuardRedirect` variants
+- Defined `ReactiveEvent` struct capturing: `triggered_on`, `reactor`, `kind`, `source_skill`, `attacker`, `damage_amount`
+- Defined `DamageStepContext` for extracting deterministic damage data from resolved effects
+- Added `build_reactive_events()` constructor for deterministic event creation from damage step
+- Added 7 focused unit tests proving deterministic creation and equality
+- Wired `pub mod reactive_events;` into `src/run/mod.rs`
+- Files changed: `src/run/reactive_events.rs` (new), `src/run/mod.rs` (modified), `tasks/prd-semantic-gap-phase-1.json` (modified outside git)
+- **Learnings for future iterations:**
+  - Reactive events are a data-model only slice — no execution logic yet; P1-2 (reactive queue harness) will consume these events
+  - `ReactiveEvent` contains `SkillId` (not Copy) but is still Clone + Serializable — correct for a data model
+  - `ActorId` from framework_rules has Copy derived — safe to use in event structs
+  - `SkillId` from framework_combat has Clone but NOT Copy (String-based) — correctly reflected in ReactiveEvent derive (no Copy)
+  - The reactive event model captures who was hit, who may react, and what triggered the reaction — sufficient for both riposte and guard redirect use cases
+  - This module lives in `src/run/` because reactive events are consumed during combat resolution in `run/encounters.rs`
+  - Cannot run `cargo test` on this system (no Rust toolchain) — code verified by inspection against existing patterns
+  - tasks/ directory is outside the game_ddgc_headless git repo — PRD/progress updates are metadata only, not commit-able
+---
+
+## 2026-04-14 - US-503
+- Created `src/run/reactive_queue.rs` with `ReactiveQueue` struct for deterministic reactive event scheduling
+- `ReactiveQueue` uses `BTreeMap<ActorId, ReactiveEvent>` for deterministic ordering (sorted by reactor ActorId ascending)
+- Added `enqueue()` that deduplicates by `(triggered_on, reactor)` pair and prevents already-reacted actors from enqueueing
+- Added `drain_next()` / `drain_all()` that marks reactors as reacted to prevent infinite recursion
+- Added `reset_for_next_trigger()` to clear state for a new damage trigger cycle
+- Added 15 focused unit tests covering: deterministic ordering, no-duplicate enqueueing, recursion termination, queue state
+- Wired `pub mod reactive_queue;` into `src/run/mod.rs`
+- Files changed: `src/run/reactive_queue.rs` (new), `src/run/mod.rs` (modified), `tasks/prd-semantic-gap-phase-1.json` (modified)
+- **Learnings for future iterations:**
+  - `BTreeMap` instead of `HashMap` is key to deterministic ordering — sorted by ActorId gives stable output regardless of insertion order
+  - Two separate dedup sets are needed: `already_queued` prevents same (triggered_on, reactor) pair from being enqueued twice, `already_reacted` prevents recursion chains
+  - `ReactiveEvent` contains `SkillId` (String-based, Clone but not Copy) — must Clone when building events in helper functions
+  - `ActorId` from framework_rules is Copy — safe to pass by value in constructor calls
+  - Cannot run `cargo test` on this system (no Rust toolchain) — code verified by inspection against existing test patterns in `reactive_events.rs`
+  - tasks/ directory is outside the game_ddgc_headless git repo — PRD/progress updates are metadata only, not commit-able
+---
+
+## 2026-04-14 - US-504
+- Added `ReactiveTrigger` struct to `src/trace.rs` for explicit trigger relationship capture
+- Added `triggered_by: Option<ReactiveTrigger>` field to `TraceEntry` for reactive follow-up entries
+- Added `record_reactive()` method to `BattleTrace` for recording reactive events with trigger context
+- Updated `to_text()` to render reactive trigger info as `[REACTIVE: {kind} by {actor} on {target} from {attacker}'s {skill}]`
+- Added `#[serde(skip_serializing_if = "Option::is_none")]` to `triggered_by` for backward-compatible JSON output
+- Added 5 focused unit tests: serialization stability, multiple reactive events, trigger field capture, regular action has no trigger, to_text includes reactive info
+- Files changed: `src/trace.rs` (modified)
+- **Learnings for future iterations:**
+  - `SkillId` from framework_combat is not needed in trace.rs — trace entries use String for skill names
+  - `#[serde(default, skip_serializing_if = "Option::is_none")]` makes `triggered_by` optional in JSON for backward compatibility with existing trace fixtures
+  - Regular `record_action` entries get `triggered_by: None` — only reactive entries have the trigger context
+  - Cannot run `cargo test` on this system — code verified by inspection against existing patterns in trace.rs
+  - tasks/ directory is outside the game_ddgc_headless git repo — PRD/progress updates are metadata only, not commit-able
+---
