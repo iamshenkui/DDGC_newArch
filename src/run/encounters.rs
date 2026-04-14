@@ -32,6 +32,7 @@ use crate::run::family_action_policy::{
 };
 use crate::run::guard_detection::detect_guard_relations_for_target;
 use crate::run::reactive_events::{build_reactive_events, DamageStepContext, ReactiveEventKind};
+use crate::run::summon_events::extract_summon_events;
 use crate::run::reactive_queue::ReactiveQueue;
 use crate::run::riposte_detection::detect_riposte_candidates;
 use crate::run::riposte_execution::{execute_riposte, has_riposte_status};
@@ -417,6 +418,12 @@ impl EncounterResolver {
                         &mut actors,
                     );
                     let effect_results = resolve_skill(skill, &mut ctx);
+
+                    // ── US-707: Summon event seam (non-mutating) ─────────────────────────
+                    // Extract summon events from resolved skill effects without mutating
+                    // encounter state. The events are stored for US-708 materialization.
+                    // This is a pure extraction — no actor or formation state is modified.
+                    let _summon_events = extract_summon_events(current_actor, &effect_results.results);
 
                     // ── Record usage (US-513) ─────────────────────────────────
                     // After successful skill execution, record the usage for limit tracking.
