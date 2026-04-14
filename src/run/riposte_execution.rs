@@ -47,7 +47,7 @@ pub fn execute_riposte(
     event: &ReactiveEvent,
     content_pack: &ContentPack,
     actors: &mut HashMap<ActorId, ActorAggregate>,
-    formation: &FormationLayout,
+    formation: &mut FormationLayout,
     side_lookup: &HashMap<ActorId, CombatSide>,
 ) -> Option<(SkillId, Vec<EffectResult>)> {
     if !event.is_riposte() {
@@ -169,7 +169,7 @@ mod tests {
 
         let content_pack = ContentPack::default();
         let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
-        let formation = FormationLayout::new(2, 4);
+        let mut formation = FormationLayout::new(2, 4);
         let side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
 
         // Create a guard redirect event (not riposte)
@@ -185,7 +185,7 @@ mod tests {
             &event,
             &content_pack,
             &mut actors,
-            &formation,
+            &mut formation,
             &side_lookup,
         );
 

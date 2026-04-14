@@ -13,10 +13,10 @@ name = "game_ddgc_headless"
 path = "src/main.rs"
 
 [dependencies]
-framework_rules = { path = "../../frameworks/framework_turn_based_roguelike/crates/framework_rules" }
-framework_combat = { path = "../../frameworks/framework_turn_based_roguelike/crates/framework_combat" }
-framework_progression = { path = "../../frameworks/framework_turn_based_roguelike/crates/framework_progression" }
-framework_viewmodels = { path = "../../frameworks/framework_turn_based_roguelike/crates/framework_viewmodels" }
-framework_ai = { path = "../../frameworks/framework_turn_based_roguelike/crates/framework_ai" }
+framework_rules = { path = "../glowing-fishstick-framwork/framework_turn_based_roguelike/crates/framework_rules" }
+framework_combat = { path = "../glowing-fishstick-framwork/framework_turn_based_roguelike/crates/framework_combat" }
+framework_progression = { path = "../glowing-fishstick-framwork/framework_turn_based_roguelike/crates/framework_progression" }
+framework_viewmodels = { path = "../glowing-fishstick-framwork/framework_turn_based_roguelike/crates/framework_viewmodels" }
+framework_ai = { path = "../glowing-fishstick-framwork/framework_turn_based_roguelike/crates/framework_ai" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

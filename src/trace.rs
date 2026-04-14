@@ -263,6 +263,7 @@ impl BattleTrace {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use framework_rules::actor::ActorAggregate;
 
     fn make_test_actors() -> HashMap<ActorId, ActorAggregate> {
         HashMap::new()

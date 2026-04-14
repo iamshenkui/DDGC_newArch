@@ -56,7 +56,7 @@ use crate::encounters::Dungeon;
 ///     // High-stress effect applies
 /// }
 /// ```
-pub struct ConditionContext<'a> {
+pub struct ConditionContext {
     /// The actor attempting to perform the action.
     actor_id: ActorId,
     /// The target(s) of the action.
@@ -64,14 +64,14 @@ pub struct ConditionContext<'a> {
     /// The current round number (0 = first round).
     current_round: u32,
     /// All actors in the encounter, keyed by ID.
-    actors: &'a HashMap<ActorId, ActorAggregate>,
+    actors: HashMap<ActorId, ActorAggregate>,
     /// Map from actor ID to combat side (ally/enemy).
-    side_lookup: &'a HashMap<ActorId, CombatSide>,
+    side_lookup: HashMap<ActorId, CombatSide>,
     /// The dungeon this encounter is taking place in.
     dungeon: Dungeon,
 }
 
-impl<'a> ConditionContext<'a> {
+impl ConditionContext {
     /// Create a new condition context from combat state.
     ///
     /// All parameters must come from deterministic combat state so the
@@ -89,8 +89,8 @@ impl<'a> ConditionContext<'a> {
         actor_id: ActorId,
         target_ids: Vec<ActorId>,
         current_round: u32,
-        actors: &'a HashMap<ActorId, ActorAggregate>,
-        side_lookup: &'a HashMap<ActorId, CombatSide>,
+        actors: HashMap<ActorId, ActorAggregate>,
+        side_lookup: HashMap<ActorId, CombatSide>,
         dungeon: Dungeon,
     ) -> Self {
         ConditionContext {
@@ -114,12 +114,12 @@ impl<'a> ConditionContext<'a> {
     }
 
     /// Returns the actor attempting the action.
-    pub fn actor(&self) -> Option<&'a ActorAggregate> {
+    pub fn actor(&self) -> Option<&ActorAggregate> {
         self.actors.get(&self.actor_id)
     }
 
     /// Returns the targets of the action.
-    pub fn targets(&self) -> Vec<&'a ActorAggregate> {
+    pub fn targets(&self) -> Vec<&ActorAggregate> {
         self.target_ids
             .iter()
             .filter_map(|id| self.actors.get(id))
@@ -297,7 +297,7 @@ impl<'a> ConditionContext<'a> {
 
 /// Check if an actor has an active status of the given kind.
 fn has_status_kind(actor: &ActorAggregate, kind: &str) -> bool {
-    actor.statuses.active().iter().any(|s| s.kind.0 == kind)
+    actor.statuses.active().iter().any(|s| s.1.kind.0 == kind)
 }
 
 // ── DDGC-Specific Conditions ─────────────────────────────────────────────────
@@ -372,14 +372,14 @@ pub enum ConditionResult {
 /// let result = adapter.evaluate_ddgc(&DdgcCondition::FirstRound);
 /// assert!(result); // On round 0, FirstRound passes
 /// ```
-pub struct ConditionAdapter<'a> {
+pub struct ConditionAdapter {
     /// The DDGC condition context for DDGC-specific condition evaluation.
-    ctx: &'a ConditionContext<'a>,
+    ctx: ConditionContext,
 }
 
-impl<'a> ConditionAdapter<'a> {
+impl ConditionAdapter {
     /// Create a new condition adapter from a DDGC condition context.
-    pub fn new(ctx: &'a ConditionContext) -> Self {
+    pub fn new(ctx: ConditionContext) -> Self {
         ConditionAdapter { ctx }
     }
 
@@ -593,8 +593,27 @@ mod tests {
     use framework_combat::encounter::CombatSide;
     use framework_rules::attributes::{AttributeKey, AttributeValue, ATTR_HEALTH};
 
-    fn make_test_context() -> (
-        ConditionContext<'static>,
+    /// Create a test condition context with ally hero (high stress) and enemy monster.
+    ///
+    /// Takes ownership of the hashmaps.
+    fn make_test_context(
+        actors: HashMap<ActorId, ActorAggregate>,
+        side_lookup: HashMap<ActorId, CombatSide>,
+    ) -> ConditionContext {
+        ConditionContext::new(
+            ActorId(1),
+            vec![ActorId(2)],
+            0, // first round
+            actors,
+            side_lookup,
+            Dungeon::QingLong,
+        )
+    }
+
+    /// Build standard test actors and side_lookup for the first round test.
+    ///
+    /// Helper for tests that need to create a context with specific parameters.
+    fn build_test_actors_and_side_lookup() -> (
         HashMap<ActorId, ActorAggregate>,
         HashMap<ActorId, CombatSide>,
     ) {
@@ -625,33 +644,25 @@ mod tests {
         actors.insert(ActorId(2), enemy);
         side_lookup.insert(ActorId(2), CombatSide::Enemy);
 
-        let ctx = ConditionContext::new(
-            ActorId(1),
-            vec![ActorId(2)],
-            0, // first round
-            &actors,
-            &side_lookup,
-            Dungeon::QingLong,
-        );
-
-        (ctx, actors, side_lookup)
+        (actors, side_lookup)
     }
 
     #[test]
     fn is_first_round_on_round_0() {
-        let (ctx, _, _) = make_test_context();
+        let (actors, side_lookup) = build_test_actors_and_side_lookup();
+        let ctx = make_test_context(actors, side_lookup);
         assert!(ctx.is_first_round());
     }
 
     #[test]
     fn is_not_first_round_after_round_0() {
-        let (ctx, actors, side_lookup) = make_test_context();
+        let (actors, side_lookup) = build_test_actors_and_side_lookup();
         let ctx = ConditionContext::new(
             ActorId(1),
             vec![ActorId(2)],
             1, // round 1, not first round
-            &actors,
-            &side_lookup,
+            actors.clone(),
+            side_lookup.clone(),
             Dungeon::QingLong,
         );
         assert!(!ctx.is_first_round());
@@ -659,7 +670,8 @@ mod tests {
 
     #[test]
     fn actor_stress_above_threshold() {
-        let (ctx, _, _) = make_test_context();
+        let (actors, side_lookup) = build_test_actors_and_side_lookup();
+        let ctx = make_test_context(actors, side_lookup);
         assert!(ctx.actor_stress_above(50.0));
         assert!(ctx.actor_stress_above(70.0));
         assert!(!ctx.actor_stress_above(80.0));
@@ -667,7 +679,8 @@ mod tests {
 
     #[test]
     fn actor_stress_below_threshold() {
-        let (ctx, _, _) = make_test_context();
+        let (actors, side_lookup) = build_test_actors_and_side_lookup();
+        let ctx = make_test_context(actors, side_lookup);
         assert!(ctx.actor_stress_below(80.0));
         assert!(ctx.actor_stress_below(100.0));
         assert!(!ctx.actor_stress_below(70.0));
@@ -675,14 +688,14 @@ mod tests {
 
     #[test]
     fn stress_conditions_fail_for_monsters() {
-        let (ctx, actors, side_lookup) = make_test_context();
+        let (actors, side_lookup) = build_test_actors_and_side_lookup();
         // Actor 2 is a monster
         let ctx = ConditionContext::new(
             ActorId(2), // monster
             vec![],
             0,
-            &actors,
-            &side_lookup,
+            actors.clone(),
+            side_lookup.clone(),
             Dungeon::QingLong,
         );
         // Monsters should fail stress conditions regardless of their (non-existent) stress
@@ -692,7 +705,8 @@ mod tests {
 
     #[test]
     fn actor_hp_fraction_calculates_correctly() {
-        let (ctx, _, _) = make_test_context();
+        let (actors, side_lookup) = build_test_actors_and_side_lookup();
+        let ctx = make_test_context(actors, side_lookup);
         // Actor 1 has 100/100 HP = 1.0
         assert!((ctx.actor_hp_fraction() - 1.0).abs() < 0.001);
     }
@@ -715,8 +729,8 @@ mod tests {
             ActorId(1),
             vec![],
             0,
-            &actors,
-            &side_lookup,
+            actors.clone(),
+            side_lookup.clone(),
             Dungeon::QingLong,
         );
 
@@ -726,14 +740,16 @@ mod tests {
 
     #[test]
     fn not_at_deaths_door_when_healthy() {
-        let (ctx, _, _) = make_test_context();
+        let (actors, side_lookup) = build_test_actors_and_side_lookup();
+        let ctx = make_test_context(actors, side_lookup);
         // Actor 1 has 100/100 HP, not at deaths door
         assert!(!ctx.actor_at_deaths_door());
     }
 
     #[test]
     fn target_hp_fraction_calculates_correctly() {
-        let (ctx, _, _) = make_test_context();
+        let (actors, side_lookup) = build_test_actors_and_side_lookup();
+        let ctx = make_test_context(actors, side_lookup);
         // Target 2 has 50/50 HP = 1.0
         assert!((ctx.target_hp_fraction() - 1.0).abs() < 0.001);
     }
@@ -762,8 +778,8 @@ mod tests {
             ActorId(1),
             vec![ActorId(2)], // targeting the enemy with bleed
             0,
-            &actors,
-            &side_lookup,
+            actors.clone(),
+            side_lookup.clone(),
             Dungeon::QingLong,
         );
 
@@ -786,8 +802,8 @@ mod tests {
             ActorId(1),
             vec![],
             0,
-            &actors,
-            &side_lookup,
+            actors.clone(),
+            side_lookup.clone(),
             Dungeon::QingLong,
         );
 
@@ -798,8 +814,10 @@ mod tests {
     #[test]
     fn context_is_deterministic() {
         // Creating the same context twice should yield identical results
-        let (ctx1, _, _) = make_test_context();
-        let (ctx2, _, _) = make_test_context();
+        let (actors1, side_lookup1) = build_test_actors_and_side_lookup();
+        let (actors2, side_lookup2) = build_test_actors_and_side_lookup();
+        let ctx1 = make_test_context(actors1, side_lookup1);
+        let ctx2 = make_test_context(actors2, side_lookup2);
 
         assert_eq!(ctx1.actor_id(), ctx2.actor_id());
         assert_eq!(ctx1.target_ids(), ctx2.target_ids());
@@ -815,10 +833,9 @@ mod tests {
 #[cfg(test)]
 mod adapter_tests {
     use super::*;
+    use framework_rules::attributes::AttributeValue;
 
-    fn make_adapter_context()
-        -> (ConditionAdapter<'static>, HashMap<ActorId, ActorAggregate>, HashMap<ActorId, CombatSide>)
-    {
+    fn make_adapter_context() -> ConditionAdapter {
         let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
         let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
 
@@ -849,17 +866,17 @@ mod adapter_tests {
             ActorId(1),        // actor
             vec![ActorId(2)], // targets
             0,                // first round
-            &actors,
-            &side_lookup,
+            actors,
+            side_lookup,
             Dungeon::QingLong,
         );
 
-        (ConditionAdapter::new(&ctx), actors, side_lookup)
+        ConditionAdapter::new(ctx)
     }
 
     #[test]
     fn adapter_evaluates_probability_condition() {
-        let (adapter, _, _) = make_adapter_context();
+        let adapter = make_adapter_context();
 
         // Probability(1.0) should pass
         let cond = EffectCondition::Probability(1.0);
@@ -876,26 +893,27 @@ mod adapter_tests {
 
     #[test]
     fn adapter_evaluates_target_health_below_condition() {
-        let (adapter, actors, _) = make_adapter_context();
+        let adapter = make_adapter_context();
 
-        // Target (ActorId 2) has 40/50 HP = 0.8 fraction
+        // Target (ActorId 2) has 40 HP base, but bleed(5.0) reduces effective health to 35
+        // IfTargetHealthBelow compares raw effective health values
 
-        // Threshold 0.9: 0.8 < 0.9 → passes
-        let cond = EffectCondition::IfTargetHealthBelow(0.9);
+        // Threshold 50: 35 < 50 → passes
+        let cond = EffectCondition::IfTargetHealthBelow(50.0);
         assert_eq!(adapter.evaluate_framework(&cond, ActorId(2)), ConditionResult::Pass);
 
-        // Threshold 0.5: 0.8 >= 0.5 → fails
-        let cond = EffectCondition::IfTargetHealthBelow(0.5);
+        // Threshold 30: 35 < 30 → fails
+        let cond = EffectCondition::IfTargetHealthBelow(30.0);
         assert_eq!(adapter.evaluate_framework(&cond, ActorId(2)), ConditionResult::Fail);
 
-        // Threshold 0.8: 0.8 < 0.8 → fails (strict less-than)
-        let cond = EffectCondition::IfTargetHealthBelow(0.8);
+        // Threshold 35: 35 < 35 → fails (strict less-than)
+        let cond = EffectCondition::IfTargetHealthBelow(35.0);
         assert_eq!(adapter.evaluate_framework(&cond, ActorId(2)), ConditionResult::Fail);
     }
 
     #[test]
     fn adapter_evaluates_actor_has_status_condition() {
-        let (adapter, _, _) = make_adapter_context();
+        let adapter = make_adapter_context();
 
         // Actor (ActorId 1) has poison status
 
@@ -910,7 +928,7 @@ mod adapter_tests {
 
     #[test]
     fn adapter_evaluates_ddgc_first_round_condition() {
-        let (adapter, _, _) = make_adapter_context();
+        let adapter = make_adapter_context();
 
         // On round 0, FirstRound should pass
         let cond = DdgcCondition::FirstRound;
@@ -931,12 +949,12 @@ mod adapter_tests {
             ActorId(1),
             vec![],
             1, // round 1, NOT first round
-            &actors,
-            &side_lookup,
+            actors.clone(),
+            side_lookup.clone(),
             Dungeon::QingLong,
         );
 
-        let adapter = ConditionAdapter::new(&ctx);
+        let adapter = ConditionAdapter::new(ctx);
         let cond = DdgcCondition::FirstRound;
 
         // On round 1, FirstRound should fail
@@ -949,7 +967,7 @@ mod adapter_tests {
 
     #[test]
     fn adapter_evaluates_ddgc_stress_above_condition() {
-        let (adapter, _, _) = make_adapter_context();
+        let adapter = make_adapter_context();
 
         // Actor (ActorId 1) has stress 75
 
@@ -964,7 +982,7 @@ mod adapter_tests {
 
     #[test]
     fn adapter_evaluates_ddgc_deaths_door_condition() {
-        let (adapter, _, _) = make_adapter_context();
+        let adapter = make_adapter_context();
 
         // Actor 1 has 100/100 HP (not at deaths door)
         let cond = DdgcCondition::DeathsDoor;
@@ -991,12 +1009,12 @@ mod adapter_tests {
             ActorId(1),
             vec![],
             0,
-            &actors,
-            &side_lookup,
+            actors.clone(),
+            side_lookup.clone(),
             Dungeon::QingLong,
         );
 
-        let adapter = ConditionAdapter::new(&ctx);
+        let adapter = ConditionAdapter::new(ctx);
 
         // 20/100 = 0.2 < 0.5, so at deaths door → Pass
         let cond = DdgcCondition::DeathsDoor;
@@ -1027,12 +1045,12 @@ mod adapter_tests {
             ActorId(1),
             vec![],
             0,
-            &actors,
-            &side_lookup,
+            actors.clone(),
+            side_lookup.clone(),
             Dungeon::QingLong,
         );
 
-        let adapter = ConditionAdapter::new(&ctx);
+        let adapter = ConditionAdapter::new(ctx);
 
         // 30/100 = 0.3 < 0.5, so at deaths door → Pass
         let result = adapter.evaluate_by_tag("ddgc_deaths_door");
@@ -1063,12 +1081,12 @@ mod adapter_tests {
             ActorId(1),
             vec![],
             0,
-            &actors,
-            &side_lookup,
+            actors.clone(),
+            side_lookup.clone(),
             Dungeon::QingLong,
         );
 
-        let adapter = ConditionAdapter::new(&ctx);
+        let adapter = ConditionAdapter::new(ctx);
 
         // 60/100 = 0.6 >= 0.5, so NOT at deaths door → Fail
         let result = adapter.evaluate_by_tag("ddgc_deaths_door");
@@ -1112,22 +1130,22 @@ mod adapter_tests {
             ActorId(1),
             vec![],
             0,
-            &actors,
-            &side_lookup,
+            actors.clone(),
+            side_lookup.clone(),
             Dungeon::QingLong,
         );
-        let adapter_low = ConditionAdapter::new(&ctx_low);
+        let adapter_low = ConditionAdapter::new(ctx_low);
 
         // High-HP context (actor 2, HP 80/100 = 80% >= 50%)
         let ctx_high = ConditionContext::new(
             ActorId(2),
             vec![],
             0,
-            &actors,
-            &side_lookup,
+            actors.clone(),
+            side_lookup.clone(),
             Dungeon::QingLong,
         );
-        let adapter_high = ConditionAdapter::new(&ctx_high);
+        let adapter_high = ConditionAdapter::new(ctx_high);
 
         // Same condition tag: ddgc_deaths_door
         // Low HP (20% < 50%) → Pass
@@ -1155,7 +1173,7 @@ mod adapter_tests {
 
     #[test]
     fn adapter_evaluates_ddgc_target_has_status_condition() {
-        let (adapter, _, _) = make_adapter_context();
+        let adapter = make_adapter_context();
 
         // Target (ActorId 2) has bleed status
 
@@ -1170,7 +1188,7 @@ mod adapter_tests {
 
     #[test]
     fn adapter_unified_evaluate_handles_both_condition_types() {
-        let (adapter, _, _) = make_adapter_context();
+        let adapter = make_adapter_context();
 
         // Framework-native condition via unified interface
         let cond = Condition::Framework(EffectCondition::Probability(0.5));
@@ -1186,7 +1204,7 @@ mod adapter_tests {
         // This test proves that framework-native conditions evaluated through
         // the adapter produce the same results as the framework's own logic.
         // This is the key acceptance criterion for US-603.
-        let (adapter, actors, _) = make_adapter_context();
+        let adapter = make_adapter_context();
 
         // Test Probability condition
         // Framework logic: p > 0.0 passes, p <= 0.0 fails
@@ -1202,26 +1220,18 @@ mod adapter_tests {
         }
 
         // Test IfTargetHealthBelow condition
-        // Framework logic: health < threshold passes
-        // Actor 2 has 40/50 HP = 0.8 fraction
-        let target_health = actors
-            .get(&ActorId(2))
-            .unwrap()
-            .effective_attribute(&AttributeKey::new(ATTR_HEALTH));
-        let target_max = actors
-            .get(&ActorId(2))
-            .unwrap()
-            .effective_attribute(&AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH));
-        let hp_fraction = target_health.0 / target_max.0;
+        // Framework logic: health < threshold passes (raw health, not fraction)
+        // Actor 2 has 40 HP base but bleed(5) reduces effective health to 35
+        let effective_health = 35.0;
 
-        for &threshold in &[0.5, 0.7, 0.8, 0.9, 1.0] {
+        for &threshold in &[30.0, 35.0, 40.0, 45.0, 50.0] {
             let cond = EffectCondition::IfTargetHealthBelow(threshold);
-            let expected = if hp_fraction < threshold { ConditionResult::Pass } else { ConditionResult::Fail };
+            let expected = if effective_health < threshold { ConditionResult::Pass } else { ConditionResult::Fail };
             let actual = adapter.evaluate_framework(&cond, ActorId(2));
             assert_eq!(
                 actual, expected,
-                "IfTargetHealthBelow({}) should be {:?} (HP fraction is {}), got {:?}",
-                threshold, expected, hp_fraction, actual
+                "IfTargetHealthBelow({}) should be {:?} (effective health is {}), got {:?}",
+                threshold, expected, effective_health, actual
             );
         }
 
@@ -1245,10 +1255,10 @@ mod adapter_tests {
         // IfTargetPosition cannot be evaluated because ConditionContext does not
         // have formation layout access. Rather than silently failing (returning
         // false), we surface this as Unknown so callers can observe and handle it.
-        let (adapter, _, _) = make_adapter_context();
+        let adapter = make_adapter_context();
 
         // IfTargetPosition requires formation access we don't have → Unknown
-        let cond = EffectCondition::IfTargetPosition(SlotRange { start: 0, end: 2 });
+        let cond = EffectCondition::IfTargetPosition(SlotRange { min: 0, max: 2 });
         assert_eq!(
             adapter.evaluate_framework(&cond, ActorId(2)),
             ConditionResult::Unknown,
@@ -1260,10 +1270,10 @@ mod adapter_tests {
     fn unknown_condition_is_deterministic() {
         // Proves that unsupported conditions are observable in a deterministic way.
         // Running the same evaluation twice yields the same Unknown result.
-        let (adapter1, _, _) = make_adapter_context();
-        let (adapter2, _, _) = make_adapter_context();
+        let adapter1 = make_adapter_context();
+        let adapter2 = make_adapter_context();
 
-        let cond = EffectCondition::IfTargetPosition(SlotRange { start: 0, end: 2 });
+        let cond = EffectCondition::IfTargetPosition(SlotRange { min: 0, max: 2 });
 
         let result1 = adapter1.evaluate_framework(&cond, ActorId(2));
         let result2 = adapter2.evaluate_framework(&cond, ActorId(2));
@@ -1276,11 +1286,11 @@ mod adapter_tests {
     fn unified_evaluate_propagates_unknown_from_framework() {
         // When evaluate_framework returns Unknown, the unified evaluate() method
         // should propagate it rather than converting it to Pass or Fail.
-        let (adapter, _, _) = make_adapter_context();
+        let adapter = make_adapter_context();
 
         let cond = Condition::Framework(EffectCondition::IfTargetPosition(SlotRange {
-            start: 0,
-            end: 2,
+            min: 0,
+            max: 2,
         }));
         assert_eq!(
             adapter.evaluate(&cond, ActorId(2)),
@@ -1311,12 +1321,12 @@ mod adapter_tests {
             ActorId(1),
             vec![],
             0,
-            &actors,
-            &side_lookup,
+            actors.clone(),
+            side_lookup.clone(),
             Dungeon::QingLong,
         );
 
-        let adapter = ConditionAdapter::new(&ctx);
+        let adapter = ConditionAdapter::new(ctx);
 
         // Stress 75 > 50 → passes
         let result = adapter.evaluate_by_tag("ddgc_stress_above_50");
@@ -1343,12 +1353,12 @@ mod adapter_tests {
             ActorId(1),
             vec![],
             0,
-            &actors,
-            &side_lookup,
+            actors.clone(),
+            side_lookup.clone(),
             Dungeon::QingLong,
         );
 
-        let adapter = ConditionAdapter::new(&ctx);
+        let adapter = ConditionAdapter::new(ctx);
 
         // Stress 30 < 50 → fails
         let result = adapter.evaluate_by_tag("ddgc_stress_above_50");
@@ -1375,12 +1385,12 @@ mod adapter_tests {
             ActorId(1),
             vec![],
             0,
-            &actors,
-            &side_lookup,
+            actors.clone(),
+            side_lookup.clone(),
             Dungeon::QingLong,
         );
 
-        let adapter = ConditionAdapter::new(&ctx);
+        let adapter = ConditionAdapter::new(ctx);
 
         // Stress 30 < 50 → passes
         let result = adapter.evaluate_by_tag("ddgc_stress_below_50");
@@ -1407,12 +1417,12 @@ mod adapter_tests {
             ActorId(1),
             vec![],
             0,
-            &actors,
-            &side_lookup,
+            actors.clone(),
+            side_lookup.clone(),
             Dungeon::QingLong,
         );
 
-        let adapter = ConditionAdapter::new(&ctx);
+        let adapter = ConditionAdapter::new(ctx);
 
         // Stress 75 > 50 → fails
         let result = adapter.evaluate_by_tag("ddgc_stress_below_50");
@@ -1454,22 +1464,22 @@ mod adapter_tests {
             ActorId(1),
             vec![],
             0,
-            &actors,
-            &side_lookup,
+            actors.clone(),
+            side_lookup.clone(),
             Dungeon::QingLong,
         );
-        let adapter_low = ConditionAdapter::new(&ctx_low);
+        let adapter_low = ConditionAdapter::new(ctx_low);
 
         // High-stress context (actor 2, stress 80)
         let ctx_high = ConditionContext::new(
             ActorId(2),
             vec![],
             0,
-            &actors,
-            &side_lookup,
+            actors.clone(),
+            side_lookup.clone(),
             Dungeon::QingLong,
         );
-        let adapter_high = ConditionAdapter::new(&ctx_high);
+        let adapter_high = ConditionAdapter::new(ctx_high);
 
         // Same condition tag: ddgc_stress_above_50
         // Low stress (20 < 50) → fails
@@ -1555,12 +1565,12 @@ mod adapter_tests {
             ActorId(1),
             vec![],
             0,
-            &actors,
-            &side_lookup,
+            actors.clone(),
+            side_lookup.clone(),
             Dungeon::QingLong,
         );
 
-        let adapter = ConditionAdapter::new(&ctx);
+        let adapter = ConditionAdapter::new(ctx);
 
         // Monster should fail stress conditions regardless of tag
         assert_eq!(

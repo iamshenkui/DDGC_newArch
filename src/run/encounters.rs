@@ -291,13 +291,18 @@ impl EncounterResolver {
                 let resolution = resolver.submit_command(&mut encounter, &mut actors, cmd);
 
                 if resolution.accepted {
-                    let mut ctx = EffectContext::new(
-                        current_actor,
-                        targets.clone(),
-                        &mut formation,
-                        &mut actors,
-                    );
-                    let result = resolve_skill(skill, &mut ctx);
+                    // ── Skill Resolution ───────────────────────────────────────
+                    // Create EffectContext only for skill resolution, then drop it
+                    // to allow reactive processing to borrow actors/formation.
+                    let result = {
+                        let mut ctx = EffectContext::new(
+                            current_actor,
+                            targets.clone(),
+                            &mut formation,
+                            &mut actors,
+                        );
+                        resolve_skill(skill, &mut ctx)
+                    }; // ctx dropped here
 
                     // ── Reactive Processing (US-506) ─────────────────────────
                     // After damage is applied, check if targets have riposte status
@@ -334,7 +339,7 @@ impl EncounterResolver {
                                 false
                             };
                             if has_riposte {
-                                if let Some((skill_id, reactive_results)) = execute_riposte(
+                                if let Some((_skill_id, reactive_results)) = execute_riposte(
                                     &event,
                                     &self.content_pack,
                                     &mut actors,
@@ -363,6 +368,7 @@ impl EncounterResolver {
 
                     // ── DDGC Condition Evaluation ────────────────────────────
                     // Evaluate deferred effects (effects with DDGC-specific conditions)
+                    // Re-create EffectContext for deferred effects processing
                     let mut deferred_results = Vec::new();
                     for deferred in &result.deferred {
                         // Build condition context for DDGC condition evaluation
@@ -370,11 +376,11 @@ impl EncounterResolver {
                             current_actor,
                             targets.clone(),
                             round - 1, // round is 1-indexed, condition context uses 0-indexed (0 = first round)
-                            &actors,
-                            &side_lookup,
+                            actors.clone(),
+                            side_lookup.clone(),
                             pack.dungeon,
                         );
-                        let adapter = ConditionAdapter::new(&cond_ctx);
+                        let adapter = ConditionAdapter::new(cond_ctx);
 
                         // Parse the condition tag to determine the DDGC condition
                         // Tags are formatted as "ddgc_<Kind>" e.g., "ddgc_Damage"
@@ -383,10 +389,17 @@ impl EncounterResolver {
                         if let Some(cond) = ddgc_condition {
                             let eval_result = adapter.evaluate_ddgc(&cond);
                             if eval_result == ConditionResult::Pass {
+                                // Condition passes - recreate EffectContext for execute_effect_node
+                                let mut effect_ctx = EffectContext::new(
+                                    current_actor,
+                                    targets.clone(),
+                                    &mut formation,
+                                    &mut actors,
+                                );
                                 // Condition passes - execute the effect
                                 let effect_result = execute_effect_node(
                                     &deferred.node,
-                                    &mut ctx,
+                                    &mut effect_ctx,
                                     &targets,
                                 );
                                 deferred_results.push(effect_result);

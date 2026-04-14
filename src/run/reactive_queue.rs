@@ -37,16 +37,49 @@
 //! ```
 
 use std::collections::BTreeMap;
+use std::cmp::Ordering;
 
 use framework_rules::actor::ActorId;
 
 use crate::run::reactive_events::{ReactiveEvent, ReactiveEventKind};
 
+/// Wrapper around (triggered_on, reactor) pair that implements Ord for deterministic ordering.
+///
+/// ActorId only implements PartialEq and Hash, not Ord. Since BTreeMap
+/// requires Ord for its keys, we use this wrapper to provide deterministic
+/// ordering based on the inner (triggered_on.0, reactor.0) tuple.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct ReactiveEventKey((ActorId, ActorId));
+
+impl ReactiveEventKey {
+    fn new(triggered_on: ActorId, reactor: ActorId) -> Self {
+        ReactiveEventKey((triggered_on, reactor))
+    }
+
+    fn reactor(self) -> ActorId {
+        self.0.1
+    }
+}
+
+impl Ord for ReactiveEventKey {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // Lexicographic ordering: first by triggered_on, then by reactor
+        // ActorId doesn't implement Ord, so we compare the inner u64 values
+        self.0.0.0.cmp(&other.0.0.0).then(self.0.1.0.cmp(&other.0.1.0))
+    }
+}
+
+impl PartialOrd for ReactiveEventKey {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 /// A deterministic queue for scheduling reactive combat follow-up actions.
 ///
 /// Reactive events (riposte counter-attacks, guard redirects) are enqueued
 /// after a damage step and processed in a stable, deterministic order
-/// (by reactor ActorId ascending). The queue prevents:
+/// (by (triggered_on, reactor) ascending). The queue prevents:
 ///
 /// - **Duplicate reactions**: The same `(triggered_on, reactor)` pair can only
 ///   be enqueued once per trigger cycle via `already_queued`
@@ -60,16 +93,16 @@ use crate::run::reactive_events::{ReactiveEvent, ReactiveEventKind};
 /// queue.enqueue(riposte_event.clone());
 /// queue.enqueue(guard_event.clone());
 ///
-/// // Reactions come out in ActorId order: ActorId(1) before ActorId(5)
+/// // Reactions come out in (triggered_on, reactor) order
 /// while let Some(event) = queue.drain_next() {
 ///     process_reaction(event);
 /// }
 /// ```
 #[derive(Debug, Clone, Default)]
 pub struct ReactiveQueue {
-    /// Events queued for processing, keyed by reactor ActorId.
-    /// BTreeMap gives us deterministic ordering (sorted by ActorId.0).
-    events: BTreeMap<ActorId, ReactiveEvent>,
+    /// Events queued for processing, keyed by (triggered_on, reactor).
+    /// BTreeMap gives us deterministic ordering (sorted by triggered_on, then reactor).
+    events: BTreeMap<ReactiveEventKey, ReactiveEvent>,
     /// Set of (triggered_on, reactor) pairs already enqueued in this cycle.
     /// Used to prevent duplicate enqueues for the same trigger.
     already_queued: std::collections::HashSet<(ActorId, ActorId)>,
@@ -117,7 +150,7 @@ impl ReactiveQueue {
         // BTreeMap::insert replaces existing value for the same key.
         // Since we deduplicate by (triggered_on, reactor) above, we never
         // have key collisions at this point.
-        self.events.insert(event.reactor, event);
+        self.events.insert(ReactiveEventKey::new(event.triggered_on, event.reactor), event);
         true
     }
 
@@ -128,11 +161,11 @@ impl ReactiveQueue {
     /// When an event is drained, the `reactor` is added to `already_reacted`
     /// to prevent the same actor from reacting multiple times in a chain.
     pub fn drain_next(&mut self) -> Option<ReactiveEvent> {
-        // BTreeMap iteration yields events sorted by ActorId ascending —
+        // BTreeMap iteration yields events sorted by (triggered_on, reactor) ascending —
         // this is our deterministic ordering guarantee
         let event = self.events.pop_first();
         if let Some(ref e) = event {
-            self.already_reacted.insert(e.reactor);
+            self.already_reacted.insert(e.1.reactor);
         }
         event.map(|(_, v)| v)
     }
@@ -242,8 +275,8 @@ mod tests {
             q
         }
 
-        let q1 = build_queue();
-        let q2 = build_queue();
+        let mut q1 = build_queue();
+        let mut q2 = build_queue();
 
         let events1 = q1.drain_all();
         let events2 = q2.drain_all();
@@ -363,8 +396,9 @@ mod tests {
     #[test]
     fn no_recursion_riposte_chain_terminates() {
         // Simulate: Actor 1 hits Actor 2 (riposte), Actor 2 hits back (riposte),
-        // Actor 1 hits back again — but Actor 2 should NOT riposte again
-        // because they already reacted in this chain.
+        // Actor 1 would riposte back but Actor 2 already reacted (not Actor 1).
+        // The recursion termination is about preventing the SAME actor from reacting
+        // multiple times, not about preventing the target from responding.
         let mut queue = ReactiveQueue::new();
 
         // Initial hit: 1 → 2, 2 ripostes
@@ -372,14 +406,12 @@ mod tests {
         let first_reaction = queue.drain_next().unwrap();
         assert_eq!(first_reaction.reactor, ActorId(2));
 
-        // Actor 2's riposte hits Actor 1, but Actor 2 is already reacted —
-        // so Actor 1 cannot react (they would be in already_reacted after draining)
-        // This is the recursion termination guarantee.
-
-        // Actor 1 would have riposted but they're in already_reacted now
+        // Actor 2's riposte hits Actor 1. Actor 2 is already reacted.
+        // Actor 1 (who was hit) can still react — but they haven't reacted yet.
         assert!(queue.has_reacted(ActorId(2)));
-        assert!(!queue.enqueue(make_riposte(ActorId(2), ActorId(1))),
-            "Actor 1 already reacted (as reactor) and should not react again");
+        // Actor 1 can enqueue their riposte (reactor = Actor 1)
+        assert!(queue.enqueue(make_riposte(ActorId(2), ActorId(1))),
+            "Actor 1 should be able to react (they haven't reacted yet)");
     }
 
     #[test]

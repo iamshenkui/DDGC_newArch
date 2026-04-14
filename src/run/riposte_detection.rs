@@ -47,9 +47,9 @@ pub fn detect_riposte_candidates(
     actors: &HashMap<ActorId, ActorAggregate>,
 ) -> Vec<ActorId> {
     let mut candidates: Vec<ActorId> = actors
-        .values()
-        .filter(|actor| has_riposte_status(actor))
-        .map(|actor| actor.id())
+        .iter()
+        .filter(|(_, actor)| has_riposte_status(actor))
+        .map(|(id, _)| *id)
         .collect();
 
     // Sort by ActorId for deterministic ordering
