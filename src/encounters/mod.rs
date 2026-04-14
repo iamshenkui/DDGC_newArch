@@ -8,6 +8,7 @@
 //! common encounter packs for the four DDGC dungeons. Boss encounter packs
 //! will be added in later migration slices (K29/K30+).
 
+pub mod ddgc_targeting_rules;
 pub mod packs;
 pub mod targeting;
 
