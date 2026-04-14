@@ -1097,3 +1097,14 @@
   - `SkillUsageCounters` is game-layer state separate from framework cooldown — this is intentional isolation
   - `reset_turn_scope(actor)` only clears turn-scoped counters for that actor; battle-scoped counters persist
   - `UsageLimit::per_turn(N)` and `UsageLimit::per_battle(N)` are convenience constructors
+
+## 2026-04-15 - US-502
+- Verified reactive event types already implemented: `ReactiveEvent`, `ReactiveEventKind`, `DamageStepContext`, `build_reactive_events()` in `src/run/reactive_events.rs`
+- All 6 unit tests pass (deterministic creation, riposte, guard redirect, value equality, different inputs)
+- Integration test `reactive_battle_contains_reactive_entries` proves events created from resolved damage step
+- Updated `passes: true` in `tasks/prd.json` — implementation was already complete
+- Files changed: `tasks/prd.json` (passes flag update only)
+- **Learnings for future iterations:**
+  - `ReactiveEvent` model captures `triggered_on` (who was hit), `reactor` (who may react), `source_skill` (what triggered), `attacker` — complete trigger relationship
+  - `DamageStepContext` provides deterministic construction context for reactive events from resolved damage
+  - The reactive_events module was already committed in prior session — only the passes flag needed updating
