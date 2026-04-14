@@ -4,6 +4,7 @@
 //! `DefaultRoomGenerator` with DDGC-appropriate room weights,
 //! room-by-room progression, and post-battle reward application.
 
+pub mod conditions;
 pub mod encounters;
 pub mod flow;
 pub mod reactive_events;
