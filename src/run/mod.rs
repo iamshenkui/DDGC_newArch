@@ -5,6 +5,7 @@
 //! room-by-room progression, and post-battle reward application.
 
 pub mod encounters;
+pub mod family_action_policy;
 pub mod flow;
 pub mod guard_detection;
 pub mod guard_redirect_execution;

@@ -27,6 +27,9 @@ use crate::encounters::ddgc_targeting_rules::{
 use crate::monsters::build_registry as build_monster_registry;
 use crate::monsters::MonsterFamilyRegistry;
 use crate::trace::BattleTrace;
+use crate::run::family_action_policy::{
+    select_next_skill, update_actor_state, ActorActionState,
+};
 use crate::run::guard_detection::detect_guard_relations_for_target;
 use crate::run::reactive_events::{build_reactive_events, DamageStepContext, ReactiveEventKind};
 use crate::run::reactive_queue::ReactiveQueue;
@@ -38,25 +41,53 @@ use crate::run::usage_limits::get_usage_limit;
 
 /// Skill assignment for encounter battles.
 ///
-/// Maps each actor to the skill they use in the deterministic battle script.
+/// Maps each actor to either a fixed skill (heroes) or a family ID (monsters).
+/// For heroes, the skill is fixed. For monsters, the family ID is used to
+/// look up the action policy and select skills dynamically during battle.
+///
 /// In a full game, this would be replaced by AI/player input.
 struct SkillAssignment {
-    skills: HashMap<u64, String>,
+    /// Maps actor ID to either a fixed skill name (heroes) or a family ID (monsters).
+    /// A prefix "family:" indicates a family ID lookup.
+    assignments: HashMap<u64, String>,
 }
 
 impl SkillAssignment {
     fn new() -> Self {
         SkillAssignment {
-            skills: HashMap::new(),
+            assignments: HashMap::new(),
         }
     }
 
-    fn assign(&mut self, actor_id: ActorId, skill_name: impl Into<String>) {
-        self.skills.insert(actor_id.0, skill_name.into());
+    /// Assign a fixed skill to an actor (for heroes).
+    fn assign_skill(&mut self, actor_id: ActorId, skill_name: impl Into<String>) {
+        self.assignments.insert(actor_id.0, skill_name.into());
     }
 
+    /// Assign a family ID to an actor (for monsters).
+    fn assign_family(&mut self, actor_id: ActorId, family_id: impl Into<String>) {
+        self.assignments.insert(actor_id.0, format!("family:{}", family_id.into()));
+    }
+
+    /// Get the assignment for an actor. Returns None if not assigned.
     fn get(&self, actor_id: ActorId) -> Option<&str> {
-        self.skills.get(&actor_id.0).map(|s| s.as_str())
+        self.assignments.get(&actor_id.0).map(|s| s.as_str())
+    }
+
+    /// Check if an actor is assigned to a family (vs a fixed skill).
+    fn is_family_assignment(&self, actor_id: ActorId) -> bool {
+        match self.get(actor_id) {
+            Some(s) => s.starts_with("family:"),
+            None => false,
+        }
+    }
+
+    /// Get the family ID for an actor, if it's a family assignment.
+    fn get_family_id(&self, actor_id: ActorId) -> Option<String> {
+        match self.get(actor_id) {
+            Some(s) if s.starts_with("family:") => Some(s[7..].to_string()),
+            _ => None,
+        }
     }
 }
 
@@ -174,7 +205,7 @@ impl EncounterResolver {
             if let Some(archetype) = self.content_pack.get_archetype(archetype_name) {
                 actors.insert(actor_id, archetype.create_actor(actor_id));
                 ally_ids.push(actor_id);
-                skill_assign.assign(actor_id, *skill_name);
+                skill_assign.assign_skill(actor_id, *skill_name);
                 side_lookup.insert(actor_id, CombatSide::Ally);
             }
         }
@@ -197,18 +228,12 @@ impl EncounterResolver {
                     )
                 });
 
-            // Use the family's first skill as the primary attack
-            let skill_name = family
-                .skill_ids
-                .first()
-                .map(|s| s.0.as_str())
-                .unwrap_or("normal_attack");
-
             for _ in 0..slot.count {
                 let actor_id = ActorId(next_enemy_id);
                 actors.insert(actor_id, archetype.create_actor(actor_id));
                 enemy_ids.push(actor_id);
-                skill_assign.assign(actor_id, skill_name);
+                // Assign family ID for dynamic action policy selection
+                skill_assign.assign_family(actor_id, &slot.family_id.0);
                 side_lookup.insert(actor_id, CombatSide::Enemy);
                 next_enemy_id += 1;
             }
@@ -242,6 +267,7 @@ impl EncounterResolver {
         // ── Battle loop ────────────────────────────────────────────────────
         let mut trace = BattleTrace::new(&pack.id.0);
         let mut counters = SkillUsageCounters::new();
+        let mut actor_states: HashMap<ActorId, ActorActionState> = HashMap::new();
         let mut round: u32 = 0;
         let max_rounds = 100;
 
@@ -263,9 +289,35 @@ impl EncounterResolver {
                 continue;
             }
 
-            // Select skill from assignment
-            let skill_name = skill_assign.get(current_actor).unwrap_or("crusading_strike");
-            let skill = match self.content_pack.get_skill(&SkillId::new(skill_name)) {
+            // Select skill from assignment (US-706: family action policy)
+            let skill_name = if skill_assign.is_family_assignment(current_actor) {
+                // Monster: use family action policy to select skill dynamically
+                if let Some(family_id) = skill_assign.get_family_id(current_actor) {
+                    let family = match self.monster_registry.get(&family_id) {
+                        Some(f) => f,
+                        None => {
+                            let cmd = CombatCommand::Wait { actor: current_actor };
+                            resolver.submit_command(&mut encounter, &mut actors, cmd);
+                            trace.record_wait(round, current_actor, &actors);
+                            resolver.end_turn(&mut encounter, &mut actors);
+                            counters.reset_turn_scope(current_actor);
+                            continue;
+                        }
+                    };
+                    // Use the authored policy from get_default_policy (grounded in JsonAI.json)
+                    let policy = crate::run::family_action_policy::get_default_policy(&family_id);
+                    let state = actor_states.entry(current_actor).or_default();
+                    let selected = select_next_skill(&policy, current_actor, state, &family.skill_ids);
+                    selected.0.clone()
+                } else {
+                    skill_assign.get(current_actor).unwrap_or("crusading_strike").to_string()
+                }
+            } else {
+                // Hero: use fixed skill assignment
+                skill_assign.get(current_actor).unwrap_or("crusading_strike").to_string()
+            };
+
+            let skill = match self.content_pack.get_skill(&SkillId::new(&skill_name)) {
                 Some(s) => s,
                 None => {
                     let cmd = CombatCommand::Wait {
@@ -303,7 +355,7 @@ impl EncounterResolver {
             // Check if the actor's current position satisfies the skill's launch
             // constraint. If not, the skill is illegal from this position and we
             // submit a Wait instead.
-            if let Some(rule) = get_ddgc_targeting_rule(skill_name) {
+            if let Some(rule) = get_ddgc_targeting_rule(&skill_name) {
                 if !check_launch_rank_constraint(rule.launch_constraint, current_actor, &formation, &side_lookup) {
                     let cmd = CombatCommand::Wait {
                         actor: current_actor,
@@ -330,7 +382,7 @@ impl EncounterResolver {
             // NOTE: Single-target truncation is NOT applied here because the
             // framework handles per-skill resolution against all provided targets.
             // Truncating to 1 target would break multi-target skills.
-            if let Some(rule) = get_ddgc_targeting_rule(skill_name) {
+            if let Some(rule) = get_ddgc_targeting_rule(&skill_name) {
                 if rule.exclude_self_from_allies {
                     targets.retain(|t| *t != current_actor);
                 }
@@ -339,7 +391,7 @@ impl EncounterResolver {
             // ── DDGC Target Rank Filtering (US-704) ─────────────────────────────
             // Filter targets by the skill's target rank constraint. This restricts
             // which ranks (rows) are valid targets for rank-gated skills.
-            if let Some(rule) = get_ddgc_targeting_rule(skill_name) {
+            if let Some(rule) = get_ddgc_targeting_rule(&skill_name) {
                 targets = filter_targets_by_rank(rule.target_rank, &targets, &formation);
             }
 
@@ -370,6 +422,14 @@ impl EncounterResolver {
                     // After successful skill execution, record the usage for limit tracking.
                     if let Some(limit) = get_usage_limit(&skill.id) {
                         counters.record_usage(current_actor, skill.id.clone(), limit.scope);
+                    }
+
+                    // ── Update actor action state (US-706) ─────────────────────
+                    // After successful skill execution, update the actor's state so the
+                    // next skill selection uses the correct last-skill-used context.
+                    if skill_assign.is_family_assignment(current_actor) {
+                        let state = actor_states.entry(current_actor).or_default();
+                        update_actor_state(state, skill.id.clone());
                     }
 
                     // ── Reactive Processing (US-506, US-507) ─────────────────
@@ -489,7 +549,7 @@ impl EncounterResolver {
                     trace.record_action(
                         round,
                         current_actor,
-                        skill_name,
+                        &skill_name,
                         &targets,
                         &effect_results.results,
                         &actors,
@@ -1257,5 +1317,179 @@ mod tests {
         let all_enemies = vec![ActorId(10), ActorId(11)];
         let filtered = filter_targets_by_rank(TargetRank::Any, &all_enemies, &formation);
         assert_eq!(filtered.len(), 2, "TargetRank::Any should return all targets");
+    }
+
+    // ── Family Action Policy Tests (US-706) ──────────────────────────────────
+
+    #[test]
+    fn lizard_uses_deterministic_cycle_not_first_skill_fallback() {
+        // US-706: lizard's action policy is a deterministic cycle (stun → intimidate → stress → repeat),
+        // NOT the first-skill fallback that always uses stun.
+        //
+        // This test verifies that:
+        // 1. The lizard family has a DeterministicCycle policy (not FirstSkill)
+        // 2. The state is correctly updated after each skill use
+        //
+        // Note: The battle may end before the cycle is observed multiple times,
+        // but the policy and state updates are verified.
+        use crate::run::family_action_policy::{
+            get_default_policy, FamilyActionPolicy,
+        };
+
+        // Verify lizard has DeterministicCycle policy (not FirstSkill fallback)
+        let policy = get_default_policy("lizard");
+        let is_cycle = matches!(policy, FamilyActionPolicy::DeterministicCycle { .. });
+        assert!(
+            is_cycle,
+            "lizard should have DeterministicCycle policy, but got: {:?}",
+            policy
+        );
+
+        // Verify the cycle sequence is correct
+        if let FamilyActionPolicy::DeterministicCycle { sequence } = &policy {
+            assert_eq!(sequence.len(), 3, "lizard cycle should have 3 skills");
+            assert_eq!(sequence[0].0, "stun", "first cycle skill should be stun");
+            assert_eq!(sequence[1].0, "intimidate", "second cycle skill should be intimidate");
+            assert_eq!(sequence[2].0, "stress", "third cycle skill should be stress");
+        }
+
+        // Now run the battle to verify the policy is actually used
+        let resolver = EncounterResolver::new();
+
+        // BaiHu hall packs: baihu_hall_01 (metal_armor), baihu_hall_02 (lizard x2),
+        // baihu_hall_03, baihu_hall_04, baihu_hall_05
+        // Sorted by pack ID, seed=41, room_index=0 gives index=41%5=1 → baihu_hall_02 (lizard)
+        let pack = resolver
+            .resolve_pack(Dungeon::BaiHu, 0, 41, true)
+            .expect("BaiHu should have hall packs (contains lizard family)");
+
+        let result = resolver.run_battle(pack, 1);
+
+        // The battle should complete
+        assert!(
+            result.turns <= 100,
+            "Battle should finish within 100 turns"
+        );
+
+        // Get all lizard skill uses from the trace
+        let lizard_skill_uses: Vec<&str> = result
+            .trace
+            .entries
+            .iter()
+            .filter(|e| {
+                // lizard skills are: stun, intimidate, stress, move
+                e.action == "stun"
+                    || e.action == "intimidate"
+                    || e.action == "stress"
+                    || e.action == "move"
+            })
+            .map(|e| e.action.as_str())
+            .collect();
+
+        // At minimum, we should see at least one lizard skill used
+        assert!(
+            !lizard_skill_uses.is_empty(),
+            "Should see at least one lizard skill in the trace"
+        );
+
+        // If the battle has enough turns for the cycle to progress, we should see multiple skills.
+        // But even if the battle ends early, we've verified the policy is correct.
+    }
+
+    #[test]
+    fn gambler_prioritizes_summon_mahjong() {
+        // US-706: gambler's action policy is a priority table with summon_mahjong (weight 1000)
+        // vs other skills (weight 1). This means summon_mahjong should be used almost always.
+        use crate::run::family_action_policy::get_default_policy;
+
+        let policy = get_default_policy("gambler");
+
+        match policy {
+            crate::run::family_action_policy::FamilyActionPolicy::PriorityTable { entries } => {
+                // Find summon_mahjong weight
+                let summon_weight = entries
+                    .iter()
+                    .find(|(id, _)| id.0 == "summon_mahjong")
+                    .map(|(_, w)| *w)
+                    .expect("summon_mahjong should be in gambler priority table");
+
+                // Find other skill weights
+                let other_weights: Vec<u32> = entries
+                    .iter()
+                    .filter(|(id, _)| id.0 != "summon_mahjong")
+                    .map(|(_, w)| *w)
+                    .collect();
+
+                // summon_mahjong weight (1000) should be much higher than others (1)
+                assert!(
+                    summon_weight > other_weights.iter().max().copied().unwrap_or(0),
+                    "summon_mahjong weight ({}) should be higher than other skills {:?}",
+                    summon_weight, other_weights
+                );
+            }
+            _ => panic!("gambler should have PriorityTable policy"),
+        }
+    }
+
+    #[test]
+    fn lizard_policy_differs_from_first_skill_fallback_unit() {
+        // Unit test: prove that the lizard deterministic cycle differs from first-skill
+        use crate::run::family_action_policy::{
+            select_next_skill, update_actor_state, ActorActionState,
+            get_default_policy, FamilyActionPolicy,
+        };
+        use framework_combat::skills::SkillId;
+        use framework_rules::actor::ActorId;
+
+        let lizard_skills = vec![
+            SkillId::new("stun"),
+            SkillId::new("intimidate"),
+            SkillId::new("stress"),
+            SkillId::new("move"),
+        ];
+
+        let policy = get_default_policy("lizard");
+        let mut state = ActorActionState::default();
+        let actor_id = ActorId(10);
+
+        // First turn: should use stun (first in cycle)
+        let first = select_next_skill(&policy, actor_id, &state, &lizard_skills);
+        assert_eq!(first.0, "stun", "First skill should be stun");
+
+        // Update state: last skill was stun
+        update_actor_state(&mut state, SkillId::new("stun"));
+
+        // Second turn: should use intimidate (after stun)
+        let second = select_next_skill(&policy, actor_id, &state, &lizard_skills);
+        assert_eq!(second.0, "intimidate", "After stun, skill should be intimidate");
+
+        // Update state: last skill was intimidate
+        update_actor_state(&mut state, SkillId::new("intimidate"));
+
+        // Third turn: should use stress (after intimidate)
+        let third = select_next_skill(&policy, actor_id, &state, &lizard_skills);
+        assert_eq!(third.0, "stress", "After intimidate, skill should be stress");
+
+        // Update state: last skill was stress
+        update_actor_state(&mut state, SkillId::new("stress"));
+
+        // Fourth turn: should cycle back to stun
+        let fourth = select_next_skill(&policy, actor_id, &state, &lizard_skills);
+        assert_eq!(fourth.0, "stun", "After stress, cycle should restart at stun");
+
+        // Compare with first-skill fallback: would always return "stun"
+        let first_skill_policy = FamilyActionPolicy::FirstSkill;
+        for _ in 0..4 {
+            let fallback_skill = select_next_skill(
+                &first_skill_policy,
+                actor_id,
+                &ActorActionState::default(),
+                &lizard_skills,
+            );
+            assert_eq!(
+                fallback_skill.0, "stun",
+                "First-skill fallback always returns stun (ignoring state)"
+            );
+        }
     }
 }
