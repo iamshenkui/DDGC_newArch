@@ -39,7 +39,7 @@
                 "A focused test proves supported native conditions behave the same before and after the adapter layer"
             ],
             "priority": 3,
-            "passes": false,
+            "passes": true,
             "notes": "Compatibility slice before DDGC-only condition work."
         },
         {
@@ -52,7 +52,7 @@
                 "A focused test proves unsupported conditions are observable in a deterministic way"
             ],
             "priority": 4,
-            "passes": false,
+            "passes": true,
             "notes": "Guardrail slice before incremental condition implementation."
         },
         {

@@ -19,7 +19,7 @@
 use std::collections::HashMap;
 
 use framework_combat::encounter::CombatSide;
-use framework_combat::effects::EffectCondition;
+use framework_combat::effects::{EffectCondition, SlotRange};
 use framework_rules::actor::{ActorAggregate, ActorId};
 use framework_rules::attributes::AttributeKey;
 use framework_rules::attributes::ATTR_HEALTH;
@@ -388,42 +388,62 @@ impl<'a> ConditionAdapter<'a> {
     /// This delegates to the same logic as `EffectContext::check_condition`,
     /// ensuring framework-native conditions behave identically through the adapter.
     ///
-    /// Returns `true` if the condition passes, `false` otherwise.
-    pub fn evaluate_framework(&self, condition: &EffectCondition, target: ActorId) -> bool {
+    /// Returns `ConditionResult` so callers can distinguish between
+    /// "passed", "failed", and "not recognized".
+    pub fn evaluate_framework(&self, condition: &EffectCondition, target: ActorId) -> ConditionResult {
         match condition {
             EffectCondition::IfTargetHealthBelow(threshold) => {
                 if let Some(actor_agg) = self.ctx.actors.get(&target) {
                     let health = actor_agg.effective_attribute(&AttributeKey::new(ATTR_HEALTH));
-                    health.0 < *threshold
+                    if health.0 < *threshold {
+                        ConditionResult::Pass
+                    } else {
+                        ConditionResult::Fail
+                    }
                 } else {
-                    false
+                    ConditionResult::Fail
                 }
             }
             EffectCondition::IfActorHasStatus(status_kind) => {
                 if let Some(actor_agg) = self.ctx.actors.get(&self.ctx.actor_id) {
-                    actor_agg
+                    if actor_agg
                         .statuses
                         .active()
                         .values()
                         .any(|s| s.kind.0 == *status_kind)
+                    {
+                        ConditionResult::Pass
+                    } else {
+                        ConditionResult::Fail
+                    }
                 } else {
-                    false
+                    ConditionResult::Fail
                 }
             }
             EffectCondition::IfTargetPosition(slot_range) => {
                 // NOTE: Formation lookup requires formation access which is not available
                 // in ConditionContext. This is a limitation - position conditions
                 // require integration with the formation system.
-                // For now, we return false (condition fails) which is safe.
+                // We return Unknown here because silently failing would hide a
+                // missing implementation rather than surfacing it.
                 // TODO: Integrate with formation layout in future iteration.
                 let _ = slot_range;
-                false
+                ConditionResult::Unknown
             }
             EffectCondition::Probability(p) => {
                 // Deterministic: probability < 1.0 always returns true
                 // (real random evaluation is game-specific)
-                *p > 0.0
+                if *p > 0.0 {
+                    ConditionResult::Pass
+                } else {
+                    ConditionResult::Fail
+                }
             }
+            // ── Catch-all for non-exhaustive framework conditions ───────────────
+            // Any unrecognized framework condition variant is surfaced as Unknown
+            // rather than silently failing. This ensures missing implementations
+            // are observable instead of being hidden by false returns.
+            _ => ConditionResult::Unknown,
         }
     }
 
@@ -481,18 +501,13 @@ impl<'a> ConditionAdapter<'a> {
     /// Unified evaluation that handles both framework-native and DDGC-specific conditions.
     ///
     /// For framework-native conditions, returns `ConditionResult::Pass` if the condition
-    /// evaluates to true, `ConditionResult::Fail` otherwise.
+    /// evaluates to true, `ConditionResult::Fail` if false, and `ConditionResult::Unknown`
+    /// if the condition kind is not recognized.
     ///
     /// For DDGC-specific conditions, returns the `ConditionResult` from `evaluate_ddgc`.
     pub fn evaluate(&self, condition: &Condition, target: ActorId) -> ConditionResult {
         match condition {
-            Condition::Framework(fc) => {
-                if self.evaluate_framework(fc, target) {
-                    ConditionResult::Pass
-                } else {
-                    ConditionResult::Fail
-                }
-            }
+            Condition::Framework(fc) => self.evaluate_framework(fc, target),
             Condition::Ddgc(dc) => self.evaluate_ddgc(dc),
         }
     }
@@ -783,15 +798,15 @@ mod adapter_tests {
 
         // Probability(1.0) should pass
         let cond = EffectCondition::Probability(1.0);
-        assert!(adapter.evaluate_framework(&cond, ActorId(2)));
+        assert_eq!(adapter.evaluate_framework(&cond, ActorId(2)), ConditionResult::Pass);
 
         // Probability(0.5) should pass (deterministic: > 0 passes)
         let cond = EffectCondition::Probability(0.5);
-        assert!(adapter.evaluate_framework(&cond, ActorId(2)));
+        assert_eq!(adapter.evaluate_framework(&cond, ActorId(2)), ConditionResult::Pass);
 
         // Probability(0.0) should fail
         let cond = EffectCondition::Probability(0.0);
-        assert!(!adapter.evaluate_framework(&cond, ActorId(2)));
+        assert_eq!(adapter.evaluate_framework(&cond, ActorId(2)), ConditionResult::Fail);
     }
 
     #[test]
@@ -802,15 +817,15 @@ mod adapter_tests {
 
         // Threshold 0.9: 0.8 < 0.9 → passes
         let cond = EffectCondition::IfTargetHealthBelow(0.9);
-        assert!(adapter.evaluate_framework(&cond, ActorId(2)));
+        assert_eq!(adapter.evaluate_framework(&cond, ActorId(2)), ConditionResult::Pass);
 
         // Threshold 0.5: 0.8 >= 0.5 → fails
         let cond = EffectCondition::IfTargetHealthBelow(0.5);
-        assert!(!adapter.evaluate_framework(&cond, ActorId(2)));
+        assert_eq!(adapter.evaluate_framework(&cond, ActorId(2)), ConditionResult::Fail);
 
         // Threshold 0.8: 0.8 < 0.8 → fails (strict less-than)
         let cond = EffectCondition::IfTargetHealthBelow(0.8);
-        assert!(!adapter.evaluate_framework(&cond, ActorId(2)));
+        assert_eq!(adapter.evaluate_framework(&cond, ActorId(2)), ConditionResult::Fail);
     }
 
     #[test]
@@ -821,11 +836,11 @@ mod adapter_tests {
 
         // Has poison → passes
         let cond = EffectCondition::IfActorHasStatus("poison".to_string());
-        assert!(adapter.evaluate_framework(&cond, ActorId(2)));
+        assert_eq!(adapter.evaluate_framework(&cond, ActorId(2)), ConditionResult::Pass);
 
         // Has stun → fails
         let cond = EffectCondition::IfActorHasStatus("stun".to_string());
-        assert!(!adapter.evaluate_framework(&cond, ActorId(2)));
+        assert_eq!(adapter.evaluate_framework(&cond, ActorId(2)), ConditionResult::Fail);
     }
 
     #[test]
@@ -900,11 +915,11 @@ mod adapter_tests {
         // Framework logic: p > 0.0 passes, p <= 0.0 fails
         for &p in &[0.0, 0.25, 0.5, 0.75, 1.0] {
             let cond = EffectCondition::Probability(p);
-            let expected = p > 0.0;
+            let expected = if p > 0.0 { ConditionResult::Pass } else { ConditionResult::Fail };
             let actual = adapter.evaluate_framework(&cond, ActorId(2));
             assert_eq!(
                 actual, expected,
-                "Probability({}) should be {}, got {}",
+                "Probability({}) should be {:?}, got {:?}",
                 p, expected, actual
             );
         }
@@ -924,11 +939,11 @@ mod adapter_tests {
 
         for &threshold in &[0.5, 0.7, 0.8, 0.9, 1.0] {
             let cond = EffectCondition::IfTargetHealthBelow(threshold);
-            let expected = hp_fraction < threshold;
+            let expected = if hp_fraction < threshold { ConditionResult::Pass } else { ConditionResult::Fail };
             let actual = adapter.evaluate_framework(&cond, ActorId(2));
             assert_eq!(
                 actual, expected,
-                "IfTargetHealthBelow({}) should be {} (HP fraction is {}), got {}",
+                "IfTargetHealthBelow({}) should be {:?} (HP fraction is {}), got {:?}",
                 threshold, expected, hp_fraction, actual
             );
         }
@@ -937,9 +952,63 @@ mod adapter_tests {
         // Framework logic: actor has status with matching kind passes
         // Actor 1 has poison status
         let cond = EffectCondition::IfActorHasStatus("poison".to_string());
-        assert!(adapter.evaluate_framework(&cond, ActorId(2)));
+        assert_eq!(adapter.evaluate_framework(&cond, ActorId(2)), ConditionResult::Pass);
 
         let cond = EffectCondition::IfActorHasStatus("stun".to_string());
-        assert!(!adapter.evaluate_framework(&cond, ActorId(2)));
+        assert_eq!(adapter.evaluate_framework(&cond, ActorId(2)), ConditionResult::Fail);
+    }
+
+    // ── US-604: Unsupported conditions surfaced explicitly ─────────────────────
+
+    #[test]
+    fn unsupported_framework_conditions_return_unknown() {
+        // This is the key acceptance test for US-604: unsupported conditions
+        // must be observable, not silently applied or ignored.
+        //
+        // IfTargetPosition cannot be evaluated because ConditionContext does not
+        // have formation layout access. Rather than silently failing (returning
+        // false), we surface this as Unknown so callers can observe and handle it.
+        let (adapter, _, _) = make_adapter_context();
+
+        // IfTargetPosition requires formation access we don't have → Unknown
+        let cond = EffectCondition::IfTargetPosition(SlotRange { start: 0, end: 2 });
+        assert_eq!(
+            adapter.evaluate_framework(&cond, ActorId(2)),
+            ConditionResult::Unknown,
+            "IfTargetPosition should return Unknown because formation context is unavailable"
+        );
+    }
+
+    #[test]
+    fn unknown_condition_is_deterministic() {
+        // Proves that unsupported conditions are observable in a deterministic way.
+        // Running the same evaluation twice yields the same Unknown result.
+        let (adapter1, _, _) = make_adapter_context();
+        let (adapter2, _, _) = make_adapter_context();
+
+        let cond = EffectCondition::IfTargetPosition(SlotRange { start: 0, end: 2 });
+
+        let result1 = adapter1.evaluate_framework(&cond, ActorId(2));
+        let result2 = adapter2.evaluate_framework(&cond, ActorId(2));
+
+        assert_eq!(result1, result2, "Unknown conditions should be deterministic");
+        assert_eq!(result1, ConditionResult::Unknown);
+    }
+
+    #[test]
+    fn unified_evaluate_propagates_unknown_from_framework() {
+        // When evaluate_framework returns Unknown, the unified evaluate() method
+        // should propagate it rather than converting it to Pass or Fail.
+        let (adapter, _, _) = make_adapter_context();
+
+        let cond = Condition::Framework(EffectCondition::IfTargetPosition(SlotRange {
+            start: 0,
+            end: 2,
+        }));
+        assert_eq!(
+            adapter.evaluate(&cond, ActorId(2)),
+            ConditionResult::Unknown,
+            "evaluate() should propagate Unknown from evaluate_framework"
+        );
     }
 }
