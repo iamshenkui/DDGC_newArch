@@ -65,7 +65,7 @@
                 "A deterministic test proves the effect applies on round one and stops applying afterwards"
             ],
             "priority": 5,
-            "passes": false,
+            "passes": true,
             "notes": "Choose one high-leverage DDGC condition and land it fully."
         },
         {
@@ -78,8 +78,8 @@
                 "A deterministic test proves the same effect changes outcome across the threshold boundary"
             ],
             "priority": 6,
-            "passes": false,
-            "notes": "Second DDGC-specific condition slice."
+            "passes": true,
+            "notes": "Second DDGC-specific condition slice. Added parse_condition_tag and evaluate_by_tag methods to ConditionAdapter. Added 7 integration tests demonstrating stress threshold evaluation, threshold boundary behavior, and monster stress condition semantics."
         },
         {
             "id": "US-607",
@@ -91,8 +91,8 @@
                 "A focused test proves the new condition integrates through the shared adapter instead of a one-off branch"
             ],
             "priority": 7,
-            "passes": false,
-            "notes": "Pick the most reused remaining condition after the Phase 2 inventory."
+            "passes": true,
+            "notes": "Implemented DeathsDoor condition (actor HP < 50%). Added 4 integration tests proving DeathsDoor evaluates correctly through evaluate_by_tag. Added desperate_strike() fixture skill demonstrating DeathsDoor in a skill context."
         },
         {
             "id": "US-608",

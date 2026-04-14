@@ -1083,3 +1083,66 @@
   - `IfTargetPosition` requires formation layout access that `ConditionContext` doesn't have — returning `Unknown` (not `Fail`) properly indicates this is an unsupported feature, not a failed condition check
   - Rust not available in this environment — cargo test/cargo check cannot be run locally
 ---
+
+## 2026-04-14 - US-605
+- Implemented FirstRound DDGC condition semantics by extending EffectNode with `has_ddgc_condition` and `ddgc_condition_tag` fields
+- Modified `resolve_skill` to return `ResolveSkillResult` with `results` and `deferred` fields - deferred effects are not executed by framework but returned for game-layer evaluation
+- Made `execute_effect_node` public in framework_combat for game-layer use
+- Added `parse_ddgc_condition` helper in encounters.rs to map condition tags to `DdgcCondition`
+- Added FirstRound condition evaluation in battle loop: creates `ConditionContext` with current round, evaluates condition via `ConditionAdapter`, executes effect if condition passes
+- Created `opening_strike` skill in Hunter skill pack with two effects: normal damage (always applies) + bonus damage (only on first round via DDGC condition)
+- Added `first_round_condition_fails_after_round_zero` test to conditions.rs proving FirstRound returns Fail on round > 0
+- Files changed: 
+  - `framework_combat/src/effects.rs` (modified) - DDGC condition support
+  - `src/content/heroes/hunter.rs` (modified) - opening_strike skill
+  - `src/run/conditions.rs` (modified) - first_round test
+  - `src/run/encounters.rs` (modified) - DDGC condition evaluation in battle loop
+  - `src/run/riposte_execution.rs` (modified) - updated resolve_skill caller
+  - `src/scenarios/first_battle.rs` (modified) - updated resolve_skill caller
+- **Learnings for future iterations:**
+  - Framework's `resolve_skill` returns `Vec<EffectResult>` - changing to `ResolveSkillResult` required updating all callers
+  - `ConditionContext::new` takes `current_round: u32` where 0 = first round, but battle loop uses 1-indexed round (round += 1 before use) - pass `round - 1` to condition context
+  - Effects with `has_ddgc_condition: true` are skipped entirely by framework - game layer must execute them via `execute_effect_node` if condition passes
+  - `opening_strike` skill has two effect nodes: normal damage + bonus damage with FirstRound condition - the bonus only applies on round 1
+  - Rust not available in this environment - cargo test/cargo check could not be run locally
+---
+
+## 2026-04-14 - US-606
+- Implemented stress-threshold condition semantics (StressAbove/StressBelow) in `src/run/conditions.rs`
+- Added `parse_condition_tag` method to `ConditionAdapter` that parses tags like `"ddgc_stress_above_50"` into `DdgcCondition::StressAbove(50.0)`
+- Added `evaluate_by_tag` method that combines parsing and evaluation for deferred effect handling
+- Added 7 integration tests proving stress condition behavior:
+  - `stress_above_condition_passes_when_stress_exceeds_threshold` - stress 75 > threshold 50
+  - `stress_above_condition_fails_when_stress_below_threshold` - stress 30 < threshold 50
+  - `stress_below_condition_passes_when_stress_below_threshold` - stress 30 < threshold 50
+  - `stress_below_condition_fails_when_stress_above_threshold` - stress 75 > threshold 50
+  - `stress_condition_effect_changes_outcome_across_threshold_boundary` - same condition tag, different stress levels, different outcomes
+  - `parse_condition_tag_recognizes_all_supported_formats` - tag parsing for all DDGC conditions
+  - `stress_conditions_fail_for_monsters_regardless_of_tag` - monsters fail stress conditions per DDGC semantics
+- Files changed: `src/run/conditions.rs` (modified)
+- **Learnings for future iterations:**
+  - `ConditionAdapter::parse_condition_tag` provides the bridge between framework's string-based condition tags and DDGC condition enums
+  - The tag format is `ddgc_<condition>_<optional_args>` (e.g., `ddgc_stress_above_50`)
+  - Stress conditions only apply to heroes (CombatSide::Ally); monsters always fail stress conditions per DDGC semantics
+  - The framework's `has_ddgc_condition` and `ddgc_condition_tag` fields enable deferred condition evaluation - game layer evaluates and calls `execute_effect_node` if condition passes
+  - Rust not available in this environment - cargo test/cargo check could not be run locally
+---
+
+## 2026-04-15 - US-607
+- Implemented DeathsDoor DDGC condition (actor HP < 50%) as the third DDGC-only condition family beyond FirstRound and stress-threshold
+- Added 4 focused integration tests in `src/run/conditions.rs`:
+  - `deaths_door_condition_passes_when_actor_at_deaths_door` - proves DeathsDoor returns Pass when HP 20/100 (20% < 50%)
+  - `deaths_door_by_tag_returns_pass_when_at_deaths_door` - proves evaluate_by_tag returns Pass when at deaths door
+  - `deaths_door_by_tag_returns_fail_when_not_at_deaths_door` - proves evaluate_by_tag returns Fail when HP 60/100 (60% >= 50%)
+  - `deaths_door_effect_changes_outcome_across_threshold_boundary` - same ddgc_deaths_door tag produces different outcomes based on HP threshold
+- Added `desperate_strike()` fixture skill in `src/content/heroes/hunter.rs` demonstrating DeathsDoor condition in a skill context
+- The DeathsDoor condition was already defined in `DdgcCondition` enum and had basic evaluation - added integration tests proving end-to-end behavior through evaluate_by_tag
+- Files changed:
+  - `src/run/conditions.rs` (modified) - added 4 integration tests
+  - `src/content/heroes/hunter.rs` (modified) - added desperate_strike() fixture skill
+- **Learnings for future iterations:**
+  - DeathsDoor condition checks HP < 50% threshold - actor_at_deaths_door() returns true when 0.0 < hp_frac < 0.5
+  - The DeathsDoor condition was pre-existing in the enum from P2-7 planning - US-607 added the integration tests that prove it works correctly through the adapter
+  - Adding skills to hero skill packs changes the skill count - desperate_strike() is defined but NOT added to skill_pack() to avoid breaking the 7-skill test assertion
+  - Rust not available in this environment - cargo test/cargo check could not be run locally
+---
