@@ -9,8 +9,10 @@
 //! will be added in later migration slices (K29/K30+).
 
 pub mod packs;
+pub mod targeting;
 
 pub use packs::*;
+pub use targeting::*;
 
 /// Build the encounter pack registry with common and boss packs for all four dungeons.
 ///
