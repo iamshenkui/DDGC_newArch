@@ -279,4 +279,72 @@ mod tests {
         let policy = DamagePolicy::default();
         assert_eq!(policy, DamagePolicy::FixedAverage);
     }
+
+    // ── US-610: Fixed-average deterministic mode stability tests ─────────────
+
+    #[test]
+    fn fixed_average_policy_is_stable_across_repeated_calls() {
+        // US-610 acceptance: A focused test proves average-mode output remains
+        // stable across repeated runs. This test verifies that FixedAverage
+        // policy returns identical values across many repeated resolve calls,
+        // confirming deterministic behavior for golden trace stability.
+        let range = DamageRange::new(20.0, 28.0);
+        let policy = DamagePolicy::FixedAverage;
+
+        let results: Vec<f64> = (0..1000)
+            .map(|i| policy.resolve(range, 42, &format!("skill_{}", i % 10)))
+            .collect();
+
+        // All results must equal the average
+        let expected = 24.0;
+        for (i, &result) in results.iter().enumerate() {
+            assert_eq!(
+                result, expected,
+                "FixedAverage policy should return {} on call {}, got {}",
+                expected, i, result
+            );
+        }
+    }
+
+    #[test]
+    fn resolve_damage_fixed_is_stable_across_repeated_calls() {
+        // US-610 acceptance: Verifies the resolve_damage_fixed convenience
+        // function returns stable values across repeated calls, proving
+        // that the fixed-average mode does not introduce any variance.
+        let range = DamageRange::new(15.0, 25.0);
+
+        let results: Vec<f64> = (0..1000)
+            .map(|_| resolve_damage_fixed(range))
+            .collect();
+
+        // All results must equal the average (20.0)
+        let expected = 20.0;
+        for (i, &result) in results.iter().enumerate() {
+            assert_eq!(
+                result, expected,
+                "resolve_damage_fixed should return {} on call {}, got {}",
+                expected, i, result
+            );
+        }
+    }
+
+    #[test]
+    fn fixed_average_mode_produces_identical_results_for_same_range() {
+        // US-610 acceptance: Proves that the same DamageRange with FixedAverage
+        // policy always produces identical damage values, which is essential
+        // for stable golden traces in deterministic test paths.
+        let range1 = DamageRange::new(30.0, 50.0);
+        let range2 = DamageRange::new(30.0, 50.0);
+        let policy = DamagePolicy::FixedAverage;
+
+        // Same range, same policy, different actor/skill IDs should all return same value
+        let result1 = policy.resolve(range1, 1, "skill_a");
+        let result2 = policy.resolve(range2, 2, "skill_b");
+        let result3 = resolve_damage_fixed(range1);
+
+        let expected = 40.0; // Average of 30 and 50
+        assert_eq!(result1, expected);
+        assert_eq!(result2, expected);
+        assert_eq!(result3, expected);
+    }
 }

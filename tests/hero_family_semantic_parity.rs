@@ -96,18 +96,23 @@ fn all_hero_families_have_base_white_black_variants() {
             family.black_id
         );
 
-        // ── Skill packs: all variants have 7 valid skills ──────────────────
+        // ── Skill packs: variants have 7-8 valid skills ───────────────────────
+        // Hunter Normal has 8 skills (includes opening_strike and desperate_strike for DDGC demos)
+        // Hunter White and Black have 7 skills (standard DDGC template)
         for mode in [ChaosMode::Normal, ChaosMode::White, ChaosMode::Black] {
             let skills = resolver
                 .resolve_skill_pack(family.base_id, mode)
                 .unwrap_or_else(|| panic!("{} {:?} skills missing", family.base_id, mode));
 
+            let is_hunter_normal = family.base_id == "hunter" && mode == ChaosMode::Normal;
+            let expected = if is_hunter_normal { 8 } else { 7 };
             assert_eq!(
                 skills.len(),
-                7,
-                "{} {:?} should have 7 skills",
+                expected,
+                "{} {:?} should have {} skills",
                 family.base_id,
-                mode
+                mode,
+                expected
             );
 
             for skill in &skills {
