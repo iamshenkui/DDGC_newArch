@@ -26,7 +26,7 @@
                 "A focused test proves the context can be created deterministically from an in-progress combat state"
             ],
             "priority": 2,
-            "passes": false,
+            "passes": true,
             "notes": "Foundational data-model slice for B-004."
         },
         {
