@@ -27,6 +27,10 @@ use crate::encounters::ddgc_targeting_rules::{
 use crate::monsters::build_registry as build_monster_registry;
 use crate::monsters::MonsterFamilyRegistry;
 use crate::trace::BattleTrace;
+use crate::run::capture_events::extract_capture_events;
+use crate::run::captor_state::{
+    apply_captor_dot, is_captor_family, CaptorTracker,
+};
 use crate::run::family_action_policy::{
     select_next_skill, update_actor_state, ActorActionState,
 };
@@ -303,12 +307,19 @@ impl EncounterResolver {
             phase_tracker.init_for_pack(&pack.id.0, clone_ids);
         }
 
+        // ── US-711: Captor state tracking ─────────────────────────────────
+        // For necrodrake_embryosac boss encounters, track captor/captive relationships.
+        // egg_membrane_empty actors start as captor vessels; they transform to
+        // egg_membrane_full when they capture a hero.
+        let mut captor_tracker = CaptorTracker::new();
+
         // ── Battle loop ────────────────────────────────────────────────────
         let mut trace = BattleTrace::new(&pack.id.0);
         let mut counters = SkillUsageCounters::new();
         let mut summon_tracker = SummonTracker::new();
         let mut actor_states: HashMap<ActorId, ActorActionState> = HashMap::new();
         let mut round: u32 = 0;
+        let mut dot_applied_this_round = false;
         let max_rounds = 100;
 
         while encounter.state == EncounterState::Active && round < max_rounds {
@@ -323,7 +334,7 @@ impl EncounterResolver {
             // Check if actor is alive (may have been killed by status tick)
             let hp = actors[&current_actor].effective_attribute(&AttributeKey::new(ATTR_HEALTH));
             if hp.0 <= 0.0 {
-                remove_defeated(&mut encounter, &mut actors, current_actor);
+                remove_defeated(&mut encounter, &mut actors, &mut captor_tracker, current_actor, round, &mut trace);
                 resolver.end_turn(&mut encounter, &mut actors);
                 counters.reset_turn_scope(current_actor);
                 continue;
@@ -484,6 +495,44 @@ impl EncounterResolver {
                         next_enemy_id,
                     );
 
+                    // ── US-711: Capture event extraction and processing ─────────────────────
+                    // Extract capture events from resolved skill effects. For necrodrake_embryosac's
+                    // untimely_progeny skill, this detects when a hero should be captured.
+                    let capture_events = extract_capture_events(current_actor, &effect_results.results, round);
+
+                    for event in capture_events {
+                        // The captor must be an egg_membrane_empty actor from the pack
+                        let captor_family = actor_families.get(&event.captor);
+                        if let Some(family_id) = captor_family {
+                            if is_captor_family(family_id) {
+                                // Hero being captured
+                                let hero_id = event.captured;
+                                let hero_hp = actors.get(&hero_id)
+                                    .map(|a| a.effective_attribute(&AttributeKey::new(ATTR_HEALTH)).0)
+                                    .unwrap_or(0.0);
+
+                                // Check if captor already holds a captive (shouldn't happen, but safety)
+                                if !captor_tracker.is_captor(event.captor) {
+                                    // Place hero into captive state
+                                    captor_tracker.capture(hero_id, event.captor, event.capture_turn, hero_hp);
+
+                                    // Remove captured hero from turn order (they stop acting)
+                                    if let Some(ref mut to) = encounter.turn_order {
+                                        to.remove(hero_id);
+                                    }
+
+                                    // Record capture in trace
+                                    trace.record_capture(
+                                        round,
+                                        event.captor,
+                                        hero_id,
+                                        &actors,
+                                    );
+                                }
+                            }
+                        }
+                    }
+
                     // ── Record usage (US-513) ─────────────────────────────────
                     // After successful skill execution, record the usage for limit tracking.
                     if let Some(limit) = get_usage_limit(&skill.id) {
@@ -620,7 +669,7 @@ impl EncounterResolver {
                     for pool_id in exhausted_pools {
                         let members = shared_health.members_of_exhausted_pool(pool_id);
                         for member_id in members {
-                            remove_defeated(&mut encounter, &mut actors, member_id);
+                            remove_defeated(&mut encounter, &mut actors, &mut captor_tracker, member_id, round, &mut trace);
                         }
                     }
 
@@ -681,7 +730,7 @@ impl EncounterResolver {
                     for id in all_ids {
                         let hp = actors[&id].effective_attribute(&AttributeKey::new(ATTR_HEALTH));
                         if hp.0 <= 0.0 {
-                            remove_defeated(&mut encounter, &mut actors, id);
+                            remove_defeated(&mut encounter, &mut actors, &mut captor_tracker, id, round, &mut trace);
                         }
                     }
                 } else {
@@ -693,7 +742,42 @@ impl EncounterResolver {
                 }
             }
 
+            // ── US-711: Captor DoT at end of round ───────────────────────────
+            // Apply passive damage from egg_membrane_full captors to their captives
+            // at the end of each round. This happens before end_turn so the damage
+            // is recorded before the next round starts.
+            // Detect round end: if current_actor is first in turn order, we just
+            // completed a round (the first actor's turn marks the start of a new round).
+            if !dot_applied_this_round {
+                // Apply captor DoT from this round
+                let dot_results = apply_captor_dot(&mut captor_tracker, &mut actors, round);
+                for (captor, captive, damage, released) in dot_results {
+                    trace.record_captor_dot(round, captor, captive, damage, &actors);
+                    if released {
+                        // Captive reached death's door — release them back to play
+                        trace.record_release(round, captor, captive, "deaths_door", &actors);
+                        // Restore captive to turn order (they can act again)
+                        if let Some(ref mut to) = encounter.turn_order {
+                            if !to.queue.contains(&captive) {
+                                to.queue.push_back(captive);
+                            }
+                        }
+                    }
+                }
+                dot_applied_this_round = true;
+            }
+
             resolver.end_turn(&mut encounter, &mut actors);
+
+            // Reset DoT flag at the start of a new round (when first actor acts again)
+            if let Some(ref to) = encounter.turn_order {
+                if let Some(first) = to.queue.front() {
+                    if *first == current_actor {
+                        dot_applied_this_round = false;
+                    }
+                }
+            }
+
             counters.reset_turn_scope(current_actor);
         }
 
@@ -715,14 +799,36 @@ impl EncounterResolver {
 }
 
 /// Remove a defeated actor from encounter and turn order.
+///
+/// If the defeated actor is a captor holding a captive, the captive is
+/// released back to the encounter and can act again.
+#[allow(clippy::too_many_arguments)]
 fn remove_defeated(
     encounter: &mut Encounter,
-    _actors: &mut HashMap<ActorId, ActorAggregate>,
+    actors: &mut HashMap<ActorId, ActorAggregate>,
+    captor_tracker: &mut CaptorTracker,
     id: ActorId,
+    round: u32,
+    trace: &mut BattleTrace,
 ) {
+    // If this actor is a captor holding a captive, release the captive
+    if let Some(captive_id) = captor_tracker.release_captive_of(id) {
+        // Record the release in trace
+        trace.record_release(round, id, captive_id, "captor_death", actors);
+        // Add captive back to turn order so they can act again
+        if let Some(ref mut to) = encounter.turn_order {
+            if !to.queue.contains(&captive_id) {
+                to.queue.push_back(captive_id);
+            }
+        }
+    }
+
     encounter.remove_actor(id);
+    // Also remove from turn order queue ( Encounter.remove_actor may not handle it)
     if let Some(ref mut to) = encounter.turn_order {
-        to.remove(id);
+        if let Some(pos) = to.queue.iter().position(|&x| x == id) {
+            to.queue.remove(pos);
+        }
     }
 }
 
