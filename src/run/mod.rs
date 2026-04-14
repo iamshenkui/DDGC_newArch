@@ -5,6 +5,7 @@
 //! room-by-room progression, and post-battle reward application.
 
 pub mod conditions;
+pub mod damage_policy;
 pub mod encounters;
 pub mod flow;
 pub mod reactive_events;

@@ -104,8 +104,8 @@
                 "The documentation distinguishes remaining unsupported conditions from the ones now implemented"
             ],
             "priority": 8,
-            "passes": false,
-            "notes": "Documentation closeout for the B-004 subset delivered in Phase 2."
+            "passes": true,
+            "notes": "Documentation closeout for the B-004 subset delivered in Phase 2. SEMANTIC_GAPS.md and MIGRATION_BLOCKERS.md updated per commit bace7f1."
         },
         {
             "id": "US-609",
@@ -117,8 +117,8 @@
                 "A focused test proves policy selection occurs through one shared interface rather than scattered branches"
             ],
             "priority": 9,
-            "passes": false,
-            "notes": "Foundation slice for B-006."
+            "passes": true,
+            "notes": "Foundation slice for B-006. Implemented DamageRange, DamagePolicy (FixedAverage/Rolled), and resolve_damage() in run/damage_policy.rs."
         },
         {
             "id": "US-610",
