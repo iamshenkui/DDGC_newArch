@@ -1146,3 +1146,23 @@
   - Adding skills to hero skill packs changes the skill count - desperate_strike() is defined but NOT added to skill_pack() to avoid breaking the 7-skill test assertion
   - Rust not available in this environment - cargo test/cargo check could not be run locally
 ---
+
+## 2026-04-15 - US-601
+- Created PHASE2_CONDITION_HITPOLICY_INVENTORY.md with comprehensive inventory of DDGC conditions, damage variance, and hit-resolution gaps
+- Inventory distinguishes framework-native conditions (Probability, IfTargetHealthBelow, IfActorHasStatus, IfTargetPosition) from DDGC-only conditions (FirstRound, StressAbove, StressBelow, DeathsDoor, TargetHasStatus, ActorHasStatus)
+- Documents all migrated skills affected by damage averaging (B-006) - all skills use averaged damage values
+- Documents all actors with dodge attributes and accuracy/dodge debuff skills not evaluated in hit resolution (B-010)
+- Selects implementation anchors: opening_strike()/desperate_strike() for conditions, smoke_bomb() for hit-policy
+- Updated tasks/prd-semantic-gap-phase-2.json to mark US-601 as passes: true
+- Files changed:
+  - PHASE2_CONDITION_HITPOLICY_INVENTORY.md (new, at repo root)
+  - tasks/prd-semantic-gap-phase-2.json (modified - US-601 passes: true)
+- **Learnings for future iterations:**
+  - Framework is not available in this environment - cargo test/check could not be run locally
+  - tasks/ directory is inside DDGC_newArch git repo - PRD/progress updates are commit-able
+  - The original US-601 inventory was at tasks/phase2_condition_hit_policy_inventory.md (240 lines) - this iteration created a parallel inventory at repo root (212 lines) with updated content
+  - DDGC conditions already implemented: FirstRound, StressAbove, StressBelow, DeathsDoor, TargetHasStatus, ActorHasStatus (via ConditionAdapter in conditions.rs)
+  - Still-blocked DDGC conditions: InMode, HpAbove, TargetHpAbove, other BuffRule variants
+  - B-006 (damage variance): all migrated skills use averaged damage - needs DamagePolicy interface
+  - B-010 (hit resolution): actors have dodge but no hit-resolution policy - smoke_bomb() is anchor
+---
