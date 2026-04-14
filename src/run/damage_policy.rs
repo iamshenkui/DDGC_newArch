@@ -12,14 +12,7 @@
 //! - [`DamagePolicy::Rolled`]: Returns a random value within the damage range.
 //!   Uses a seeded RNG for determinism in tests.
 //!
-//! # Usage
-//!
-//! ```
-//! let range = DamageRange::new(20.0, 28.0);
-//! let policy = DamagePolicy::FixedAverage;
-//! let resolved = policy.resolve(range);
-//! assert_eq!(resolved, 24.0); // Average of 20 and 28
-//! ```
+//! See unit tests in `run::damage_policy::tests` for usage examples.
 //!
 //! # Architecture
 //!

@@ -35,14 +35,7 @@ const RIPOSTE_KIND: &str = "riposte";
 ///
 /// * `actors` — all actors in the current combat state (HashMap from ActorId to ActorAggregate)
 ///
-/// # Example
-///
-/// ```
-/// let candidates = detect_riposte_candidates(&actors);
-/// for candidate in candidates {
-///     // reactor may counter-attack when hit
-/// }
-/// ```
+/// See unit tests in `run::riposte_detection::tests` for usage examples.
 pub fn detect_riposte_candidates(
     actors: &HashMap<ActorId, ActorAggregate>,
 ) -> Vec<ActorId> {

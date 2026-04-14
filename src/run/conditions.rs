@@ -36,26 +36,7 @@ use crate::encounters::Dungeon;
 /// All data is accessed through deterministic lookups so the context
 /// can be created and queried without introducing non-determinism.
 ///
-/// # Example
-///
-/// ```
-/// let ctx = ConditionContext::new(
-///     actor_id,
-///     target_ids,
-///     0,                           // current round
-///     &actors,
-///     &side_lookup,                // map from ActorId to CombatSide
-///     Dungeon::QingLong,
-/// );
-///
-/// if ctx.is_first_round() {
-///     // First-round-only effect applies
-/// }
-///
-/// if ctx.actor_stress_above(50.0) {
-///     // High-stress effect applies
-/// }
-/// ```
+/// See unit tests in `run::conditions::tests` for usage examples.
 pub struct ConditionContext {
     /// The actor attempting to perform the action.
     actor_id: ActorId,
@@ -350,28 +331,7 @@ pub enum ConditionResult {
 /// The adapter is created from in-progress combat state and provides read-only
 /// access to condition evaluation. It does not mutate combat state.
 ///
-/// # Example
-///
-/// ```
-/// let ctx = ConditionContext::new(
-///     actor_id,
-///     target_ids,
-///     0, // current round
-///     &actors,
-///     &side_lookup,
-///     Dungeon::QingLong,
-/// );
-///
-/// let adapter = ConditionAdapter::new(&ctx);
-///
-/// // Evaluate framework-native condition
-/// let result = adapter.evaluate_framework(&EffectCondition::Probability(0.5));
-/// assert!(result); // Probability > 0 passes
-///
-/// // Evaluate DDGC-specific condition
-/// let result = adapter.evaluate_ddgc(&DdgcCondition::FirstRound);
-/// assert!(result); // On round 0, FirstRound passes
-/// ```
+/// See unit tests in `run::conditions::tests` for usage examples.
 pub struct ConditionAdapter {
     /// The DDGC condition context for DDGC-specific condition evaluation.
     ctx: ConditionContext,
