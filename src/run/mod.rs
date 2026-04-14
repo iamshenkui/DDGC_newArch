@@ -8,6 +8,7 @@ pub mod conditions;
 pub mod damage_policy;
 pub mod encounters;
 pub mod flow;
+pub mod hit_resolution;
 pub mod reactive_events;
 pub mod reactive_queue;
 pub mod rewards;
