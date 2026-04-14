@@ -1013,3 +1013,23 @@
   - Cannot run `cargo test` on this system — code verified by inspection against existing battle loop patterns in encounters.rs
   - tasks/ directory IS tracked by the DDGC_newArch git repo — be careful not to mix metadata commits with code commits
 ---
+
+## 2026-04-14 - US-601
+- Created `tasks/phase2_condition_hit_policy_inventory.md` — comprehensive inventory of DDGC conditions, damage variance, and hit resolution gaps
+- Documented full DDGC BuffRule enum (30+ variants) and classified each as framework-native, DDGC-only, or out-of-scope
+- Framework-native: `IfTargetHealthBelow`, `IfActorHasStatus`, `IfTargetPosition`, `Probability` — all already supported via `EffectCondition`
+- DDGC-only conditions: `FirstRound`, `StressAbove`, `StressBelow`, `DeathsDoor`, `InMode`, etc. — NOT yet implemented
+- Selected initial condition subset for Phase 2: `FirstRound` (P2-4) and `StressAbove/Below` (P2-5)
+- Selected hit-policy anchor scenario: `snake_water` for accuracy-vs-dodge (P2-12)
+- B-006 damage variance: all migrated skills use averaged damage; documented policy options (fixed-average vs rolled)
+- B-010 accuracy/dodge: documented DDGC `hitChance = clamp(accuracy + performerAccuracy - targetDodge, 0, 0.95)` formula
+- Updated `tasks/prd-semantic-gap-phase-2.json` to mark US-601 as passes: true
+- Files changed: `tasks/phase2_condition_hit_policy_inventory.md` (new), `tasks/prd-semantic-gap-phase-2.json` (modified)
+- **Learnings for future iterations:**
+  - The `tasks/` directory IS tracked by the DDGC_newArch git repo — can commit documentation changes
+  - DDGC BuffRule `StressAbove` applies to heroes only (monsters always fail the condition) — need to check `actor.IsMonster`
+  - DDGC `FirstRound` checks `RoundNumber == 0` — round 0 is the first round, round > 0 is subsequent rounds
+  - `BuffRule.SingleParam` holds the threshold value for numeric conditions (stress, HP, etc.)
+  - Cannot run `cargo test` on this system — Rust toolchain not available in this environment
+  - The DDGC C# source (`Character.cs`, `Buff.cs`) is the canonical reference for condition semantics, not the .txt data files
+---
