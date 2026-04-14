@@ -12,6 +12,9 @@
 //! resolution results, applying single-target truncation and self-exclusion filters.
 
 use crate::encounters::targeting::{LaunchConstraint, SideAffinity, TargetRank};
+use framework_combat::encounter::CombatSide;
+use framework_combat::formation::FormationLayout;
+use framework_rules::actor::ActorId;
 
 /// DDGC targeting rule for a specific skill.
 #[derive(Debug, Clone)]
@@ -26,6 +29,106 @@ pub struct DdgcTargetingRule {
     pub single_target: bool,
     /// Whether to exclude self from ally targets (DDGC `@rank` = ally, not self).
     pub exclude_self_from_allies: bool,
+}
+
+/// Helper to create a launch constraint from DDGC rank range notation.
+///
+/// DDGC ranks are 1-indexed and relative to the actor's side (ally/enemy).
+/// Rank 1-2 = front row, rank 3-4 = back row.
+///
+/// `launch_ranks` is a string like "12" (ranks 1-2), "34" (ranks 3-4), or "1234" (any).
+pub fn launch_constraint_from_ddgc(launch_ranks: &str) -> LaunchConstraint {
+    match launch_ranks {
+        "12" => LaunchConstraint::FrontRow,
+        "34" => LaunchConstraint::BackRow,
+        "1234" => LaunchConstraint::Any,
+        _ => LaunchConstraint::Any,
+    }
+}
+
+/// Helper to create a target rank from DDGC rank notation.
+///
+/// DDGC target notation:
+/// - "1234" = any rank (FrontAndBack)
+/// - "12" or "~12" = front 2 ranks (Front)
+/// - "34" = back 2 ranks (Back)
+pub fn target_rank_from_ddgc(target_notation: &str) -> TargetRank {
+    match target_notation {
+        "1234" => TargetRank::FrontAndBack,
+        "12" | "~12" | "~1234" => TargetRank::Front,
+        "34" => TargetRank::Back,
+        _ => TargetRank::Any,
+    }
+}
+
+/// Check if an actor at the given slot satisfies a DDGC rank-based launch constraint.
+///
+/// DDGC ranks are 1-indexed and relative to the actor's side:
+/// - Rank 1-2 = front row (slots 0 to slots_per_lane-1 within the actor's lane)
+/// - Rank 3-4 = back row (slots slots_per_lane to 2*slots_per_lane-1 within the actor's lane)
+pub fn check_launch_rank_constraint(
+    constraint: LaunchConstraint,
+    actor: ActorId,
+    formation: &FormationLayout,
+    _side_lookup: &std::collections::HashMap<ActorId, CombatSide>,
+) -> bool {
+    let Some(slot) = formation.find_actor(actor) else {
+        return false;
+    };
+
+    // Compute the actor's rank within their lane
+    // Allies are in lane 0, enemies are in lane 1
+    // Rank is slot position within the lane (0-indexed), +1 for 1-indexed
+    let slot_in_lane = slot.0 % formation.slots_per_lane;
+
+    match constraint {
+        LaunchConstraint::Any => true,
+        LaunchConstraint::FrontRow => slot_in_lane < formation.slots_per_lane / 2,
+        LaunchConstraint::BackRow => slot_in_lane >= formation.slots_per_lane / 2,
+        LaunchConstraint::SpecificLane(lane) => formation
+            .slots
+            .get(&slot)
+            .is_some_and(|s| s.lane == lane),
+        LaunchConstraint::SlotRange { min, max } => {
+            // Convert slot range (absolute) to rank-based: rank = slot_in_lane + 1
+            // Rank 1 = slot 0 in lane, Rank 2 = slot 1, etc.
+            let rank = slot_in_lane + 1;
+            rank >= min && rank <= max
+        }
+    }
+}
+
+/// Filter targets by DDGC target rank constraint.
+///
+/// Given a list of candidate targets, filters to only those whose slot
+/// satisfies the target rank restriction.
+pub fn filter_targets_by_rank(
+    rank_constraint: TargetRank,
+    targets: &[ActorId],
+    formation: &FormationLayout,
+) -> Vec<ActorId> {
+    if matches!(rank_constraint, TargetRank::Any | TargetRank::FrontAndBack) {
+        return targets.to_vec();
+    }
+
+    let slots_per_lane = formation.slots_per_lane;
+
+    targets
+        .iter()
+        .filter(|&&target_id| {
+            let Some(slot) = formation.find_actor(target_id) else {
+                return false;
+            };
+            let slot_in_lane = slot.0 % slots_per_lane;
+
+            match rank_constraint {
+                TargetRank::Front => slot_in_lane < slots_per_lane / 2,
+                TargetRank::Back => slot_in_lane >= slots_per_lane / 2,
+                _ => true,
+            }
+        })
+        .copied()
+        .collect()
 }
 
 impl DdgcTargetingRule {
@@ -70,6 +173,22 @@ impl DdgcTargetingRule {
             side_affinity: SideAffinity::Ally,
             single_target: true,
             exclude_self_from_allies: false, // Self is the only target anyway
+        }
+    }
+
+    /// Create a rule with explicit launch constraint and target rank (for rank-gated skills).
+    pub fn with_rank_constraint(
+        launch_constraint: LaunchConstraint,
+        target_rank: TargetRank,
+        side_affinity: SideAffinity,
+        single_target: bool,
+    ) -> Self {
+        DdgcTargetingRule {
+            launch_constraint,
+            target_rank,
+            side_affinity,
+            single_target,
+            exclude_self_from_allies: false,
         }
     }
 }
@@ -191,8 +310,22 @@ pub fn ddgc_targeting_rules() -> impl IntoIterator<Item = (&'static str, DdgcTar
         ("bleed", DdgcTargetingRule::single_target_enemy()),
         // moth_mimicry_A normal_attack: single-target enemy
         ("normal_attack", DdgcTargetingRule::single_target_enemy()),
-        // mantis families poison: single-target enemy
-        ("poison", DdgcTargetingRule::single_target_enemy()),
+        // mantis_magic_flower poison: single-target enemy
+        // DDGC: launch ranks 1-2 (front row), target ranks 1-4 (any rank)
+        ("poison", DdgcTargetingRule::with_rank_constraint(
+            LaunchConstraint::FrontRow,
+            TargetRank::FrontAndBack,
+            SideAffinity::Enemy,
+            true,
+        )),
+        // mantis_magic_flower crowd_bleed: multi-target enemy
+        // DDGC: launch ranks 1-2 (front row), target ~12 (front 2 ranks only)
+        ("crowd_bleed", DdgcTargetingRule::with_rank_constraint(
+            LaunchConstraint::FrontRow,
+            TargetRank::Front,
+            SideAffinity::Enemy,
+            false,
+        )),
         // mantis_spiny_flower ignore_armor: single-target enemy
         ("ignore_armor", DdgcTargetingRule::single_target_enemy()),
         // robber_melee normal_attack: single-target enemy

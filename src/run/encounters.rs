@@ -21,7 +21,9 @@ use framework_rules::attributes::{AttributeKey, ATTR_HEALTH};
 
 use crate::content::ContentPack;
 use crate::encounters::{build_packs_registry, Dungeon, EncounterPack, EncounterPackRegistry, PackType};
-use crate::encounters::ddgc_targeting_rules::get_ddgc_targeting_rule;
+use crate::encounters::ddgc_targeting_rules::{
+    check_launch_rank_constraint, filter_targets_by_rank, get_ddgc_targeting_rule,
+};
 use crate::monsters::build_registry as build_monster_registry;
 use crate::monsters::MonsterFamilyRegistry;
 use crate::trace::BattleTrace;
@@ -297,6 +299,23 @@ impl EncounterResolver {
                 continue;
             }
 
+            // ── DDGC Launch-Rank Gating (US-704) ───────────────────────────────
+            // Check if the actor's current position satisfies the skill's launch
+            // constraint. If not, the skill is illegal from this position and we
+            // submit a Wait instead.
+            if let Some(rule) = get_ddgc_targeting_rule(skill_name) {
+                if !check_launch_rank_constraint(rule.launch_constraint, current_actor, &formation, &side_lookup) {
+                    let cmd = CombatCommand::Wait {
+                        actor: current_actor,
+                    };
+                    resolver.submit_command(&mut encounter, &mut actors, cmd);
+                    trace.record_wait(round, current_actor, &actors);
+                    resolver.end_turn(&mut encounter, &mut actors);
+                    counters.reset_turn_scope(current_actor);
+                    continue;
+                }
+            }
+
             // Resolve targets — sorted by ActorId for deterministic trace output
             let mut targets = skill
                 .target_selector
@@ -315,6 +334,13 @@ impl EncounterResolver {
                 if rule.exclude_self_from_allies {
                     targets.retain(|t| *t != current_actor);
                 }
+            }
+
+            // ── DDGC Target Rank Filtering (US-704) ─────────────────────────────
+            // Filter targets by the skill's target rank constraint. This restricts
+            // which ranks (rows) are valid targets for rank-gated skills.
+            if let Some(rule) = get_ddgc_targeting_rule(skill_name) {
+                targets = filter_targets_by_rank(rule.target_rank, &targets, &formation);
             }
 
             if targets.is_empty() {
@@ -1052,5 +1078,184 @@ mod tests {
                 "mark_skill targets enemies"
             );
         }
+    }
+
+    // ── DDGC Rank Gating Tests (US-704) ─────────────────────────────────────
+
+    #[test]
+    fn poison_skill_has_front_row_launch_constraint() {
+        // Verify that the poison skill (mantis_magic_flower primary attack)
+        // has a FrontRow launch constraint in its DDGC targeting rule.
+        use crate::encounters::targeting::LaunchConstraint;
+
+        let rule = get_ddgc_targeting_rule("poison").expect("poison should have a rule");
+        assert!(
+            matches!(rule.launch_constraint, LaunchConstraint::FrontRow),
+            "poison should have FrontRow launch constraint (DDGC: launch ranks 1-2)"
+        );
+    }
+
+    #[test]
+    fn launch_constraint_front_row_satisfied_in_front() {
+        // Unit test: an actor in the front half of the formation satisfies FrontRow.
+        // For DDGC targeting, "front row" means the front half of the formation:
+        // - Ally at slot 0 (ally rank 1, front) -> satisfies
+        // - Ally at slot 1 (ally rank 2, front) -> satisfies
+        // - Enemy at slot 4 (enemy rank 1, closest to allies) -> satisfies
+        // - Enemy at slot 6 (enemy rank 3, back) -> does NOT satisfy
+        use crate::encounters::ddgc_targeting_rules::check_launch_rank_constraint;
+        use crate::encounters::targeting::LaunchConstraint;
+        use framework_rules::attributes::{AttributeKey, AttributeValue, ATTR_HEALTH};
+        use std::collections::HashMap;
+
+        let mut formation = FormationLayout::new(2, 4);
+        // Allies in lane 0 (slots 0-3), enemies in lane 1 (slots 4-7)
+        formation.place(ActorId(1), SlotIndex(0)).unwrap(); // ally slot 0 (ally rank 1, front)
+        formation.place(ActorId(2), SlotIndex(1)).unwrap(); // ally slot 1 (ally rank 2, front)
+        formation.place(ActorId(10), SlotIndex(4)).unwrap(); // enemy slot 4 (enemy rank 1, front)
+        formation.place(ActorId(11), SlotIndex(6)).unwrap(); // enemy slot 6 (enemy rank 3, back)
+
+        let mut actors = HashMap::new();
+        for id in [ActorId(1), ActorId(2), ActorId(10), ActorId(11)] {
+            let mut a = framework_rules::actor::ActorAggregate::new(id);
+            a.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+            actors.insert(id, a);
+        }
+
+        let mut side_lookup = HashMap::new();
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+        side_lookup.insert(ActorId(2), CombatSide::Ally);
+        side_lookup.insert(ActorId(10), CombatSide::Enemy);
+        side_lookup.insert(ActorId(11), CombatSide::Enemy);
+
+        // ActorId(1) at slot 0 (ally rank 1, front) satisfies FrontRow
+        assert!(
+            check_launch_rank_constraint(LaunchConstraint::FrontRow, ActorId(1), &formation, &side_lookup),
+            "Ally at slot 0 (rank 1, front) should satisfy FrontRow constraint"
+        );
+
+        // ActorId(2) at slot 1 (ally rank 2, front) satisfies FrontRow
+        assert!(
+            check_launch_rank_constraint(LaunchConstraint::FrontRow, ActorId(2), &formation, &side_lookup),
+            "Ally at slot 1 (rank 2, front) should satisfy FrontRow constraint"
+        );
+
+        // ActorId(10) at slot 4 (enemy rank 1, front relative to enemies) satisfies FrontRow
+        // Note: For enemies, rank 1 is the slot closest to allies (slot 4 in lane 1)
+        assert!(
+            check_launch_rank_constraint(LaunchConstraint::FrontRow, ActorId(10), &formation, &side_lookup),
+            "Enemy at slot 4 (enemy rank 1, front) should satisfy FrontRow constraint"
+        );
+
+        // ActorId(11) at slot 6 (enemy rank 3, back) does NOT satisfy FrontRow
+        assert!(
+            !check_launch_rank_constraint(LaunchConstraint::FrontRow, ActorId(11), &formation, &side_lookup),
+            "Enemy at slot 6 (enemy rank 3, back) should NOT satisfy FrontRow constraint"
+        );
+    }
+
+    #[test]
+    fn launch_constraint_any_always_satisfied() {
+        // Unit test: Any launch constraint is always satisfied regardless of position.
+        use crate::encounters::ddgc_targeting_rules::check_launch_rank_constraint;
+        use crate::encounters::targeting::LaunchConstraint;
+        use framework_rules::attributes::{AttributeKey, AttributeValue, ATTR_HEALTH};
+        use std::collections::HashMap;
+
+        let mut formation = FormationLayout::new(2, 4);
+        formation.place(ActorId(1), SlotIndex(0)).unwrap(); // front row
+        formation.place(ActorId(10), SlotIndex(4)).unwrap(); // back row
+
+        let mut actors = HashMap::new();
+        for id in [ActorId(1), ActorId(10)] {
+            let mut a = framework_rules::actor::ActorAggregate::new(id);
+            a.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+            actors.insert(id, a);
+        }
+
+        let mut side_lookup = HashMap::new();
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+        side_lookup.insert(ActorId(10), CombatSide::Enemy);
+
+        assert!(
+            check_launch_rank_constraint(LaunchConstraint::Any, ActorId(1), &formation, &side_lookup),
+            "Any constraint should be satisfied in front row"
+        );
+        assert!(
+            check_launch_rank_constraint(LaunchConstraint::Any, ActorId(10), &formation, &side_lookup),
+            "Any constraint should be satisfied in back row"
+        );
+    }
+
+    #[test]
+    fn filter_targets_by_rank_front_restricts_to_front_row() {
+        // Unit test: TargetRank::Front filters out back-row targets.
+        // Front row = slots 0-3 (slots 0,1 for allies; slots 4,5 for enemies in lane 1).
+        // Back row = slots 4-7.
+        use crate::encounters::ddgc_targeting_rules::filter_targets_by_rank;
+        use crate::encounters::targeting::TargetRank;
+        use framework_rules::attributes::{AttributeKey, AttributeValue, ATTR_HEALTH};
+        use std::collections::HashMap;
+
+        let mut formation = FormationLayout::new(2, 4);
+        // Allies in lane 0 (slots 0-3), enemies in lane 1 (slots 4-7)
+        formation.place(ActorId(1), SlotIndex(0)).unwrap(); // ally front
+        formation.place(ActorId(10), SlotIndex(4)).unwrap(); // enemy slot 4 (enemy rank 1, front)
+        formation.place(ActorId(11), SlotIndex(5)).unwrap(); // enemy slot 5 (enemy rank 2, front)
+        formation.place(ActorId(12), SlotIndex(6)).unwrap(); // enemy slot 6 (enemy rank 3, back)
+        formation.place(ActorId(13), SlotIndex(7)).unwrap(); // enemy slot 7 (enemy rank 4, back)
+
+        let mut actors = HashMap::new();
+        for id in [ActorId(1), ActorId(10), ActorId(11), ActorId(12), ActorId(13)] {
+            let mut a = framework_rules::actor::ActorAggregate::new(id);
+            a.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+            actors.insert(id, a);
+        }
+
+        let mut side_lookup = HashMap::new();
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+        side_lookup.insert(ActorId(10), CombatSide::Enemy);
+        side_lookup.insert(ActorId(11), CombatSide::Enemy);
+        side_lookup.insert(ActorId(12), CombatSide::Enemy);
+        side_lookup.insert(ActorId(13), CombatSide::Enemy);
+
+        // All enemies as candidates
+        let all_enemies = vec![ActorId(10), ActorId(11), ActorId(12), ActorId(13)];
+
+        // Filter to front row only (slots 4, 5 = enemy ranks 1, 2 = front)
+        let front_targets = filter_targets_by_rank(TargetRank::Front, &all_enemies, &formation);
+        assert_eq!(front_targets.len(), 2, "Front rank should include 2 enemies (slots 4, 5)");
+        assert!(front_targets.contains(&ActorId(10)), "Should include enemy at slot 4");
+        assert!(front_targets.contains(&ActorId(11)), "Should include enemy at slot 5");
+        assert!(!front_targets.contains(&ActorId(12)), "Should exclude enemy at slot 6 (back)");
+        assert!(!front_targets.contains(&ActorId(13)), "Should exclude enemy at slot 7 (back)");
+    }
+
+    #[test]
+    fn filter_targets_by_rank_any_returns_all() {
+        // Unit test: TargetRank::Any returns all targets unchanged.
+        use crate::encounters::ddgc_targeting_rules::filter_targets_by_rank;
+        use crate::encounters::targeting::TargetRank;
+        use framework_rules::attributes::{AttributeKey, AttributeValue, ATTR_HEALTH};
+        use std::collections::HashMap;
+
+        let mut formation = FormationLayout::new(2, 4);
+        formation.place(ActorId(10), SlotIndex(0)).unwrap();
+        formation.place(ActorId(11), SlotIndex(4)).unwrap();
+
+        let mut actors = HashMap::new();
+        for id in [ActorId(10), ActorId(11)] {
+            let mut a = framework_rules::actor::ActorAggregate::new(id);
+            a.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+            actors.insert(id, a);
+        }
+
+        let mut side_lookup = HashMap::new();
+        side_lookup.insert(ActorId(10), CombatSide::Enemy);
+        side_lookup.insert(ActorId(11), CombatSide::Enemy);
+
+        let all_enemies = vec![ActorId(10), ActorId(11)];
+        let filtered = filter_targets_by_rank(TargetRank::Any, &all_enemies, &formation);
+        assert_eq!(filtered.len(), 2, "TargetRank::Any should return all targets");
     }
 }
