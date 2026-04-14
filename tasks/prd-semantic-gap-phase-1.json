@@ -104,7 +104,7 @@
                 "A focused test proves guard redirection coexists cleanly with the reactive queue and trace output"
             ],
             "priority": 8,
-            "passes": false,
+            "passes": true,
             "notes": "Second real B-008 behavior slice."
         },
         {
@@ -117,7 +117,7 @@
                 "The trace clearly separates original attacks, redirected hits, and counter-attacks for review"
             ],
             "priority": 9,
-            "passes": false,
+            "passes": true,
             "notes": "Locks Phase 1 reactive behavior before moving on."
         },
         {
@@ -130,7 +130,7 @@
                 "A focused test proves unrelated skills do not affect each other's counters"
             ],
             "priority": 10,
-            "passes": false,
+            "passes": true,
             "notes": "State-model slice for B-005 only."
         },
         {

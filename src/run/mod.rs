@@ -13,3 +13,4 @@ pub mod reactive_queue;
 pub mod rewards;
 pub mod riposte_detection;
 pub mod riposte_execution;
+pub mod usage_counters;

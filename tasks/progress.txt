@@ -1049,3 +1049,51 @@
   - Test assertions should match actual behavior - the `no_recursion_riposte_chain_terminates` test had a comment/assertion mismatch
   - The `already_reacted` set tracks actors who have reacted, not actors who have been hit
 ---
+
+## 2026-04-15 - US-508
+- Implemented guard redirect execution in `src/run/guard_redirect_execution.rs`
+- Guard absorbs damage for protected target by reversing damage to protected actor and applying same damage to guard
+- Guard status is consumed after redirect (one-shot per hit)
+- Guard redirect events are now processed in the reactive queue in `encounters.rs`
+- Added 5 tests covering: kind constant, damage reversal, non-guard events, no-damage events, status consumption
+- All 593 tests pass
+- Files changed: `src/run/guard_redirect_execution.rs` (new), `src/run/mod.rs` (modified), `src/run/encounters.rs` (modified)
+- **Learnings for future iterations:**
+  - `EffectResult` struct has fields `actor`, `targets` (vec), `kind`, `values`, `applied_statuses` — not `target` singular
+  - `execute_guard_redirect` uses direct HP modification via `actor.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(...))` rather than going through skill resolution
+  - Guard redirect reverses damage by adding it back to protected target and subtracting from guard — net effect is redirect
+  - `ReactiveEventKind` enum variants must be imported in test modules explicitly
+  - Variable names shadowing imports (e.g., `let guard = ...` shadowing `use crate::content::statuses::guard`) causes compile errors — use different names like `guard_actor`
+---
+
+## 2026-04-15 - US-509
+- Created `reactive_battle` scenario in `src/scenarios/reactive_battle.rs` demonstrating riposte mechanics
+- Created golden trace fixture `fixtures/semantic_battles/reactive_battle_trace.json` with explicit reactive entries
+- Added regression tests in `tests/semantic_parity_trace.rs`: `reactive_fixture_battle_trace_is_stable`, `reactive_fixture_contains_riposte_entries`, `reactive_fixture_triggers_are_explicit`
+- Fixed reactive detection in `encounters.rs` to check `target == candidate` instead of `targets.contains(&candidate)` — this ensures only actors who were actually hit trigger riposte, not any actor with riposte status in the battle
+- All 593+ tests pass
+- Files changed: `src/scenarios/reactive_battle.rs` (new), `src/scenarios/mod.rs` (modified), `tests/semantic_parity_trace.rs` (modified), `fixtures/semantic_battles/reactive_battle_trace.json` (new)
+- **Learnings for future iterations:**
+  - The framework's `apply_status` EffectNode does not auto-attach statuses during skill resolution — must manually attach via `actor.statuses.attach(statuses::riposte(N))` for testing
+  - The reactive detection logic had a bug where it checked if a riposte candidate was anywhere in targets, not if the specific target being processed was the candidate — fix with `target == candidate`
+  - Guard and riposte reactive events should only fire when there's actual damage (check `damage_amount.is_some() && damage_amount.unwrap() > 0.0`)
+  - The scenario manually pre-attaches riposte status to the tank actor because `apply_status` doesn't work autoamtically
+  - `reactive_battle_trace.json` shows clear trigger relationship: enemy glacial_torrent hits tank → tank riposte counter-attacks enemy
+---
+
+## 2026-04-15 - US-510
+- Created `src/run/usage_counters.rs` with `SkillUsageCounters` game-layer state
+- Tracks usage counts keyed by (ActorId, SkillId, UsageScope) for turn and battle scopes
+- `UsageLimit` struct declares per-turn or per-battle limits
+- `can_use()` and `remaining_uses()` methods for limit checking
+- `reset_turn_scope()` resets only turn counters (actor-specific); `reset_all_scope()` clears all for actor
+- Added 22 focused tests proving counter isolation and scope independence
+- Core acceptance test: `unrelated_skills_do_not_affect_each_others_counters` proves different skills have independent counters
+- All 619 tests pass
+- Files changed: `src/run/usage_counters.rs` (new), `src/run/mod.rs` (modified)
+- **Learnings for future iterations:**
+  - Counters are keyed by `(ActorId, SkillId, UsageScope)` — each combination is independent
+  - Turn and battle scopes are tracked independently and do not interfere with each other
+  - `SkillUsageCounters` is game-layer state separate from framework cooldown — this is intentional isolation
+  - `reset_turn_scope(actor)` only clears turn-scoped counters for that actor; battle-scoped counters persist
+  - `UsageLimit::per_turn(N)` and `UsageLimit::per_battle(N)` are convenience constructors
