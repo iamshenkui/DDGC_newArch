@@ -137,6 +137,31 @@ impl BattleTrace {
         });
     }
 
+    /// Record a miss action (attack missed due to dodge).
+    pub fn record_miss(
+        &mut self,
+        turn: u32,
+        actor: ActorId,
+        targets: &[ActorId],
+        actors: &HashMap<ActorId, framework_rules::actor::ActorAggregate>,
+    ) {
+        let mut snapshot = BTreeMap::new();
+        for (&id, act) in actors {
+            let hp = act.effective_attribute(&AttributeKey::new(ATTR_HEALTH));
+            snapshot.insert(id.0, hp.0);
+        }
+
+        self.entries.push(TraceEntry {
+            turn,
+            actor: actor.0,
+            action: "miss".to_string(),
+            targets: targets.iter().map(|t| t.0).collect(),
+            effects: vec![],
+            snapshot,
+            triggered_by: None,
+        });
+    }
+
     /// Record a status tick event (end-of-turn status processing).
     pub fn record_status_tick(
         &mut self,

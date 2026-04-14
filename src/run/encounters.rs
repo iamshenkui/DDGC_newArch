@@ -25,6 +25,7 @@ use crate::monsters::build_registry as build_monster_registry;
 use crate::monsters::MonsterFamilyRegistry;
 use crate::trace::BattleTrace;
 use crate::run::conditions::{Condition, ConditionAdapter, ConditionContext, ConditionResult, DdgcCondition};
+use crate::run::hit_resolution::{HitPolicy, HitResolutionContext};
 use crate::run::reactive_events::{build_reactive_events, DamageStepContext, ReactiveEventKind};
 use crate::run::reactive_queue::ReactiveQueue;
 use crate::run::riposte_detection::detect_riposte_candidates;
@@ -291,6 +292,29 @@ impl EncounterResolver {
                 let resolution = resolver.submit_command(&mut encounter, &mut actors, cmd);
 
                 if resolution.accepted {
+                    // ── Hit Resolution (US-613) ─────────────────────────────────
+                    // Check if the attack hits based on accuracy vs dodge.
+                    // If miss, record the miss and skip skill resolution.
+                    let primary_target = targets.first().copied();
+                    let mut attack_hits = true;
+                    if let Some(target_id) = primary_target {
+                        if let Some(hit_ctx) = HitResolutionContext::new(
+                            current_actor,
+                            target_id,
+                            &actors,
+                            &self.content_pack,
+                        ) {
+                            attack_hits = HitPolicy::AccuracyVsDodge.resolve(&hit_ctx);
+                        }
+                    }
+
+                    if !attack_hits {
+                        // Attack missed - record miss and end turn
+                        trace.record_miss(round, current_actor, &targets, &actors);
+                        resolver.end_turn(&mut encounter, &mut actors);
+                        continue;
+                    }
+
                     // ── Skill Resolution ───────────────────────────────────────
                     // Create EffectContext only for skill resolution, then drop it
                     // to allow reactive processing to borrow actors/formation.

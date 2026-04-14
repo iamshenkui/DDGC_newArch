@@ -30,6 +30,7 @@ pub fn alchemist_archetype() -> Archetype {
         stress: 0.0,
         max_stress: 200.0,
         crit_chance: 0.02,
+        accuracy: 0.95,
         dodge: 0.00,
     }
 }
@@ -167,6 +168,7 @@ pub fn diviner_archetype() -> Archetype {
         stress: 0.0,
         max_stress: 200.0,
         crit_chance: 0.02,
+        accuracy: 0.95,
         dodge: 0.05,
     }
 }
@@ -313,6 +315,7 @@ pub fn hunter_archetype() -> Archetype {
         stress: 0.0,
         max_stress: 200.0,
         crit_chance: 0.02,
+        accuracy: 0.95,
         dodge: 0.05,
     }
 }
@@ -463,6 +466,7 @@ pub fn shaman_archetype() -> Archetype {
         stress: 0.0,
         max_stress: 200.0,
         crit_chance: 0.03,
+        accuracy: 0.95,
         dodge: 0.00,
     }
 }
@@ -610,6 +614,7 @@ pub fn tank_archetype() -> Archetype {
         stress: 0.0,
         max_stress: 200.0,
         crit_chance: 0.03,
+        accuracy: 0.95,
         dodge: 0.00,
     }
 }

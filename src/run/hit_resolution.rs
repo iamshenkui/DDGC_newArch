@@ -274,4 +274,96 @@ mod tests {
 
         assert!(!HitPolicy::AlwaysMiss.resolve(&ctx));
     }
+
+    #[test]
+    fn accuracy_vs_dodge_policy_hits_when_strictly_greater() {
+        // accuracy > effective_dodge -> hit
+        let ctx = HitResolutionContext {
+            attacker_id: ActorId(1),
+            defender_id: ActorId(2),
+            attacker_accuracy: 0.96,
+            defender_dodge: 0.95,
+            has_flanking_bonus: false,
+            defender_is_marked: false,
+        };
+
+        assert!(
+            HitPolicy::AccuracyVsDodge.resolve(&ctx),
+            "Should hit when accuracy > dodge"
+        );
+    }
+
+    #[test]
+    fn accuracy_vs_dodge_policy_misses_when_equal() {
+        // accuracy == effective_dodge -> miss (not strictly greater)
+        let ctx = HitResolutionContext {
+            attacker_id: ActorId(1),
+            defender_id: ActorId(2),
+            attacker_accuracy: 0.95,
+            defender_dodge: 0.95,
+            has_flanking_bonus: false,
+            defender_is_marked: false,
+        };
+
+        assert!(
+            !HitPolicy::AccuracyVsDodge.resolve(&ctx),
+            "Should miss when accuracy == dodge"
+        );
+    }
+
+    #[test]
+    fn accuracy_vs_dodge_policy_misses_when_less() {
+        // accuracy < effective_dodge -> miss
+        let ctx = HitResolutionContext {
+            attacker_id: ActorId(1),
+            defender_id: ActorId(2),
+            attacker_accuracy: 0.20,
+            defender_dodge: 0.30,
+            has_flanking_bonus: false,
+            defender_is_marked: false,
+        };
+
+        assert!(
+            !HitPolicy::AccuracyVsDodge.resolve(&ctx),
+            "Should miss when accuracy < dodge"
+        );
+    }
+
+    #[test]
+    fn accuracy_vs_dodge_policy_hits_with_marked_target() {
+        // accuracy 0.60 vs dodge 0.30, marked reduces dodge to 0.15 -> hit
+        let ctx = HitResolutionContext {
+            attacker_id: ActorId(1),
+            defender_id: ActorId(2),
+            attacker_accuracy: 0.60,
+            defender_dodge: 0.30,
+            has_flanking_bonus: false,
+            defender_is_marked: true, // marked reduces dodge by 50%
+        };
+
+        // effective_dodge = 0.30 * 0.5 = 0.15, and 0.60 > 0.15 -> hit
+        assert!(
+            HitPolicy::AccuracyVsDodge.resolve(&ctx),
+            "Should hit against marked target when accuracy > reduced dodge"
+        );
+    }
+
+    #[test]
+    fn accuracy_vs_dodge_policy_misses_with_marked_target_when_still_less() {
+        // accuracy 0.10 vs dodge 0.30, marked reduces dodge to 0.15 -> miss
+        let ctx = HitResolutionContext {
+            attacker_id: ActorId(1),
+            defender_id: ActorId(2),
+            attacker_accuracy: 0.10,
+            defender_dodge: 0.30,
+            has_flanking_bonus: false,
+            defender_is_marked: true, // marked reduces dodge by 50%
+        };
+
+        // effective_dodge = 0.30 * 0.5 = 0.15, and 0.10 < 0.15 -> miss
+        assert!(
+            !HitPolicy::AccuracyVsDodge.resolve(&ctx),
+            "Should miss against marked target when accuracy < reduced dodge"
+        );
+    }
 }

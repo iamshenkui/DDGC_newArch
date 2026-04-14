@@ -17,6 +17,7 @@ pub const ATTR_MAX_STRESS: &str = "max_stress";
 pub const ATTR_CHAOS: &str = "chaos";
 pub const ATTR_MAX_CHAOS: &str = "max_chaos";
 pub const ATTR_CRIT_CHANCE: &str = "crit_chance";
+pub const ATTR_ACCURACY: &str = "accuracy";
 pub const ATTR_DODGE: &str = "dodge";
 
 // ── Archetype Definition ──────────────────────────────────────────────────
@@ -39,6 +40,7 @@ pub struct Archetype {
     pub stress: f64,
     pub max_stress: f64,
     pub crit_chance: f64,
+    pub accuracy: f64,
     pub dodge: f64,
 }
 
@@ -70,6 +72,7 @@ impl Archetype {
         actor.set_base(AttributeKey::new(ATTR_STRESS), AttributeValue(self.stress));
         actor.set_base(AttributeKey::new(ATTR_MAX_STRESS), AttributeValue(self.max_stress));
         actor.set_base(AttributeKey::new(ATTR_CRIT_CHANCE), AttributeValue(self.crit_chance));
+        actor.set_base(AttributeKey::new(ATTR_ACCURACY), AttributeValue(self.accuracy));
         actor.set_base(AttributeKey::new(ATTR_DODGE), AttributeValue(self.dodge));
 
         actor
@@ -93,6 +96,7 @@ pub fn crusader() -> Archetype {
         stress: 0.0,
         max_stress: 200.0,
         crit_chance: 0.05,
+        accuracy: 0.95,
         dodge: 0.05,
     }
 }
@@ -112,6 +116,7 @@ pub fn vestal() -> Archetype {
         stress: 0.0,
         max_stress: 200.0,
         crit_chance: 0.03,
+        accuracy: 0.95,
         dodge: 0.10,
     }
 }
@@ -133,6 +138,7 @@ pub fn bone_soldier() -> Archetype {
         stress: 0.0,
         max_stress: 200.0,
         crit_chance: 0.0,
+        accuracy: 0.95,
         dodge: 0.10,
     }
 }
@@ -152,6 +158,7 @@ pub fn necromancer() -> Archetype {
         stress: 0.0,
         max_stress: 200.0,
         crit_chance: 0.0,
+        accuracy: 0.95,
         dodge: 0.0,
     }
 }

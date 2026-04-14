@@ -41,6 +41,7 @@ pub fn archetype() -> Archetype {
         stress: 0.0,
         max_stress: 200.0,
         crit_chance: 0.07,
+        accuracy: 0.95,
         dodge: 0.0,
     }
 }
