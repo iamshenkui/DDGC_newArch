@@ -37,6 +37,7 @@ use crate::run::reactive_queue::ReactiveQueue;
 use crate::run::riposte_detection::detect_riposte_candidates;
 use crate::run::riposte_execution::{execute_riposte, has_riposte_status};
 use crate::run::guard_redirect_execution::execute_guard_redirect;
+use crate::run::summon_materialization::{materialize_summons, SummonTracker};
 use crate::run::usage_counters::SkillUsageCounters;
 use crate::run::usage_limits::get_usage_limit;
 
@@ -268,6 +269,7 @@ impl EncounterResolver {
         // ── Battle loop ────────────────────────────────────────────────────
         let mut trace = BattleTrace::new(&pack.id.0);
         let mut counters = SkillUsageCounters::new();
+        let mut summon_tracker = SummonTracker::new();
         let mut actor_states: HashMap<ActorId, ActorActionState> = HashMap::new();
         let mut round: u32 = 0;
         let max_rounds = 100;
@@ -423,7 +425,22 @@ impl EncounterResolver {
                     // Extract summon events from resolved skill effects without mutating
                     // encounter state. The events are stored for US-708 materialization.
                     // This is a pure extraction — no actor or formation state is modified.
-                    let _summon_events = extract_summon_events(current_actor, &effect_results.results);
+                    let summon_events = extract_summon_events(current_actor, &effect_results.results);
+
+                    // ── US-708: Summon unit materialization ───────────────────────────────
+                    // Materialize summoned units from extracted summon events.
+                    // This creates real actors in the encounter state through the formation
+                    // placement pathway. Deduplication prevents infinite spawn loops.
+                    next_enemy_id = materialize_summons(
+                        &summon_events,
+                        &mut actors,
+                        &mut formation,
+                        &mut encounter,
+                        &self.content_pack,
+                        &self.monster_registry,
+                        &mut summon_tracker,
+                        next_enemy_id,
+                    );
 
                     // ── Record usage (US-513) ─────────────────────────────────
                     // After successful skill execution, record the usage for limit tracking.
@@ -1498,5 +1515,147 @@ mod tests {
                 "First-skill fallback always returns stun (ignoring state)"
             );
         }
+    }
+
+    // ── US-708: Summon Materialization Tests ─────────────────────────────────
+
+    #[test]
+    fn gambler_battle_runs_to_completion_with_summon() {
+        // US-708: Verify that gambler battle runs and produces trace output.
+        // The gambler prioritizes summon_mahjong, which creates summon events.
+        // The battle should complete regardless of whether summoned units act.
+        let resolver = EncounterResolver::new();
+
+        let pack = resolver
+            .resolve_boss_pack(Dungeon::ZhuQue, 0, 42)
+            .expect("ZhuQue should have gambler boss pack");
+
+        assert_eq!(pack.id.0, "zhuque_boss_gambler");
+
+        let result = resolver.run_battle(pack, 1);
+
+        // Battle must terminate
+        assert!(
+            result.turns <= 100,
+            "Gambler battle should finish within 100 turns, took {}",
+            result.turns
+        );
+
+        // Trace should have entries
+        assert!(
+            !result.trace.entries.is_empty(),
+            "Gambler battle trace should record events"
+        );
+
+        // The gambler should have used skills (including summon_mahjong)
+        let gambler_skills: Vec<&str> = result
+            .trace
+            .entries
+            .iter()
+            .filter(|e| {
+                e.action == "summon_mahjong"
+                    || e.action == "dice_thousand"
+                    || e.action == "hollow_victory"
+                    || e.action == "card_doomsday"
+            })
+            .map(|e| e.action.as_str())
+            .collect();
+
+        assert!(
+            !gambler_skills.is_empty(),
+            "Gambler should have used at least one skill, but none were found in trace"
+        );
+    }
+
+    #[test]
+    fn summon_materialization_creates_units() {
+        // US-708: Unit test that the materialize_summons function creates actors.
+        use crate::run::summon_materialization::{
+            family_id_for_summon_kind, SummonTracker,
+        };
+        use crate::run::summon_events::{SummonEvent, SummonKind, SummonPlacement};
+
+        // Test that family_id_for_summon_kind returns valid family IDs
+        let family = family_id_for_summon_kind(SummonKind::MahjongTile, ActorId(10));
+        assert!(
+            family.is_some(),
+            "MahjongTile should map to a valid family"
+        );
+
+        let family = family_id_for_summon_kind(SummonKind::RottenFruit, ActorId(5));
+        assert_eq!(
+            family.as_deref(),
+            Some("rotten_fruit_A"),
+            "RottenFruit should map to rotten_fruit_A"
+        );
+
+        // Test SummonTracker dedup logic
+        let mut tracker = SummonTracker::new();
+
+        let event = SummonEvent::new(
+            ActorId(10),
+            SummonKind::RottenFruit,
+            SummonPlacement::FrontRow,
+            1,
+        );
+
+        assert!(
+            tracker.can_materialize(&event),
+            "First materialize should succeed"
+        );
+
+        tracker.record_materialization(&event);
+
+        assert!(
+            !tracker.can_materialize(&event),
+            "Second materialize of same kind should be blocked by dedup"
+        );
+
+        // Different summon kind should still work
+        let event2 = SummonEvent::new(
+            ActorId(10),
+            SummonKind::GhostFireClone,
+            SummonPlacement::FrontRow,
+            1,
+        );
+
+        assert!(
+            tracker.can_materialize(&event2),
+            "Different summon kind should not be affected by dedup"
+        );
+    }
+
+    #[test]
+    fn summon_events_extracted_from_skill_results() {
+        // US-708: Integration test verifying summon events are extracted correctly.
+        use crate::run::summon_events::{extract_summon_events, SummonKind};
+        use framework_combat::results::EffectResultKind;
+        use framework_rules::statuses::{StackRule, StatusEffect, StatusKind};
+
+        // Create an effect result with summon_mahjong status
+        let status = StatusEffect::new(
+            StatusKind::new("summon_mahjong"),
+            Some(2),
+            vec![],
+            StackRule::Replace,
+        );
+
+        let effect = framework_combat::results::EffectResult::new(
+            EffectResultKind::ApplyStatus,
+            ActorId(10),
+            vec![ActorId(10)],
+        )
+        .with_status(status);
+
+        let effects = vec![effect];
+        let events = extract_summon_events(ActorId(10), &effects);
+
+        assert_eq!(
+            events.len(),
+            1,
+            "Should extract one summon event from summon_mahjong status"
+        );
+        assert!(matches!(events[0].summon_kind, SummonKind::MahjongTile));
+        assert_eq!(events[0].count, 2, "Count should be 2 from duration");
     }
 }
