@@ -44,7 +44,7 @@ Game-gap blockers are solved entirely within `game_ddgc_headless`.
 - **Batch:** 2 (Statuses)
 - **Description:** DDGC's `BuffRule` supports 35+ conditional variants (HpBelow, StressAbove, InMode, FirstRound, DeathsDoor, etc.). The framework has `EffectCondition` with 4 variants (IfTargetHealthBelow, IfActorHasStatus, IfTargetPosition, Probability).
 - **Resolution:** Use `EffectCondition` where it matches. For DDGC-specific conditions (StressAbove, DeathsDoor, FirstRound), implement game-layer filtering in the skill resolution pipeline. No framework change needed for G2 slice.
-- **Status:** Open — may produce a framework-gap if conditions prove generically useful
+- **Status:** Partially resolved — Phase 2 implemented `ConditionAdapter` in `src/run/conditions.rs` with `FirstRound`, `StressAbove`, `StressBelow`, `DeathsDoor`, `TargetHasStatus`, and `ActorHasStatus` conditions. Framework-native conditions (`Probability`, `IfTargetHealthBelow`, `IfActorHasStatus`) are bridged through the adapter with identical behavior. `IfTargetPosition` returns `Unknown` (formation context unavailable). Remaining DDGC conditions (e.g., `InMode`) are deferred.
 
 ### B-005: Skill Usage Limits (LimitPerTurn, LimitPerBattle)
 - **Classification:** game-gap
@@ -130,7 +130,7 @@ Every core-gap or framework-gap patch **must** include a regression test in the 
 | B-001 | game-gap | 1 | Resolved |
 | B-002 | game-gap | 1 | Resolved |
 | B-003 | game-gap | 1 | Resolved |
-| B-004 | game-gap | 2 | Open |
+| B-004 | game-gap | 2 | Partially resolved |
 | B-005 | game-gap | 3 | Open |
 | B-006 | game-gap | 3 | Open |
 | B-007 | game-gap | 3 | Resolved |

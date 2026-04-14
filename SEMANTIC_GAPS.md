@@ -39,15 +39,32 @@ differentiation as verified by parity tests._
 
 ## Status Gaps
 
-### SG-002: BuffRule Condition System Downgrade
+### SG-002: BuffRule Condition System — Partial Implementation
 
 - **Gap ID:** SG-002
-- **Classification:** Deferred parity work
+- **Classification:** Partially resolved
 - **Description:**
   - **Original behavior:** `BuffRule` supports 35+ conditional variants (HpBelow, StressAbove, InMode, FirstRound, DeathsDoor, etc.).
-  - **Migration behavior:** Framework `EffectCondition` covers 4 variants (IfTargetHealthBelow, IfActorHasStatus, IfTargetPosition, Probability). DDGC-specific conditions not yet implemented.
-- **Reason:** Framework's EffectCondition covers 4 of 35+ DDGC variants; remaining conditions require game-layer filtering not yet implemented. Skills with unimplemented conditions always apply or never apply instead of conditionally applying, which is a behavioral deviation requiring future work.
-- **Tracking:** MIGRATION_BLOCKERS.md B-004
+  - **Phase 1 migration behavior:** Framework `EffectCondition` covers 4 variants (IfTargetHealthBelow, IfActorHasStatus, IfTargetPosition, Probability). DDGC-specific conditions not yet implemented.
+  - **Phase 2 migration behavior:** Game-layer `ConditionAdapter` in `src/run/conditions.rs` provides a unified interface for both framework-native and DDGC-specific conditions.
+- **Implemented DDGC conditions (Phase 2):**
+  - `FirstRound` — active only on round 0 of combat
+  - `StressAbove(threshold)` — actor's stress exceeds threshold (heroes only)
+  - `StressBelow(threshold)` — actor's stress below threshold (heroes only)
+  - `DeathsDoor` — actor HP below 50% of max
+  - `TargetHasStatus(kind)` — target has a specific status active
+  - `ActorHasStatus(kind)` — actor has a specific status active
+- **Bridged framework-native conditions:**
+  - `EffectCondition::Probability` — deterministic pass-through (>0 passes)
+  - `EffectCondition::IfTargetHealthBelow` — target HP fraction threshold
+  - `EffectCondition::IfActorHasStatus` — actor has a specific status
+  - `EffectCondition::IfTargetPosition` — returns `Unknown` (formation context unavailable)
+- **Remaining unimplemented DDGC conditions:**
+  - Dungeon-specific modes (`InMode`)
+  - Position-based conditions beyond `IfTargetPosition`
+  - Other DDGC-specific variants not listed above
+- **Reason:** `ConditionAdapter` provides a scalable interface for DDGC-specific conditions. Implemented conditions are exercised via `ConditionContext` and `evaluate_by_tag()`. Remaining conditions require future game-layer additions.
+- **Tracking:** MIGRATION_BLOCKERS.md B-004 (partially resolved — see B-004 entry for updated status)
 
 ### SG-003: Reactive Hooks in Game Layer
 
@@ -80,7 +97,7 @@ differentiation as verified by parity tests._
 | Gap ID | Classification | Blocker |
 |---|---|---|
 | SG-001 | Acceptable approximation | B-006 |
-| SG-002 | Deferred parity work | B-004 |
+| SG-002 | Partially resolved | B-004 |
 | SG-003 | Acceptable approximation | B-008 |
 | SG-004 | Deferred parity work | B-005 |
 
@@ -130,6 +147,71 @@ DDGC skills can declare `LimitPerTurn` and `LimitPerBattle` constraints. The fra
 | None yet migrated | — | — | No migrated content uses usage limits; this is a game-gap (B-005) |
 
 **Usage-limit implementation anchors (Phase 1, B-005):** No concrete migrated anchor exists yet. The inventory above confirms this is a greenfield addition. Future DDGC migration slices (not yet scheduled) will provide concrete per-turn and per-battle skills. The implementation must track usage counts in game-layer state, reset per-turn counts at turn boundaries, and reset per-battle counts at encounter boundaries.
+
+---
+
+## Phase 2 DDGC Condition Support Inventory
+
+This section tracks DDGC condition implementations delivered in Phase 2 (US-601 through US-607), serving as the implementation anchor for B-004.
+
+### Condition Context Architecture
+
+`src/run/conditions.rs` provides:
+- `ConditionContext` — read-only context exposing actor, target, turn-state, and encounter-state data
+- `DdgcCondition` enum — DDGC-specific condition variants
+- `ConditionAdapter` — unified interface bridging framework-native and DDGC-specific conditions
+- `ConditionResult` — distinguishes Pass, Fail, and Unknown (unsupported) outcomes
+
+### Implemented DDGC Conditions
+
+| Condition | Tag Format | Implementation | Notes |
+|-----------|-----------|---------------|-------|
+| `FirstRound` | `ddgc_first_round` | `ConditionContext::is_first_round()` | Active only on round 0 |
+| `StressAbove` | `ddgc_stress_above_<threshold>` | `ConditionContext::actor_stress_above()` | Heroes only; monsters always fail |
+| `StressBelow` | `ddgc_stress_below_<threshold>` | `ConditionContext::actor_stress_below()` | Heroes only; monsters always fail |
+| `DeathsDoor` | `ddgc_deaths_door` | `ConditionContext::actor_at_deaths_door()` | Actor HP < 50% of max |
+| `TargetHasStatus` | `ddgc_target_has_status_<kind>` | `ConditionContext::target_has_status()` | Checks first target |
+| `ActorHasStatus` | `ddgc_actor_has_status_<kind>` | `ConditionContext::actor_has_status()` | Checks performing actor |
+
+### Bridged Framework-Native Conditions
+
+Framework-native `EffectCondition` variants are evaluated through `ConditionAdapter::evaluate_framework()` with identical behavior to `EffectContext::check_condition`:
+
+| Framework Condition | Adapter Behavior | Notes |
+|--------------------|-----------------|-------|
+| `Probability(p)` | Pass if `p > 0.0` | Deterministic; real randomness is game-specific |
+| `IfTargetHealthBelow(threshold)` | Pass if target HP fraction < threshold | |
+| `IfActorHasStatus(kind)` | Pass if actor has active status | |
+| `IfTargetPosition(slot_range)` | Returns `Unknown` | Formation context not yet available in `ConditionContext` |
+
+### Unsupported Conditions
+
+The following are known DDGC conditions not yet implemented in `ConditionAdapter`:
+
+| Condition | DDGC Reference | Notes |
+|-----------|---------------|-------|
+| `InMode` | Dungeon-specific modes | Not yet modeled |
+| `HpAbove` | HP above threshold | Not yet implemented |
+| `TargetHpAbove` | Target HP above threshold | Not yet implemented |
+| `TargetHpBelow` (DDGC variant) | Target HP below threshold | Framework `IfTargetHealthBelow` is bridged |
+| Other DDGC-specific variants | `BuffRule` 35+ variants | Only a subset is implemented |
+
+**US-604 guardrail:** Unsupported conditions return `ConditionResult::Unknown`, which is surfaced explicitly rather than silently failing. This ensures missing implementations are observable.
+
+### Implementation Anchors
+
+| Anchor | Type | Description |
+|--------|------|-------------|
+| `desperate_strike()` | Fixture skill | Demonstrates `DeathsDoor` condition in skill context |
+| `stressed_skill()` | Fixture skill | Demonstrates `StressAbove` condition in skill context |
+| `first_round_strike()` | Fixture skill | Demonstrates `FirstRound` condition in skill context |
+
+### Remaining Work (B-004)
+
+- Additional DDGC condition families beyond FirstRound, stress thresholds, and DeathsDoor
+- `InMode` dungeon-specific conditions
+- Full `BuffRule` coverage for remaining DDGC condition variants
+- B-006 and B-010 (damage variance and hit resolution) are separate work streams
 
 ### Summary: Already-Migrated vs. Future Content
 
