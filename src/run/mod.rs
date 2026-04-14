@@ -6,4 +6,5 @@
 
 pub mod encounters;
 pub mod flow;
+pub mod reactive_events;
 pub mod rewards;
