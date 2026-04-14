@@ -596,4 +596,62 @@ mod tests {
         assert_eq!(counters.get_usage_count(actor, &fireball(), UsageScope::Turn), 0);
         assert_eq!(counters.get_usage_count(actor, &fireball(), UsageScope::Battle), 0);
     }
+
+    // ── Per-turn enforcement tests (US-513) ──────────────────────────────────────
+
+    #[test]
+    fn per_turn_limit_allows_up_to_limit() {
+        let mut counters = SkillUsageCounters::new();
+        let actor = ActorId(1);
+        let skill = SkillId::new("direct_hit_1");
+        let limit = UsageLimit::per_turn(2);
+
+        // First use - should be allowed
+        assert!(counters.can_use(actor, &skill, limit), "First use should be allowed");
+        counters.record_usage(actor, skill.clone(), UsageScope::Turn);
+
+        // Second use - should be allowed (at limit)
+        assert!(counters.can_use(actor, &skill, limit), "Second use should be allowed");
+        counters.record_usage(actor, skill.clone(), UsageScope::Turn);
+
+        // Third use - should be blocked (over limit)
+        assert!(!counters.can_use(actor, &skill, limit), "Third use should be blocked");
+    }
+
+    #[test]
+    fn per_turn_limit_resets_after_turn_boundary() {
+        let mut counters = SkillUsageCounters::new();
+        let actor = ActorId(1);
+        let skill = SkillId::new("direct_hit_1");
+        let limit = UsageLimit::per_turn(2);
+
+        // Use skill up to limit
+        counters.record_usage(actor, skill.clone(), UsageScope::Turn);
+        counters.record_usage(actor, skill.clone(), UsageScope::Turn);
+        assert!(!counters.can_use(actor, &skill, limit), "Should be at limit");
+
+        // Simulate turn boundary - reset turn scope
+        counters.reset_turn_scope(actor);
+
+        // After reset, should be able to use again
+        assert!(counters.can_use(actor, &skill, limit), "Should be able to use after turn reset");
+    }
+
+    #[test]
+    fn per_turn_limit_does_not_affect_unrelated_skills() {
+        let mut counters = SkillUsageCounters::new();
+        let actor = ActorId(1);
+        let fireball = SkillId::new("fireball");
+        let heal = SkillId::new("heal");
+
+        // Use fireball up to its limit
+        let fireball_limit = UsageLimit::per_turn(2);
+        counters.record_usage(actor, fireball.clone(), UsageScope::Turn);
+        counters.record_usage(actor, fireball.clone(), UsageScope::Turn);
+        assert!(!counters.can_use(actor, &fireball, fireball_limit), "Fireball at limit");
+
+        // Heal should not be affected
+        let heal_limit = UsageLimit::per_turn(3);
+        assert!(counters.can_use(actor, &heal, heal_limit), "Heal should not be affected by fireball limit");
+    }
 }

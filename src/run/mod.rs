@@ -14,3 +14,4 @@ pub mod rewards;
 pub mod riposte_detection;
 pub mod riposte_execution;
 pub mod usage_counters;
+pub mod usage_limits;

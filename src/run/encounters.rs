@@ -31,6 +31,7 @@ use crate::run::riposte_detection::detect_riposte_candidates;
 use crate::run::riposte_execution::{execute_riposte, has_riposte_status};
 use crate::run::guard_redirect_execution::execute_guard_redirect;
 use crate::run::usage_counters::SkillUsageCounters;
+use crate::run::usage_limits::get_usage_limit;
 
 /// Skill assignment for encounter battles.
 ///
@@ -275,6 +276,26 @@ impl EncounterResolver {
                 }
             };
 
+            // ── Usage Limit Check (US-513) ────────────────────────────────────
+            // Before executing a skill, check if it has a usage limit that's been exceeded.
+            // If over limit, skip the skill use (submit Wait instead).
+            let skill_over_limit = if let Some(limit) = get_usage_limit(&skill.id) {
+                !counters.can_use(current_actor, &skill.id, limit)
+            } else {
+                false
+            };
+
+            if skill_over_limit {
+                let cmd = CombatCommand::Wait {
+                    actor: current_actor,
+                };
+                resolver.submit_command(&mut encounter, &mut actors, cmd);
+                trace.record_wait(round, current_actor, &actors);
+                resolver.end_turn(&mut encounter, &mut actors);
+                counters.reset_turn_scope(current_actor);
+                continue;
+            }
+
             // Resolve targets — sorted by ActorId for deterministic trace output
             let mut targets = skill
                 .target_selector
@@ -303,6 +324,12 @@ impl EncounterResolver {
                         &mut actors,
                     );
                     let effect_results = resolve_skill(skill, &mut ctx);
+
+                    // ── Record usage (US-513) ─────────────────────────────────
+                    // After successful skill execution, record the usage for limit tracking.
+                    if let Some(limit) = get_usage_limit(&skill.id) {
+                        counters.record_usage(current_actor, skill.id.clone(), limit.scope);
+                    }
 
                     // ── Reactive Processing (US-506, US-507) ─────────────────
                     // After damage is applied, check if targets have riposte status
