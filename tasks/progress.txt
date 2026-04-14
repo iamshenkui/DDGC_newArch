@@ -1033,3 +1033,19 @@
   - Cannot run `cargo test` on this system — Rust toolchain not available in this environment
   - The DDGC C# source (`Character.cs`, `Buff.cs`) is the canonical reference for condition semantics, not the .txt data files
 ---
+
+## 2026-04-14 - US-602
+- Created `src/run/conditions.rs` with `ConditionContext` struct for DDGC-specific condition evaluation
+- `ConditionContext` provides game-layer access to actor, target, turn-state, and encounter-state data
+- Implemented condition query methods: `is_first_round()`, `actor_stress_above()`, `actor_stress_below()`, `actor_has_status()`, `target_has_status()`, `actor_hp_fraction()`, `target_hp_fraction()`, `actor_at_deaths_door()`
+- Stress conditions (`StressAbove`, `StressBelow`) only apply to heroes (CombatSide::Ally) — monsters always fail
+- Added 11 focused unit tests covering all condition methods, deterministic creation, and actor/target edge cases
+- Wired `pub mod conditions;` into `src/run/mod.rs`
+- Files changed: `src/run/conditions.rs` (new), `src/run/mod.rs` (modified)
+- **Learnings for future iterations:**
+  - `Encounter` from framework_combat doesn't store round number — round is tracked manually in the battle loop, so ConditionContext accepts `current_round` as a parameter
+  - `ActorAggregate` doesn't have a `side()` method — side is tracked in a separate `HashMap<ActorId, CombatSide>` lookup, passed to ConditionContext
+  - `actor.statuses.active()` returns a collection with `.values()` method (not `.iter()`) — follow the pattern in `riposte_detection.rs`
+  - `has_status_kind()` helper function checks `status.kind.0 == kind` matching the pattern in riposte_detection
+  - Cannot run `cargo test` on this system — code verified by inspection against existing patterns in riposte_detection.rs and reactive_events.rs
+---
