@@ -511,6 +511,71 @@ impl<'a> ConditionAdapter<'a> {
             Condition::Ddgc(dc) => self.evaluate_ddgc(dc),
         }
     }
+
+    /// Parse a DDGC condition tag string into a `DdgcCondition`.
+    ///
+    /// The tag format is: `ddgc_<condition>_<optional_args>`
+    ///
+    /// Supported tags:
+    /// - `"ddgc_first_round"` → `DdgcCondition::FirstRound`
+    /// - `"ddgc_stress_above_<threshold>"` → `DdgcCondition::StressAbove(threshold)`
+    /// - `"ddgc_stress_below_<threshold>"` → `DdgcCondition::StressBelow(threshold)`
+    /// - `"ddgc_deaths_door"` → `DdgcCondition::DeathsDoor`
+    /// - `"ddgc_target_has_status_<kind>"` → `DdgcCondition::TargetHasStatus(kind)`
+    /// - `"ddgc_actor_has_status_<kind>"` → `DdgcCondition::ActorHasStatus(kind)`
+    ///
+    /// Returns `None` if the tag is not recognized.
+    pub fn parse_condition_tag(tag: &str) -> Option<DdgcCondition> {
+        let tag = tag.trim();
+
+        if tag == "ddgc_first_round" {
+            return Some(DdgcCondition::FirstRound);
+        }
+        if tag == "ddgc_deaths_door" {
+            return Some(DdgcCondition::DeathsDoor);
+        }
+
+        // Parse stress_above_<threshold>
+        if let Some(rest) = tag.strip_prefix("ddgc_stress_above_") {
+            if let Ok(threshold) = rest.parse::<f64>() {
+                return Some(DdgcCondition::StressAbove(threshold));
+            }
+        }
+
+        // Parse stress_below_<threshold>
+        if let Some(rest) = tag.strip_prefix("ddgc_stress_below_") {
+            if let Ok(threshold) = rest.parse::<f64>() {
+                return Some(DdgcCondition::StressBelow(threshold));
+            }
+        }
+
+        // Parse target_has_status_<kind>
+        if let Some(rest) = tag.strip_prefix("ddgc_target_has_status_") {
+            if !rest.is_empty() {
+                return Some(DdgcCondition::TargetHasStatus(rest.to_string()));
+            }
+        }
+
+        // Parse actor_has_status_<kind>
+        if let Some(rest) = tag.strip_prefix("ddgc_actor_has_status_") {
+            if !rest.is_empty() {
+                return Some(DdgcCondition::ActorHasStatus(rest.to_string()));
+            }
+        }
+
+        None
+    }
+
+    /// Evaluate a deferred effect's DDGC condition using its condition tag.
+    ///
+    /// This combines parsing the tag into a `DdgcCondition` and evaluating it.
+    /// Returns `ConditionResult` so callers can distinguish between pass, fail, and unknown.
+    pub fn evaluate_by_tag(&self, condition_tag: &str) -> ConditionResult {
+        match Self::parse_condition_tag(condition_tag) {
+            Some(ddgc_cond) => self.evaluate_ddgc(&ddgc_cond),
+            None => ConditionResult::Unknown,
+        }
+    }
 }
 
 /// Unified condition type for the adapter.
@@ -1039,6 +1104,292 @@ mod adapter_tests {
             adapter.evaluate(&cond, ActorId(2)),
             ConditionResult::Unknown,
             "evaluate() should propagate Unknown from evaluate_framework"
+        );
+    }
+
+    // ── US-606: Stress threshold condition semantics ─────────────────────────────────
+
+    #[test]
+    fn stress_above_condition_passes_when_stress_exceeds_threshold() {
+        // Actor 1 has stress 75 — StressAbove(50.0) should pass
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut ally = ActorAggregate::new(ActorId(1));
+        ally.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+        ally.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        ally.set_base(AttributeKey::new(ATTR_STRESS), AttributeValue(75.0));
+        actors.insert(ActorId(1), ally);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx = ConditionContext::new(
+            ActorId(1),
+            vec![],
+            0,
+            &actors,
+            &side_lookup,
+            Dungeon::QingLong,
+        );
+
+        let adapter = ConditionAdapter::new(&ctx);
+
+        // Stress 75 > 50 → passes
+        let result = adapter.evaluate_by_tag("ddgc_stress_above_50");
+        assert_eq!(result, ConditionResult::Pass, "StressAbove(50) should pass when stress is 75");
+    }
+
+    #[test]
+    fn stress_above_condition_fails_when_stress_below_threshold() {
+        // Actor 1 has stress 30 — StressAbove(50.0) should fail
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut ally = ActorAggregate::new(ActorId(1));
+        ally.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+        ally.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        ally.set_base(AttributeKey::new(ATTR_STRESS), AttributeValue(30.0));
+        actors.insert(ActorId(1), ally);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx = ConditionContext::new(
+            ActorId(1),
+            vec![],
+            0,
+            &actors,
+            &side_lookup,
+            Dungeon::QingLong,
+        );
+
+        let adapter = ConditionAdapter::new(&ctx);
+
+        // Stress 30 < 50 → fails
+        let result = adapter.evaluate_by_tag("ddgc_stress_above_50");
+        assert_eq!(result, ConditionResult::Fail, "StressAbove(50) should fail when stress is 30");
+    }
+
+    #[test]
+    fn stress_below_condition_passes_when_stress_below_threshold() {
+        // Actor 1 has stress 30 — StressBelow(50.0) should pass
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut ally = ActorAggregate::new(ActorId(1));
+        ally.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+        ally.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        ally.set_base(AttributeKey::new(ATTR_STRESS), AttributeValue(30.0));
+        actors.insert(ActorId(1), ally);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx = ConditionContext::new(
+            ActorId(1),
+            vec![],
+            0,
+            &actors,
+            &side_lookup,
+            Dungeon::QingLong,
+        );
+
+        let adapter = ConditionAdapter::new(&ctx);
+
+        // Stress 30 < 50 → passes
+        let result = adapter.evaluate_by_tag("ddgc_stress_below_50");
+        assert_eq!(result, ConditionResult::Pass, "StressBelow(50) should pass when stress is 30");
+    }
+
+    #[test]
+    fn stress_below_condition_fails_when_stress_above_threshold() {
+        // Actor 1 has stress 75 — StressBelow(50.0) should fail
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut ally = ActorAggregate::new(ActorId(1));
+        ally.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+        ally.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        ally.set_base(AttributeKey::new(ATTR_STRESS), AttributeValue(75.0));
+        actors.insert(ActorId(1), ally);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx = ConditionContext::new(
+            ActorId(1),
+            vec![],
+            0,
+            &actors,
+            &side_lookup,
+            Dungeon::QingLong,
+        );
+
+        let adapter = ConditionAdapter::new(&ctx);
+
+        // Stress 75 > 50 → fails
+        let result = adapter.evaluate_by_tag("ddgc_stress_below_50");
+        assert_eq!(result, ConditionResult::Fail, "StressBelow(50) should fail when stress is 75");
+    }
+
+    #[test]
+    fn stress_condition_effect_changes_outcome_across_threshold_boundary() {
+        // This is the key acceptance test: same effect, different stress levels,
+        // proving the effect changes outcome across the threshold boundary.
+
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        // Low-stress actor (stress 20)
+        let mut low_stress_ally = ActorAggregate::new(ActorId(1));
+        low_stress_ally.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+        low_stress_ally.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        low_stress_ally.set_base(AttributeKey::new(ATTR_STRESS), AttributeValue(20.0));
+        actors.insert(ActorId(1), low_stress_ally);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        // High-stress actor (stress 80)
+        let mut high_stress_ally = ActorAggregate::new(ActorId(2));
+        high_stress_ally.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+        high_stress_ally.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        high_stress_ally.set_base(AttributeKey::new(ATTR_STRESS), AttributeValue(80.0));
+        actors.insert(ActorId(2), high_stress_ally);
+        side_lookup.insert(ActorId(2), CombatSide::Ally);
+
+        // Low-stress context (actor 1, stress 20)
+        let ctx_low = ConditionContext::new(
+            ActorId(1),
+            vec![],
+            0,
+            &actors,
+            &side_lookup,
+            Dungeon::QingLong,
+        );
+        let adapter_low = ConditionAdapter::new(&ctx_low);
+
+        // High-stress context (actor 2, stress 80)
+        let ctx_high = ConditionContext::new(
+            ActorId(2),
+            vec![],
+            0,
+            &actors,
+            &side_lookup,
+            Dungeon::QingLong,
+        );
+        let adapter_high = ConditionAdapter::new(&ctx_high);
+
+        // Same condition tag: ddgc_stress_above_50
+        // Low stress (20 < 50) → fails
+        let result_low = adapter_low.evaluate_by_tag("ddgc_stress_above_50");
+        assert_eq!(result_low, ConditionResult::Fail,
+            "Low-stress actor (stress=20) should fail StressAbove(50)");
+
+        // High stress (80 > 50) → passes
+        let result_high = adapter_high.evaluate_by_tag("ddgc_stress_above_50");
+        assert_eq!(result_high, ConditionResult::Pass,
+            "High-stress actor (stress=80) should pass StressAbove(50)");
+
+        // The same condition tag produces different outcomes based on stress level
+        assert_ne!(result_low, result_high,
+            "Same condition tag should produce different outcomes across threshold boundary");
+    }
+
+    #[test]
+    fn parse_condition_tag_recognizes_all_supported_formats() {
+        // FirstRound
+        assert!(matches!(
+            ConditionAdapter::parse_condition_tag("ddgc_first_round"),
+            Some(DdgcCondition::FirstRound)
+        ));
+
+        // StressAbove
+        assert!(matches!(
+            ConditionAdapter::parse_condition_tag("ddgc_stress_above_50"),
+            Some(DdgcCondition::StressAbove(50.0))
+        ));
+        assert!(matches!(
+            ConditionAdapter::parse_condition_tag("ddgc_stress_above_0"),
+            Some(DdgcCondition::StressAbove(0.0))
+        ));
+
+        // StressBelow
+        assert!(matches!(
+            ConditionAdapter::parse_condition_tag("ddgc_stress_below_30"),
+            Some(DdgcCondition::StressBelow(30.0))
+        ));
+
+        // DeathsDoor
+        assert!(matches!(
+            ConditionAdapter::parse_condition_tag("ddgc_deaths_door"),
+            Some(DdgcCondition::DeathsDoor)
+        ));
+
+        // TargetHasStatus
+        assert!(matches!(
+            ConditionAdapter::parse_condition_tag("ddgc_target_has_status_bleed"),
+            Some(DdgcCondition::TargetHasStatus(s)) if s == "bleed"
+        ));
+
+        // ActorHasStatus
+        assert!(matches!(
+            ConditionAdapter::parse_condition_tag("ddgc_actor_has_status_stun"),
+            Some(DdgcCondition::ActorHasStatus(s)) if s == "stun"
+        ));
+
+        // Unknown tag
+        assert!(ConditionAdapter::parse_condition_tag("unknown_tag").is_none());
+        assert!(ConditionAdapter::parse_condition_tag("ddgc_invalid").is_none());
+    }
+
+    #[test]
+    fn stress_conditions_fail_for_monsters_regardless_of_tag() {
+        // Monsters don't have stress, so stress conditions should always fail for them
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        // Monster (enemy) — even if we could set stress on it, it would fail
+        let mut enemy = ActorAggregate::new(ActorId(1));
+        enemy.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(50.0));
+        enemy.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(50.0),
+        );
+        // Note: enemies don't have stress attribute, but even if they did...
+        actors.insert(ActorId(1), enemy);
+        side_lookup.insert(ActorId(1), CombatSide::Enemy);
+
+        let ctx = ConditionContext::new(
+            ActorId(1),
+            vec![],
+            0,
+            &actors,
+            &side_lookup,
+            Dungeon::QingLong,
+        );
+
+        let adapter = ConditionAdapter::new(&ctx);
+
+        // Monster should fail stress conditions regardless of tag
+        assert_eq!(
+            adapter.evaluate_by_tag("ddgc_stress_above_0"),
+            ConditionResult::Fail,
+            "Monsters should fail StressAbove regardless of tag"
+        );
+        assert_eq!(
+            adapter.evaluate_by_tag("ddgc_stress_below_1000"),
+            ConditionResult::Fail,
+            "Monsters should fail StressBelow regardless of tag"
         );
     }
 }
