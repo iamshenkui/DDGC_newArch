@@ -853,6 +853,36 @@ mod adapter_tests {
     }
 
     #[test]
+    fn first_round_condition_fails_after_round_zero() {
+        // Create a context with round 1 (not first round)
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let ally = ActorAggregate::new(ActorId(1));
+        actors.insert(ActorId(1), ally);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx = ConditionContext::new(
+            ActorId(1),
+            vec![],
+            1, // round 1, NOT first round
+            &actors,
+            &side_lookup,
+            Dungeon::QingLong,
+        );
+
+        let adapter = ConditionAdapter::new(&ctx);
+        let cond = DdgcCondition::FirstRound;
+
+        // On round 1, FirstRound should fail
+        assert_eq!(
+            adapter.evaluate_ddgc(&cond),
+            ConditionResult::Fail,
+            "FirstRound condition should fail on round 1"
+        );
+    }
+
+    #[test]
     fn adapter_evaluates_ddgc_stress_above_condition() {
         let (adapter, _, _) = make_adapter_context();
 

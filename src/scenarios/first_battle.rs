@@ -158,7 +158,7 @@ pub fn run_first_battle() -> BattleResult {
                     &mut formation,
                     &mut actors,
                 );
-                let effect_results = resolve_skill(skill, &mut ctx);
+                let result = resolve_skill(skill, &mut ctx);
 
                 // Record in trace
                 trace.record_action(
@@ -166,7 +166,7 @@ pub fn run_first_battle() -> BattleResult {
                     current_actor,
                     skill_name,
                     &targets,
-                    &effect_results,
+                    &result.results,
                     &actors,
                 );
 

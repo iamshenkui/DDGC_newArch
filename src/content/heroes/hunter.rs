@@ -142,7 +142,35 @@ pub fn buff_skill() -> SkillDefinition {
     )
 }
 
-/// All 7 Hunter base skills.
+/// Opening Strike — first-round bonus attack.
+///
+/// DDGC reference: full weapon damage (avg 40) on first round, reduced damage (avg 20) after.
+/// This skill demonstrates the FirstRound DDGC condition: the bonus damage effect
+/// is only applied when the battle is on round 1.
+///
+/// Implementation: two effect nodes - normal damage always applies, bonus damage
+/// only applies on first round (via DDGC condition).
+pub fn opening_strike() -> SkillDefinition {
+    // Normal damage effect (always applies)
+    let normal_damage = EffectNode::damage(20.0);
+
+    // Bonus damage effect (only on first round) - uses DDGC FirstRound condition
+    // The framework defers this effect to the game layer, which evaluates
+    // the FirstRound condition via ConditionAdapter
+    let mut bonus_damage = EffectNode::damage(20.0);
+    bonus_damage.has_ddgc_condition = Some(true);
+    bonus_damage.ddgc_condition_tag = Some("ddgc_first_round".to_string());
+
+    SkillDefinition::new(
+        SkillId::new("opening_strike"),
+        vec![normal_damage, bonus_damage],
+        TargetSelector::AllEnemies,
+        1,
+        None,
+    )
+}
+
+/// All 8 Hunter base skills.
 pub fn skill_pack() -> Vec<SkillDefinition> {
     vec![
         mark_skill(),
@@ -152,5 +180,6 @@ pub fn skill_pack() -> Vec<SkillDefinition> {
         ignore_def_skill(),
         bleed_skill(),
         buff_skill(),
+        opening_strike(),
     ]
 }

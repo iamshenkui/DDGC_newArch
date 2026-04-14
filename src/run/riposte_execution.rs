@@ -64,12 +64,13 @@ pub fn execute_riposte(
     // Create a context for skill resolution
     // The reactor counter-attacks the attacker using the skill
     let mut ctx = EffectContext::new(reactor, vec![attacker], formation, actors);
-    let effect_results = resolve_skill(skill, &mut ctx);
+    let result = resolve_skill(skill, &mut ctx);
 
     // Consume the riposte status from the reactor
     consume_riposte_status(actors, reactor);
 
-    Some((skill_id, effect_results))
+    // Note: Riposte skills should not have DDGC conditions, so we use .results
+    Some((skill_id, result.results))
 }
 
 /// Find the counter-attack skill for a reactor.
