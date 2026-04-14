@@ -37,6 +37,9 @@ use crate::run::reactive_queue::ReactiveQueue;
 use crate::run::riposte_detection::detect_riposte_candidates;
 use crate::run::riposte_execution::{execute_riposte, has_riposte_status};
 use crate::run::guard_redirect_execution::execute_guard_redirect;
+use crate::run::phase_transition::{
+    execute_phase_transition, is_multi_phase_boss, PhaseTransitionTracker,
+};
 use crate::run::shared_health::{init_shared_health_for_pack, SharedHealthTracker};
 use crate::run::summon_materialization::{materialize_summons, SummonTracker};
 use crate::run::usage_counters::SkillUsageCounters;
@@ -279,6 +282,26 @@ impl EncounterResolver {
         } else {
             SharedHealthTracker::new()
         };
+
+        // ── US-710: Phase transition tracking ────────────────────────────────
+        // For multi-phase bosses (White Tiger), track press attacks on clone
+        // forms and trigger phase transition when threshold is reached.
+        let mut phase_tracker = PhaseTransitionTracker::new();
+        if is_multi_phase_boss(&pack.id.0) {
+            // Identify clone actor IDs from the pack
+            // White Tiger pack has A and B as clone forms
+            let clone_ids: Vec<ActorId> = pack
+                .slots
+                .iter()
+                .filter(|slot| {
+                    let fid = &slot.family_id.0;
+                    fid == "white_tiger_A" || fid == "white_tiger_B"
+                })
+                .enumerate()
+                .map(|(i, _slot)| ActorId(10 + i as u64)) // A=10, B=11
+                .collect();
+            phase_tracker.init_for_pack(&pack.id.0, clone_ids);
+        }
 
         // ── Battle loop ────────────────────────────────────────────────────
         let mut trace = BattleTrace::new(&pack.id.0);
@@ -598,6 +621,44 @@ impl EncounterResolver {
                         let members = shared_health.members_of_exhausted_pool(pool_id);
                         for member_id in members {
                             remove_defeated(&mut encounter, &mut actors, member_id);
+                        }
+                    }
+
+                    // ── US-710: Phase transition press tracking ─────────────────────
+                    // Record press for any clone actors that were targeted.
+                    // A "press" counts when a clone actor is hit by an attack.
+                    for &target in &targets {
+                        let _new_count = phase_tracker.record_press(&pack.id.0, target);
+                        // Check if phase transition should trigger (count reached threshold)
+                        if phase_tracker.should_transition(&pack.id.0) {
+                            // Get clone actor IDs to remove
+                            let clone_ids = phase_tracker.clone_actor_ids(&pack.id.0);
+                            // Get placement slot from first clone
+                            if let Some(slot) = phase_tracker.placement_slot(&pack.id.0, &formation) {
+                                let transition_event = crate::run::phase_transition::PhaseTransitionEvent {
+                                    remove_actors: clone_ids.clone(),
+                                    summon_family_id: "white_tiger_C".to_string(),
+                                    placement_slot: slot,
+                                };
+                                if let Some(summoned_id) = execute_phase_transition(
+                                    &transition_event,
+                                    &mut actors,
+                                    &mut formation,
+                                    &mut encounter,
+                                    &self.content_pack,
+                                    &self.monster_registry,
+                                    &mut next_enemy_id,
+                                ) {
+                                    // Mark as transitioned and record in trace
+                                    phase_tracker.mark_transitioned(&pack.id.0);
+                                    trace.record_phase_transition(
+                                        round,
+                                        &clone_ids,
+                                        summoned_id,
+                                        &actors,
+                                    );
+                                }
+                            }
                         }
                     }
 

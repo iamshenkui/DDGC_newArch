@@ -218,6 +218,39 @@ impl BattleTrace {
         });
     }
 
+    /// Record a phase transition event (multi-phase boss transitioning to next phase).
+    ///
+    /// The `removed` parameter lists actor IDs that were removed (clone forms).
+    /// The `summoned` parameter is the ActorId of the newly materialized final form.
+    pub fn record_phase_transition(
+        &mut self,
+        turn: u32,
+        removed: &[ActorId],
+        summoned: ActorId,
+        actors: &HashMap<ActorId, framework_rules::actor::ActorAggregate>,
+    ) {
+        // Snapshot: HP of every actor (BTreeMap for deterministic ordering)
+        let mut snapshot = BTreeMap::new();
+        for (&id, actor) in actors {
+            let hp = actor.effective_attribute(&AttributeKey::new(ATTR_HEALTH));
+            snapshot.insert(id.0, hp.0);
+        }
+
+        self.entries.push(TraceEntry {
+            turn,
+            actor: 0, // Phase transition is not attributed to a specific actor
+            action: "phase_transition".to_string(),
+            targets: removed.iter().map(|t| t.0).collect(),
+            effects: vec![TraceEffect {
+                kind: "Summon".to_string(),
+                target: summoned.0,
+                value: 0.0,
+            }],
+            snapshot,
+            triggered_by: None,
+        });
+    }
+
     /// Finalize the trace with the battle outcome.
     pub fn finalize(&mut self, winner: Option<CombatSide>, turns: u32) {
         self.winner = winner.map(|s| format!("{:?}", s));
