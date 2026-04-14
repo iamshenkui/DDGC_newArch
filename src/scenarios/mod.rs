@@ -4,3 +4,4 @@
 //! Scenarios produce structured traces for debugging and regression testing.
 
 pub mod first_battle;
+pub mod reactive_battle;

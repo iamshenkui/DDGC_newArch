@@ -1,0 +1,250 @@
+{
+  "scenario": "reactive_battle",
+  "winner": "Ally",
+  "turns": 8,
+  "entries": [
+    {
+      "turn": 1,
+      "actor": 1,
+      "action": "taunt_skill",
+      "targets": [
+        10,
+        11
+      ],
+      "effects": [
+        {
+          "kind": "Damage",
+          "target": 10,
+          "value": 31.0
+        },
+        {
+          "kind": "Damage",
+          "target": 11,
+          "value": 31.0
+        }
+      ],
+      "snapshot": {
+        "1": 192.0,
+        "2": 152.0,
+        "10": 119.0,
+        "11": 119.0
+      }
+    },
+    {
+      "turn": 2,
+      "actor": 2,
+      "action": "ignore_def_skill",
+      "targets": [
+        10,
+        11
+      ],
+      "effects": [
+        {
+          "kind": "Damage",
+          "target": 10,
+          "value": 40.0
+        },
+        {
+          "kind": "Damage",
+          "target": 11,
+          "value": 40.0
+        }
+      ],
+      "snapshot": {
+        "1": 192.0,
+        "2": 152.0,
+        "10": 79.0,
+        "11": 79.0
+      }
+    },
+    {
+      "turn": 3,
+      "actor": 1,
+      "action": "riposte",
+      "targets": [
+        10
+      ],
+      "effects": [
+        {
+          "kind": "Damage",
+          "target": 10,
+          "value": 31.5
+        }
+      ],
+      "snapshot": {
+        "1": 187.0,
+        "2": 147.0,
+        "10": 47.5,
+        "11": 79.0
+      },
+      "triggered_by": {
+        "attacker": 10,
+        "skill": "glacial_torrent",
+        "target": 1,
+        "kind": "Riposte"
+      }
+    },
+    {
+      "turn": 3,
+      "actor": 10,
+      "action": "glacial_torrent",
+      "targets": [
+        1,
+        2
+      ],
+      "effects": [
+        {
+          "kind": "Damage",
+          "target": 1,
+          "value": 5.0
+        },
+        {
+          "kind": "Damage",
+          "target": 2,
+          "value": 5.0
+        }
+      ],
+      "snapshot": {
+        "1": 187.0,
+        "2": 147.0,
+        "10": 47.5,
+        "11": 79.0
+      }
+    },
+    {
+      "turn": 4,
+      "actor": 11,
+      "action": "glacial_torrent",
+      "targets": [
+        1,
+        2
+      ],
+      "effects": [
+        {
+          "kind": "Damage",
+          "target": 1,
+          "value": 5.0
+        },
+        {
+          "kind": "Damage",
+          "target": 2,
+          "value": 5.0
+        }
+      ],
+      "snapshot": {
+        "1": 182.0,
+        "2": 142.0,
+        "10": 47.5,
+        "11": 79.0
+      }
+    },
+    {
+      "turn": 5,
+      "actor": 1,
+      "action": "taunt_skill",
+      "targets": [
+        10,
+        11
+      ],
+      "effects": [
+        {
+          "kind": "Damage",
+          "target": 10,
+          "value": 31.0
+        },
+        {
+          "kind": "Damage",
+          "target": 11,
+          "value": 31.0
+        }
+      ],
+      "snapshot": {
+        "1": 182.0,
+        "2": 142.0,
+        "10": 16.5,
+        "11": 48.0
+      }
+    },
+    {
+      "turn": 6,
+      "actor": 2,
+      "action": "ignore_def_skill",
+      "targets": [
+        10,
+        11
+      ],
+      "effects": [
+        {
+          "kind": "Damage",
+          "target": 10,
+          "value": 40.0
+        },
+        {
+          "kind": "Damage",
+          "target": 11,
+          "value": 40.0
+        }
+      ],
+      "snapshot": {
+        "1": 182.0,
+        "2": 142.0,
+        "10": 0.0,
+        "11": 8.0
+      }
+    },
+    {
+      "turn": 7,
+      "actor": 11,
+      "action": "glacial_torrent",
+      "targets": [
+        1,
+        2
+      ],
+      "effects": [
+        {
+          "kind": "Damage",
+          "target": 1,
+          "value": 5.0
+        },
+        {
+          "kind": "Damage",
+          "target": 2,
+          "value": 5.0
+        }
+      ],
+      "snapshot": {
+        "1": 177.0,
+        "2": 137.0,
+        "10": 0.0,
+        "11": 8.0
+      }
+    },
+    {
+      "turn": 8,
+      "actor": 1,
+      "action": "taunt_skill",
+      "targets": [
+        10,
+        11
+      ],
+      "effects": [
+        {
+          "kind": "Damage",
+          "target": 10,
+          "value": 31.0
+        },
+        {
+          "kind": "Damage",
+          "target": 11,
+          "value": 31.0
+        }
+      ],
+      "snapshot": {
+        "1": 177.0,
+        "2": 137.0,
+        "10": 0.0,
+        "11": 0.0
+      }
+    }
+  ]
+}
