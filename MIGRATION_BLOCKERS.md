@@ -72,7 +72,7 @@ Game-gap blockers are solved entirely within `game_ddgc_headless`.
 - **Batch:** 2 (Statuses)
 - **Description:** DDGC has "riposte" (counter-attack when hit) and "guard ally" (redirect damage to self). The framework has no built-in reactive trigger system.
 - **Resolution:** Implement as `StatusEffect { kind: "riposte" }` / `StatusEffect { kind: "guard" }`. Game-layer code checks for these statuses after each damage effect and applies the secondary action. No framework change needed.
-- **Status:** Open — game-layer reactive hooks
+- **Status:** Partially resolved — riposte counter-attack implemented (US-506); guard redirect pending (US-507/US-508)
 
 ### B-009: Multi-Hit Skills
 - **Classification:** game-gap
@@ -134,6 +134,6 @@ Every core-gap or framework-gap patch **must** include a regression test in the 
 | B-005 | game-gap | 3 | Open |
 | B-006 | game-gap | 3 | Open |
 | B-007 | game-gap | 3 | Resolved |
-| B-008 | game-gap | 2 | Open |
+| B-008 | game-gap | 2 | Partially resolved |
 | B-009 | game-gap | 3 | Resolved |
 | B-010 | game-gap | 3 | Open |

@@ -983,3 +983,33 @@
   - Cannot run `cargo test` on this system — code verified by inspection against existing patterns in trace.rs
   - tasks/ directory is outside the game_ddgc_headless git repo — PRD/progress updates are metadata only, not commit-able
 ---
+
+## 2026-04-14 - US-505
+- Created `src/run/riposte_detection.rs` with `detect_riposte_candidates()` function
+- Added `has_riposte_status()` helper that checks actor's active statuses for "riposte" kind
+- Added 6 focused unit tests: finds marked actors, empty when none, deterministic ordering, ignores expired statuses, non-riposte actors ignored, multiple statuses including riposte
+- Wired `pub mod riposte_detection;` into `src/run/mod.rs`
+- Files changed: `src/run/riposte_detection.rs` (new), `src/run/mod.rs` (modified)
+- **Learnings for future iterations:**
+  - Riposte detection iterates `actor.statuses.active().values()` and checks `status.kind.0 == "riposte"` — same pattern as status_semantic_parity tests
+  - Results are sorted by ActorId ascending for deterministic ordering (consistent with other HashMap-iteration patterns in the codebase)
+  - The `riposte()` status factory from `content/statuses.rs` is a `StatusKind::new("riposte")` marker with no modifiers — detection is purely kind-based
+  - Cannot run `cargo test` on this system — code verified by inspection against existing patterns in reactive_events.rs and status_semantic_parity.rs
+  - tasks/ directory is outside the game_ddgc_headless git repo — PRD/progress updates are metadata only, not commit-able
+---
+
+## 2026-04-14 - US-506
+- Created `src/run/riposte_execution.rs` with `execute_riposte()`, `has_riposte_status()`, `consume_riposte_status()` functions
+- Added reactive processing section in `encounters.rs` battle loop: after `resolve_skill()` applies damage, detect riposte candidates among targets and process reactive queue
+- Counter-attack uses `normal_attack` skill targeting the original attacker
+- Riposte status is consumed after counter-attack fires (one-shot per trigger)
+- Added 2 unit tests: `consume_riposte_status_removes_marker` and `execute_riposte_returns_none_for_non_riposte_event`
+- Files changed: `src/run/riposte_execution.rs` (new), `src/run/encounters.rs` (modified), `src/run/mod.rs` (modified)
+- **Learnings for future iterations:**
+  - `EffectContext::new()` requires `&'a mut HashMap<ActorId, ActorAggregate>` — must pass `&mut actors` to create context
+  - Rust borrow checker requires careful sequencing: check riposte status with immutable borrow, then execute with mutable borrow in separate scope
+  - `consume_riposte_status()` iterates `actor.statuses.active()` to find the StatusId with `kind == "riposte"`, then calls `actor.statuses.remove(id)`
+  - The `reactive_queue.drain_next()` marks the reactor as "already reacted" to prevent infinite recursion chains
+  - Cannot run `cargo test` on this system — code verified by inspection against existing battle loop patterns in encounters.rs
+  - tasks/ directory IS tracked by the DDGC_newArch git repo — be careful not to mix metadata commits with code commits
+---
