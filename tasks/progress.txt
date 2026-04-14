@@ -1108,3 +1108,28 @@
   - `ReactiveEvent` model captures `triggered_on` (who was hit), `reactor` (who may react), `source_skill` (what triggered), `attacker` — complete trigger relationship
   - `DamageStepContext` provides deterministic construction context for reactive events from resolved damage
   - The reactive_events module was already committed in prior session — only the passes flag needed updating
+
+## 2026-04-15 - US-503 through US-515 (batch pass update)
+- Verified all Phase 1 stories (US-503 through US-515) are already fully implemented in the codebase
+- US-503: `reactive_queue.rs` — ReactiveQueue with BTreeMap deterministic ordering, no-duplicate, no-recursion guarantees
+- US-504: `trace.rs` — ReactiveTrigger and record_reactive() with stable serialization tests
+- US-505: `riposte_detection.rs` — detect_riposte_candidates() with deterministic actor ordering
+- US-506: `riposte_execution.rs` — execute_riposte() with one-shot status consumption
+- US-507: `guard_detection.rs` — detect_guard_relations_for_target() with protection relationships
+- US-508: `guard_redirect_execution.rs` — execute_guard_redirect() reversing damage to guard
+- US-509: `reactive_battle.rs` scenario + `reactive_battle_trace.json` golden fixture
+- US-510: `usage_counters.rs` — SkillUsageCounters with Turn/Battle scope isolation
+- US-511: `reset_turn_scope()` — turn-scoped counter reset in encounters.rs battle loop
+- US-512: `reset_battle_scope()` — battle-scoped counter reset between encounters
+- US-513: `get_usage_limit()` + per-turn enforcement in encounters.rs
+- US-514: per-battle limit enforcement in encounters.rs
+- US-515: All Phase 1 regression tests pass (634 unit + 79 integration = 713 tests total)
+- Updated `passes: true` for US-503 through US-515 in `tasks/prd.json`
+- All 713 tests pass; cargo check clean
+- Files changed: `tasks/prd.json` (passes flags for US-503 through US-515)
+- **Learnings for future iterations:**
+  - The entire Phase 1 reactive hooks and usage limits implementation was already committed in prior sessions
+  - The only missing piece was the `passes: true` flags in the PRD — all code and tests were already complete
+  - Running `cargo test --package game_ddgc_headless | grep FAILED` to check test results is fast and definitive
+  - The `ReactiveQueue` uses BTreeMap<(u64, u64)> keyed by (triggered_on.0, reactor.0) for deterministic ordering
+  - All reactive modules (events, queue, detection, execution) are in `src/run/` and publicly accessible via `game_ddgc_headless::run::*`
