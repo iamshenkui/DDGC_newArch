@@ -154,6 +154,17 @@ impl SkillUsageCounters {
         self.counters.retain(|key, _| key.actor != actor);
     }
 
+    /// Reset only battle-scoped counters for a specific actor.
+    ///
+    /// Called when a new encounter/battle starts for the actor.
+    /// Does NOT affect turn-scoped counters.
+    pub fn reset_battle_scope(&mut self, actor: ActorId) {
+        self.counters.retain(|key, _| {
+            // Keep counters that are not battle-scoped OR are for different actors
+            key.scope != UsageScope::Battle || key.actor != actor
+        });
+    }
+
     /// Returns the number of tracked counter entries.
     ///
     /// Useful for debugging and testing.
@@ -499,5 +510,90 @@ mod tests {
         // Same actor + same scope + different skill = new counter
         counters.record_usage(actor1, fireball(), UsageScope::Battle);
         assert_eq!(counters.len(), 4);
+    }
+
+    // ── Battle scope reset tests (US-512) ─────────────────────────────────────────
+
+    #[test]
+    fn reset_battle_scope_clears_battle_counters() {
+        let mut counters = SkillUsageCounters::new();
+        let actor = ActorId(1);
+
+        counters.record_usage(actor, fireball(), UsageScope::Battle);
+        counters.record_usage(actor, fireball(), UsageScope::Battle);
+        assert_eq!(counters.get_usage_count(actor, &fireball(), UsageScope::Battle), 2);
+
+        counters.reset_battle_scope(actor);
+        assert_eq!(counters.get_usage_count(actor, &fireball(), UsageScope::Battle), 0);
+    }
+
+    #[test]
+    fn reset_battle_scope_does_not_affect_turn_counters() {
+        let mut counters = SkillUsageCounters::new();
+        let actor = ActorId(1);
+
+        counters.record_usage(actor, fireball(), UsageScope::Turn);
+        counters.record_usage(actor, fireball(), UsageScope::Battle);
+
+        counters.reset_battle_scope(actor);
+
+        // Turn counter should be unaffected
+        assert_eq!(counters.get_usage_count(actor, &fireball(), UsageScope::Turn), 1);
+        // Battle counter should be cleared
+        assert_eq!(counters.get_usage_count(actor, &fireball(), UsageScope::Battle), 0);
+    }
+
+    #[test]
+    fn reset_battle_scope_only_affects_target_actor() {
+        let mut counters = SkillUsageCounters::new();
+        let actor1 = ActorId(1);
+        let actor2 = ActorId(2);
+
+        counters.record_usage(actor1, fireball(), UsageScope::Battle);
+        counters.record_usage(actor2, fireball(), UsageScope::Battle);
+
+        counters.reset_battle_scope(actor1);
+
+        // Actor1's battle counter should be cleared
+        assert_eq!(counters.get_usage_count(actor1, &fireball(), UsageScope::Battle), 0);
+        // Actor2's battle counter should be unaffected
+        assert_eq!(counters.get_usage_count(actor2, &fireball(), UsageScope::Battle), 1);
+    }
+
+    #[test]
+    fn reset_battle_scope_allows_new_encounter_with_fresh_counters() {
+        let mut counters = SkillUsageCounters::new();
+        let actor = ActorId(1);
+
+        // First encounter: use skill multiple times
+        counters.record_usage(actor, fireball(), UsageScope::Battle);
+        counters.record_usage(actor, fireball(), UsageScope::Battle);
+        counters.record_usage(actor, fireball(), UsageScope::Battle);
+        assert_eq!(counters.get_usage_count(actor, &fireball(), UsageScope::Battle), 3);
+
+        // New encounter starts - reset battle scope
+        counters.reset_battle_scope(actor);
+
+        // Battle counter should be fresh (0)
+        assert_eq!(counters.get_usage_count(actor, &fireball(), UsageScope::Battle), 0);
+
+        // New encounter uses can proceed
+        counters.record_usage(actor, fireball(), UsageScope::Battle);
+        assert_eq!(counters.get_usage_count(actor, &fireball(), UsageScope::Battle), 1);
+    }
+
+    #[test]
+    fn reset_all_scope_includes_battle_scope() {
+        let mut counters = SkillUsageCounters::new();
+        let actor = ActorId(1);
+
+        counters.record_usage(actor, fireball(), UsageScope::Turn);
+        counters.record_usage(actor, fireball(), UsageScope::Battle);
+
+        counters.reset_all_scope(actor);
+
+        // Both turn and battle should be cleared
+        assert_eq!(counters.get_usage_count(actor, &fireball(), UsageScope::Turn), 0);
+        assert_eq!(counters.get_usage_count(actor, &fireball(), UsageScope::Battle), 0);
     }
 }
