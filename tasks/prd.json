@@ -26,7 +26,7 @@
                 "A focused test proves the event structure can be created deterministically from a resolved damage step"
             ],
             "priority": 2,
-            "passes": false,
+            "passes": true,
             "notes": "Data-model slice only. Do not execute reactions yet."
         },
         {
