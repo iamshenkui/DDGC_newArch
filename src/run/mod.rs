@@ -7,6 +7,7 @@
 pub mod encounters;
 pub mod flow;
 pub mod guard_detection;
+pub mod guard_redirect_execution;
 pub mod reactive_events;
 pub mod reactive_queue;
 pub mod rewards;

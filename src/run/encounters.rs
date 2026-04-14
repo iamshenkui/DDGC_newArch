@@ -29,6 +29,7 @@ use crate::run::reactive_events::{build_reactive_events, DamageStepContext, Reac
 use crate::run::reactive_queue::ReactiveQueue;
 use crate::run::riposte_detection::detect_riposte_candidates;
 use crate::run::riposte_execution::{execute_riposte, has_riposte_status};
+use crate::run::guard_redirect_execution::execute_guard_redirect;
 
 /// Skill assignment for encounter battles.
 ///
@@ -343,7 +344,7 @@ impl EncounterResolver {
                         }
                     }
 
-                    // Process reactive queue: execute riposte counter-attacks
+                    // Process reactive queue: execute riposte counter-attacks and guard redirects
                     while let Some(event) = reactive_queue.drain_next() {
                         if event.is_riposte() {
                             let reactor_id = event.reactor;
@@ -377,6 +378,38 @@ impl EncounterResolver {
                                         trigger,
                                     );
                                 }
+                            }
+                        } else if event.is_guard_redirect() {
+                            // US-508: Guard redirect - damage goes to guard instead of protected target
+                            if let Some(redirected_damage) = execute_guard_redirect(&event, &mut actors) {
+                                let trigger = crate::trace::ReactiveTrigger {
+                                    attacker: event.attacker.0,
+                                    skill: skill_name.to_string(),
+                                    target: event.triggered_on.0,
+                                    kind: "GuardRedirect".to_string(),
+                                };
+                                // Build effect results for the redirect action
+                                // actor = original attacker, targets = guard (who absorbed the damage)
+                                let redirect_results = vec![
+                                    framework_combat::results::EffectResult {
+                                        kind: framework_combat::results::EffectResultKind::Damage,
+                                        actor: event.attacker,
+                                        targets: vec![event.reactor],
+                                        values: std::collections::HashMap::from([
+                                            ("amount".to_string(), redirected_damage),
+                                        ]),
+                                        applied_statuses: vec![],
+                                    }
+                                ];
+                                trace.record_reactive(
+                                    round,
+                                    event.reactor,
+                                    "guard_redirect",
+                                    &[event.triggered_on],
+                                    &redirect_results,
+                                    &actors,
+                                    trigger,
+                                );
                             }
                         }
                     }
