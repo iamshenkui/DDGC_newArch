@@ -1166,3 +1166,21 @@
   - B-006 (damage variance): all migrated skills use averaged damage - needs DamagePolicy interface
   - B-010 (hit resolution): actors have dodge but no hit-resolution policy - smoke_bomb() is anchor
 ---
+
+## 2026-04-15 - US-609 (fixup)
+- Fixed lifetime and ownership issues in ConditionAdapter/ConditionContext system
+- Changed from borrowed references to owned HashMaps to resolve lifetime conflicts
+- Fixed ReactiveQueue to use (triggered_on, reactor) tuple as key instead of just reactor
+- This allows multiple events with same reactor but different triggered_on actors
+- Updated tests to use correct threshold values for IfTargetHealthBelow (raw health, not fractions)
+- All 625 tests now pass
+- Files changed:
+  - `src/run/conditions.rs` - ownership model refactor, test fixes
+  - `src/run/encounters.rs` - pass owned HashMaps to ConditionContext
+  - `src/run/reactive_queue.rs` - key type change, test fix
+  - `src/run/riposte_detection.rs` - actor.id() to *id fix
+  - `src/run/riposte_execution.rs` - formation mutability fix
+  - `src/trace.rs` - added ActorAggregate import
+  - `src/content/statuses.rs` - added poison function
+  - `Cargo.toml` - framework path fixes
+- Commit: 5d88857
