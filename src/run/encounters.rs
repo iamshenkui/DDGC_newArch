@@ -24,6 +24,7 @@ use crate::encounters::{build_packs_registry, Dungeon, EncounterPack, EncounterP
 use crate::monsters::build_registry as build_monster_registry;
 use crate::monsters::MonsterFamilyRegistry;
 use crate::trace::BattleTrace;
+use crate::run::guard_detection::detect_guard_relations_for_target;
 use crate::run::reactive_events::{build_reactive_events, DamageStepContext, ReactiveEventKind};
 use crate::run::reactive_queue::ReactiveQueue;
 use crate::run::riposte_detection::detect_riposte_candidates;
@@ -298,16 +299,19 @@ impl EncounterResolver {
                     );
                     let effect_results = resolve_skill(skill, &mut ctx);
 
-                    // ── Reactive Processing (US-506) ─────────────────────────
+                    // ── Reactive Processing (US-506, US-507) ─────────────────
                     // After damage is applied, check if targets have riposte status
-                    // and process reactive counter-attacks
+                    // and process reactive counter-attacks (US-506).
+                    // Also detect guard protection relationships for guard redirect
+                    // events (US-507).
                     let mut reactive_queue = ReactiveQueue::new();
                     for &target in &targets {
+                        // Riposte detection: actor with riposte status who was hit
                         let candidates = detect_riposte_candidates(&actors);
                         for candidate in candidates {
                             // Only create event if the candidate was actually hit (is in targets)
                             if targets.contains(&candidate) {
-                                let damage_amount = effect_results.iter().find_map(|r| r.values.get("amount").copied());
+                                let damage_amount = effect_results.results.iter().find_map(|r| r.values.get("amount").copied());
                                 let ctx = DamageStepContext::new(
                                     current_actor,
                                     skill.id.clone(),
@@ -318,6 +322,23 @@ impl EncounterResolver {
                                 for event in events {
                                     reactive_queue.enqueue(event);
                                 }
+                            }
+                        }
+
+                        // Guard detection (US-507): find guards on same side who can protect this target
+                        let guard_relations = detect_guard_relations_for_target(target, &actors, &side_lookup);
+                        for relation in guard_relations {
+                            // Guard redirects damage for the protected target
+                            let damage_amount = effect_results.results.iter().find_map(|r| r.values.get("amount").copied());
+                            let ctx = DamageStepContext::new(
+                                current_actor,
+                                skill.id.clone(),
+                                target,
+                                damage_amount,
+                            );
+                            let events = build_reactive_events(&ctx, relation.guard, ReactiveEventKind::GuardRedirect);
+                            for event in events {
+                                reactive_queue.enqueue(event);
                             }
                         }
                     }
@@ -333,7 +354,7 @@ impl EncounterResolver {
                                 false
                             };
                             if has_riposte {
-                                if let Some((skill_id, reactive_results)) = execute_riposte(
+                                if let Some((_skill_id, reactive_results)) = execute_riposte(
                                     &event,
                                     &self.content_pack,
                                     &mut actors,
@@ -365,7 +386,7 @@ impl EncounterResolver {
                         current_actor,
                         skill_name,
                         &targets,
-                        &effect_results,
+                        &effect_results.results,
                         &actors,
                     );
 

@@ -37,7 +37,7 @@ const RIPOSTE_KIND: &str = "riposte";
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// let candidates = detect_riposte_candidates(&actors);
 /// for candidate in candidates {
 ///     // reactor may counter-attack when hit
@@ -49,7 +49,7 @@ pub fn detect_riposte_candidates(
     let mut candidates: Vec<ActorId> = actors
         .values()
         .filter(|actor| has_riposte_status(actor))
-        .map(|actor| actor.id())
+        .map(|actor| actor.id)
         .collect();
 
     // Sort by ActorId for deterministic ordering

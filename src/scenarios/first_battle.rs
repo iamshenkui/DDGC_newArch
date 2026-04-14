@@ -166,7 +166,7 @@ pub fn run_first_battle() -> BattleResult {
                     current_actor,
                     skill_name,
                     &targets,
-                    &effect_results,
+                    &effect_results.results,
                     &actors,
                 );
 

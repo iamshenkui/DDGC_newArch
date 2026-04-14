@@ -1,0 +1,189 @@
+{
+    "project": "game_ddgc_headless",
+    "branchName": "ralph/ddgc-conditional-hit-policy-closure",
+    "description": "Phase 2 of 2 — DDGC Conditional Effects, Damage Variance, And Hit Resolution. Start only after Phase 1 is complete. This PRD closes the remaining semantic-policy gaps by implementing DDGC-specific conditional evaluation, deterministic/rolled damage policy seams, and a real accuracy-vs-dodge resolution path.",
+    "userStories": [
+        {
+            "id": "US-601",
+            "title": "P2-0: Inventory open conditional and hit-policy gaps",
+            "description": "As a developer, I need a concrete inventory of remaining DDGC conditional rules and hit-resolution behaviors so Phase 2 targets the highest-value semantic gaps first.",
+            "acceptanceCriteria": [
+                "A checked-in note or progress entry lists the migrated skills or statuses still blocked by DDGC-specific conditions, damage variance, or dodge-aware hit resolution",
+                "The inventory distinguishes framework-native conditions from DDGC-only conditions",
+                "The inventory selects a small initial condition subset and at least one hit-policy anchor scenario for implementation"
+            ],
+            "priority": 1,
+            "passes": false,
+            "notes": "Discovery slice for B-004, B-006, and B-010."
+        },
+        {
+            "id": "US-602",
+            "title": "P2-1: Add condition evaluation context model",
+            "description": "As a developer, I need a game-layer condition evaluation context so DDGC-specific checks can read actor, target, turn, and encounter state through one stable interface.",
+            "acceptanceCriteria": [
+                "A dedicated DDGC condition-evaluation context type exists outside framework crates",
+                "The context exposes enough data for actor-side, target-side, turn-state, and encounter-state conditions",
+                "A focused test proves the context can be created deterministically from an in-progress combat state"
+            ],
+            "priority": 2,
+            "passes": false,
+            "notes": "Foundational data-model slice for B-004."
+        },
+        {
+            "id": "US-603",
+            "title": "P2-2: Bridge framework-native conditions through the DDGC adapter",
+            "description": "As a developer, I need the DDGC evaluation layer to pass through supported framework-native conditions so one adapter can handle both generic and DDGC-specific checks.",
+            "acceptanceCriteria": [
+                "The DDGC adapter can evaluate at least one existing framework-native condition through the new shared interface",
+                "The bridge does not duplicate framework logic unnecessarily",
+                "A focused test proves supported native conditions behave the same before and after the adapter layer"
+            ],
+            "priority": 3,
+            "passes": false,
+            "notes": "Compatibility slice before DDGC-only condition work."
+        },
+        {
+            "id": "US-604",
+            "title": "P2-3: Surface unsupported conditions explicitly",
+            "description": "As a developer, I need unsupported DDGC conditions to fail loudly in the game layer so missing semantic support is visible instead of silently flattening behavior.",
+            "acceptanceCriteria": [
+                "Unsupported condition kinds are surfaced via explicit error, trace marker, or ledgered fallback path",
+                "The combat path does not silently apply or ignore an effect when a required DDGC condition is unknown",
+                "A focused test proves unsupported conditions are observable in a deterministic way"
+            ],
+            "priority": 4,
+            "passes": false,
+            "notes": "Guardrail slice before incremental condition implementation."
+        },
+        {
+            "id": "US-605",
+            "title": "P2-4: Implement first-round condition semantics",
+            "description": "As a developer, I need FirstRound-style DDGC conditions implemented so opening-turn-only effects stop behaving as if they were unconditional.",
+            "acceptanceCriteria": [
+                "The game layer can evaluate whether the current action occurs on the first round or not",
+                "At least one migrated or fixture-backed effect uses the new first-round condition successfully",
+                "A deterministic test proves the effect applies on round one and stops applying afterwards"
+            ],
+            "priority": 5,
+            "passes": false,
+            "notes": "Choose one high-leverage DDGC condition and land it fully."
+        },
+        {
+            "id": "US-606",
+            "title": "P2-5: Implement stress-threshold condition semantics",
+            "description": "As a developer, I need StressAbove or StressBelow DDGC conditions implemented so stress-driven behavior can diverge correctly instead of being always-on.",
+            "acceptanceCriteria": [
+                "The game layer can evaluate at least one stress-threshold condition using DDGC stress state",
+                "At least one migrated or fixture-backed effect proves stress-threshold behavior end-to-end",
+                "A deterministic test proves the same effect changes outcome across the threshold boundary"
+            ],
+            "priority": 6,
+            "passes": false,
+            "notes": "Second DDGC-specific condition slice."
+        },
+        {
+            "id": "US-607",
+            "title": "P2-6: Implement one additional DDGC-only condition family",
+            "description": "As a developer, I need one more DDGC-only condition family implemented so the adapter proves it can scale beyond a single special case.",
+            "acceptanceCriteria": [
+                "At least one additional DDGC-only condition family beyond FirstRound and stress-threshold is implemented",
+                "The condition is exercised by a migrated or fixture-backed skill or status",
+                "A focused test proves the new condition integrates through the shared adapter instead of a one-off branch"
+            ],
+            "priority": 7,
+            "passes": false,
+            "notes": "Pick the most reused remaining condition after the Phase 2 inventory."
+        },
+        {
+            "id": "US-608",
+            "title": "P2-7: Update semantic gap ledger for conditional support",
+            "description": "As a developer, I need the semantic-gap and blocker ledgers updated as condition support lands so the repo no longer describes closed gaps as entirely deferred.",
+            "acceptanceCriteria": [
+                "SEMANTIC_GAPS.md reflects the newly implemented DDGC condition support accurately",
+                "MIGRATION_BLOCKERS.md is updated if B-004 can be partially or fully reclassified",
+                "The documentation distinguishes remaining unsupported conditions from the ones now implemented"
+            ],
+            "priority": 8,
+            "passes": false,
+            "notes": "Documentation closeout for the B-004 subset delivered in Phase 2."
+        },
+        {
+            "id": "US-609",
+            "title": "P2-8: Add deterministic damage policy interface",
+            "description": "As a developer, I need a game-layer damage policy interface so fixed-average and rolled-damage behavior can coexist without rewriting every migrated skill definition.",
+            "acceptanceCriteria": [
+                "Game-layer combat code exposes a clear policy seam for translating DDGC damage ranges into resolved damage values",
+                "Existing deterministic test paths continue using a stable default policy",
+                "A focused test proves policy selection occurs through one shared interface rather than scattered branches"
+            ],
+            "priority": 9,
+            "passes": false,
+            "notes": "Foundation slice for B-006."
+        },
+        {
+            "id": "US-610",
+            "title": "P2-9: Preserve fixed-average deterministic mode",
+            "description": "As a developer, I need the current fixed-average damage behavior preserved as an explicit deterministic mode so golden traces stay stable while variance support is added.",
+            "acceptanceCriteria": [
+                "Fixed-average damage resolution is represented as an explicit selectable policy",
+                "Existing deterministic traces or regression scenarios continue to pass unchanged under that policy",
+                "A focused test proves average-mode output remains stable across repeated runs"
+            ],
+            "priority": 10,
+            "passes": false,
+            "notes": "Do not introduce variance into default test mode in this slice."
+        },
+        {
+            "id": "US-611",
+            "title": "P2-10: Add rolled-damage policy for DDGC ranges",
+            "description": "As a developer, I need a rolled-damage policy for DDGC min/max ranges so the game can eventually restore variance without abandoning deterministic testing.",
+            "acceptanceCriteria": [
+                "The game layer can resolve DDGC min/max ranges through a non-average policy path",
+                "The rolled-damage path is explicitly selectable and does not replace deterministic default behavior",
+                "A focused test proves the rolled policy stays within the expected range bounds"
+            ],
+            "priority": 11,
+            "passes": false,
+            "notes": "Second B-006 slice after the policy seam exists."
+        },
+        {
+            "id": "US-612",
+            "title": "P2-11: Add hit-resolution context model",
+            "description": "As a developer, I need a DDGC-specific hit-resolution context so accuracy, dodge, and related combat modifiers can be evaluated coherently through one policy seam.",
+            "acceptanceCriteria": [
+                "Game-layer combat code exposes a dedicated context for hit-resolution decisions",
+                "The context can read attacker accuracy, defender dodge, and any required supporting state",
+                "A focused test proves the context is deterministic and reusable across repeated hit checks"
+            ],
+            "priority": 12,
+            "passes": false,
+            "notes": "Foundation slice for B-010."
+        },
+        {
+            "id": "US-613",
+            "title": "P2-12: Implement accuracy-vs-dodge policy",
+            "description": "As a developer, I need an actual accuracy-vs-dodge resolution policy so DDGC skills can hit or miss under game-layer control instead of relying only on coarse probability placeholders.",
+            "acceptanceCriteria": [
+                "A DDGC-specific hit policy resolves at least one dodge-sensitive attack path end-to-end",
+                "The policy integrates with the shared hit-resolution context rather than a one-off helper",
+                "A deterministic or seeded test proves hit and miss outcomes can both be exercised intentionally"
+            ],
+            "priority": 13,
+            "passes": false,
+            "notes": "Main B-010 behavior slice."
+        },
+        {
+            "id": "US-614",
+            "title": "P2-13: Add regression coverage for conditions and hit policies",
+            "description": "As a developer, I need Phase 2 mechanics locked by regression tests so later content migration can rely on conditional effects, damage variance seams, and hit resolution without re-opening the same gaps.",
+            "acceptanceCriteria": [
+                "Regression tests cover implemented DDGC-specific conditions, deterministic damage mode, rolled-damage policy seams, and accuracy-vs-dodge behavior",
+                "The test suite uses game_ddgc_headless public APIs and fixture content rather than framework internals",
+                "cargo test --manifest-path Cargo.toml exits 0 with full Phase 2 coverage enabled"
+            ],
+            "priority": 14,
+            "passes": false,
+            "notes": "Phase 2 closeout story. Start only after Phase 1 is complete."
+        }
+    ]
+}

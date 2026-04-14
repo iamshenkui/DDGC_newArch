@@ -7,7 +7,8 @@
 
 use framework_combat::encounter::CombatSide;
 use framework_combat::results::EffectResult;
-use framework_rules::actor::ActorId;
+#[allow(unused_imports)]
+use framework_rules::actor::{ActorAggregate, ActorId};
 use framework_rules::attributes::{AttributeKey, ATTR_HEALTH};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};

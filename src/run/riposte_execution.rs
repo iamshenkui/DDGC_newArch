@@ -31,7 +31,6 @@ use std::collections::HashMap;
 
 use crate::content::ContentPack;
 use crate::run::reactive_events::ReactiveEvent;
-use crate::trace::ReactiveTrigger;
 
 /// The status kind key for riposte marker statuses.
 pub const RIPOSTE_KIND: &str = "riposte";
@@ -47,7 +46,7 @@ pub fn execute_riposte(
     event: &ReactiveEvent,
     content_pack: &ContentPack,
     actors: &mut HashMap<ActorId, ActorAggregate>,
-    formation: &FormationLayout,
+    formation: &mut FormationLayout,
     side_lookup: &HashMap<ActorId, CombatSide>,
 ) -> Option<(SkillId, Vec<EffectResult>)> {
     if !event.is_riposte() {
@@ -69,7 +68,7 @@ pub fn execute_riposte(
     // Consume the riposte status from the reactor
     consume_riposte_status(actors, reactor);
 
-    Some((skill_id, effect_results))
+    Some((skill_id, effect_results.results))
 }
 
 /// Find the counter-attack skill for a reactor.
@@ -168,7 +167,7 @@ mod tests {
 
         let content_pack = ContentPack::default();
         let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
-        let formation = FormationLayout::new(2, 4);
+        let mut formation = FormationLayout::new(2, 4);
         let side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
 
         // Create a guard redirect event (not riposte)
@@ -184,7 +183,7 @@ mod tests {
             &event,
             &content_pack,
             &mut actors,
-            &formation,
+            &mut formation,
             &side_lookup,
         );
 
