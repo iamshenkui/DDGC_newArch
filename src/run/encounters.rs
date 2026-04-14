@@ -37,6 +37,7 @@ use crate::run::reactive_queue::ReactiveQueue;
 use crate::run::riposte_detection::detect_riposte_candidates;
 use crate::run::riposte_execution::{execute_riposte, has_riposte_status};
 use crate::run::guard_redirect_execution::execute_guard_redirect;
+use crate::run::shared_health::{init_shared_health_for_pack, SharedHealthTracker};
 use crate::run::summon_materialization::{materialize_summons, SummonTracker};
 use crate::run::usage_counters::SkillUsageCounters;
 use crate::run::usage_limits::get_usage_limit;
@@ -214,6 +215,7 @@ impl EncounterResolver {
 
         // ── Enemy actors from pack ─────────────────────────────────────────
         let mut next_enemy_id: u64 = 10;
+        let mut actor_families: HashMap<ActorId, String> = HashMap::new();
         for slot in &pack.slots {
             let family = self
                 .monster_registry
@@ -237,6 +239,8 @@ impl EncounterResolver {
                 // Assign family ID for dynamic action policy selection
                 skill_assign.assign_family(actor_id, &slot.family_id.0);
                 side_lookup.insert(actor_id, CombatSide::Enemy);
+                // Track actor-to-family mapping for shared health pools
+                actor_families.insert(actor_id, slot.family_id.0.clone());
                 next_enemy_id += 1;
             }
         }
@@ -265,6 +269,16 @@ impl EncounterResolver {
         // ── Resolver ──────────────────────────────────────────────────────
         let mut resolver = CombatResolver::new(3);
         resolver.start(&mut encounter, &actors);
+
+        // ── US-709: Shared health pool tracking ────────────────────────────
+        // For boss encounters with multi-body bosses (Azure Dragon, Vermilion Bird),
+        // initialize shared health pool tracking so damage to any body reduces
+        // the shared pool and all members die when the pool is exhausted.
+        let mut shared_health = if pack.pack_type == PackType::Boss {
+            init_shared_health_for_pack(&pack.id.0, &actors, &actor_families)
+        } else {
+            SharedHealthTracker::new()
+        };
 
         // ── Battle loop ────────────────────────────────────────────────────
         let mut trace = BattleTrace::new(&pack.id.0);
@@ -397,6 +411,11 @@ impl EncounterResolver {
             if let Some(rule) = get_ddgc_targeting_rule(&skill_name) {
                 targets = filter_targets_by_rank(rule.target_rank, &targets, &formation);
             }
+
+            // ── US-709: Shared health pre-damage snapshot ─────────────────────
+            // Before the framework applies damage, snapshot pool member HP values
+            // so we can compute actual damage dealt after resolution.
+            shared_health.snapshot_pre_damage(&actors);
 
             if targets.is_empty() {
                 let cmd = CombatCommand::Wait {
@@ -567,6 +586,18 @@ impl EncounterResolver {
                                     trigger,
                                 );
                             }
+                        }
+                    }
+
+                    // ── US-709: Shared health post-damage processing ───────────────
+                    // After the framework applies damage and reactive events are processed,
+                    // compute actual damage dealt to pool members and redistribute pool HP.
+                    // Remove all members of any exhausted pools.
+                    let exhausted_pools = shared_health.process_post_damage(&mut actors);
+                    for pool_id in exhausted_pools {
+                        let members = shared_health.members_of_exhausted_pool(pool_id);
+                        for member_id in members {
+                            remove_defeated(&mut encounter, &mut actors, member_id);
                         }
                     }
 

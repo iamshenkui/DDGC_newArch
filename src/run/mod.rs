@@ -14,6 +14,7 @@ pub mod reactive_queue;
 pub mod rewards;
 pub mod riposte_detection;
 pub mod riposte_execution;
+pub mod shared_health;
 pub mod summon_events;
 pub mod summon_materialization;
 pub mod usage_counters;
