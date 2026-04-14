@@ -44,6 +44,9 @@ use crate::run::guard_redirect_execution::execute_guard_redirect;
 use crate::run::phase_transition::{
     execute_phase_transition, is_multi_phase_boss, PhaseTransitionTracker,
 };
+use crate::run::paired_boss::{
+    execute_hp_averaging, init_paired_boss_for_pack, is_paired_boss_pack, PairedBossTracker,
+};
 use crate::run::shared_health::{init_shared_health_for_pack, SharedHealthTracker};
 use crate::run::summon_materialization::{materialize_summons, SummonTracker};
 use crate::run::usage_counters::SkillUsageCounters;
@@ -313,6 +316,15 @@ impl EncounterResolver {
         // egg_membrane_full when they capture a hero.
         let mut captor_tracker = CaptorTracker::new();
 
+        // ── US-712: Paired boss HP averaging tracking ─────────────────────
+        // For paired boss encounters (bloodthirsty_assassin + bloodthirsty_shadow),
+        // track the paired relationship so crimson_duet skill averages HP.
+        let mut paired_boss_tracker = if is_paired_boss_pack(&pack.id.0) {
+            init_paired_boss_for_pack(&pack.id.0, &actor_families)
+        } else {
+            PairedBossTracker::new()
+        };
+
         // ── Battle loop ────────────────────────────────────────────────────
         let mut trace = BattleTrace::new(&pack.id.0);
         let mut counters = SkillUsageCounters::new();
@@ -547,6 +559,20 @@ impl EncounterResolver {
                         update_actor_state(state, skill.id.clone());
                     }
 
+                    // ── US-712: Paired boss HP averaging ─────────────────────────
+                    // When crimson_duet skill is used on a paired boss, average HP
+                    // between the paired actors. crimson_duet is a 0-damage skill that
+                    // applies the average_hp status effect.
+                    let skill_is_crimson_duet = skill.id.0 == "crimson_duet";
+                    if skill_is_crimson_duet && !paired_boss_tracker.averaging_done(current_actor) {
+                        if let Some((actor_a, actor_b, avg_hp)) =
+                            execute_hp_averaging(current_actor, &mut actors, &paired_boss_tracker)
+                        {
+                            paired_boss_tracker.mark_averaging_done(current_actor);
+                            trace.record_hp_averaging(round, actor_a, actor_b, avg_hp, &actors);
+                        }
+                    }
+
                     // ── Reactive Processing (US-506, US-507) ─────────────────
                     // After damage is applied, check if targets have riposte status
                     // and process reactive counter-attacks (US-506).
@@ -774,6 +800,8 @@ impl EncounterResolver {
                 if let Some(first) = to.queue.front() {
                     if *first == current_actor {
                         dot_applied_this_round = false;
+                        // US-712: Reset paired boss HP averaging flag at new round
+                        paired_boss_tracker.reset_round();
                     }
                 }
             }

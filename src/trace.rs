@@ -337,6 +337,37 @@ impl BattleTrace {
         });
     }
 
+    /// Record an HP averaging event (paired boss crimson_duet averaging HP).
+    pub fn record_hp_averaging(
+        &mut self,
+        turn: u32,
+        actor_a: ActorId,
+        actor_b: ActorId,
+        avg_hp: f64,
+        actors: &HashMap<ActorId, framework_rules::actor::ActorAggregate>,
+    ) {
+        // Snapshot: HP of every actor (BTreeMap for deterministic ordering)
+        let mut snapshot = BTreeMap::new();
+        for (&id, actor) in actors {
+            let hp = actor.effective_attribute(&AttributeKey::new(ATTR_HEALTH));
+            snapshot.insert(id.0, hp.0);
+        }
+
+        self.entries.push(TraceEntry {
+            turn,
+            actor: actor_a.0,
+            action: "hp_averaging".to_string(),
+            targets: vec![actor_b.0],
+            effects: vec![TraceEffect {
+                kind: "HP_Average".to_string(),
+                target: actor_b.0,
+                value: avg_hp,
+            }],
+            snapshot,
+            triggered_by: None,
+        });
+    }
+
     /// Finalize the trace with the battle outcome.
     pub fn finalize(&mut self, winner: Option<CombatSide>, turns: u32) {
         self.winner = winner.map(|s| format!("{:?}", s));

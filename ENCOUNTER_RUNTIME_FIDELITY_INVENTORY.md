@@ -125,17 +125,18 @@ This document is the checked-in inventory for Phase 3 (DDGC Targeting, Boss Runt
 | Monster families (22 common + 12 boss) | Migrated | Full registry + skill packs |
 | Formation placement | Migrated | Actors placed by slot index |
 | Target resolution (broad selectors) | Migrated | AllEnemies/AllAllies work for damage resolution |
-| Single-target selection | **GAME-GAP** | B-007 reclassified as game-gap; needs game-layer fix |
-| Ally-target selection | **GAME-GAP** | Same as above |
-| Rank-gating (launch/target ranks) | **GAME-GAP** | Same as above |
-| Movement/reposition effects | **GAME-GAP** | push/pull modeled as EffectNode; formation slot update not wired |
-| Summon materialize | **GAME-GAP** | US-707/US-708 pending |
-| Shared-health linking | **GAME-GAP** | US-709 pending |
-| Multi-phase transitions | **GAME-GAP** | US-710 pending |
-| Captor/release | **GAME-GAP** | US-711 pending |
-| Controller/paired-boss | **GAME-GAP** | US-712 pending |
-| Family action policy (AI) | **GAME-GAP** | US-706 pending |
-| Remove run fallbacks | **GAME-GAP** | US-713 pending |
+| DDGC targeting intent context model | Resolved (P3) | US-702: TargetingIntent, TargetingContext, TargetRank, SideAffinity |
+| Single-target and ally-target selection | Resolved (P3) | US-703: DdgcTargetingRule, ally-exclusion in battle loop |
+| Rank-gating (launch/target ranks) | Resolved (P3) | US-704: rank constraint checking in battle loop |
+| Movement/reposition effects | Resolved (P3) | US-705: push/pull formation update; direction semantics fixed |
+| Family action policy (AI) | Resolved (P3) | US-706: FamilyActionPolicy, DeterministicCycle, PriorityTable |
+| Summon events seam | Resolved (P3) | US-707: SummonEvent, SummonKind, extract_summon_events() |
+| Summon materialization | Resolved (P3) | US-708: SummonTracker, materialize_summons(), gambler battle works |
+| Shared-health linking | Resolved (P3) | US-709: SharedHealthPool, SharedHealthTracker, azure_dragon golden trace |
+| Multi-phase transitions | Resolved (P3) | US-710: white_tiger phase progression |
+| Captor/release | Resolved (P3) | US-711: CaptorTracker, capture_events, captive state in turn order |
+| Controller/paired-boss | Resolved (P3) | US-712: PairedBossTracker, HP averaging, bloodthirsty_assassin |
+| Remove run fallbacks | **GAME-GAP** | US-713: Transitional fallback removal pending |
 
 ---
 

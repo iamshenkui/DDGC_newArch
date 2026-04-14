@@ -11,6 +11,7 @@ pub mod family_action_policy;
 pub mod flow;
 pub mod guard_detection;
 pub mod guard_redirect_execution;
+pub mod paired_boss;
 pub mod phase_transition;
 pub mod reactive_events;
 pub mod reactive_queue;
