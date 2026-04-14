@@ -24,6 +24,10 @@ use crate::encounters::{build_packs_registry, Dungeon, EncounterPack, EncounterP
 use crate::monsters::build_registry as build_monster_registry;
 use crate::monsters::MonsterFamilyRegistry;
 use crate::trace::BattleTrace;
+use crate::run::reactive_events::{build_reactive_events, DamageStepContext, ReactiveEventKind};
+use crate::run::reactive_queue::ReactiveQueue;
+use crate::run::riposte_detection::detect_riposte_candidates;
+use crate::run::riposte_execution::{execute_riposte, has_riposte_status};
 
 /// Skill assignment for encounter battles.
 ///
@@ -293,6 +297,68 @@ impl EncounterResolver {
                         &mut actors,
                     );
                     let effect_results = resolve_skill(skill, &mut ctx);
+
+                    // ── Reactive Processing (US-506) ─────────────────────────
+                    // After damage is applied, check if targets have riposte status
+                    // and process reactive counter-attacks
+                    let mut reactive_queue = ReactiveQueue::new();
+                    for &target in &targets {
+                        let candidates = detect_riposte_candidates(&actors);
+                        for candidate in candidates {
+                            // Only create event if the candidate was actually hit (is in targets)
+                            if targets.contains(&candidate) {
+                                let damage_amount = effect_results.iter().find_map(|r| r.values.get("amount").copied());
+                                let ctx = DamageStepContext::new(
+                                    current_actor,
+                                    skill.id.clone(),
+                                    target,
+                                    damage_amount,
+                                );
+                                let events = build_reactive_events(&ctx, candidate, ReactiveEventKind::Riposte);
+                                for event in events {
+                                    reactive_queue.enqueue(event);
+                                }
+                            }
+                        }
+                    }
+
+                    // Process reactive queue: execute riposte counter-attacks
+                    while let Some(event) = reactive_queue.drain_next() {
+                        if event.is_riposte() {
+                            let reactor_id = event.reactor;
+                            // Check riposte status - borrow actors immutably
+                            let has_riposte = if let Some(reactor) = actors.get(&reactor_id) {
+                                has_riposte_status(reactor)
+                            } else {
+                                false
+                            };
+                            if has_riposte {
+                                if let Some((skill_id, reactive_results)) = execute_riposte(
+                                    &event,
+                                    &self.content_pack,
+                                    &mut actors,
+                                    &mut formation,
+                                    &side_lookup,
+                                ) {
+                                    let trigger = crate::trace::ReactiveTrigger {
+                                        attacker: event.attacker.0,
+                                        skill: skill_name.to_string(),
+                                        target: event.triggered_on.0,
+                                        kind: "Riposte".to_string(),
+                                    };
+                                    trace.record_reactive(
+                                        round,
+                                        event.reactor,
+                                        "riposte",
+                                        &[event.attacker],
+                                        &reactive_results,
+                                        &actors,
+                                        trigger,
+                                    );
+                                }
+                            }
+                        }
+                    }
 
                     trace.record_action(
                         round,

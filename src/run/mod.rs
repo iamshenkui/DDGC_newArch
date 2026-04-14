@@ -10,3 +10,4 @@ pub mod reactive_events;
 pub mod reactive_queue;
 pub mod rewards;
 pub mod riposte_detection;
+pub mod riposte_execution;
