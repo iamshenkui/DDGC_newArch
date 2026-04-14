@@ -30,6 +30,7 @@ use crate::run::reactive_queue::ReactiveQueue;
 use crate::run::riposte_detection::detect_riposte_candidates;
 use crate::run::riposte_execution::{execute_riposte, has_riposte_status};
 use crate::run::guard_redirect_execution::execute_guard_redirect;
+use crate::run::usage_counters::SkillUsageCounters;
 
 /// Skill assignment for encounter battles.
 ///
@@ -236,6 +237,7 @@ impl EncounterResolver {
 
         // ── Battle loop ────────────────────────────────────────────────────
         let mut trace = BattleTrace::new(&pack.id.0);
+        let mut counters = SkillUsageCounters::new();
         let mut round: u32 = 0;
         let max_rounds = 100;
 
@@ -253,6 +255,7 @@ impl EncounterResolver {
             if hp.0 <= 0.0 {
                 remove_defeated(&mut encounter, &mut actors, current_actor);
                 resolver.end_turn(&mut encounter, &mut actors);
+                counters.reset_turn_scope(current_actor);
                 continue;
             }
 
@@ -267,6 +270,7 @@ impl EncounterResolver {
                     resolver.submit_command(&mut encounter, &mut actors, cmd);
                     trace.record_wait(round, current_actor, &actors);
                     resolver.end_turn(&mut encounter, &mut actors);
+                    counters.reset_turn_scope(current_actor);
                     continue;
                 }
             };
@@ -446,6 +450,7 @@ impl EncounterResolver {
             }
 
             resolver.end_turn(&mut encounter, &mut actors);
+            counters.reset_turn_scope(current_actor);
         }
 
         // ── Result ────────────────────────────────────────────────────────
