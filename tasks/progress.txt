@@ -1265,3 +1265,19 @@
   - Pre-existing clippy warnings in conditions.rs, hit_resolution.rs, reactive_queue.rs, shared_health.rs are lint debt for US-805
   - `cargo test` passes; `cargo clippy --tests -- -D warnings` has pre-existing lint errors addressed by US-805
 ---
+## 2026-04-16 - US-804
+- Fixed riposte detection bug in encounters.rs: changed `targets.contains(&candidate)` to `candidate == target` so riposte events are only generated for actors actually hit in the current target iteration
+- Added regression test scenario `multi_target_riposte_battle.rs` to verify per-target riposte correctness
+- Fixed pre-existing lint issues in touched runtime modules:
+  - conditions.rs: removed unused `SlotRange` import, added `#[allow(unreachable_patterns)]` to preserve catch-all for forward compatibility
+  - hit_resolution.rs: removed unused `AttributeValue` import, prefixed unused `content_pack` param with `_`
+  - reactive_queue.rs: removed dead code method `reactor()`
+  - shared_health.rs: marked `current_hp_fn()` with `#[allow(dead_code)]` (used in tests)
+- All 816 unit tests pass
+- Files changed: `src/run/encounters.rs`, `src/scenarios/multi_target_riposte_battle.rs` (new), `src/scenarios/mod.rs`, `src/run/conditions.rs`, `src/run/hit_resolution.rs`, `src/run/reactive_queue.rs`, `src/run/shared_health.rs`, `tasks/prd-post-merge-runtime-quality-followup.json`
+- **Learnings for future iterations:**
+  - The `targets.contains(&candidate)` bug causes riposte events to be generated for ANY candidate in the target set, not just the current target - the fix `candidate == target` ensures per-iteration correctness
+  - The reactive_battle.rs scenario already had the correct fix applied (line 194: `if target == candidate`) - the encounters.rs battle loop was the source of the bug
+  - `cargo clippy --tests -- -D warnings` has 43 errors across the codebase - these are pre-existing lint issues in runtime modules (damage_policy.rs, family_action_policy.rs, phase_transition.rs, content modules) that require broader cleanup beyond the scope of this stabilization PRD
+  - The `SlotRange` import in conditions.rs was needed for test code - restoring it with the understanding it's only used in `#[cfg(test)]` modules
+---
