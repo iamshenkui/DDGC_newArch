@@ -11,7 +11,7 @@
 use std::collections::HashMap;
 
 use framework_combat::commands::CombatCommand;
-use framework_combat::effects::{EffectContext, resolve_skill};
+use framework_combat::effects::{EffectContext, execute_effect_node, resolve_skill};
 use framework_combat::encounter::{CombatSide, Encounter, EncounterId, EncounterState};
 use framework_combat::formation::{FormationLayout, SlotIndex};
 use framework_combat::resolver::CombatResolver;
@@ -24,6 +24,12 @@ use crate::encounters::{build_packs_registry, Dungeon, EncounterPack, EncounterP
 use crate::monsters::build_registry as build_monster_registry;
 use crate::monsters::MonsterFamilyRegistry;
 use crate::trace::BattleTrace;
+use crate::run::conditions::{Condition, ConditionAdapter, ConditionContext, ConditionResult, DdgcCondition};
+use crate::run::hit_resolution::{HitPolicy, HitResolutionContext};
+use crate::run::reactive_events::{build_reactive_events, DamageStepContext, ReactiveEventKind};
+use crate::run::reactive_queue::ReactiveQueue;
+use crate::run::riposte_detection::detect_riposte_candidates;
+use crate::run::riposte_execution::{execute_riposte, has_riposte_status};
 
 /// Skill assignment for encounter battles.
 ///
@@ -286,20 +292,158 @@ impl EncounterResolver {
                 let resolution = resolver.submit_command(&mut encounter, &mut actors, cmd);
 
                 if resolution.accepted {
-                    let mut ctx = EffectContext::new(
-                        current_actor,
-                        targets.clone(),
-                        &mut formation,
-                        &mut actors,
-                    );
-                    let effect_results = resolve_skill(skill, &mut ctx);
+                    // ── Hit Resolution (US-613) ─────────────────────────────────
+                    // Check if the attack hits based on accuracy vs dodge.
+                    // If miss, record the miss and skip skill resolution.
+                    let primary_target = targets.first().copied();
+                    let mut attack_hits = true;
+                    if let Some(target_id) = primary_target {
+                        if let Some(hit_ctx) = HitResolutionContext::new(
+                            current_actor,
+                            target_id,
+                            &actors,
+                            &self.content_pack,
+                        ) {
+                            attack_hits = HitPolicy::AccuracyVsDodge.resolve(&hit_ctx);
+                        }
+                    }
+
+                    if !attack_hits {
+                        // Attack missed - record miss and end turn
+                        trace.record_miss(round, current_actor, &targets, &actors);
+                        resolver.end_turn(&mut encounter, &mut actors);
+                        continue;
+                    }
+
+                    // ── Skill Resolution ───────────────────────────────────────
+                    // Create EffectContext only for skill resolution, then drop it
+                    // to allow reactive processing to borrow actors/formation.
+                    let result = {
+                        let mut ctx = EffectContext::new(
+                            current_actor,
+                            targets.clone(),
+                            &mut formation,
+                            &mut actors,
+                        );
+                        resolve_skill(skill, &mut ctx)
+                    }; // ctx dropped here
+
+                    // ── Reactive Processing (US-506) ─────────────────────────
+                    // After damage is applied, check if targets have riposte status
+                    // and process reactive counter-attacks
+                    let mut reactive_queue = ReactiveQueue::new();
+                    for &target in &targets {
+                        let candidates = detect_riposte_candidates(&actors);
+                        for candidate in candidates {
+                            // Only create event if the candidate was actually hit (is in targets)
+                            if targets.contains(&candidate) {
+                                let damage_amount = result.results.iter().find_map(|r| r.values.get("amount").copied());
+                                let ctx = DamageStepContext::new(
+                                    current_actor,
+                                    skill.id.clone(),
+                                    target,
+                                    damage_amount,
+                                );
+                                let events = build_reactive_events(&ctx, candidate, ReactiveEventKind::Riposte);
+                                for event in events {
+                                    reactive_queue.enqueue(event);
+                                }
+                            }
+                        }
+                    }
+
+                    // Process reactive queue: execute riposte counter-attacks
+                    while let Some(event) = reactive_queue.drain_next() {
+                        if event.is_riposte() {
+                            let reactor_id = event.reactor;
+                            // Check riposte status - borrow actors immutably
+                            let has_riposte = if let Some(reactor) = actors.get(&reactor_id) {
+                                has_riposte_status(reactor)
+                            } else {
+                                false
+                            };
+                            if has_riposte {
+                                if let Some((_skill_id, reactive_results)) = execute_riposte(
+                                    &event,
+                                    &self.content_pack,
+                                    &mut actors,
+                                    &mut formation,
+                                    &side_lookup,
+                                ) {
+                                    let trigger = crate::trace::ReactiveTrigger {
+                                        attacker: event.attacker.0,
+                                        skill: skill_name.to_string(),
+                                        target: event.triggered_on.0,
+                                        kind: "Riposte".to_string(),
+                                    };
+                                    trace.record_reactive(
+                                        round,
+                                        event.reactor,
+                                        "riposte",
+                                        &[event.attacker],
+                                        &reactive_results,
+                                        &actors,
+                                        trigger,
+                                    );
+                                }
+                            }
+                        }
+                    }
+
+                    // ── DDGC Condition Evaluation ────────────────────────────
+                    // Evaluate deferred effects (effects with DDGC-specific conditions)
+                    // Re-create EffectContext for deferred effects processing
+                    let mut deferred_results = Vec::new();
+                    for deferred in &result.deferred {
+                        // Build condition context for DDGC condition evaluation
+                        let cond_ctx = ConditionContext::new(
+                            current_actor,
+                            targets.clone(),
+                            round - 1, // round is 1-indexed, condition context uses 0-indexed (0 = first round)
+                            actors.clone(),
+                            side_lookup.clone(),
+                            pack.dungeon,
+                        );
+                        let adapter = ConditionAdapter::new(cond_ctx);
+
+                        // Parse the condition tag to determine the DDGC condition
+                        // Tags are formatted as "ddgc_<Kind>" e.g., "ddgc_Damage"
+                        let ddgc_condition = parse_ddgc_condition(&deferred.condition_tag);
+
+                        if let Some(cond) = ddgc_condition {
+                            let eval_result = adapter.evaluate_ddgc(&cond);
+                            if eval_result == ConditionResult::Pass {
+                                // Condition passes - recreate EffectContext for execute_effect_node
+                                let mut effect_ctx = EffectContext::new(
+                                    current_actor,
+                                    targets.clone(),
+                                    &mut formation,
+                                    &mut actors,
+                                );
+                                // Condition passes - execute the effect
+                                let effect_result = execute_effect_node(
+                                    &deferred.node,
+                                    &mut effect_ctx,
+                                    &targets,
+                                );
+                                deferred_results.push(effect_result);
+                            }
+                            // If condition fails, skip the effect (do nothing)
+                        }
+                    }
+
+                    // Combine normal results with deferred results
+                    let all_results = result.results.iter()
+                        .chain(deferred_results.iter())
+                        .cloned()
+                        .collect::<Vec<_>>();
 
                     trace.record_action(
                         round,
                         current_actor,
                         skill_name,
                         &targets,
-                        &effect_results,
+                        &all_results,
                         &actors,
                     );
 
@@ -342,6 +486,24 @@ impl EncounterResolver {
             trace,
             pack_id: pack.id.0.clone(),
         }
+    }
+}
+
+/// Parse a DDGC condition tag from the framework into a DdgcCondition.
+///
+/// The framework generates tags in the format "ddgc_<Kind>" (e.g., "ddgc_Damage").
+/// The game layer interprets these tags to determine the actual DDGC condition
+/// to evaluate.
+///
+/// For US-605, only "ddgc_first_round" is mapped to DdgcCondition::FirstRound.
+/// Additional condition types can be added as needed.
+fn parse_ddgc_condition(tag: &str) -> Option<DdgcCondition> {
+    match tag {
+        "ddgc_first_round" => Some(DdgcCondition::FirstRound),
+        // Additional DDGC conditions can be added here:
+        // "ddgc_stress_above" => Some(DdgcCondition::StressAbove(threshold)),
+        // "ddgc_stress_below" => Some(DdgcCondition::StressBelow(threshold)),
+        _ => None,
     }
 }
 

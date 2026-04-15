@@ -27,6 +27,7 @@ pub fn archetype() -> Archetype {
         stress: 0.0,
         max_stress: 200.0,
         crit_chance: 0.02,
+        accuracy: 0.95,
         dodge: 0.05,
     }
 }
@@ -142,7 +143,63 @@ pub fn buff_skill() -> SkillDefinition {
     )
 }
 
-/// All 7 Hunter base skills.
+/// Opening Strike — first-round bonus attack.
+///
+/// DDGC reference: full weapon damage (avg 40) on first round, reduced damage (avg 20) after.
+/// This skill demonstrates the FirstRound DDGC condition: the bonus damage effect
+/// is only applied when the battle is on round 1.
+///
+/// Implementation: two effect nodes - normal damage always applies, bonus damage
+/// only applies on first round (via DDGC condition).
+pub fn opening_strike() -> SkillDefinition {
+    // Normal damage effect (always applies)
+    let normal_damage = EffectNode::damage(20.0);
+
+    // Bonus damage effect (only on first round) - uses DDGC FirstRound condition
+    // The framework defers this effect to the game layer, which evaluates
+    // the FirstRound condition via ConditionAdapter
+    let mut bonus_damage = EffectNode::damage(20.0);
+    bonus_damage.has_ddgc_condition = Some(true);
+    bonus_damage.ddgc_condition_tag = Some("ddgc_first_round".to_string());
+
+    SkillDefinition::new(
+        SkillId::new("opening_strike"),
+        vec![normal_damage, bonus_damage],
+        TargetSelector::AllEnemies,
+        1,
+        None,
+    )
+}
+
+/// Desperate Strike — bonus damage when at death's door.
+///
+/// DDGC reference: bonus damage when actor is near death (HP < 50%).
+/// This skill demonstrates the DeathsDoor DDGC condition: the bonus damage effect
+/// is only applied when the actor's HP drops below 50%.
+///
+/// Implementation: two effect nodes - normal damage always applies, bonus damage
+/// only applies when at deaths door (via DDGC condition).
+pub fn desperate_strike() -> SkillDefinition {
+    // Normal damage effect (always applies)
+    let normal_damage = EffectNode::damage(15.0);
+
+    // Bonus damage effect (only when at deaths door) - uses DDGC DeathsDoor condition
+    // The framework defers this effect to the game layer, which evaluates
+    // the DeathsDoor condition via ConditionAdapter
+    let mut bonus_damage = EffectNode::damage(25.0);
+    bonus_damage.has_ddgc_condition = Some(true);
+    bonus_damage.ddgc_condition_tag = Some("ddgc_deaths_door".to_string());
+
+    SkillDefinition::new(
+        SkillId::new("desperate_strike"),
+        vec![normal_damage, bonus_damage],
+        TargetSelector::AllEnemies,
+        1,
+        None,
+    )
+}
+
+/// All 8 Hunter base skills (DDGC template + Opening Strike).
 pub fn skill_pack() -> Vec<SkillDefinition> {
     vec![
         mark_skill(),
@@ -152,5 +209,6 @@ pub fn skill_pack() -> Vec<SkillDefinition> {
         ignore_def_skill(),
         bleed_skill(),
         buff_skill(),
+        opening_strike(),
     ]
 }

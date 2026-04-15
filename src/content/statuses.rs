@@ -120,6 +120,25 @@ pub fn frozen(damage_per_tick: f64, duration: u32) -> StatusEffect {
     )
 }
 
+/// Poison — blight damage-over-time that stacks up to 3 times.
+///
+/// DDGC reference: deals N blight damage per tick, duration 3 turns.
+/// Functionally similar to bleed but represents poison/blight damage.
+pub fn poison(damage_per_tick: f64, duration: u32) -> StatusEffect {
+    StatusEffect::new(
+        StatusKind::new("poison"),
+        Some(duration),
+        vec![Modifier::new(
+            ModifierSource::Status,
+            AttributeKey::new(ATTR_HEALTH),
+            AttributeValue(-damage_per_tick),
+            0,
+            Some(duration),
+        )],
+        StackRule::Stack { max: 3 },
+    )
+}
+
 /// Tagged — marker status for mark/tag mechanics.
 ///
 /// DDGC reference: tagged status enables conditional effects (Hunter's mark

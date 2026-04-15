@@ -116,12 +116,19 @@ fn hero_variant_switching_preserves_family_identity() {
                 expected_mode
             );
             let skills = skills.unwrap();
+            // Hunter Normal has 8 skills (includes opening_strike and desperate_strike)
+            let expected = if family.base_id == "hunter" && *expected_mode == ChaosMode::Normal {
+                8
+            } else {
+                7
+            };
             assert_eq!(
                 skills.len(),
-                7,
-                "{}: {:?} mode should have 7 skills",
+                expected,
+                "{}: {:?} mode should have {} skills",
                 family.base_id,
-                expected_mode
+                expected_mode,
+                expected
             );
 
             // After switching, the family lookup by the new variant ID still
