@@ -27,7 +27,7 @@ use crate::encounters::ddgc_targeting_rules::{
 use crate::monsters::build_registry as build_monster_registry;
 use crate::monsters::MonsterFamilyRegistry;
 use crate::trace::BattleTrace;
-use crate::run::conditions::{Condition, ConditionAdapter, ConditionContext, ConditionResult, DdgcCondition};
+use crate::run::conditions::{Condition, ConditionAdapter, ConditionContext, ConditionResult};
 use crate::run::hit_resolution::{HitPolicy, HitResolutionContext};
 use crate::run::capture_events::extract_capture_events;
 use crate::run::captor_state::{
@@ -783,30 +783,28 @@ impl EncounterResolver {
                         );
                         let adapter = ConditionAdapter::new(cond_ctx);
 
-                        // Parse the condition tag to determine the DDGC condition
-                        // Tags are formatted as "ddgc_<Kind>" e.g., "ddgc_Damage"
-                        let ddgc_condition = parse_ddgc_condition(&deferred.condition_tag);
-
-                        if let Some(cond) = ddgc_condition {
-                            let eval_result = adapter.evaluate_ddgc(&cond);
-                            if eval_result == ConditionResult::Pass {
-                                // Condition passes - recreate EffectContext for execute_effect_node
-                                let mut effect_ctx = EffectContext::new(
-                                    current_actor,
-                                    targets.clone(),
-                                    &mut formation,
-                                    &mut actors,
-                                );
-                                // Condition passes - execute the effect
-                                let effect_result = execute_effect_node(
-                                    &deferred.node,
-                                    &mut effect_ctx,
-                                    &targets,
-                                );
-                                deferred_results.push(effect_result);
-                            }
-                            // If condition fails, skip the effect (do nothing)
+                        // Evaluate the condition tag using the shared ConditionAdapter.
+                        // evaluate_by_tag handles all DDGC condition tags (first_round, stress_above,
+                        // stress_below, deaths_door, target_has_status, actor_has_status, etc.)
+                        // and returns Unknown for unrecognized tags.
+                        let eval_result = adapter.evaluate_by_tag(&deferred.condition_tag);
+                        if eval_result == ConditionResult::Pass {
+                            // Condition passes - recreate EffectContext for execute_effect_node
+                            let mut effect_ctx = EffectContext::new(
+                                current_actor,
+                                targets.clone(),
+                                &mut formation,
+                                &mut actors,
+                            );
+                            // Condition passes - execute the effect
+                            let effect_result = execute_effect_node(
+                                &deferred.node,
+                                &mut effect_ctx,
+                                &targets,
+                            );
+                            deferred_results.push(effect_result);
                         }
+                        // If condition fails or is unknown, skip the effect (do nothing)
                     }
 
                     // Combine normal results with deferred results
@@ -901,24 +899,6 @@ impl EncounterResolver {
             trace,
             pack_id: pack.id.0.clone(),
         }
-    }
-}
-
-/// Parse a DDGC condition tag from the framework into a DdgcCondition.
-///
-/// The framework generates tags in the format "ddgc_<Kind>" (e.g., "ddgc_Damage").
-/// The game layer interprets these tags to determine the actual DDGC condition
-/// to evaluate.
-///
-/// For US-605, only "ddgc_first_round" is mapped to DdgcCondition::FirstRound.
-/// Additional condition types can be added as needed.
-fn parse_ddgc_condition(tag: &str) -> Option<DdgcCondition> {
-    match tag {
-        "ddgc_first_round" => Some(DdgcCondition::FirstRound),
-        // Additional DDGC conditions can be added here:
-        // "ddgc_stress_above" => Some(DdgcCondition::StressAbove(threshold)),
-        // "ddgc_stress_below" => Some(DdgcCondition::StressBelow(threshold)),
-        _ => None,
     }
 }
 
