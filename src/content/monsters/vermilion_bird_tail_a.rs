@@ -182,7 +182,7 @@ mod tests {
         let skill = ignore_def();
         assert_eq!(skill.id.0, "ignore_def");
         assert!(
-            skill.effects.len() >= 1,
+            !skill.effects.is_empty(),
             "ignore_def should have damage effect"
         );
     }

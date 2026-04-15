@@ -138,7 +138,7 @@ mod tests {
         let skill = stress_crowd();
         assert_eq!(skill.id.0, "stress_crowd");
         assert!(
-            skill.effects.len() >= 1,
+            !skill.effects.is_empty(),
             "stress_crowd should have stress status"
         );
     }

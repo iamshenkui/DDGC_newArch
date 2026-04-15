@@ -212,7 +212,7 @@ mod tests {
         let skill = move_skill();
         assert_eq!(skill.id.0, "move");
         assert!(
-            skill.effects.len() >= 1,
+            !skill.effects.is_empty(),
             "move should have at least one effect"
         );
         let has_push = skill

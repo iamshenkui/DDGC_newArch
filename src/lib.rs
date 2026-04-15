@@ -64,6 +64,5 @@ mod feedback_loop {
 
         // If we got here, all imports resolved using only generic framework types.
         // No DDGC-specific types, constants, or rule branches were needed.
-        assert!(true, "All framework imports are generic — no DDGC-specific surface");
     }
 }

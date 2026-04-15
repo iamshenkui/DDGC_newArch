@@ -19,7 +19,9 @@
 use std::collections::HashMap;
 
 use framework_combat::encounter::CombatSide;
-use framework_combat::effects::{EffectCondition, SlotRange};
+use framework_combat::effects::EffectCondition;
+#[allow(unused_imports)]
+use framework_combat::effects::SlotRange;
 use framework_rules::actor::{ActorAggregate, ActorId};
 use framework_rules::attributes::AttributeKey;
 use framework_rules::attributes::ATTR_HEALTH;

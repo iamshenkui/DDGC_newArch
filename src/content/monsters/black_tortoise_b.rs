@@ -341,7 +341,7 @@ mod tests {
         let skill = snake_bites();
         assert_eq!(skill.id.0, "snake_bites");
         assert!(
-            skill.effects.len() >= 1,
+            !skill.effects.is_empty(),
             "snake_bites should have at least damage"
         );
     }

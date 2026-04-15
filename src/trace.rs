@@ -201,6 +201,8 @@ impl BattleTrace {
     /// Reactive events are triggered by a damage action. The `trigger` parameter
     /// captures the original attack that caused this reaction, making the
     /// trigger relationship explicit in the trace.
+    // Allow: too_many_arguments — function requires all these parameters for trace structure
+    #[allow(clippy::too_many_arguments)]
     pub fn record_reactive(
         &mut self,
         turn: u32,

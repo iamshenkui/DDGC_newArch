@@ -76,7 +76,6 @@ fn semantic_fixture_preserves_status_timing() {
         // apply_status effects in the skill are not auto-executed by the
         // resolver; status attachment requires game-layer implementation.
         // This is documented as expected behavior.
-        assert!(true, "No status_tick entries — expected for current first_battle");
     } else {
         // If status_tick entries exist (future: after game-layer status
         // attachment is implemented), verify they have non-zero damage.

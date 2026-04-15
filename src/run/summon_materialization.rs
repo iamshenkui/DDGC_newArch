@@ -209,6 +209,9 @@ fn find_placement_slot(
 /// If a summon event's kind has `needs_dedup() == true`, it will only be
 /// materialized once per (summoner, summon_kind) pair per battle. Subsequent
 /// events with the same key are silently skipped.
+// Allow: too_many_arguments — function requires all these parameters for current architecture
+// Refactoring to reduce arguments would require significant changes to call sites
+#[allow(clippy::too_many_arguments)]
 pub fn materialize_summons(
     events: &[SummonEvent],
     actors: &mut HashMap<ActorId, ActorAggregate>,
@@ -278,7 +281,7 @@ pub fn materialize_summons(
             encounter
                 .sides
                 .entry(CombatSide::Enemy)
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(actor_id);
 
             // Add to turn order queue if turn order exists (for deterministic ordering)

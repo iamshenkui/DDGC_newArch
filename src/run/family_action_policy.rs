@@ -23,10 +23,11 @@ use framework_rules::actor::ActorId;
 ///
 /// Each policy type encodes a different DDGC AI brain behavior.
 /// The policy is resolved at runtime given the current actor's state.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum FamilyActionPolicy {
     /// Default fallback: use the first registered skill.
     /// This is the safe default for families not yet migrated to a real policy.
+    #[default]
     FirstSkill,
 
     /// Cycles through skills in a fixed sequence, restarting after the last.
@@ -44,12 +45,6 @@ pub enum FamilyActionPolicy {
         /// (skill_id, weight) pairs. Higher weight = higher priority.
         entries: Vec<(SkillId, u32)>,
     },
-}
-
-impl Default for FamilyActionPolicy {
-    fn default() -> Self {
-        FamilyActionPolicy::FirstSkill
-    }
 }
 
 /// Per-actor state tracked during encounter resolution for policy evaluation.
@@ -222,18 +217,17 @@ mod tests {
         ];
 
         // After stun → intimidate
-        let mut state = ActorActionState::default();
-        state.last_skill_used = Some(SkillId::new("stun"));
+        let state = ActorActionState { last_skill_used: Some(SkillId::new("stun")) };
         let result = select_next_skill(&policy, ActorId(10), &state, &skills);
         assert_eq!(result.0, "intimidate");
 
         // After intimidate → stress
-        state.last_skill_used = Some(SkillId::new("intimidate"));
+        let state = ActorActionState { last_skill_used: Some(SkillId::new("intimidate")) };
         let result = select_next_skill(&policy, ActorId(10), &state, &skills);
         assert_eq!(result.0, "stress");
 
         // After stress → stun (cycle restarts)
-        state.last_skill_used = Some(SkillId::new("stress"));
+        let state = ActorActionState { last_skill_used: Some(SkillId::new("stress")) };
         let result = select_next_skill(&policy, ActorId(10), &state, &skills);
         assert_eq!(result.0, "stun");
     }
@@ -255,8 +249,7 @@ mod tests {
         ];
 
         // Last skill is "move" (not in cycle) → reset to first
-        let mut state = ActorActionState::default();
-        state.last_skill_used = Some(SkillId::new("move"));
+        let state = ActorActionState { last_skill_used: Some(SkillId::new("move")) };
         let result = select_next_skill(&policy, ActorId(10), &state, &skills);
         assert_eq!(result.0, "stun");
     }
@@ -298,8 +291,7 @@ mod tests {
         ];
 
         // Even if last_skill_used is dice_thousand, should still pick summon_mahjong
-        let mut state = ActorActionState::default();
-        state.last_skill_used = Some(SkillId::new("dice_thousand"));
+        let state = ActorActionState { last_skill_used: Some(SkillId::new("dice_thousand")) };
 
         let result = select_next_skill(&policy, ActorId(10), &state, &skills);
         assert_eq!(result.0, "summon_mahjong");

@@ -124,10 +124,11 @@ impl HitResolutionContext {
 /// Hit-resolution policy enum.
 ///
 /// Defines how hits are resolved in DDGC-style combat.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub enum HitPolicy {
     /// Standard DDGC hit resolution: accuracy vs dodge comparison.
     /// Hit if accuracy > effective_dodge.
+    #[default]
     AccuracyVsDodge,
 
     /// Always hits (for testing or certain skill effects).
@@ -135,12 +136,6 @@ pub enum HitPolicy {
 
     /// Always misses (for testing or certain debuffs).
     AlwaysMiss,
-}
-
-impl Default for HitPolicy {
-    fn default() -> Self {
-        HitPolicy::AccuracyVsDodge
-    }
 }
 
 impl HitPolicy {

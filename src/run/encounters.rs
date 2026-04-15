@@ -124,6 +124,12 @@ pub struct EncounterResolver {
     monster_registry: MonsterFamilyRegistry,
 }
 
+impl Default for EncounterResolver {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Default ally party for encounter battles.
 ///
 /// Uses DDGC-scale hero archetypes (not legacy tutorial heroes like Crusader/Vestal

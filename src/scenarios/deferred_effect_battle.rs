@@ -245,7 +245,9 @@ pub fn run_deferred_effect_battle() -> DeferredEffectBattleResult {
         resolver.end_turn(&mut encounter, &mut actors);
     }
 
-    trace.entries.last_mut().map(|e| e.turn = round);
+    if let Some(e) = trace.entries.last_mut() {
+        e.turn = round;
+    }
 
     DeferredEffectBattleResult {
         winner: if actors.iter().any(|(id, _)| side_lookup[id] == CombatSide::Ally) {

@@ -76,6 +76,12 @@ impl DdgcRunState {
     }
 }
 
+impl Default for DdgcRunState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Result of completing a DDGC run slice.
 pub struct DdgcRunResult {
     pub run: Run,
