@@ -1184,3 +1184,56 @@
   - `src/content/statuses.rs` - added poison function
   - `Cargo.toml` - framework path fixes
 - Commit: 5d88857
+
+## 2026-04-15 - US-801
+- Created inventory of post-merge runtime regressions for DDGC_newArch stabilization PRD
+- **Correctness Regressions:**
+
+  **US-802 (Priority 2) - Deferred DDGC condition parsing limited to `ddgc_first_round`**
+  - Anchor file: `src/run/encounters.rs` lines 770-816 (deferred effect evaluation)
+  - Root cause: `parse_ddgc_condition()` at line 913-923 only recognizes `"ddgc_first_round"`
+  - `ConditionAdapter::evaluate_by_tag()` in `src/run/conditions.rs` supports all DDGC conditions:
+    - `ddgc_first_round`, `ddgc_stress_above_<N>`, `ddgc_stress_below_<N>`
+    - `ddgc_deaths_door`, `ddgc_target_has_status_<kind>`, `ddgc_actor_has_status_<kind>`
+  - Fix: Replace `parse_ddgc_condition()` with `adapter.evaluate_by_tag()` at line 788
+  - Tests: See `src/run/conditions.rs` tests for ConditionAdapter (lines 791-1542)
+
+  **US-803 (Priority 3) - Deferred conditional effects applied AFTER downstream mechanics**
+  - Anchor file: `src/run/encounters.rs` lines 606-648 (reactive processing) vs 770-816 (deferred effects)
+  - Root cause: Reactive events (riposte, guard redirect) are processed at lines 606-648 BEFORE deferred effects are evaluated and combined at lines 812-816
+  - This means conditional DDGC effects cannot influence reactive events, summon extraction, capture, shared-health, or phase transitions
+  - Fix: Move deferred effect evaluation and combination BEFORE reactive processing block
+  - Downstream mechanics affected: reactive_queue, summon_events, capture_events, shared_health, phase_transition
+
+  **US-804 (Priority 4) - Riposte detection on multi-target hits**
+  - Anchor file: `src/run/encounters.rs` lines 612-629 (riposte candidate filtering)
+  - Root cause: For each target in multi-target attack, ALL riposte candidates are checked against ALL targets via `targets.contains(&candidate)`. This doesn't correctly establish `candidate == target` (only `candidate ∈ targets`)
+  - The comment at line 613 says "actor with riposte status who was hit" but the filtering logic checks set membership, not hit identity
+  - Fix: Change filtering to `candidate == target` so riposte is generated only for actor actually hit in that iteration
+  - Related: `src/run/reactive_queue.rs` deduplicates by `(triggered_on, reactor)` which helps but doesn't fix the root cause
+  - Tests: `detect_riposte_candidates_*` tests in `src/run/riposte_detection.rs`
+
+- **Style/Clippy Issues (for US-805):**
+  - `src/run/conditions.rs:22`: unused import `SlotRange`
+  - `src/run/conditions.rs:406`: unreachable pattern (wildcard `_` after exhaustive match)
+  - `src/run/encounters.rs:30`: unused import `Condition`
+  - `src/run/hit_resolution.rs:15`: unused import `AttributeValue`
+  - `src/run/hit_resolution.rs:60`: unused variable `content_pack`
+  - `src/run/reactive_queue.rs:59`: dead code method `reactor()`
+  - `src/run/shared_health.rs:66`: dead code method `current_hp_fn()`
+
+- **Primary anchor files for follow-up slices:**
+  - `src/run/encounters.rs` - main battle loop, all three regressions touch this file
+  - `src/run/conditions.rs` - ConditionAdapter, ConditionContext, DdgcCondition enum
+  - `src/run/reactive_queue.rs` - reactive event queue with deduplication
+  - `src/run/riposte_detection.rs` - riposte candidate detection
+  - `src/run/reactive_events.rs` - ReactiveEvent and DamageStepContext types
+
+- Files changed: (inventory only - no code changes for US-801)
+- **Learnings for future iterations:**
+  - The `parse_ddgc_condition()` local parser in encounters.rs is the root cause of US-802 - it was added as a temporary solution for US-605 but never wired to the full ConditionAdapter
+  - The deferred effects processing block (lines 770-816) is positioned AFTER reactive processing (lines 606-648) which breaks downstream mechanics
+  - Riposte filtering in multi-target scenarios uses set membership (`targets.contains`) instead of identity (`candidate == target`)
+  - `ConditionAdapter::evaluate_by_tag(condition_tag)` is the correct single pathway for all DDGC condition evaluation
+  - `cargo clippy --tests` shows 23 lib warnings and 44 test warnings - most are style issues but unreachable pattern in conditions.rs is a code smell
+---
