@@ -399,10 +399,9 @@ impl ConditionAdapter {
                     ConditionResult::Fail
                 }
             }
-            // ── Catch-all for non-exhaustive framework conditions ───────────────
-            // Any unrecognized framework condition variant is surfaced as Unknown
-            // rather than silently failing. This ensures missing implementations
-            // are observable instead of being hidden by false returns.
+            // Catch-all for framework conditions not yet handled by this adapter.
+            // If a new variant reaches here, it means the adapter needs updating.
+            #[allow(unreachable_patterns)]
             _ => ConditionResult::Unknown,
         }
     }

@@ -661,8 +661,8 @@ impl EncounterResolver {
                         // Riposte detection: actor with riposte status who was hit
                         let candidates = detect_riposte_candidates(&actors);
                         for candidate in candidates {
-                            // Only create event if the candidate was actually hit (is in targets)
-                            if targets.contains(&candidate) {
+                            // Only create event if the candidate was actually hit in this iteration (candidate == target)
+                            if candidate == target {
                                 let damage_amount = all_results.iter().find_map(|r| r.values.get("amount").copied());
                                 let ctx = DamageStepContext::new(
                                     current_actor,

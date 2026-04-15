@@ -12,7 +12,7 @@
 //! implement DDGC-style hit calculations.
 
 use framework_rules::actor::ActorId;
-use framework_rules::attributes::{AttributeKey, AttributeValue};
+use framework_rules::attributes::AttributeKey;
 
 use crate::content::ContentPack;
 
@@ -57,7 +57,7 @@ impl HitResolutionContext {
         attacker_id: ActorId,
         defender_id: ActorId,
         actors: &std::collections::HashMap<ActorId, framework_rules::actor::ActorAggregate>,
-        content_pack: &ContentPack,
+        _content_pack: &ContentPack,
     ) -> Option<Self> {
         let attacker = actors.get(&attacker_id)?;
         let defender = actors.get(&defender_id)?;

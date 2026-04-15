@@ -6,3 +6,4 @@
 pub mod first_battle;
 pub mod reactive_battle;
 pub mod deferred_effect_battle;
+pub mod multi_target_riposte_battle;
