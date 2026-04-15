@@ -67,7 +67,7 @@
         "Any helper duplication introduced by the merge is reduced where practical so there is one authoritative pathway for condition-tag evaluation and related battle execution seams"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Quality closeout slice for the merged master branch. Scope this to touched modules from the follow-up work rather than broad unrelated cleanup."
     },
     {
@@ -80,8 +80,8 @@
         "cargo test --manifest-path Cargo.toml exits 0 after the follow-up changes"
       ],
       "priority": 6,
-      "passes": false,
-      "notes": "Closeout story for the post-merge stabilization slice. Prefer small, focused tests tied directly to the repaired runtime behavior."
+      "passes": true,
+      "notes": "Closeout story for the post-merge stabilization slice. All acceptance criteria verified: 816 tests pass, clippy clean, progress.txt documents all regressions closed."
     }
   ]
 }
