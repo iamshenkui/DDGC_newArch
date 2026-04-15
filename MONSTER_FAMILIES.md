@@ -59,28 +59,28 @@ tier 2/3 scale HP, SPD, and skill damage upward.
 
 | Family | Type | Dungeon | HP (T1) | SPD (T1) | Skills | Key Mechanics | Source File | Migration Status |
 |---|---|---|---|---|---|---|---|---|
-| mantis_magic_flower | Beast | QingLong | 88 | 7 | poison, crowd_bleed, normal_attack, move | Blight + AoE bleed | mantis_magic_flower_1/2/3.txt | Not started |
-| mantis_spiny_flower | Beast | QingLong | 88 | 7 | ignore_armor, crowd_bleed, normal_attack, move | Armor-piercing blight + AoE bleed | mantis_spiny_flower_1/2/3.txt | Not started |
-| mantis_walking_flower | Beast | QingLong | 88 | 7 | weak, crowd_bleed, normal_attack, move | Debuff + AoE bleed | mantis_walking_flower_1/2/3.txt | Not started |
-| dry_tree_genie | Eldritch | QingLong | 90 | 3 | bleed, slow_crowd, stress, move | Ranged bleed + slow + stress | dry_tree_genie_1/2/3.txt | Not started |
-| moth_mimicry_A | Eldritch | QingLong | 63 | 6 | normal_attack, poison, stress_poison | Ranged blight + stress-poison | moth_mimicry_A_1/2/3.txt | Not started |
-| moth_mimicry_B | Eldritch | QingLong | 63 | 6 | poison, stress, stress_crowd | Ranged blight + AoE stress | moth_mimicry_B_1/2/3.txt | Not started |
-| robber_melee | Man | QingLong | 15 | 5 | normal_attack, bleed, smoke_bomb, move | Low HP, stun + debuff | robber_melee.txt | Not started |
-| robber_ranged | Man | QingLong | 10 | 3 | normal_attack, multiple_shot, throw_stone, move | Low HP, ranged stun | robber_ranged.txt | Not started |
-| metal_armor | Unholy | BaiHu | 90 | 4 | stun, bleed, normal_attack, move | High prot, melee stun+bleed | metal_armor_1/2/3.txt | Not started |
-| tiger_sword | Unholy | BaiHu | 90 | 3 | normal_attack, pull, move | Heavy melee + pull | tiger_sword_1/2/3.txt | Not started |
-| lizard | Eldritch | BaiHu | 62 | 6 | stun, intimidate, stress, move | Fast, stun + stress | lizard_1/2/3.txt | Not started |
-| unicorn_beetle_A | Eldritch | BaiHu | 62 | 7 | normal_attack, bleed, bleed_crowd, move | Ranged bleed + ignore def | unicorn_beetle_A_1/2/3.txt | Not started |
-| unicorn_beetle_B | Eldritch | BaiHu | 62 | 7 | normal_attack, bleed, stress, move | Ranged bleed + stress | unicorn_beetle_B_1/2/3.txt | Not started |
-| alligator_yangtze | Beast | BaiHu | 94 | 6 | normal_attack, bleed, mark_riposte | Melee bruiser + riposte | alligator_yangtze_1/2/3.txt | Not started |
-| ghost_fire_assist | Eldritch | ZhuQue | 72 | 6 | assist, buff_self, ghost_fire_split | Ally buff + self-split on death | ghost_fire_assist_1/2/3.txt | Not started |
-| ghost_fire_damage | Eldritch | ZhuQue | 72 | 6 | stress, burn_attack, ghost_fire_split | Burn + stress + self-split on death | ghost_fire_damage_1/2/3.txt | Not started |
-| fox_fire | Beast | ZhuQue | 65 | 6 | bite, vomit, protect, move | Bleed + burn debuff + ally guard | fox_fire_1/2/3.txt | Not started |
-| moth_fire | Eldritch | ZhuQue | 65 | 7 | stress_attack, cocoon, fly_into_fire | Stress + cocoon (defend+heal) + burn | moth_fire_1/2/3.txt | Not started |
-| lantern | Eldritch | ZhuQue | 70 | 7 | stress, burn_attack | Magic burn + stress | lantern_1/2/3.txt | Not started |
-| snake_water | Eldritch | XuanWu | 62 | 6 | stun, poison_fang, move | Stun + blight | snake_water_1/2/3.txt | Not started |
-| water_grass | Eldritch | XuanWu | 62 | 3 | stun, puncture, attack_crowd, convolve, move | Stun + bleed + pull (5 skills) | water_grass_1/2/3.txt | Not started |
-| monkey_water | Unholy | XuanWu | 98 | 6 | base_melee, rush, stress, move | Stress-tag melee + charge | monkey_water_1/2/3.txt | Not started |
+| mantis_magic_flower | Beast | QingLong | 88 | 7 | poison, crowd_bleed, normal_attack, move | Blight + AoE bleed | mantis_magic_flower_1/2/3.txt | Migrated |
+| mantis_spiny_flower | Beast | QingLong | 88 | 7 | ignore_armor, crowd_bleed, normal_attack, move | Armor-piercing blight + AoE bleed | mantis_spiny_flower_1/2/3.txt | Migrated |
+| mantis_walking_flower | Beast | QingLong | 88 | 7 | weak, crowd_bleed, normal_attack, move | Debuff + AoE bleed | mantis_walking_flower_1/2/3.txt | Migrated |
+| dry_tree_genie | Eldritch | QingLong | 90 | 3 | bleed, slow_crowd, stress, move | Ranged bleed + slow + stress | dry_tree_genie_1/2/3.txt | Migrated |
+| moth_mimicry_A | Eldritch | QingLong | 63 | 6 | normal_attack, poison, stress_poison | Ranged blight + stress-poison | moth_mimicry_A_1/2/3.txt | Migrated |
+| moth_mimicry_B | Eldritch | QingLong | 63 | 6 | poison, stress, stress_crowd | Ranged blight + AoE stress | moth_mimicry_B_1/2/3.txt | Migrated |
+| robber_melee | Man | QingLong | 15 | 5 | normal_attack, bleed, smoke_bomb, move | Low HP, stun + debuff | robber_melee.txt | Migrated |
+| robber_ranged | Man | QingLong | 10 | 3 | normal_attack, multiple_shot, throw_stone, move | Low HP, ranged stun | robber_ranged.txt | Migrated |
+| metal_armor | Unholy | BaiHu | 90 | 4 | stun, bleed, normal_attack, move | High prot, melee stun+bleed | metal_armor_1/2/3.txt | Migrated |
+| tiger_sword | Unholy | BaiHu | 90 | 3 | normal_attack, pull, move | Heavy melee + pull | tiger_sword_1/2/3.txt | Migrated |
+| lizard | Eldritch | BaiHu | 62 | 6 | stun, intimidate, stress, move | Fast, stun + stress | lizard_1/2/3.txt | Migrated |
+| unicorn_beetle_A | Eldritch | BaiHu | 62 | 7 | normal_attack, bleed, bleed_crowd, move | Ranged bleed + ignore def | unicorn_beetle_A_1/2/3.txt | Migrated |
+| unicorn_beetle_B | Eldritch | BaiHu | 62 | 7 | normal_attack, bleed, stress, move | Ranged bleed + stress | unicorn_beetle_B_1/2/3.txt | Migrated |
+| alligator_yangtze | Beast | BaiHu | 94 | 6 | normal_attack, bleed, mark_riposte | Melee bruiser + riposte | alligator_yangtze_1/2/3.txt | Migrated |
+| ghost_fire_assist | Eldritch | ZhuQue | 72 | 6 | assist, buff_self, ghost_fire_split | Ally buff + self-split on death | ghost_fire_assist_1/2/3.txt | Migrated |
+| ghost_fire_damage | Eldritch | ZhuQue | 72 | 6 | stress, burn_attack, ghost_fire_split | Burn + stress + self-split on death | ghost_fire_damage_1/2/3.txt | Migrated |
+| fox_fire | Beast | ZhuQue | 65 | 6 | bite, vomit, protect, move | Bleed + burn debuff + ally guard | fox_fire_1/2/3.txt | Migrated |
+| moth_fire | Eldritch | ZhuQue | 65 | 7 | stress_attack, cocoon, fly_into_fire | Stress + cocoon (defend+heal) + burn | moth_fire_1/2/3.txt | Migrated |
+| lantern | Eldritch | ZhuQue | 70 | 7 | stress, burn_attack | Magic burn + stress | lantern_1/2/3.txt | Migrated |
+| snake_water | Eldritch | XuanWu | 62 | 6 | stun, poison_fang, move | Stun + blight | snake_water_1/2/3.txt | Migrated |
+| water_grass | Eldritch | XuanWu | 62 | 3 | stun, puncture, attack_crowd, convolve, move | Stun + bleed + pull (5 skills) | water_grass_1/2/3.txt | Migrated |
+| monkey_water | Unholy | XuanWu | 98 | 6 | base_melee, rush, stress, move | Stress-tag melee + charge | monkey_water_1/2/3.txt | Migrated |
 
 ## Boss Family Inventory
 
@@ -89,19 +89,19 @@ multi-part mechanics and summon/minion relationships.
 
 | Boss | Type | Dungeon | HP | SPD | Turns/Rd | Skills | Key Mechanics | Source File | Migration Status |
 |---|---|---|---|---|---|---|---|---|---|
-| azure_dragon | Beast | QingLong | 150 | 7 | 2 | bloodscale_reaping, dragonfear_crash, summit_relocation, soulfog_enthrall, dragoncry_storm, volt_tyranny, voltic_baptism, capricious_skies, swap_dragon_ball, swap_dragon_ball_other, swap_dragon_ball_summon | Shared health with ball units; summons thunder/wind balls; buff/debuff control | azure_dragon.txt | Not started |
-| vermilion_bird | Beast | ZhuQue | 160 | 7 | 2 | singing_loudly, ruin, ruin1, precise_pecking, iron_feather, bide, calm_nerves, explosion | Shared health with tail units; burn + self-heal cycle; absorb mechanic | vermilion_bird.txt | Not started |
-| white_tiger_C | Beast | BaiHu | 115 | 7 | 3 | thunder_lightning, paw, raging_fire, true_strike, jump, deter_stress, deter_def | 3 turns/round; multi-phase (A/B clones → C final form); stun+burn+stress | white_tiger_C.txt | Not started |
-| black_tortoise_A | Eldritch | XuanWu | 115 | 4 | 2 | call_roll, rain_spray, ice_spike, hunger_cold, inner_battle, near_mountain_river, hunger_cold_1, unexpectedly | Tank body; slow, frozen + stress; share damage with snake body | black_tortoise_A.txt | Not started |
-| black_tortoise_B | Eldritch | XuanWu | 115 | 7 | 2 | call_roll, rain_spray, freezing_cold, benefits_stress, fangs_sprayed, armor, fangs_sprayed_1, snake_bites | Snake body; fast, blight + disease; share damage with turtle body | black_tortoise_B.txt | Not started |
-| rotvine_wraith | Eldritch | XuanWu | 150 | 5 | 2 | cadaver_bloom, rotvine_snare, sepsis_strangulate, telluric_resurrect, carrion_sowing, move | Summon rotten_fruit A/B/C; burn + mark + stun + bleed | rotvine_wraith.txt | Not started |
-| skeletal_tiller | Eldritch | XuanWu | 150 | 6 | 2 | bone_reforge, famine_reaping, scarecrow_shriek, grave_tug, crop_rot_claw | Summon vegetable; heavy melee + frozen debuff + stress | skeletal_tiller.txt | Not started |
-| necrodrake_embryosac | Man | XuanWu | 150 | 5 | 2 | requiem_stillbirth, placental_tap, untimely_progeny, doom_symbiosis, ecdysis_metamorphosis | Life-linked to egg_membrane captor mechanic; hero capture + self-cleanse | necrodrake_embryosac.txt | Not started |
-| gambler | Eldritch | ZhuQue | 150 | 5 | 2 | dice_thousand, hollow_victory, card_doomsday, jackpot_requiem, summon_mahjong | Summon mahjong_red/green/white; random debuff + stress + bleed | gambler.txt | Not started |
-| scorchthroat_chanteuse | Eldritch | ZhuQue | 150 | 6 | 2 | cremona_last_chord, pyre_resonance, ashen_communion, encore_embers, move | Summon sc_blow/bow/pluck; magic burn + stress | scorchthroat_chanteuse.txt | Not started |
-| frostvein_clam | Eldritch | XuanWu | 150 | 5 | 1 | glacial_torrent, abyssal_glare, nacreous_homunculus, prismatic_clench | Riposte; summon pearlkin_flawed/opalescent; frozen + stress | frostvein_clam.txt | Not started |
-| bloodthirsty_assassin | Eldritch | Cross | 150 | 6 | 2 | bloodstrike_ambush, phantom_lunge, crimson_duet, scarlet_guillotine | Paired with shadow; crimson_duet averages HP; ignore-def finisher | bloodthirsty_assassin.txt | Not started |
-| glutton_pawnshop | Eldritch | Cross | 150 | 5 | 2 | flesh_usury_contract, compound_agony, invitation, foreclosed_wail | Size 3 (largest); controller mechanic; tag-based bleed/blight/debuff | glutton_pawnshop.txt | Not started |
+| azure_dragon | Beast | QingLong | 150 | 7 | 2 | bloodscale_reaping, dragonfear_crash, summit_relocation, soulfog_enthrall, dragoncry_storm, volt_tyranny, voltic_baptism, capricious_skies, swap_dragon_ball, swap_dragon_ball_other, swap_dragon_ball_summon | Shared health with ball units; summons thunder/wind balls; buff/debuff control | azure_dragon.txt | Migrated |
+| vermilion_bird | Beast | ZhuQue | 160 | 7 | 2 | singing_loudly, ruin, ruin1, precise_pecking, iron_feather, bide, calm_nerves, explosion | Shared health with tail units; burn + self-heal cycle; absorb mechanic | vermilion_bird.txt | Migrated |
+| white_tiger_C | Beast | BaiHu | 115 | 7 | 3 | thunder_lightning, paw, raging_fire, true_strike, jump, deter_stress, deter_def | 3 turns/round; multi-phase (A/B clones → C final form); stun+burn+stress | white_tiger_C.txt | Migrated |
+| black_tortoise_A | Eldritch | XuanWu | 115 | 4 | 2 | call_roll, rain_spray, ice_spike, hunger_cold, inner_battle, near_mountain_river, hunger_cold_1, unexpectedly | Tank body; slow, frozen + stress; share damage with snake body | black_tortoise_A.txt | Migrated |
+| black_tortoise_B | Eldritch | XuanWu | 115 | 7 | 2 | call_roll, rain_spray, freezing_cold, benefits_stress, fangs_sprayed, armor, fangs_sprayed_1, snake_bites | Snake body; fast, blight + disease; share damage with turtle body | black_tortoise_B.txt | Migrated |
+| rotvine_wraith | Eldritch | XuanWu | 150 | 5 | 2 | cadaver_bloom, rotvine_snare, sepsis_strangulate, telluric_resurrect, carrion_sowing, move | Summon rotten_fruit A/B/C; burn + mark + stun + bleed | rotvine_wraith.txt | Migrated |
+| skeletal_tiller | Eldritch | XuanWu | 150 | 6 | 2 | bone_reforge, famine_reaping, scarecrow_shriek, grave_tug, crop_rot_claw | Summon vegetable; heavy melee + frozen debuff + stress | skeletal_tiller.txt | Migrated |
+| necrodrake_embryosac | Man | XuanWu | 150 | 5 | 2 | requiem_stillbirth, placental_tap, untimely_progeny, doom_symbiosis, ecdysis_metamorphosis | Life-linked to egg_membrane captor mechanic; hero capture + self-cleanse | necrodrake_embryosac.txt | Migrated |
+| gambler | Eldritch | ZhuQue | 150 | 5 | 2 | dice_thousand, hollow_victory, card_doomsday, jackpot_requiem, summon_mahjong | Summon mahjong_red/green/white; random debuff + stress + bleed | gambler.txt | Migrated |
+| scorchthroat_chanteuse | Eldritch | ZhuQue | 150 | 6 | 2 | cremona_last_chord, pyre_resonance, ashen_communion, encore_embers, move | Summon sc_blow/bow/pluck; magic burn + stress | scorchthroat_chanteuse.txt | Migrated |
+| frostvein_clam | Eldritch | XuanWu | 150 | 5 | 1 | glacial_torrent, abyssal_glare, nacreous_homunculus, prismatic_clench | Riposte; summon pearlkin_flawed/opalescent; frozen + stress | frostvein_clam.txt | Migrated |
+| bloodthirsty_assassin | Eldritch | Cross | 150 | 6 | 2 | bloodstrike_ambush, phantom_lunge, crimson_duet, scarlet_guillotine | Paired with shadow; crimson_duet averages HP; ignore-def finisher | bloodthirsty_assassin.txt | Migrated |
+| glutton_pawnshop | Eldritch | Cross | 150 | 5 | 2 | flesh_usury_contract, compound_agony, invitation, foreclosed_wail | Size 3 (largest); controller mechanic; tag-based bleed/blight/debuff | glutton_pawnshop.txt | Migrated |
 
 ## Boss Part and Minion Units
 
@@ -236,11 +236,30 @@ structural complexity (simpler families first):
 
 ## Already Migrated Content
 
-The headless crate currently has 2 placeholder enemy archetypes in
-`src/content/actors.rs`:
+The monster-content situation has moved well beyond the original placeholder
+state. The DDGC headless crate now ships migrated monster content under
+`src/content/monsters/`, and those entries are wired into the runtime through
+both `src/content/monsters/mod.rs` and `src/monsters/mod.rs`.
 
-- `bone_soldier` — generic Darkest Dungeon-style enemy
-- `necromancer` — generic Darkest Dungeon-style enemy
+Current code state:
 
-These are **not** DDGC monster families. All DDGC monster migration is
-outstanding.
+- All common families listed in the inventory above have migrated content
+  modules and are registered in the content pack.
+- The primary boss families listed above are also migrated, along with their
+  required boss-part and summon/minion units.
+- Encounter/runtime mechanics needed to execute those bosses headlessly were
+  closed in Phase 3 and the post-merge stabilization follow-up.
+
+What remains is no longer "monster migration is outstanding" in bulk. The
+remaining work is narrower:
+
+- keep the family inventory in sync with actual registered content,
+- close the remaining DDGC-only condition families tracked under B-004,
+- continue parity and encounter verification for migrated content.
+
+Legacy placeholder enemies still exist for older parity scenarios:
+
+- `bone_soldier`
+- `necromancer`
+
+They are legacy fixtures, not the source of truth for DDGC monster migration.
