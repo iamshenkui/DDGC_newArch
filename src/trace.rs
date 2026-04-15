@@ -7,7 +7,8 @@
 
 use framework_combat::encounter::CombatSide;
 use framework_combat::results::EffectResult;
-use framework_rules::actor::ActorId;
+#[allow(unused_imports)]
+use framework_rules::actor::{ActorAggregate, ActorId};
 use framework_rules::attributes::{AttributeKey, ATTR_HEALTH};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
@@ -239,6 +240,156 @@ impl BattleTrace {
             effects,
             snapshot,
             triggered_by: Some(trigger),
+        });
+    }
+
+    /// Record a phase transition event (multi-phase boss transitioning to next phase).
+    ///
+    /// The `removed` parameter lists actor IDs that were removed (clone forms).
+    /// The `summoned` parameter is the ActorId of the newly materialized final form.
+    pub fn record_phase_transition(
+        &mut self,
+        turn: u32,
+        removed: &[ActorId],
+        summoned: ActorId,
+        actors: &HashMap<ActorId, framework_rules::actor::ActorAggregate>,
+    ) {
+        // Snapshot: HP of every actor (BTreeMap for deterministic ordering)
+        let mut snapshot = BTreeMap::new();
+        for (&id, actor) in actors {
+            let hp = actor.effective_attribute(&AttributeKey::new(ATTR_HEALTH));
+            snapshot.insert(id.0, hp.0);
+        }
+
+        self.entries.push(TraceEntry {
+            turn,
+            actor: 0, // Phase transition is not attributed to a specific actor
+            action: "phase_transition".to_string(),
+            targets: removed.iter().map(|t| t.0).collect(),
+            effects: vec![TraceEffect {
+                kind: "Summon".to_string(),
+                target: summoned.0,
+                value: 0.0,
+            }],
+            snapshot,
+            triggered_by: None,
+        });
+    }
+
+    /// Record a capture event (hero captured by captor).
+    pub fn record_capture(
+        &mut self,
+        turn: u32,
+        captor: ActorId,
+        captured: ActorId,
+        actors: &HashMap<ActorId, framework_rules::actor::ActorAggregate>,
+    ) {
+        // Snapshot: HP of every actor (BTreeMap for deterministic ordering)
+        let mut snapshot = BTreeMap::new();
+        for (&id, actor) in actors {
+            let hp = actor.effective_attribute(&AttributeKey::new(ATTR_HEALTH));
+            snapshot.insert(id.0, hp.0);
+        }
+
+        self.entries.push(TraceEntry {
+            turn,
+            actor: captor.0,
+            action: "capture".to_string(),
+            targets: vec![captured.0],
+            effects: vec![],
+            snapshot,
+            triggered_by: None,
+        });
+    }
+
+    /// Record a release event (hero released from captor).
+    ///
+    /// The `reason` indicates why the release occurred: "captor_death" or "deaths_door".
+    pub fn record_release(
+        &mut self,
+        turn: u32,
+        captor: ActorId,
+        released: ActorId,
+        reason: &str,
+        actors: &HashMap<ActorId, framework_rules::actor::ActorAggregate>,
+    ) {
+        // Snapshot: HP of every actor (BTreeMap for deterministic ordering)
+        let mut snapshot = BTreeMap::new();
+        for (&id, actor) in actors {
+            let hp = actor.effective_attribute(&AttributeKey::new(ATTR_HEALTH));
+            snapshot.insert(id.0, hp.0);
+        }
+
+        self.entries.push(TraceEntry {
+            turn,
+            actor: captor.0,
+            action: format!("release_{}", reason),
+            targets: vec![released.0],
+            effects: vec![],
+            snapshot,
+            triggered_by: None,
+        });
+    }
+
+    /// Record a captor passive damage event (egg_membrane_full dealing DoT to captive).
+    pub fn record_captor_dot(
+        &mut self,
+        turn: u32,
+        captor: ActorId,
+        captive: ActorId,
+        damage: f64,
+        actors: &HashMap<ActorId, framework_rules::actor::ActorAggregate>,
+    ) {
+        // Snapshot: HP of every actor (BTreeMap for deterministic ordering)
+        let mut snapshot = BTreeMap::new();
+        for (&id, actor) in actors {
+            let hp = actor.effective_attribute(&AttributeKey::new(ATTR_HEALTH));
+            snapshot.insert(id.0, hp.0);
+        }
+
+        self.entries.push(TraceEntry {
+            turn,
+            actor: captor.0,
+            action: "captor_dot".to_string(),
+            targets: vec![captive.0],
+            effects: vec![TraceEffect {
+                kind: "captor_damage".to_string(),
+                target: captive.0,
+                value: damage,
+            }],
+            snapshot,
+            triggered_by: None,
+        });
+    }
+
+    /// Record an HP averaging event (paired boss crimson_duet averaging HP).
+    pub fn record_hp_averaging(
+        &mut self,
+        turn: u32,
+        actor_a: ActorId,
+        actor_b: ActorId,
+        avg_hp: f64,
+        actors: &HashMap<ActorId, framework_rules::actor::ActorAggregate>,
+    ) {
+        // Snapshot: HP of every actor (BTreeMap for deterministic ordering)
+        let mut snapshot = BTreeMap::new();
+        for (&id, actor) in actors {
+            let hp = actor.effective_attribute(&AttributeKey::new(ATTR_HEALTH));
+            snapshot.insert(id.0, hp.0);
+        }
+
+        self.entries.push(TraceEntry {
+            turn,
+            actor: actor_a.0,
+            action: "hp_averaging".to_string(),
+            targets: vec![actor_b.0],
+            effects: vec![TraceEffect {
+                kind: "HP_Average".to_string(),
+                target: actor_b.0,
+                value: avg_hp,
+            }],
+            snapshot,
+            triggered_by: None,
         });
     }
 

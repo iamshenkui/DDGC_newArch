@@ -1,7 +1,7 @@
 {
     "project": "game_ddgc_headless",
     "branchName": "ralph/ddgc-reactive-and-usage-closure",
-    "description": "Phase 1 of 2 \u2014 DDGC Reactive Hooks And Skill Usage Limits. Close the highest-leverage open game-gap blockers first by building deterministic reactive combat plumbing, implementing riposte and guard semantics, and enforcing LimitPerTurn / LimitPerBattle through game-layer state.",
+    "description": "Phase 1 of 2 — DDGC Reactive Hooks And Skill Usage Limits. Close the highest-leverage open game-gap blockers first by building deterministic reactive combat plumbing, implementing riposte and guard semantics, and enforcing LimitPerTurn / LimitPerBattle through game-layer state.",
     "userStories": [
         {
             "id": "US-501",
@@ -143,7 +143,7 @@
                 "A focused test proves the reset boundary is deterministic and not tied to unrelated combat events"
             ],
             "priority": 11,
-            "passes": true,
+            "passes": false,
             "notes": "Lifecycle slice before any enforcement."
         },
         {
@@ -156,7 +156,7 @@
                 "A focused test proves battle reset behavior without depending on manual state cleanup"
             ],
             "priority": 12,
-            "passes": true,
+            "passes": false,
             "notes": "Completes the B-005 state lifecycle model."
         },
         {
@@ -169,7 +169,7 @@
                 "A deterministic test proves the same skill becomes available again after the correct turn reset"
             ],
             "priority": 13,
-            "passes": true,
+            "passes": false,
             "notes": "First enforcement slice for B-005."
         },
         {
@@ -182,7 +182,7 @@
                 "A deterministic test proves a new encounter restores availability while the current encounter does not"
             ],
             "priority": 14,
-            "passes": true,
+            "passes": false,
             "notes": "Second enforcement slice for B-005."
         },
         {
@@ -195,7 +195,7 @@
                 "cargo test --manifest-path Cargo.toml exits 0 with the full Phase 1 coverage enabled"
             ],
             "priority": 15,
-            "passes": true,
+            "passes": false,
             "notes": "Phase 1 closeout story. Start Phase 2 only after this passes."
         }
     ]

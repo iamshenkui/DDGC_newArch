@@ -31,7 +31,6 @@ use std::collections::HashMap;
 
 use crate::content::ContentPack;
 use crate::run::reactive_events::ReactiveEvent;
-use crate::trace::ReactiveTrigger;
 
 /// The status kind key for riposte marker statuses.
 pub const RIPOSTE_KIND: &str = "riposte";

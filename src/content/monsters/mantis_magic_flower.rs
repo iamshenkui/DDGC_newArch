@@ -89,11 +89,11 @@ pub fn normal_attack() -> SkillDefinition {
 /// Move — self-repositioning skill (move forward 1 rank).
 ///
 /// DDGC reference: 0 dmg, atk 0%, launch ranks 3–4, moves self forward 1.
-/// Game-gap: movement not fully modeled — uses push(1) on self as approximation.
+/// Uses pull(1) with SelfOnly so the actor moves forward (toward front row).
 pub fn move_skill() -> SkillDefinition {
     SkillDefinition::new(
         SkillId::new("move"),
-        vec![EffectNode::push(1)],
+        vec![EffectNode::pull(1)],
         TargetSelector::SelfOnly,
         1,
         None,
@@ -108,6 +108,11 @@ pub fn skill_pack() -> Vec<SkillDefinition> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use framework_combat::effects::{resolve_skill, EffectContext};
+    use framework_combat::formation::{FormationLayout, SlotIndex};
+    use framework_rules::actor::{ActorAggregate, ActorId};
+    use framework_rules::attributes::{AttributeKey, AttributeValue, ATTR_HEALTH};
+    use std::collections::HashMap;
 
     #[test]
     fn mantis_magic_flower_archetype_is_enemy_beast() {
@@ -164,5 +169,153 @@ mod tests {
         });
         assert!(has_blight, "mantis_magic_flower must apply blight (poison)");
         assert!(has_bleed, "mantis_magic_flower must apply bleed (crowd_bleed)");
+    }
+
+    /// Test that move_skill uses pull(1) to move self forward (US-705).
+    ///
+    /// DDGC self-move: actor moves forward 1 rank (toward front).
+    /// The skill uses pull(1) which moves the actor toward lane 0 (front).
+    /// This test verifies the movement is deterministic and preserves formation ordering.
+    #[test]
+    fn mantis_magic_flower_move_skill_moves_self_forward() {
+        // Setup: 4 lanes, 2 slots per lane (matches DDGC 4-rank enemy formation)
+        // Slot layout: 0-1 (lane 0, rank 1), 2-3 (lane 1, rank 2),
+        //              4-5 (lane 2, rank 3), 6-7 (lane 3, rank 4)
+        let mut formation = FormationLayout::new(4, 2);
+        let mantis_id = ActorId(1);
+
+        // Place mantis at slot 5 (lane 2 = DDGC rank 3)
+        formation.place(mantis_id, SlotIndex(5)).unwrap();
+        assert_eq!(formation.find_actor(mantis_id), Some(SlotIndex(5)));
+
+        // Create actor aggregate
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut actor = ActorAggregate::new(mantis_id);
+        actor.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(88.0));
+        actors.insert(mantis_id, actor);
+
+        // Execute move_skill (pull(1) self)
+        let skill = move_skill();
+        let mut ctx = EffectContext::new(
+            mantis_id,
+            vec![mantis_id], // SelfOnly: actor targets themselves
+            &mut formation,
+            &mut actors,
+        );
+        let results = resolve_skill(&skill, &mut ctx);
+
+        // Verify movement occurred (pull result)
+        assert!(!results.results.is_empty());
+        assert_eq!(results.results[0].kind, framework_combat::results::EffectResultKind::Pull);
+
+        // Verify mantis moved forward 1 lane: slot 5 (lane 2) -> slot 3 (lane 1)
+        assert_eq!(formation.find_actor(mantis_id), Some(SlotIndex(3)));
+    }
+
+    /// Test that repeated self-moves are deterministic and preserve formation stability.
+    ///
+    /// Running move_skill twice from lane 2 should: lane 2 -> lane 1 -> lane 0.
+    /// The movement is deterministic (same input -> same output) and the final
+    /// slot is stable (no corruption or duplication).
+    #[test]
+    fn mantis_magic_flower_repeated_move_preserves_formation_stability() {
+        let mut formation = FormationLayout::new(4, 2);
+        let mantis_id = ActorId(1);
+
+        // Start at lane 2 (slot 5)
+        formation.place(mantis_id, SlotIndex(5)).unwrap();
+
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut actor = ActorAggregate::new(mantis_id);
+        actor.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(88.0));
+        actors.insert(mantis_id, actor);
+
+        let skill = move_skill();
+
+        // First move: lane 2 -> lane 1
+        {
+            let mut ctx = EffectContext::new(
+                mantis_id,
+                vec![mantis_id],
+                &mut formation,
+                &mut actors,
+            );
+            resolve_skill(&skill, &mut ctx);
+            assert_eq!(formation.find_actor(mantis_id), Some(SlotIndex(3))); // lane 1
+        }
+
+        // Second move: lane 1 -> lane 0 (front)
+        {
+            let mut ctx = EffectContext::new(
+                mantis_id,
+                vec![mantis_id],
+                &mut formation,
+                &mut actors,
+            );
+            resolve_skill(&skill, &mut ctx);
+            assert_eq!(formation.find_actor(mantis_id), Some(SlotIndex(1))); // lane 0
+        }
+
+        // Third move: lane 0 is already at front boundary, cannot move further
+        {
+            let mut ctx = EffectContext::new(
+                mantis_id,
+                vec![mantis_id],
+                &mut formation,
+                &mut actors,
+            );
+            resolve_skill(&skill, &mut ctx);
+            // Stays at lane 0 (boundary stops movement)
+            assert_eq!(formation.find_actor(mantis_id), Some(SlotIndex(1)));
+        }
+    }
+
+    /// Test that pull(1) on an enemy target moves them forward (US-705 target-reposition).
+    ///
+    /// This tests the target-reposition case: when a hero uses pull on an enemy,
+    /// the enemy moves forward toward the front row.
+    #[test]
+    fn mantis_magic_flower_target_pull_moves_enemy_forward() {
+        let mut formation = FormationLayout::new(4, 2);
+        let hero_id = ActorId(1);
+        let enemy_id = ActorId(2);
+
+        // Place enemy at slot 6 (lane 3, back row)
+        // Place hero at slot 0 (lane 0, front row)
+        formation.place(enemy_id, SlotIndex(6)).unwrap();
+        formation.place(hero_id, SlotIndex(0)).unwrap();
+
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut enemy = ActorAggregate::new(enemy_id);
+        enemy.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+        actors.insert(enemy_id, enemy);
+        let mut hero = ActorAggregate::new(hero_id);
+        hero.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+        actors.insert(hero_id, hero);
+
+        // Create a skill that pulls the target forward
+        let pull_skill = SkillDefinition::new(
+            SkillId::new("pull_test"),
+            vec![EffectNode::pull(1)],
+            TargetSelector::AllEnemies, // pulls any/all enemies
+            1,
+            None,
+        );
+
+        // Hero uses pull on enemy
+        let mut ctx = EffectContext::new(
+            hero_id,
+            vec![enemy_id], // targeted enemy
+            &mut formation,
+            &mut actors,
+        );
+        let results = resolve_skill(&pull_skill, &mut ctx);
+
+        // Verify pull occurred
+        assert!(!results.results.is_empty());
+        assert_eq!(results.results[0].kind, framework_combat::results::EffectResultKind::Pull);
+
+        // Enemy moved from lane 3 (slot 6) to lane 2 (slot 4)
+        assert_eq!(formation.find_actor(enemy_id), Some(SlotIndex(4)));
     }
 }

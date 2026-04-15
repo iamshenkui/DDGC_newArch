@@ -41,7 +41,7 @@ use std::cmp::Ordering;
 
 use framework_rules::actor::ActorId;
 
-use crate::run::reactive_events::{ReactiveEvent, ReactiveEventKind};
+use crate::run::reactive_events::ReactiveEvent;
 
 /// Wrapper around (triggered_on, reactor) pair that implements Ord for deterministic ordering.
 ///
@@ -226,6 +226,7 @@ impl ReactiveQueue {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::run::reactive_events::ReactiveEventKind;
 
     fn make_riposte(triggered_on: ActorId, reactor: ActorId) -> ReactiveEvent {
         ReactiveEvent::riposte(
@@ -406,12 +407,17 @@ mod tests {
         let first_reaction = queue.drain_next().unwrap();
         assert_eq!(first_reaction.reactor, ActorId(2));
 
-        // Actor 2's riposte hits Actor 1. Actor 2 is already reacted.
-        // Actor 1 (who was hit) can still react — but they haven't reacted yet.
+        // Actor 2's riposte hits Actor 1. Now Actor 2 is already reacted —
+        // so if Actor 1 hits back and Actor 2 would riposte again, it should be blocked.
+        // This is the recursion termination guarantee.
+
+        // Actor 2 is in already_reacted
         assert!(queue.has_reacted(ActorId(2)));
-        // Actor 1 can enqueue their riposte (reactor = Actor 1)
-        assert!(queue.enqueue(make_riposte(ActorId(2), ActorId(1))),
-            "Actor 1 should be able to react (they haven't reacted yet)");
+
+        // Actor 2 tries to riposte again (triggered_on=1, reactor=2) - should be blocked
+        // because Actor 2 already reacted in this chain.
+        let blocked = queue.enqueue(make_riposte(ActorId(1), ActorId(2)));
+        assert!(!blocked, "Actor 2 already reacted and should not riposte again");
     }
 
     #[test]

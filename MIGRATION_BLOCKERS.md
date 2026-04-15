@@ -51,14 +51,14 @@ Game-gap blockers are solved entirely within `game_ddgc_headless`.
 - **Batch:** 3 (Skills)
 - **Description:** DDGC tracks how many times a skill can be used per turn or per battle. The framework's `SkillDefinition` has `cooldown: Option<u32>` but no per-turn or per-battle usage count.
 - **Resolution:** Track usage counts in game-layer state alongside the combat resolver. Reset per-turn counts when `CombatResolver::end_turn()` is called; track per-battle counts for the encounter lifetime. No framework change needed.
-- **Status:** Open — game-layer tracking
+- **Status:** Resolved — US-510 (SkillUsageCounters), US-512 (reset_battle_scope), US-513 (direct_hit_1 per-turn limit), US-514 (duality_fate per-battle limit), US-515 (regression suite)
 
 ### B-006: Damage Range (Min/Max) vs. Fixed Damage
 - **Classification:** game-gap
 - **Batch:** 3 (Skills)
 - **Description:** DDGC skills deal `DamageMin..DamageMax` range damage. The framework's `EffectNode::damage(amount)` takes a single `f64`.
 - **Resolution:** Use the average of min/max as the fixed damage value for the first migration slice. If variance is needed later, add a game-layer damage roll step before submitting combat commands.
-- **Status:** Open — averaging for first slice; game-layer roll for later
+- **Status:** Resolved — US-609 (DamagePolicy with FixedAverage default; Rolled policy available for future variance)
 
 ### B-007: Launch Ranks / Target Ranks (Formation Positioning)
 - **Classification:** framework-gap (partial)
@@ -72,7 +72,7 @@ Game-gap blockers are solved entirely within `game_ddgc_headless`.
 - **Batch:** 2 (Statuses)
 - **Description:** DDGC has "riposte" (counter-attack when hit) and "guard ally" (redirect damage to self). The framework has no built-in reactive trigger system.
 - **Resolution:** Implement as `StatusEffect { kind: "riposte" }` / `StatusEffect { kind: "guard" }`. Game-layer code checks for these statuses after each damage effect and applies the secondary action. No framework change needed.
-- **Status:** Partially resolved — riposte counter-attack implemented (US-506); guard redirect pending (US-507/US-508)
+- **Status:** Resolved — US-506 (riposte counter-attack), US-507 (guard detection), US-508 (guard redirect execution)
 
 ### B-009: Multi-Hit Skills
 - **Classification:** game-gap
@@ -86,7 +86,7 @@ Game-gap blockers are solved entirely within `game_ddgc_headless`.
 - **Batch:** 3 (Skills)
 - **Description:** DDGC has an accuracy vs. dodge roll. The framework has `EffectCondition::Probability(chance)` for conditional effects.
 - **Resolution:** Use `EffectCondition::Probability(chance)` for the first slice. If dodge needs to be a reactive mechanic, implement as a status check in game-layer code.
-- **Status:** Open — Probability condition for first slice
+- **Status:** Resolved — US-612 (HitResolutionContext + HitPolicy), US-613 (accuracy/dodge integration in battle loop, 0.95 default accuracy on all actors)
 
 ---
 
@@ -131,9 +131,9 @@ Every core-gap or framework-gap patch **must** include a regression test in the 
 | B-002 | game-gap | 1 | Resolved |
 | B-003 | game-gap | 1 | Resolved |
 | B-004 | game-gap | 2 | Partially resolved |
-| B-005 | game-gap | 3 | Open |
-| B-006 | game-gap | 3 | Open |
+| B-005 | game-gap | 3 | Resolved |
+| B-006 | game-gap | 3 | Resolved |
 | B-007 | game-gap | 3 | Resolved |
-| B-008 | game-gap | 2 | Partially resolved |
+| B-008 | game-gap | 2 | Resolved |
 | B-009 | game-gap | 3 | Resolved |
-| B-010 | game-gap | 3 | Open |
+| B-010 | game-gap | 3 | Resolved |

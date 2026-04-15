@@ -39,41 +39,25 @@ differentiation as verified by parity tests._
 
 ## Status Gaps
 
-### SG-002: BuffRule Condition System — Partial Implementation
+### SG-002: BuffRule Condition System Downgrade
 
 - **Gap ID:** SG-002
-- **Classification:** Partially resolved
+- **Classification:** Deferred parity work
 - **Description:**
   - **Original behavior:** `BuffRule` supports 35+ conditional variants (HpBelow, StressAbove, InMode, FirstRound, DeathsDoor, etc.).
-  - **Phase 1 migration behavior:** Framework `EffectCondition` covers 4 variants (IfTargetHealthBelow, IfActorHasStatus, IfTargetPosition, Probability). DDGC-specific conditions not yet implemented.
-  - **Phase 2 migration behavior:** Game-layer `ConditionAdapter` in `src/run/conditions.rs` provides a unified interface for both framework-native and DDGC-specific conditions.
-- **Implemented DDGC conditions (Phase 2):**
-  - `FirstRound` — active only on round 0 of combat
-  - `StressAbove(threshold)` — actor's stress exceeds threshold (heroes only)
-  - `StressBelow(threshold)` — actor's stress below threshold (heroes only)
-  - `DeathsDoor` — actor HP below 50% of max
-  - `TargetHasStatus(kind)` — target has a specific status active
-  - `ActorHasStatus(kind)` — actor has a specific status active
-- **Bridged framework-native conditions:**
-  - `EffectCondition::Probability` — deterministic pass-through (>0 passes)
-  - `EffectCondition::IfTargetHealthBelow` — target HP fraction threshold
-  - `EffectCondition::IfActorHasStatus` — actor has a specific status
-  - `EffectCondition::IfTargetPosition` — returns `Unknown` (formation context unavailable)
-- **Remaining unimplemented DDGC conditions:**
-  - Dungeon-specific modes (`InMode`)
-  - Position-based conditions beyond `IfTargetPosition`
-  - Other DDGC-specific variants not listed above
-- **Reason:** `ConditionAdapter` provides a scalable interface for DDGC-specific conditions. Implemented conditions are exercised via `ConditionContext` and `evaluate_by_tag()`. Remaining conditions require future game-layer additions.
-- **Tracking:** MIGRATION_BLOCKERS.md B-004 (partially resolved — see B-004 entry for updated status)
+  - **Migration behavior:** Framework `EffectCondition` covers 4 variants (IfTargetHealthBelow, IfActorHasStatus, IfTargetPosition, Probability). DDGC-specific conditions not yet implemented.
+- **Reason:** Framework's EffectCondition covers 4 of 35+ DDGC variants; remaining conditions require game-layer filtering not yet implemented. Skills with unimplemented conditions always apply or never apply instead of conditionally applying, which is a behavioral deviation requiring future work.
+- **Tracking:** MIGRATION_BLOCKERS.md B-004
 
 ### SG-003: Reactive Hooks in Game Layer
 
 - **Gap ID:** SG-003
-- **Classification:** Acceptable approximation
+- **Classification:** Acceptable approximation (now resolved)
 - **Description:**
   - **Original behavior:** Riposte and guard are reactive triggers that fire automatically when certain events occur.
   - **Migration behavior:** Riposte and guard are marker statuses detectable by game-layer code; the reactive trigger itself must be implemented in game-layer event handling.
 - **Reason:** Riposte/guard are marker statuses detectable by game-layer code; the reactive trigger itself is a game-gap not a semantic gap. The marker pattern preserves the detectability of reactive statuses, and the trigger implementation is a straightforward game-layer addition that does not affect parity test structure.
+- **Resolution:** Fully implemented — US-506 (riposte counter-attack), US-507 (guard detection), US-508 (guard redirect execution). Reactive hooks are now active in the battle loop.
 - **Tracking:** MIGRATION_BLOCKERS.md B-008
 
 ---
@@ -98,8 +82,8 @@ differentiation as verified by parity tests._
 |---|---|---|
 | SG-001 | Acceptable approximation | B-006 |
 | SG-002 | Partially resolved | B-004 |
-| SG-003 | Acceptable approximation | B-008 |
-| SG-004 | Deferred parity work | B-005 |
+| SG-003 | Acceptable approximation (resolved) | B-008 |
+| SG-004 | Deferred parity work (resolved) | B-005 |
 
 **Unacceptable semantic drift:** None. The current migration has no instances of unacceptable semantic drift.
 
@@ -122,7 +106,7 @@ Riposte is a reactive trigger: when an actor with the "riposte" status is hit, t
 | Black hero | `content/heroes/black.rs` | `b_tank_active_riposte` (applies `tagged`, NOT `riposte` — game-gap) | Migrated; riposte NOT modeled |
 | Status definition | `content/statuses.rs` | `riposte(duration)` — marker status factory | Defined; trigger logic implemented (US-506) |
 
-**Implementation anchor for riposte (Phase 1, B-008):** `alligator_yangtze` is the primary anchor. Its `mark_riposte` skill applies a 3-turn `riposte` status to self; when hit during that window, the actor executes `riposte1` as a counter-attack via the reactive queue. US-506 implemented this. Guard redirect (US-507/US-508) is still pending.
+**Implementation anchor for riposte (Phase 1, B-008):** `alligator_yangtze` is the primary anchor. Its `mark_riposte` skill applies a 3-turn `riposte` status to self; when hit during that window, the actor executes `riposte1` as a counter-attack via the reactive queue. US-506 implemented this. Guard redirect (US-507/US-508) is now also implemented — both reactive hooks are fully active.
 
 ### Guard Touchpoints
 
@@ -130,13 +114,13 @@ Guard is a reactive trigger: when an actor with the "guard" status is protecting
 
 | Content | File | Skills Using Guard | Status |
 |---------|------|---------------------|--------|
-| Fox Fire (ZhuQue Beast Bruiser) | `content/monsters/fox_fire.rs` | `protect` (applies `guard` + `defend`) | Migrated; redirect logic NOT yet implemented (B-008) |
-| Tank hero | `content/heroes/tank.rs` | `protect_skill` (applies `guard`) | Migrated; redirect logic NOT yet implemented |
-| White hero | `content/heroes/white.rs` | `w_protect_skill` (applies `guard` + tank damage bonus) | Migrated; redirect logic NOT yet implemented |
-| Black hero | `content/heroes/black.rs` | `b_protect_skill` (applies `guard` + damage reduction + DoT removal) | Migrated; redirect logic NOT yet implemented |
-| Status definition | `content/statuses.rs` | `guard(duration)` — marker status factory | Defined; redirect logic NOT yet implemented |
+| Fox Fire (ZhuQue Beast Bruiser) | `content/monsters/fox_fire.rs` | `protect` (applies `guard` + `defend`) | Migrated; redirect logic implemented (US-507/US-508) |
+| Tank hero | `content/heroes/tank.rs` | `protect_skill` (applies `guard`) | Migrated; redirect logic implemented |
+| White hero | `content/heroes/white.rs` | `w_protect_skill` (applies `guard` + tank damage bonus) | Migrated; redirect logic implemented |
+| Black hero | `content/heroes/black.rs` | `b_protect_skill` (applies `guard` + damage reduction + DoT removal) | Migrated; redirect logic implemented |
+| Status definition | `content/statuses.rs` | `guard(duration)` — marker status factory | Defined; redirect logic implemented (US-507/US-508) |
 
-**Implementation anchor for guard (Phase 1, B-008):** `fox_fire` is the primary anchor. Its `protect` skill applies `guard` (and `defend`) to allies; when a guarded ally is attacked, damage should redirect to the fox_fire actor. Tank hero's `protect_skill` provides a hero-side anchor.
+**Implementation anchor for guard (Phase 1, B-008):** `fox_fire` is the primary anchor. Its `protect` skill applies `guard` (and `defend`) to allies; when a guarded ally is attacked, damage redirects to the fox_fire actor. Tank hero's `protect_skill` provides a hero-side anchor. US-507/US-508 implemented guard detection and redirect execution.
 
 ### Usage-Limit Touchpoints (Per-Turn and Per-Battle)
 
@@ -144,9 +128,22 @@ DDGC skills can declare `LimitPerTurn` and `LimitPerBattle` constraints. The fra
 
 | Content | File | Limit Type | Status |
 |---------|------|-----------|--------|
-| None yet migrated | — | — | No migrated content uses usage limits; this is a game-gap (B-005) |
+| Direct Hit hero skill | `content/heroes/direct_hit.rs` | Per-turn limit: 2 | Implemented — US-513 |
+| Duality Fate hero skill | `content/heroes/duality_fate.rs` | Per-battle limit: 1 | Implemented — US-514 |
+| SkillUsageCounters | `src/run/usage_counters.rs` | Per-turn, per-battle, per-skill tracking | Implemented — US-510, US-512 |
 
-**Usage-limit implementation anchors (Phase 1, B-005):** No concrete migrated anchor exists yet. The inventory above confirms this is a greenfield addition. Future DDGC migration slices (not yet scheduled) will provide concrete per-turn and per-battle skills. The implementation must track usage counts in game-layer state, reset per-turn counts at turn boundaries, and reset per-battle counts at encounter boundaries.
+**Usage-limit implementation (Phase 1, B-005):** Fully implemented — US-510 (SkillUsageCounters), US-512 (reset_battle_scope), US-513 (direct_hit_1 per-turn limit of 2), US-514 (duality_fate per-battle limit of 1), US-515 (regression suite). Usage limits are now active in the battle loop.
+
+### Summary: Already-Migrated vs. Future Content
+
+| Mechanic | Already Migrated | Reactive Trigger Implemented | Implementation Status |
+|----------|-----------------|----------------------------|----------------------|
+| Riposte | Yes (alligator_yangtze, frostvein_clam, heroes) | Yes | B-008: reactive hooks fully implemented (US-506) |
+| Guard | Yes (fox_fire, heroes) | Yes | B-008: redirect logic fully implemented (US-507/US-508) |
+| Per-turn limits | Yes (direct_hit hero skill) | N/A | B-005: per-turn limit implementation complete (US-510, US-513) |
+| Per-battle limits | Yes (duality_fate hero skill) | N/A | B-005: per-battle limit implementation complete (US-510, US-514) |
+
+**Phase 1 status:** All reactive hooks (riposte counter-attacks, guard damage redirect) and usage limits (per-turn, per-battle) are fully implemented and regression-tested. Phase 1 is closed.
 
 ---
 
@@ -213,13 +210,40 @@ The following are known DDGC conditions not yet implemented in `ConditionAdapter
 - Full `BuffRule` coverage for remaining DDGC condition variants
 - B-006 and B-010 (damage variance and hit resolution) are separate work streams
 
-### Summary: Already-Migrated vs. Future Content
+---
 
-| Mechanic | Already Migrated | Reactive Trigger Implemented | Implementation Status |
-|----------|-----------------|----------------------------|----------------------|
-| Riposte | Yes (alligator_yangtze, frostvein_clam, heroes) | No | B-008: reactive hooks NOT yet in game layer |
-| Guard | Yes (fox_fire, heroes) | No | B-008: redirect logic NOT yet in game layer |
-| Per-turn limits | No | N/A | B-005: greenfield — no migrated content uses this |
-| Per-battle limits | No | N/A | B-005: greenfield — no migrated content uses this |
+## Phase 3 Encounter-Runtime Fidelity Inventory (Closed)
 
-**Phase 1 scope:** Reactive hooks (riposte counter-attacks, guard damage redirect) are the primary target. Usage limits are documented for completeness but are greenfield — no migrated DDGC content yet exercises them.
+This section documents the resolution of encounter-runtime fidelity gaps identified in the Phase 3 inventory. All items below were resolved in the `ralph/ddgc-encounter-runtime-fidelity-closure` branch.
+
+### Targeting Resolution (US-702, US-703, US-704)
+
+| Gap | Resolution | Story |
+|-----|-----------|-------|
+| DDGC targeting intent model | TargetingIntent, TargetingContext, TargetRank, SideAffinity in `src/encounters/targeting.rs` | US-702 |
+| Single-target and ally-target selection | DdgcTargetingRule in `src/encounters/ddgc_targeting_rules.rs`; ally-exclusion in battle loop | US-703 |
+| Launch-rank and target-rank gating | Rank constraint checking in battle loop; FrontRow constraint enforcement | US-704 |
+
+### Movement and AI Resolution (US-705, US-706)
+
+| Gap | Resolution | Story |
+|-----|-----------|-------|
+| Movement direction semantics | EffectNode::pull for forward self-move (not push); formation slot update wired | US-705 |
+| Family action policy (AI) | FamilyActionPolicy with DeterministicCycle (lizard) and PriorityTable (gambler); actor state tracking | US-706 |
+
+### Boss Runtime Resolution (US-707 through US-712)
+
+| Gap | Resolution | Story |
+|-----|-----------|-------|
+| Summon runtime event seam | SummonEvent, SummonKind, extract_summon_events() in `src/run/summon_events.rs` | US-707 |
+| Summon materialization | SummonTracker, SummonKind mapping, materialize_summons() in `src/run/summon_materialization.rs` | US-708 |
+| Shared-health linking | SharedHealthPool, SharedHealthTracker, azure_dragon golden trace | US-709 |
+| Multi-phase transitions | white_tiger phase progression (terrain → A/B → final form) | US-710 |
+| Captor/release | CaptorTracker, CaptureEvent, captive state in turn order in `src/run/captor_state.rs`, `src/run/capture_events.rs` | US-711 |
+| Controller/paired-boss | PairedBossTracker, HP averaging, crimson_duet in `src/run/paired_boss.rs` | US-712 |
+
+### Phase 3 Closeout
+
+| Gap | Status | Notes |
+|-----|--------|-------|
+| Remove run fallbacks (US-713) | Resolved (P3) | `src/run/flow.rs` no longer falls back to `first_battle`; `run_slice_uses_no_fallback_content` verifies representative run slices use migrated DDGC content only |

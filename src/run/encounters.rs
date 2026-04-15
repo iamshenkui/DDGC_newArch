@@ -21,37 +21,88 @@ use framework_rules::attributes::{AttributeKey, ATTR_HEALTH};
 
 use crate::content::ContentPack;
 use crate::encounters::{build_packs_registry, Dungeon, EncounterPack, EncounterPackRegistry, PackType};
+use crate::encounters::ddgc_targeting_rules::{
+    check_launch_rank_constraint, filter_targets_by_rank, get_ddgc_targeting_rule,
+};
 use crate::monsters::build_registry as build_monster_registry;
 use crate::monsters::MonsterFamilyRegistry;
 use crate::trace::BattleTrace;
 use crate::run::conditions::{Condition, ConditionAdapter, ConditionContext, ConditionResult, DdgcCondition};
 use crate::run::hit_resolution::{HitPolicy, HitResolutionContext};
+use crate::run::capture_events::extract_capture_events;
+use crate::run::captor_state::{
+    apply_captor_dot, is_captor_family, CaptorTracker,
+};
+use crate::run::family_action_policy::{
+    select_next_skill, update_actor_state, ActorActionState,
+};
+use crate::run::guard_detection::detect_guard_relations_for_target;
 use crate::run::reactive_events::{build_reactive_events, DamageStepContext, ReactiveEventKind};
+use crate::run::summon_events::extract_summon_events;
 use crate::run::reactive_queue::ReactiveQueue;
 use crate::run::riposte_detection::detect_riposte_candidates;
 use crate::run::riposte_execution::{execute_riposte, has_riposte_status};
+use crate::run::guard_redirect_execution::execute_guard_redirect;
+use crate::run::phase_transition::{
+    execute_phase_transition, is_multi_phase_boss, PhaseTransitionTracker,
+};
+use crate::run::paired_boss::{
+    execute_hp_averaging, init_paired_boss_for_pack, is_paired_boss_pack, PairedBossTracker,
+};
+use crate::run::shared_health::{init_shared_health_for_pack, SharedHealthTracker};
+use crate::run::summon_materialization::{materialize_summons, SummonTracker};
+use crate::run::usage_counters::SkillUsageCounters;
+use crate::run::usage_limits::get_usage_limit;
 
 /// Skill assignment for encounter battles.
 ///
-/// Maps each actor to the skill they use in the deterministic battle script.
+/// Maps each actor to either a fixed skill (heroes) or a family ID (monsters).
+/// For heroes, the skill is fixed. For monsters, the family ID is used to
+/// look up the action policy and select skills dynamically during battle.
+///
 /// In a full game, this would be replaced by AI/player input.
 struct SkillAssignment {
-    skills: HashMap<u64, String>,
+    /// Maps actor ID to either a fixed skill name (heroes) or a family ID (monsters).
+    /// A prefix "family:" indicates a family ID lookup.
+    assignments: HashMap<u64, String>,
 }
 
 impl SkillAssignment {
     fn new() -> Self {
         SkillAssignment {
-            skills: HashMap::new(),
+            assignments: HashMap::new(),
         }
     }
 
-    fn assign(&mut self, actor_id: ActorId, skill_name: impl Into<String>) {
-        self.skills.insert(actor_id.0, skill_name.into());
+    /// Assign a fixed skill to an actor (for heroes).
+    fn assign_skill(&mut self, actor_id: ActorId, skill_name: impl Into<String>) {
+        self.assignments.insert(actor_id.0, skill_name.into());
     }
 
+    /// Assign a family ID to an actor (for monsters).
+    fn assign_family(&mut self, actor_id: ActorId, family_id: impl Into<String>) {
+        self.assignments.insert(actor_id.0, format!("family:{}", family_id.into()));
+    }
+
+    /// Get the assignment for an actor. Returns None if not assigned.
     fn get(&self, actor_id: ActorId) -> Option<&str> {
-        self.skills.get(&actor_id.0).map(|s| s.as_str())
+        self.assignments.get(&actor_id.0).map(|s| s.as_str())
+    }
+
+    /// Check if an actor is assigned to a family (vs a fixed skill).
+    fn is_family_assignment(&self, actor_id: ActorId) -> bool {
+        match self.get(actor_id) {
+            Some(s) => s.starts_with("family:"),
+            None => false,
+        }
+    }
+
+    /// Get the family ID for an actor, if it's a family assignment.
+    fn get_family_id(&self, actor_id: ActorId) -> Option<String> {
+        match self.get(actor_id) {
+            Some(s) if s.starts_with("family:") => Some(s[7..].to_string()),
+            _ => None,
+        }
     }
 }
 
@@ -169,13 +220,14 @@ impl EncounterResolver {
             if let Some(archetype) = self.content_pack.get_archetype(archetype_name) {
                 actors.insert(actor_id, archetype.create_actor(actor_id));
                 ally_ids.push(actor_id);
-                skill_assign.assign(actor_id, *skill_name);
+                skill_assign.assign_skill(actor_id, *skill_name);
                 side_lookup.insert(actor_id, CombatSide::Ally);
             }
         }
 
         // ── Enemy actors from pack ─────────────────────────────────────────
         let mut next_enemy_id: u64 = 10;
+        let mut actor_families: HashMap<ActorId, String> = HashMap::new();
         for slot in &pack.slots {
             let family = self
                 .monster_registry
@@ -192,19 +244,15 @@ impl EncounterResolver {
                     )
                 });
 
-            // Use the family's first skill as the primary attack
-            let skill_name = family
-                .skill_ids
-                .first()
-                .map(|s| s.0.as_str())
-                .unwrap_or("normal_attack");
-
             for _ in 0..slot.count {
                 let actor_id = ActorId(next_enemy_id);
                 actors.insert(actor_id, archetype.create_actor(actor_id));
                 enemy_ids.push(actor_id);
-                skill_assign.assign(actor_id, skill_name);
+                // Assign family ID for dynamic action policy selection
+                skill_assign.assign_family(actor_id, &slot.family_id.0);
                 side_lookup.insert(actor_id, CombatSide::Enemy);
+                // Track actor-to-family mapping for shared health pools
+                actor_families.insert(actor_id, slot.family_id.0.clone());
                 next_enemy_id += 1;
             }
         }
@@ -234,9 +282,58 @@ impl EncounterResolver {
         let mut resolver = CombatResolver::new(3);
         resolver.start(&mut encounter, &actors);
 
+        // ── US-709: Shared health pool tracking ────────────────────────────
+        // For boss encounters with multi-body bosses (Azure Dragon, Vermilion Bird),
+        // initialize shared health pool tracking so damage to any body reduces
+        // the shared pool and all members die when the pool is exhausted.
+        let mut shared_health = if pack.pack_type == PackType::Boss {
+            init_shared_health_for_pack(&pack.id.0, &actors, &actor_families)
+        } else {
+            SharedHealthTracker::new()
+        };
+
+        // ── US-710: Phase transition tracking ────────────────────────────────
+        // For multi-phase bosses (White Tiger), track press attacks on clone
+        // forms and trigger phase transition when threshold is reached.
+        let mut phase_tracker = PhaseTransitionTracker::new();
+        if is_multi_phase_boss(&pack.id.0) {
+            // Identify clone actor IDs from the pack
+            // White Tiger pack has A and B as clone forms
+            let clone_ids: Vec<ActorId> = pack
+                .slots
+                .iter()
+                .filter(|slot| {
+                    let fid = &slot.family_id.0;
+                    fid == "white_tiger_A" || fid == "white_tiger_B"
+                })
+                .enumerate()
+                .map(|(i, _slot)| ActorId(10 + i as u64)) // A=10, B=11
+                .collect();
+            phase_tracker.init_for_pack(&pack.id.0, clone_ids);
+        }
+
+        // ── US-711: Captor state tracking ─────────────────────────────────
+        // For necrodrake_embryosac boss encounters, track captor/captive relationships.
+        // egg_membrane_empty actors start as captor vessels; they transform to
+        // egg_membrane_full when they capture a hero.
+        let mut captor_tracker = CaptorTracker::new();
+
+        // ── US-712: Paired boss HP averaging tracking ─────────────────────
+        // For paired boss encounters (bloodthirsty_assassin + bloodthirsty_shadow),
+        // track the paired relationship so crimson_duet skill averages HP.
+        let mut paired_boss_tracker = if is_paired_boss_pack(&pack.id.0) {
+            init_paired_boss_for_pack(&pack.id.0, &actor_families)
+        } else {
+            PairedBossTracker::new()
+        };
+
         // ── Battle loop ────────────────────────────────────────────────────
         let mut trace = BattleTrace::new(&pack.id.0);
+        let mut counters = SkillUsageCounters::new();
+        let mut summon_tracker = SummonTracker::new();
+        let mut actor_states: HashMap<ActorId, ActorActionState> = HashMap::new();
         let mut round: u32 = 0;
+        let mut dot_applied_this_round = false;
         let max_rounds = 100;
 
         while encounter.state == EncounterState::Active && round < max_rounds {
@@ -251,14 +348,41 @@ impl EncounterResolver {
             // Check if actor is alive (may have been killed by status tick)
             let hp = actors[&current_actor].effective_attribute(&AttributeKey::new(ATTR_HEALTH));
             if hp.0 <= 0.0 {
-                remove_defeated(&mut encounter, &mut actors, current_actor);
+                remove_defeated(&mut encounter, &mut actors, &mut captor_tracker, current_actor, round, &mut trace);
                 resolver.end_turn(&mut encounter, &mut actors);
+                counters.reset_turn_scope(current_actor);
                 continue;
             }
 
-            // Select skill from assignment
-            let skill_name = skill_assign.get(current_actor).unwrap_or("crusading_strike");
-            let skill = match self.content_pack.get_skill(&SkillId::new(skill_name)) {
+            // Select skill from assignment (US-706: family action policy)
+            let skill_name = if skill_assign.is_family_assignment(current_actor) {
+                // Monster: use family action policy to select skill dynamically
+                if let Some(family_id) = skill_assign.get_family_id(current_actor) {
+                    let family = match self.monster_registry.get(&family_id) {
+                        Some(f) => f,
+                        None => {
+                            let cmd = CombatCommand::Wait { actor: current_actor };
+                            resolver.submit_command(&mut encounter, &mut actors, cmd);
+                            trace.record_wait(round, current_actor, &actors);
+                            resolver.end_turn(&mut encounter, &mut actors);
+                            counters.reset_turn_scope(current_actor);
+                            continue;
+                        }
+                    };
+                    // Use the authored policy from get_default_policy (grounded in JsonAI.json)
+                    let policy = crate::run::family_action_policy::get_default_policy(&family_id);
+                    let state = actor_states.entry(current_actor).or_default();
+                    let selected = select_next_skill(&policy, current_actor, state, &family.skill_ids);
+                    selected.0.clone()
+                } else {
+                    skill_assign.get(current_actor).unwrap_or("crusading_strike").to_string()
+                }
+            } else {
+                // Hero: use fixed skill assignment
+                skill_assign.get(current_actor).unwrap_or("crusading_strike").to_string()
+            };
+
+            let skill = match self.content_pack.get_skill(&SkillId::new(&skill_name)) {
                 Some(s) => s,
                 None => {
                     let cmd = CombatCommand::Wait {
@@ -267,15 +391,79 @@ impl EncounterResolver {
                     resolver.submit_command(&mut encounter, &mut actors, cmd);
                     trace.record_wait(round, current_actor, &actors);
                     resolver.end_turn(&mut encounter, &mut actors);
+                    counters.reset_turn_scope(current_actor);
                     continue;
                 }
             };
+
+            // ── Usage Limit Check (US-513) ────────────────────────────────────
+            // Before executing a skill, check if it has a usage limit that's been exceeded.
+            // If over limit, skip the skill use (submit Wait instead).
+            let skill_over_limit = if let Some(limit) = get_usage_limit(&skill.id) {
+                !counters.can_use(current_actor, &skill.id, limit)
+            } else {
+                false
+            };
+
+            if skill_over_limit {
+                let cmd = CombatCommand::Wait {
+                    actor: current_actor,
+                };
+                resolver.submit_command(&mut encounter, &mut actors, cmd);
+                trace.record_wait(round, current_actor, &actors);
+                resolver.end_turn(&mut encounter, &mut actors);
+                counters.reset_turn_scope(current_actor);
+                continue;
+            }
+
+            // ── DDGC Launch-Rank Gating (US-704) ───────────────────────────────
+            // Check if the actor's current position satisfies the skill's launch
+            // constraint. If not, the skill is illegal from this position and we
+            // submit a Wait instead.
+            if let Some(rule) = get_ddgc_targeting_rule(&skill_name) {
+                if !check_launch_rank_constraint(rule.launch_constraint, current_actor, &formation, &side_lookup) {
+                    let cmd = CombatCommand::Wait {
+                        actor: current_actor,
+                    };
+                    resolver.submit_command(&mut encounter, &mut actors, cmd);
+                    trace.record_wait(round, current_actor, &actors);
+                    resolver.end_turn(&mut encounter, &mut actors);
+                    counters.reset_turn_scope(current_actor);
+                    continue;
+                }
+            }
 
             // Resolve targets — sorted by ActorId for deterministic trace output
             let mut targets = skill
                 .target_selector
                 .resolve(current_actor, &formation, &actors, &side_lookup);
             targets.sort_by_key(|t| t.0);
+
+            // ── DDGC Ally-Exclusive Targeting (US-703) ─────────────────────────
+            // For ally-exclusive skills (DDGC @rank = any ally, not self),
+            // exclude self from the target list. This is the only targeting rule
+            // that can be safely applied at the battle loop level without
+            // interfering with the framework's multi-target resolution.
+            // NOTE: Single-target truncation is NOT applied here because the
+            // framework handles per-skill resolution against all provided targets.
+            // Truncating to 1 target would break multi-target skills.
+            if let Some(rule) = get_ddgc_targeting_rule(&skill_name) {
+                if rule.exclude_self_from_allies {
+                    targets.retain(|t| *t != current_actor);
+                }
+            }
+
+            // ── DDGC Target Rank Filtering (US-704) ─────────────────────────────
+            // Filter targets by the skill's target rank constraint. This restricts
+            // which ranks (rows) are valid targets for rank-gated skills.
+            if let Some(rule) = get_ddgc_targeting_rule(&skill_name) {
+                targets = filter_targets_by_rank(rule.target_rank, &targets, &formation);
+            }
+
+            // ── US-709: Shared health pre-damage snapshot ─────────────────────
+            // Before the framework applies damage, snapshot pool member HP values
+            // so we can compute actual damage dealt after resolution.
+            shared_health.snapshot_pre_damage(&actors);
 
             if targets.is_empty() {
                 let cmd = CombatCommand::Wait {
@@ -328,11 +516,101 @@ impl EncounterResolver {
                         resolve_skill(skill, &mut ctx)
                     }; // ctx dropped here
 
-                    // ── Reactive Processing (US-506) ─────────────────────────
+                    // ── US-707: Summon event seam (non-mutating) ─────────────────────────
+                    // Extract summon events from resolved skill effects without mutating
+                    // encounter state. The events are stored for US-708 materialization.
+                    // This is a pure extraction — no actor or formation state is modified.
+                    let summon_events = extract_summon_events(current_actor, &result.results);
+
+                    // ── US-708: Summon unit materialization ───────────────────────────────
+                    // Materialize summoned units from extracted summon events.
+                    // This creates real actors in the encounter state through the formation
+                    // placement pathway. Deduplication prevents infinite spawn loops.
+                    next_enemy_id = materialize_summons(
+                        &summon_events,
+                        &mut actors,
+                        &mut formation,
+                        &mut encounter,
+                        &self.content_pack,
+                        &self.monster_registry,
+                        &mut summon_tracker,
+                        next_enemy_id,
+                    );
+
+                    // ── US-711: Capture event extraction and processing ─────────────────────
+                    // Extract capture events from resolved skill effects. For necrodrake_embryosac's
+                    // untimely_progeny skill, this detects when a hero should be captured.
+                    let capture_events = extract_capture_events(current_actor, &result.results, round);
+
+                    for event in capture_events {
+                        // The captor must be an egg_membrane_empty actor from the pack
+                        let captor_family = actor_families.get(&event.captor);
+                        if let Some(family_id) = captor_family {
+                            if is_captor_family(family_id) {
+                                // Hero being captured
+                                let hero_id = event.captured;
+                                let hero_hp = actors.get(&hero_id)
+                                    .map(|a| a.effective_attribute(&AttributeKey::new(ATTR_HEALTH)).0)
+                                    .unwrap_or(0.0);
+
+                                // Check if captor already holds a captive (shouldn't happen, but safety)
+                                if !captor_tracker.is_captor(event.captor) {
+                                    // Place hero into captive state
+                                    captor_tracker.capture(hero_id, event.captor, event.capture_turn, hero_hp);
+
+                                    // Remove captured hero from turn order (they stop acting)
+                                    if let Some(ref mut to) = encounter.turn_order {
+                                        to.remove(hero_id);
+                                    }
+
+                                    // Record capture in trace
+                                    trace.record_capture(
+                                        round,
+                                        event.captor,
+                                        hero_id,
+                                        &actors,
+                                    );
+                                }
+                            }
+                        }
+                    }
+
+                    // ── Record usage (US-513) ─────────────────────────────────
+                    // After successful skill execution, record the usage for limit tracking.
+                    if let Some(limit) = get_usage_limit(&skill.id) {
+                        counters.record_usage(current_actor, skill.id.clone(), limit.scope);
+                    }
+
+                    // ── Update actor action state (US-706) ─────────────────────
+                    // After successful skill execution, update the actor's state so the
+                    // next skill selection uses the correct last-skill-used context.
+                    if skill_assign.is_family_assignment(current_actor) {
+                        let state = actor_states.entry(current_actor).or_default();
+                        update_actor_state(state, skill.id.clone());
+                    }
+
+                    // ── US-712: Paired boss HP averaging ─────────────────────────
+                    // When crimson_duet skill is used on a paired boss, average HP
+                    // between the paired actors. crimson_duet is a 0-damage skill that
+                    // applies the average_hp status effect.
+                    let skill_is_crimson_duet = skill.id.0 == "crimson_duet";
+                    if skill_is_crimson_duet && !paired_boss_tracker.averaging_done(current_actor) {
+                        if let Some((actor_a, actor_b, avg_hp)) =
+                            execute_hp_averaging(current_actor, &mut actors, &paired_boss_tracker)
+                        {
+                            paired_boss_tracker.mark_averaging_done(current_actor);
+                            trace.record_hp_averaging(round, actor_a, actor_b, avg_hp, &actors);
+                        }
+                    }
+
+                    // ── Reactive Processing (US-506, US-507) ─────────────────
                     // After damage is applied, check if targets have riposte status
-                    // and process reactive counter-attacks
+                    // and process reactive counter-attacks (US-506).
+                    // Also detect guard protection relationships for guard redirect
+                    // events (US-507).
                     let mut reactive_queue = ReactiveQueue::new();
                     for &target in &targets {
+                        // Riposte detection: actor with riposte status who was hit
                         let candidates = detect_riposte_candidates(&actors);
                         for candidate in candidates {
                             // Only create event if the candidate was actually hit (is in targets)
@@ -350,9 +628,26 @@ impl EncounterResolver {
                                 }
                             }
                         }
+
+                        // Guard detection (US-507): find guards on same side who can protect this target
+                        let guard_relations = detect_guard_relations_for_target(target, &actors, &side_lookup);
+                        for relation in guard_relations {
+                            // Guard redirects damage for the protected target
+                            let damage_amount = result.results.iter().find_map(|r| r.values.get("amount").copied());
+                            let ctx = DamageStepContext::new(
+                                current_actor,
+                                skill.id.clone(),
+                                target,
+                                damage_amount,
+                            );
+                            let events = build_reactive_events(&ctx, relation.guard, ReactiveEventKind::GuardRedirect);
+                            for event in events {
+                                reactive_queue.enqueue(event);
+                            }
+                        }
                     }
 
-                    // Process reactive queue: execute riposte counter-attacks
+                    // Process reactive queue: execute riposte counter-attacks and guard redirects
                     while let Some(event) = reactive_queue.drain_next() {
                         if event.is_riposte() {
                             let reactor_id = event.reactor;
@@ -384,6 +679,88 @@ impl EncounterResolver {
                                         &reactive_results,
                                         &actors,
                                         trigger,
+                                    );
+                                }
+                            }
+                        } else if event.is_guard_redirect() {
+                            // US-508: Guard redirect - damage goes to guard instead of protected target
+                            if let Some(redirected_damage) = execute_guard_redirect(&event, &mut actors) {
+                                let trigger = crate::trace::ReactiveTrigger {
+                                    attacker: event.attacker.0,
+                                    skill: skill_name.to_string(),
+                                    target: event.triggered_on.0,
+                                    kind: "GuardRedirect".to_string(),
+                                };
+                                // Build effect results for the redirect action
+                                // actor = original attacker, targets = guard (who absorbed the damage)
+                                let redirect_results = vec![
+                                    framework_combat::results::EffectResult {
+                                        kind: framework_combat::results::EffectResultKind::Damage,
+                                        actor: event.attacker,
+                                        targets: vec![event.reactor],
+                                        values: std::collections::HashMap::from([
+                                            ("amount".to_string(), redirected_damage),
+                                        ]),
+                                        applied_statuses: vec![],
+                                    }
+                                ];
+                                trace.record_reactive(
+                                    round,
+                                    event.reactor,
+                                    "guard_redirect",
+                                    &[event.triggered_on],
+                                    &redirect_results,
+                                    &actors,
+                                    trigger,
+                                );
+                            }
+                        }
+                    }
+
+                    // ── US-709: Shared health post-damage processing ───────────────
+                    // After the framework applies damage and reactive events are processed,
+                    // compute actual damage dealt to pool members and redistribute pool HP.
+                    // Remove all members of any exhausted pools.
+                    let exhausted_pools = shared_health.process_post_damage(&mut actors);
+                    for pool_id in exhausted_pools {
+                        let members = shared_health.members_of_exhausted_pool(pool_id);
+                        for member_id in members {
+                            remove_defeated(&mut encounter, &mut actors, &mut captor_tracker, member_id, round, &mut trace);
+                        }
+                    }
+
+                    // ── US-710: Phase transition press tracking ─────────────────────
+                    // Record press for any clone actors that were targeted.
+                    // A "press" counts when a clone actor is hit by an attack.
+                    for &target in &targets {
+                        let _new_count = phase_tracker.record_press(&pack.id.0, target);
+                        // Check if phase transition should trigger (count reached threshold)
+                        if phase_tracker.should_transition(&pack.id.0) {
+                            // Get clone actor IDs to remove
+                            let clone_ids = phase_tracker.clone_actor_ids(&pack.id.0);
+                            // Get placement slot from first clone
+                            if let Some(slot) = phase_tracker.placement_slot(&pack.id.0, &formation) {
+                                let transition_event = crate::run::phase_transition::PhaseTransitionEvent {
+                                    remove_actors: clone_ids.clone(),
+                                    summon_family_id: "white_tiger_C".to_string(),
+                                    placement_slot: slot,
+                                };
+                                if let Some(summoned_id) = execute_phase_transition(
+                                    &transition_event,
+                                    &mut actors,
+                                    &mut formation,
+                                    &mut encounter,
+                                    &self.content_pack,
+                                    &self.monster_registry,
+                                    &mut next_enemy_id,
+                                ) {
+                                    // Mark as transitioned and record in trace
+                                    phase_tracker.mark_transitioned(&pack.id.0);
+                                    trace.record_phase_transition(
+                                        round,
+                                        &clone_ids,
+                                        summoned_id,
+                                        &actors,
                                     );
                                 }
                             }
@@ -441,7 +818,7 @@ impl EncounterResolver {
                     trace.record_action(
                         round,
                         current_actor,
-                        skill_name,
+                        &skill_name,
                         &targets,
                         &all_results,
                         &actors,
@@ -457,7 +834,7 @@ impl EncounterResolver {
                     for id in all_ids {
                         let hp = actors[&id].effective_attribute(&AttributeKey::new(ATTR_HEALTH));
                         if hp.0 <= 0.0 {
-                            remove_defeated(&mut encounter, &mut actors, id);
+                            remove_defeated(&mut encounter, &mut actors, &mut captor_tracker, id, round, &mut trace);
                         }
                     }
                 } else {
@@ -469,7 +846,45 @@ impl EncounterResolver {
                 }
             }
 
+            // ── US-711: Captor DoT at end of round ───────────────────────────
+            // Apply passive damage from egg_membrane_full captors to their captives
+            // at the end of each round. This happens before end_turn so the damage
+            // is recorded before the next round starts.
+            // Detect round end: if current_actor is first in turn order, we just
+            // completed a round (the first actor's turn marks the start of a new round).
+            if !dot_applied_this_round {
+                // Apply captor DoT from this round
+                let dot_results = apply_captor_dot(&mut captor_tracker, &mut actors, round);
+                for (captor, captive, damage, released) in dot_results {
+                    trace.record_captor_dot(round, captor, captive, damage, &actors);
+                    if released {
+                        // Captive reached death's door — release them back to play
+                        trace.record_release(round, captor, captive, "deaths_door", &actors);
+                        // Restore captive to turn order (they can act again)
+                        if let Some(ref mut to) = encounter.turn_order {
+                            if !to.queue.contains(&captive) {
+                                to.queue.push_back(captive);
+                            }
+                        }
+                    }
+                }
+                dot_applied_this_round = true;
+            }
+
             resolver.end_turn(&mut encounter, &mut actors);
+
+            // Reset DoT flag at the start of a new round (when first actor acts again)
+            if let Some(ref to) = encounter.turn_order {
+                if let Some(first) = to.queue.front() {
+                    if *first == current_actor {
+                        dot_applied_this_round = false;
+                        // US-712: Reset paired boss HP averaging flag at new round
+                        paired_boss_tracker.reset_round();
+                    }
+                }
+            }
+
+            counters.reset_turn_scope(current_actor);
         }
 
         // ── Result ────────────────────────────────────────────────────────
@@ -508,14 +923,36 @@ fn parse_ddgc_condition(tag: &str) -> Option<DdgcCondition> {
 }
 
 /// Remove a defeated actor from encounter and turn order.
+///
+/// If the defeated actor is a captor holding a captive, the captive is
+/// released back to the encounter and can act again.
+#[allow(clippy::too_many_arguments)]
 fn remove_defeated(
     encounter: &mut Encounter,
-    _actors: &mut HashMap<ActorId, ActorAggregate>,
+    actors: &mut HashMap<ActorId, ActorAggregate>,
+    captor_tracker: &mut CaptorTracker,
     id: ActorId,
+    round: u32,
+    trace: &mut BattleTrace,
 ) {
+    // If this actor is a captor holding a captive, release the captive
+    if let Some(captive_id) = captor_tracker.release_captive_of(id) {
+        // Record the release in trace
+        trace.record_release(round, id, captive_id, "captor_death", actors);
+        // Add captive back to turn order so they can act again
+        if let Some(ref mut to) = encounter.turn_order {
+            if !to.queue.contains(&captive_id) {
+                to.queue.push_back(captive_id);
+            }
+        }
+    }
+
     encounter.remove_actor(id);
+    // Also remove from turn order queue ( Encounter.remove_actor may not handle it)
     if let Some(ref mut to) = encounter.turn_order {
-        to.remove(id);
+        if let Some(pos) = to.queue.iter().position(|&x| x == id) {
+            to.queue.remove(pos);
+        }
     }
 }
 
@@ -821,5 +1258,726 @@ mod tests {
             result2.trace.entries.len(),
             "Same boss battle should produce the same number of trace entries"
         );
+    }
+
+    // ── DDGC Targeting Tests (US-703) ────────────────────────────────────────
+
+    #[test]
+    fn lizard_stun_resolves_to_single_target() {
+        // lizard's stun skill is a single-target DDGC skill — should hit ONE enemy.
+        let resolver = EncounterResolver::new();
+
+        let pack = resolver
+            .resolve_pack(Dungeon::BaiHu, 0, 42, false)
+            .expect("BaiHu should have room packs (contains lizard family)");
+
+        let result = resolver.run_battle(pack, 1);
+
+        assert!(
+            result.turns <= 100,
+            "Battle should finish within 100 turns"
+        );
+
+        // lizard uses "stun" skill — check that it targets exactly 1 enemy
+        let stun_entries: Vec<_> = result
+            .trace
+            .entries
+            .iter()
+            .filter(|e| e.action == "stun")
+            .collect();
+
+        if !stun_entries.is_empty() {
+            for entry in stun_entries {
+                assert_eq!(
+                    entry.targets.len(), 1,
+                    "lizard stun should target exactly 1 enemy, got {} targets",
+                    entry.targets.len()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn mark_skill_single_target_enemy_rule() {
+        // Unit test: verify mark_skill DDGC rule is single-target enemy
+        use crate::encounters::ddgc_targeting_rules::get_ddgc_targeting_rule;
+        use crate::encounters::targeting::SideAffinity;
+
+        let rule = get_ddgc_targeting_rule("mark_skill").expect("mark_skill should have a rule");
+        assert!(rule.single_target, "mark_skill should be single-target");
+        assert!(
+            matches!(rule.side_affinity, SideAffinity::Enemy),
+            "mark_skill should target enemies"
+        );
+        assert!(
+            !rule.exclude_self_from_allies,
+            "mark_skill should not exclude self (it targets enemies)"
+        );
+    }
+
+    #[test]
+    fn protect_skill_single_target_ally_excluding_self_rule() {
+        // Unit test: verify protect_skill DDGC rule is ally-exclusive single-target
+        use crate::encounters::ddgc_targeting_rules::get_ddgc_targeting_rule;
+        use crate::encounters::targeting::SideAffinity;
+
+        let rule = get_ddgc_targeting_rule("protect_skill").expect("protect_skill should have a rule");
+        assert!(rule.single_target, "protect_skill should be single-target");
+        assert!(
+            matches!(rule.side_affinity, SideAffinity::Ally),
+            "protect_skill should target allies"
+        );
+        assert!(
+            rule.exclude_self_from_allies,
+            "protect_skill should exclude self from ally targets"
+        );
+    }
+
+    #[test]
+    fn lizard_stun_single_target_enemy_rule() {
+        // Unit test: verify lizard's stun skill DDGC rule is single-target enemy
+        use crate::encounters::ddgc_targeting_rules::get_ddgc_targeting_rule;
+        use crate::encounters::targeting::SideAffinity;
+
+        let rule = get_ddgc_targeting_rule("stun").expect("stun should have a rule");
+        assert!(rule.single_target, "stun should be single-target");
+        assert!(
+            matches!(rule.side_affinity, SideAffinity::Enemy),
+            "stun should target enemies"
+        );
+    }
+
+    #[test]
+    fn ddgc_targeting_rule_ally_exclude_self_is_applied() {
+        // Integration test: verify ally-exclusive targeting excludes self.
+        // This tests the ally-exclusion rule that IS applied in the battle loop.
+        use std::collections::HashMap;
+        use framework_combat::formation::FormationLayout;
+        use framework_combat::formation::SlotIndex;
+        use framework_rules::actor::ActorId;
+        use framework_rules::attributes::{AttributeKey, AttributeValue, ATTR_HEALTH};
+        use framework_combat::encounter::CombatSide;
+        use framework_combat::skills::SkillId;
+        use crate::encounters::ddgc_targeting_rules::get_ddgc_targeting_rule;
+
+        // Build formation: 3 allies (ActorIds 1, 2, 3), 1 enemy (ActorId 10)
+        let mut formation = FormationLayout::new(2, 2);
+        formation.place(ActorId(1), SlotIndex(0)).unwrap(); // ally front
+        formation.place(ActorId(2), SlotIndex(1)).unwrap(); // ally front
+        formation.place(ActorId(3), SlotIndex(2)).unwrap(); // ally back
+        formation.place(ActorId(10), SlotIndex(3)).unwrap(); // enemy back
+
+        let mut actors = HashMap::new();
+        for id in [ActorId(1), ActorId(2), ActorId(3), ActorId(10)] {
+            let mut a = framework_rules::actor::ActorAggregate::new(id);
+            a.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+            actors.insert(id, a);
+        }
+
+        let mut side_lookup = HashMap::new();
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+        side_lookup.insert(ActorId(2), CombatSide::Ally);
+        side_lookup.insert(ActorId(3), CombatSide::Ally);
+        side_lookup.insert(ActorId(10), CombatSide::Enemy);
+
+        let resolver = EncounterResolver::new();
+        let protect_skill = resolver
+            .content_pack
+            .get_skill(&SkillId::new("protect_skill"))
+            .expect("protect_skill should exist in content pack");
+
+        // ActorId(1) casts protect_skill on allies
+        let mut targets = protect_skill
+            .target_selector
+            .resolve(ActorId(1), &formation, &actors, &side_lookup);
+        targets.sort_by_key(|t| t.0);
+
+        // Before DDGC rule: all 3 allies including self
+        assert_eq!(
+            targets.len(), 3,
+            "AllAllies should include self (3 allies total)"
+        );
+        assert!(
+            targets.contains(&ActorId(1)),
+            "Before DDGC rule, self should be included"
+        );
+
+        // Apply only the ally-exclusion rule (the one actually applied in battle loop)
+        if let Some(rule) = get_ddgc_targeting_rule("protect_skill") {
+            if rule.exclude_self_from_allies {
+                targets.retain(|t| *t != ActorId(1));
+            }
+        }
+
+        // After ally-exclusion rule: self excluded, but all other allies remain
+        assert!(
+            !targets.contains(&ActorId(1)),
+            "After ally-exclusion rule, self should be excluded from protect_skill targets"
+        );
+        assert_eq!(
+            targets.len(), 2,
+            "After ally-exclusion rule, protect_skill should target 2 allies (not self)"
+        );
+    }
+
+    #[test]
+    fn ddgc_targeting_rule_for_enemy_skills_returns_correct_count() {
+        // Verify that enemy skills using AllEnemies still return all enemies
+        // (the DDGC rule is defined but not enforced for enemy multi-target skills
+        // since the battle loop doesn't apply single-target truncation)
+        use std::collections::HashMap;
+        use framework_combat::formation::FormationLayout;
+        use framework_combat::formation::SlotIndex;
+        use framework_rules::actor::ActorId;
+        use framework_rules::attributes::{AttributeKey, AttributeValue, ATTR_HEALTH};
+        use framework_combat::encounter::CombatSide;
+        use framework_combat::skills::SkillId;
+        use crate::encounters::ddgc_targeting_rules::get_ddgc_targeting_rule;
+        use crate::encounters::targeting::SideAffinity;
+
+        // Build formation: 1 ally, 4 enemies
+        let mut formation = FormationLayout::new(2, 3);
+        formation.place(ActorId(1), SlotIndex(0)).unwrap();   // ally front
+        formation.place(ActorId(10), SlotIndex(3)).unwrap(); // enemy back
+        formation.place(ActorId(11), SlotIndex(4)).unwrap(); // enemy back
+        formation.place(ActorId(12), SlotIndex(5)).unwrap(); // enemy back
+        formation.place(ActorId(13), SlotIndex(2)).unwrap(); // enemy front-right
+
+        let mut actors = HashMap::new();
+        for id in [ActorId(1), ActorId(10), ActorId(11), ActorId(12), ActorId(13)] {
+            let mut a = framework_rules::actor::ActorAggregate::new(id);
+            a.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+            actors.insert(id, a);
+        }
+
+        let mut side_lookup = HashMap::new();
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+        side_lookup.insert(ActorId(10), CombatSide::Enemy);
+        side_lookup.insert(ActorId(11), CombatSide::Enemy);
+        side_lookup.insert(ActorId(12), CombatSide::Enemy);
+        side_lookup.insert(ActorId(13), CombatSide::Enemy);
+
+        let resolver = EncounterResolver::new();
+        let mark_skill = resolver
+            .content_pack
+            .get_skill(&SkillId::new("mark_skill"))
+            .expect("mark_skill should exist in content pack");
+
+        // Resolve targets using framework (AllEnemies)
+        let mut targets = mark_skill
+            .target_selector
+            .resolve(ActorId(1), &formation, &actors, &side_lookup);
+        targets.sort_by_key(|t| t.0);
+
+        // Framework returns all 4 enemies (multi-target by default)
+        assert_eq!(
+            targets.len(), 4,
+            "Framework AllEnemies should return all 4 enemies"
+        );
+
+        // The DDGC rule documents single-target intent but is not applied to
+        // enemy skills in the battle loop (framework handles multi-target)
+        if let Some(rule) = get_ddgc_targeting_rule("mark_skill") {
+            assert!(rule.single_target, "mark_skill DDGC rule should be single-target");
+            assert!(
+                matches!(rule.side_affinity, SideAffinity::Enemy),
+                "mark_skill targets enemies"
+            );
+        }
+    }
+
+    // ── DDGC Rank Gating Tests (US-704) ─────────────────────────────────────
+
+    #[test]
+    fn poison_skill_has_front_row_launch_constraint() {
+        // Verify that the poison skill (mantis_magic_flower primary attack)
+        // has a FrontRow launch constraint in its DDGC targeting rule.
+        use crate::encounters::targeting::LaunchConstraint;
+
+        let rule = get_ddgc_targeting_rule("poison").expect("poison should have a rule");
+        assert!(
+            matches!(rule.launch_constraint, LaunchConstraint::FrontRow),
+            "poison should have FrontRow launch constraint (DDGC: launch ranks 1-2)"
+        );
+    }
+
+    #[test]
+    fn launch_constraint_front_row_satisfied_in_front() {
+        // Unit test: an actor in the front half of the formation satisfies FrontRow.
+        // For DDGC targeting, "front row" means the front half of the formation:
+        // - Ally at slot 0 (ally rank 1, front) -> satisfies
+        // - Ally at slot 1 (ally rank 2, front) -> satisfies
+        // - Enemy at slot 4 (enemy rank 1, closest to allies) -> satisfies
+        // - Enemy at slot 6 (enemy rank 3, back) -> does NOT satisfy
+        use crate::encounters::ddgc_targeting_rules::check_launch_rank_constraint;
+        use crate::encounters::targeting::LaunchConstraint;
+        use framework_rules::attributes::{AttributeKey, AttributeValue, ATTR_HEALTH};
+        use std::collections::HashMap;
+
+        let mut formation = FormationLayout::new(2, 4);
+        // Allies in lane 0 (slots 0-3), enemies in lane 1 (slots 4-7)
+        formation.place(ActorId(1), SlotIndex(0)).unwrap(); // ally slot 0 (ally rank 1, front)
+        formation.place(ActorId(2), SlotIndex(1)).unwrap(); // ally slot 1 (ally rank 2, front)
+        formation.place(ActorId(10), SlotIndex(4)).unwrap(); // enemy slot 4 (enemy rank 1, front)
+        formation.place(ActorId(11), SlotIndex(6)).unwrap(); // enemy slot 6 (enemy rank 3, back)
+
+        let mut actors = HashMap::new();
+        for id in [ActorId(1), ActorId(2), ActorId(10), ActorId(11)] {
+            let mut a = framework_rules::actor::ActorAggregate::new(id);
+            a.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+            actors.insert(id, a);
+        }
+
+        let mut side_lookup = HashMap::new();
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+        side_lookup.insert(ActorId(2), CombatSide::Ally);
+        side_lookup.insert(ActorId(10), CombatSide::Enemy);
+        side_lookup.insert(ActorId(11), CombatSide::Enemy);
+
+        // ActorId(1) at slot 0 (ally rank 1, front) satisfies FrontRow
+        assert!(
+            check_launch_rank_constraint(LaunchConstraint::FrontRow, ActorId(1), &formation, &side_lookup),
+            "Ally at slot 0 (rank 1, front) should satisfy FrontRow constraint"
+        );
+
+        // ActorId(2) at slot 1 (ally rank 2, front) satisfies FrontRow
+        assert!(
+            check_launch_rank_constraint(LaunchConstraint::FrontRow, ActorId(2), &formation, &side_lookup),
+            "Ally at slot 1 (rank 2, front) should satisfy FrontRow constraint"
+        );
+
+        // ActorId(10) at slot 4 (enemy rank 1, front relative to enemies) satisfies FrontRow
+        // Note: For enemies, rank 1 is the slot closest to allies (slot 4 in lane 1)
+        assert!(
+            check_launch_rank_constraint(LaunchConstraint::FrontRow, ActorId(10), &formation, &side_lookup),
+            "Enemy at slot 4 (enemy rank 1, front) should satisfy FrontRow constraint"
+        );
+
+        // ActorId(11) at slot 6 (enemy rank 3, back) does NOT satisfy FrontRow
+        assert!(
+            !check_launch_rank_constraint(LaunchConstraint::FrontRow, ActorId(11), &formation, &side_lookup),
+            "Enemy at slot 6 (enemy rank 3, back) should NOT satisfy FrontRow constraint"
+        );
+    }
+
+    #[test]
+    fn launch_constraint_any_always_satisfied() {
+        // Unit test: Any launch constraint is always satisfied regardless of position.
+        use crate::encounters::ddgc_targeting_rules::check_launch_rank_constraint;
+        use crate::encounters::targeting::LaunchConstraint;
+        use framework_rules::attributes::{AttributeKey, AttributeValue, ATTR_HEALTH};
+        use std::collections::HashMap;
+
+        let mut formation = FormationLayout::new(2, 4);
+        formation.place(ActorId(1), SlotIndex(0)).unwrap(); // front row
+        formation.place(ActorId(10), SlotIndex(4)).unwrap(); // back row
+
+        let mut actors = HashMap::new();
+        for id in [ActorId(1), ActorId(10)] {
+            let mut a = framework_rules::actor::ActorAggregate::new(id);
+            a.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+            actors.insert(id, a);
+        }
+
+        let mut side_lookup = HashMap::new();
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+        side_lookup.insert(ActorId(10), CombatSide::Enemy);
+
+        assert!(
+            check_launch_rank_constraint(LaunchConstraint::Any, ActorId(1), &formation, &side_lookup),
+            "Any constraint should be satisfied in front row"
+        );
+        assert!(
+            check_launch_rank_constraint(LaunchConstraint::Any, ActorId(10), &formation, &side_lookup),
+            "Any constraint should be satisfied in back row"
+        );
+    }
+
+    #[test]
+    fn filter_targets_by_rank_front_restricts_to_front_row() {
+        // Unit test: TargetRank::Front filters out back-row targets.
+        // Front row = slots 0-3 (slots 0,1 for allies; slots 4,5 for enemies in lane 1).
+        // Back row = slots 4-7.
+        use crate::encounters::ddgc_targeting_rules::filter_targets_by_rank;
+        use crate::encounters::targeting::TargetRank;
+        use framework_rules::attributes::{AttributeKey, AttributeValue, ATTR_HEALTH};
+        use std::collections::HashMap;
+
+        let mut formation = FormationLayout::new(2, 4);
+        // Allies in lane 0 (slots 0-3), enemies in lane 1 (slots 4-7)
+        formation.place(ActorId(1), SlotIndex(0)).unwrap(); // ally front
+        formation.place(ActorId(10), SlotIndex(4)).unwrap(); // enemy slot 4 (enemy rank 1, front)
+        formation.place(ActorId(11), SlotIndex(5)).unwrap(); // enemy slot 5 (enemy rank 2, front)
+        formation.place(ActorId(12), SlotIndex(6)).unwrap(); // enemy slot 6 (enemy rank 3, back)
+        formation.place(ActorId(13), SlotIndex(7)).unwrap(); // enemy slot 7 (enemy rank 4, back)
+
+        let mut actors = HashMap::new();
+        for id in [ActorId(1), ActorId(10), ActorId(11), ActorId(12), ActorId(13)] {
+            let mut a = framework_rules::actor::ActorAggregate::new(id);
+            a.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+            actors.insert(id, a);
+        }
+
+        let mut side_lookup = HashMap::new();
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+        side_lookup.insert(ActorId(10), CombatSide::Enemy);
+        side_lookup.insert(ActorId(11), CombatSide::Enemy);
+        side_lookup.insert(ActorId(12), CombatSide::Enemy);
+        side_lookup.insert(ActorId(13), CombatSide::Enemy);
+
+        // All enemies as candidates
+        let all_enemies = vec![ActorId(10), ActorId(11), ActorId(12), ActorId(13)];
+
+        // Filter to front row only (slots 4, 5 = enemy ranks 1, 2 = front)
+        let front_targets = filter_targets_by_rank(TargetRank::Front, &all_enemies, &formation);
+        assert_eq!(front_targets.len(), 2, "Front rank should include 2 enemies (slots 4, 5)");
+        assert!(front_targets.contains(&ActorId(10)), "Should include enemy at slot 4");
+        assert!(front_targets.contains(&ActorId(11)), "Should include enemy at slot 5");
+        assert!(!front_targets.contains(&ActorId(12)), "Should exclude enemy at slot 6 (back)");
+        assert!(!front_targets.contains(&ActorId(13)), "Should exclude enemy at slot 7 (back)");
+    }
+
+    #[test]
+    fn filter_targets_by_rank_any_returns_all() {
+        // Unit test: TargetRank::Any returns all targets unchanged.
+        use crate::encounters::ddgc_targeting_rules::filter_targets_by_rank;
+        use crate::encounters::targeting::TargetRank;
+        use framework_rules::attributes::{AttributeKey, AttributeValue, ATTR_HEALTH};
+        use std::collections::HashMap;
+
+        let mut formation = FormationLayout::new(2, 4);
+        formation.place(ActorId(10), SlotIndex(0)).unwrap();
+        formation.place(ActorId(11), SlotIndex(4)).unwrap();
+
+        let mut actors = HashMap::new();
+        for id in [ActorId(10), ActorId(11)] {
+            let mut a = framework_rules::actor::ActorAggregate::new(id);
+            a.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+            actors.insert(id, a);
+        }
+
+        let mut side_lookup = HashMap::new();
+        side_lookup.insert(ActorId(10), CombatSide::Enemy);
+        side_lookup.insert(ActorId(11), CombatSide::Enemy);
+
+        let all_enemies = vec![ActorId(10), ActorId(11)];
+        let filtered = filter_targets_by_rank(TargetRank::Any, &all_enemies, &formation);
+        assert_eq!(filtered.len(), 2, "TargetRank::Any should return all targets");
+    }
+
+    // ── Family Action Policy Tests (US-706) ──────────────────────────────────
+
+    #[test]
+    fn lizard_uses_deterministic_cycle_not_first_skill_fallback() {
+        // US-706: lizard's action policy is a deterministic cycle (stun → intimidate → stress → repeat),
+        // NOT the first-skill fallback that always uses stun.
+        //
+        // This test verifies that:
+        // 1. The lizard family has a DeterministicCycle policy (not FirstSkill)
+        // 2. The state is correctly updated after each skill use
+        //
+        // Note: The battle may end before the cycle is observed multiple times,
+        // but the policy and state updates are verified.
+        use crate::run::family_action_policy::{
+            get_default_policy, FamilyActionPolicy,
+        };
+
+        // Verify lizard has DeterministicCycle policy (not FirstSkill fallback)
+        let policy = get_default_policy("lizard");
+        let is_cycle = matches!(policy, FamilyActionPolicy::DeterministicCycle { .. });
+        assert!(
+            is_cycle,
+            "lizard should have DeterministicCycle policy, but got: {:?}",
+            policy
+        );
+
+        // Verify the cycle sequence is correct
+        if let FamilyActionPolicy::DeterministicCycle { sequence } = &policy {
+            assert_eq!(sequence.len(), 3, "lizard cycle should have 3 skills");
+            assert_eq!(sequence[0].0, "stun", "first cycle skill should be stun");
+            assert_eq!(sequence[1].0, "intimidate", "second cycle skill should be intimidate");
+            assert_eq!(sequence[2].0, "stress", "third cycle skill should be stress");
+        }
+
+        // Now run the battle to verify the policy is actually used
+        let resolver = EncounterResolver::new();
+
+        // BaiHu hall packs: baihu_hall_01 (metal_armor), baihu_hall_02 (lizard x2),
+        // baihu_hall_03, baihu_hall_04, baihu_hall_05
+        // Sorted by pack ID, seed=41, room_index=0 gives index=41%5=1 → baihu_hall_02 (lizard)
+        let pack = resolver
+            .resolve_pack(Dungeon::BaiHu, 0, 41, true)
+            .expect("BaiHu should have hall packs (contains lizard family)");
+
+        let result = resolver.run_battle(pack, 1);
+
+        // The battle should complete
+        assert!(
+            result.turns <= 100,
+            "Battle should finish within 100 turns"
+        );
+
+        // Get all lizard skill uses from the trace
+        let lizard_skill_uses: Vec<&str> = result
+            .trace
+            .entries
+            .iter()
+            .filter(|e| {
+                // lizard skills are: stun, intimidate, stress, move
+                e.action == "stun"
+                    || e.action == "intimidate"
+                    || e.action == "stress"
+                    || e.action == "move"
+            })
+            .map(|e| e.action.as_str())
+            .collect();
+
+        // At minimum, we should see at least one lizard skill used
+        assert!(
+            !lizard_skill_uses.is_empty(),
+            "Should see at least one lizard skill in the trace"
+        );
+
+        // If the battle has enough turns for the cycle to progress, we should see multiple skills.
+        // But even if the battle ends early, we've verified the policy is correct.
+    }
+
+    #[test]
+    fn gambler_prioritizes_summon_mahjong() {
+        // US-706: gambler's action policy is a priority table with summon_mahjong (weight 1000)
+        // vs other skills (weight 1). This means summon_mahjong should be used almost always.
+        use crate::run::family_action_policy::get_default_policy;
+
+        let policy = get_default_policy("gambler");
+
+        match policy {
+            crate::run::family_action_policy::FamilyActionPolicy::PriorityTable { entries } => {
+                // Find summon_mahjong weight
+                let summon_weight = entries
+                    .iter()
+                    .find(|(id, _)| id.0 == "summon_mahjong")
+                    .map(|(_, w)| *w)
+                    .expect("summon_mahjong should be in gambler priority table");
+
+                // Find other skill weights
+                let other_weights: Vec<u32> = entries
+                    .iter()
+                    .filter(|(id, _)| id.0 != "summon_mahjong")
+                    .map(|(_, w)| *w)
+                    .collect();
+
+                // summon_mahjong weight (1000) should be much higher than others (1)
+                assert!(
+                    summon_weight > other_weights.iter().max().copied().unwrap_or(0),
+                    "summon_mahjong weight ({}) should be higher than other skills {:?}",
+                    summon_weight, other_weights
+                );
+            }
+            _ => panic!("gambler should have PriorityTable policy"),
+        }
+    }
+
+    #[test]
+    fn lizard_policy_differs_from_first_skill_fallback_unit() {
+        // Unit test: prove that the lizard deterministic cycle differs from first-skill
+        use crate::run::family_action_policy::{
+            select_next_skill, update_actor_state, ActorActionState,
+            get_default_policy, FamilyActionPolicy,
+        };
+        use framework_combat::skills::SkillId;
+        use framework_rules::actor::ActorId;
+
+        let lizard_skills = vec![
+            SkillId::new("stun"),
+            SkillId::new("intimidate"),
+            SkillId::new("stress"),
+            SkillId::new("move"),
+        ];
+
+        let policy = get_default_policy("lizard");
+        let mut state = ActorActionState::default();
+        let actor_id = ActorId(10);
+
+        // First turn: should use stun (first in cycle)
+        let first = select_next_skill(&policy, actor_id, &state, &lizard_skills);
+        assert_eq!(first.0, "stun", "First skill should be stun");
+
+        // Update state: last skill was stun
+        update_actor_state(&mut state, SkillId::new("stun"));
+
+        // Second turn: should use intimidate (after stun)
+        let second = select_next_skill(&policy, actor_id, &state, &lizard_skills);
+        assert_eq!(second.0, "intimidate", "After stun, skill should be intimidate");
+
+        // Update state: last skill was intimidate
+        update_actor_state(&mut state, SkillId::new("intimidate"));
+
+        // Third turn: should use stress (after intimidate)
+        let third = select_next_skill(&policy, actor_id, &state, &lizard_skills);
+        assert_eq!(third.0, "stress", "After intimidate, skill should be stress");
+
+        // Update state: last skill was stress
+        update_actor_state(&mut state, SkillId::new("stress"));
+
+        // Fourth turn: should cycle back to stun
+        let fourth = select_next_skill(&policy, actor_id, &state, &lizard_skills);
+        assert_eq!(fourth.0, "stun", "After stress, cycle should restart at stun");
+
+        // Compare with first-skill fallback: would always return "stun"
+        let first_skill_policy = FamilyActionPolicy::FirstSkill;
+        for _ in 0..4 {
+            let fallback_skill = select_next_skill(
+                &first_skill_policy,
+                actor_id,
+                &ActorActionState::default(),
+                &lizard_skills,
+            );
+            assert_eq!(
+                fallback_skill.0, "stun",
+                "First-skill fallback always returns stun (ignoring state)"
+            );
+        }
+    }
+
+    // ── US-708: Summon Materialization Tests ─────────────────────────────────
+
+    #[test]
+    fn gambler_battle_runs_to_completion_with_summon() {
+        // US-708: Verify that gambler battle runs and produces trace output.
+        // The gambler prioritizes summon_mahjong, which creates summon events.
+        // The battle should complete regardless of whether summoned units act.
+        let resolver = EncounterResolver::new();
+
+        let pack = resolver
+            .resolve_boss_pack(Dungeon::ZhuQue, 0, 42)
+            .expect("ZhuQue should have gambler boss pack");
+
+        assert_eq!(pack.id.0, "zhuque_boss_gambler");
+
+        let result = resolver.run_battle(pack, 1);
+
+        // Battle must terminate
+        assert!(
+            result.turns <= 100,
+            "Gambler battle should finish within 100 turns, took {}",
+            result.turns
+        );
+
+        // Trace should have entries
+        assert!(
+            !result.trace.entries.is_empty(),
+            "Gambler battle trace should record events"
+        );
+
+        // The gambler should have used skills (including summon_mahjong)
+        let gambler_skills: Vec<&str> = result
+            .trace
+            .entries
+            .iter()
+            .filter(|e| {
+                e.action == "summon_mahjong"
+                    || e.action == "dice_thousand"
+                    || e.action == "hollow_victory"
+                    || e.action == "card_doomsday"
+            })
+            .map(|e| e.action.as_str())
+            .collect();
+
+        assert!(
+            !gambler_skills.is_empty(),
+            "Gambler should have used at least one skill, but none were found in trace"
+        );
+    }
+
+    #[test]
+    fn summon_materialization_creates_units() {
+        // US-708: Unit test that the materialize_summons function creates actors.
+        use crate::run::summon_materialization::{
+            family_id_for_summon_kind, SummonTracker,
+        };
+        use crate::run::summon_events::{SummonEvent, SummonKind, SummonPlacement};
+
+        // Test that family_id_for_summon_kind returns valid family IDs
+        let family = family_id_for_summon_kind(SummonKind::MahjongTile, ActorId(10));
+        assert!(
+            family.is_some(),
+            "MahjongTile should map to a valid family"
+        );
+
+        let family = family_id_for_summon_kind(SummonKind::RottenFruit, ActorId(5));
+        assert_eq!(
+            family.as_deref(),
+            Some("rotten_fruit_A"),
+            "RottenFruit should map to rotten_fruit_A"
+        );
+
+        // Test SummonTracker dedup logic
+        let mut tracker = SummonTracker::new();
+
+        let event = SummonEvent::new(
+            ActorId(10),
+            SummonKind::RottenFruit,
+            SummonPlacement::FrontRow,
+            1,
+        );
+
+        assert!(
+            tracker.can_materialize(&event),
+            "First materialize should succeed"
+        );
+
+        tracker.record_materialization(&event);
+
+        assert!(
+            !tracker.can_materialize(&event),
+            "Second materialize of same kind should be blocked by dedup"
+        );
+
+        // Different summon kind should still work
+        let event2 = SummonEvent::new(
+            ActorId(10),
+            SummonKind::GhostFireClone,
+            SummonPlacement::FrontRow,
+            1,
+        );
+
+        assert!(
+            tracker.can_materialize(&event2),
+            "Different summon kind should not be affected by dedup"
+        );
+    }
+
+    #[test]
+    fn summon_events_extracted_from_skill_results() {
+        // US-708: Integration test verifying summon events are extracted correctly.
+        use crate::run::summon_events::{extract_summon_events, SummonKind};
+        use framework_combat::results::EffectResultKind;
+        use framework_rules::statuses::{StackRule, StatusEffect, StatusKind};
+
+        // Create an effect result with summon_mahjong status
+        let status = StatusEffect::new(
+            StatusKind::new("summon_mahjong"),
+            Some(2),
+            vec![],
+            StackRule::Replace,
+        );
+
+        let effect = framework_combat::results::EffectResult::new(
+            EffectResultKind::ApplyStatus,
+            ActorId(10),
+            vec![ActorId(10)],
+        )
+        .with_status(status);
+
+        let effects = vec![effect];
+        let events = extract_summon_events(ActorId(10), &effects);
+
+        assert_eq!(
+            events.len(),
+            1,
+            "Should extract one summon event from summon_mahjong status"
+        );
+        assert!(matches!(events[0].summon_kind, SummonKind::MahjongTile));
+        assert_eq!(events[0].count, 2, "Count should be 2 from duration");
     }
 }

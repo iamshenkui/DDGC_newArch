@@ -81,6 +81,8 @@ pub struct DdgcRunResult {
     pub run: Run,
     pub state: DdgcRunState,
     pub floor: Floor,
+    /// Pack IDs for battles in this run slice — used to verify no fallback content.
+    pub battle_pack_ids: Vec<String>,
 }
 
 /// Run a minimal DDGC run slice.
@@ -89,6 +91,10 @@ pub struct DdgcRunResult {
 /// through each room in sequence. Combat rooms resolve through the encounter
 /// pack registry; Boss rooms resolve through the boss encounter registry.
 /// Post-battle rewards are applied after each combat room is cleared.
+///
+/// All four core DDGC dungeons (QingLong, BaiHu, ZhuQue, XuanWu) have migrated
+/// encounter packs — this function will panic if a pack is missing, indicating
+/// a developer error in the migration.
 pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
     let gen = DefaultRoomGenerator;
     let floor_config = FloorConfig::new(
@@ -101,6 +107,7 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
 
     let mut run = Run::new(RunId(1), vec![FloorId(0)], config.seed);
     let mut state = DdgcRunState::new();
+    let mut battle_pack_ids = Vec::new();
 
     // Build the encounter resolver once — reuse for all combat rooms
     let resolver = EncounterResolver::new();
@@ -117,27 +124,14 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
         // Handle room by type
         match &room_kind {
             RoomKind::Combat => {
-                // Resolve combat room through encounter pack registry
-                let battle_result = match resolver.resolve_pack(
-                    config.dungeon,
-                    room_idx as u32,
-                    config.seed,
-                    false, // Combat rooms use room packs
-                ) {
-                    Some(pack) => resolver.run_battle(pack, room_idx as u64 + 1),
-                    None => {
-                        // Fallback: no pack found for this dungeon — should not happen
-                        // for the four core DDGC dungeons. This path is transitional
-                        // and only triggers for dungeons without migrated encounter packs.
-                        let fallback = crate::scenarios::first_battle::run_first_battle();
-                        crate::run::encounters::EncounterBattleResult {
-                            winner: fallback.winner,
-                            turns: fallback.turns,
-                            trace: fallback.trace,
-                            pack_id: "fallback_transitional".to_string(),
-                        }
-                    }
-                };
+                // Resolve combat room through encounter pack registry.
+                // All four core DDGC dungeons have migrated encounter packs;
+                // if a pack is missing, this is a developer error — fail fast.
+                let pack = resolver
+                    .resolve_pack(config.dungeon, room_idx as u32, config.seed, false)
+                    .expect("Combat room: migrated DDGC dungeon must have encounter packs");
+                let battle_result = resolver.run_battle(pack, room_idx as u64 + 1);
+                battle_pack_ids.push(battle_result.pack_id.clone());
 
                 if battle_result.winner == Some(CombatSide::Ally) {
                     state.battles_won += 1;
@@ -153,25 +147,14 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
                 apply_reward(&mut state, &update);
             }
             RoomKind::Boss => {
-                // Boss rooms resolve through the boss encounter pack registry
-                let battle_result = match resolver.resolve_boss_pack(
-                    config.dungeon,
-                    room_idx as u32,
-                    config.seed,
-                ) {
-                    Some(pack) => resolver.run_battle(pack, room_idx as u64 + 1),
-                    None => {
-                        // Fallback: no boss pack found for this dungeon — transitional.
-                        // This only triggers for dungeons without migrated boss packs.
-                        let fallback = crate::scenarios::first_battle::run_first_battle();
-                        crate::run::encounters::EncounterBattleResult {
-                            winner: fallback.winner,
-                            turns: fallback.turns,
-                            trace: fallback.trace,
-                            pack_id: "fallback_transitional".to_string(),
-                        }
-                    }
-                };
+                // Boss rooms resolve through the boss encounter pack registry.
+                // All four core DDGC dungeons have migrated boss packs;
+                // if a pack is missing, this is a developer error — fail fast.
+                let pack = resolver
+                    .resolve_boss_pack(config.dungeon, room_idx as u32, config.seed)
+                    .expect("Boss room: migrated DDGC dungeon must have boss encounter packs");
+                let battle_result = resolver.run_battle(pack, room_idx as u64 + 1);
+                battle_pack_ids.push(battle_result.pack_id.clone());
 
                 if battle_result.winner == Some(CombatSide::Ally) {
                     state.battles_won += 1;
@@ -207,6 +190,7 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
         run,
         state,
         floor,
+        battle_pack_ids,
     }
 }
 
@@ -394,5 +378,64 @@ mod tests {
                 dungeon
             );
         }
+    }
+
+    #[test]
+    fn run_slice_uses_no_fallback_content() {
+        // Proves that a representative run slice completes using migrated DDGC
+        // encounter content only — no fallback to first_battle placeholder.
+        // This is the acceptance test for US-713: "Remove transitional encounter
+        // and run fallbacks."
+        let config = DdgcRunConfig {
+            seed: 42,
+            room_count: 5,
+            dungeon: Dungeon::QingLong,
+        };
+        let result = run_ddgc_slice(&config);
+
+        // Count battle rooms
+        let battle_room_count = result
+            .floor
+            .rooms
+            .iter()
+            .filter(|rid| {
+                matches!(
+                    result.floor.rooms_map[rid].kind,
+                    RoomKind::Combat | RoomKind::Boss
+                )
+            })
+            .count();
+
+        // There should be battle rooms (combat-heavy weights + 5 rooms)
+        assert!(
+            battle_room_count > 0,
+            "Expected battle rooms with 5 rooms and combat-heavy weights"
+        );
+
+        // Every battle pack_id must be a real pack (not the fallback marker)
+        for (i, pack_id) in result.battle_pack_ids.iter().enumerate() {
+            assert_ne!(
+                pack_id, "fallback_transitional",
+                "Battle {} must not use fallback_transitional — should use migrated DDGC content",
+                i
+            );
+        }
+
+        // battle_pack_ids count should match battle room count
+        assert_eq!(
+            result.battle_pack_ids.len(), battle_room_count,
+            "battle_pack_ids count should match number of battle rooms"
+        );
+
+        // All battles should be won (DDGC-scale heroes vs migrated encounter packs)
+        assert_eq!(
+            result.state.battles_won, battle_room_count as u32,
+            "All {} battle rooms should be won",
+            battle_room_count
+        );
+        assert_eq!(
+            result.state.battles_lost, 0,
+            "No battles should be lost"
+        );
     }
 }
