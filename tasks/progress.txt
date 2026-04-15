@@ -1237,3 +1237,31 @@
   - `ConditionAdapter::evaluate_by_tag(condition_tag)` is the correct single pathway for all DDGC condition evaluation
   - `cargo clippy --tests` shows 23 lib warnings and 44 test warnings - most are style issues but unreachable pattern in conditions.rs is a code smell
 ---
+
+## 2026-04-15 - US-802
+- Replaced the local `parse_ddgc_condition()` function (which only recognized `ddgc_first_round`) with `ConditionAdapter::evaluate_by_tag()` which supports all DDGC condition tags
+- Removed the now-unused `parse_ddgc_condition()` function and cleaned up the `DdgcCondition` import
+- Files changed: `src/run/encounters.rs`
+- **Learnings for future iterations:**
+  - `ConditionAdapter::evaluate_by_tag(condition_tag)` is the correct single pathway for all DDGC condition evaluation
+  - The deferred effects processing block (lines 770-816) is positioned AFTER reactive processing (lines 606-648) which breaks downstream mechanics - US-803 addresses this
+  - `cargo test` passes, but `cargo clippy --tests -- -D warnings` has 44 pre-existing test errors unrelated to this change
+---
+
+## 2026-04-15 - US-803
+- Moved deferred DDGC condition evaluation from AFTER downstream processors to BEFORE them
+- The fix ensures conditional effects (via `result.deferred`) are evaluated and combined with unconditional results (`result.results`) before:
+  - `extract_summon_events()` - summon event extraction
+  - `extract_capture_events()` - capture event extraction
+  - Reactive event generation (damage amount lookup for riposte/guard redirect)
+- Changed all downstream processors to use `all_results` (combined) instead of `result.results` (unconditional only)
+- Removed the original deferred evaluation block that was incorrectly positioned after downstream processing
+- Removed unused `Condition` import from `encounters.rs`
+- Added regression test scenario `deferred_effect_battle.rs` to verify deferred effects appear in battle traces
+- Files changed: `src/run/encounters.rs`, `src/scenarios/mod.rs`, `src/scenarios/deferred_effect_battle.rs`
+- **Learnings for future iterations:**
+  - The battle pipeline order matters: skill resolution -> evaluate deferred -> downstream processing
+  - `all_results` is the authoritative input for all downstream mechanics after the fix
+  - Pre-existing clippy warnings in conditions.rs, hit_resolution.rs, reactive_queue.rs, shared_health.rs are lint debt for US-805
+  - `cargo test` passes; `cargo clippy --tests -- -D warnings` has pre-existing lint errors addressed by US-805
+---
