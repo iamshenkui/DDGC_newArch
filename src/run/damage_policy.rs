@@ -80,12 +80,13 @@ impl DamageRange {
 /// Damage resolution policy.
 ///
 /// Defines how DDGC damage ranges are translated into actual damage values.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub enum DamagePolicy {
     /// Fixed-average policy: always returns the pre-computed average.
     ///
     /// This is the default policy for deterministic test paths and golden traces.
     /// It ensures stable, reproducible damage values across runs.
+    #[default]
     FixedAverage,
 
     /// Rolled policy: returns a random value within the damage range.
@@ -100,12 +101,6 @@ pub enum DamagePolicy {
     /// to verify that the rolled policy produces values within the expected range
     /// while still being reproducible.
     Rolled,
-}
-
-impl Default for DamagePolicy {
-    fn default() -> Self {
-        DamagePolicy::FixedAverage
-    }
 }
 
 impl DamagePolicy {
@@ -226,7 +221,7 @@ mod tests {
         // Run multiple times to verify it's in range
         for _ in 0..100 {
             let resolved = policy.resolve(range, 42, "poison");
-            assert!(resolved >= 20.0 && resolved <= 28.0);
+            assert!((20.0..=28.0).contains(&resolved));
         }
     }
 
@@ -251,8 +246,8 @@ mod tests {
 
         // Results may or may not be equal (hash collision is possible but unlikely)
         // The key is that both are in range
-        assert!(result1 >= 20.0 && result1 <= 28.0);
-        assert!(result2 >= 20.0 && result2 <= 28.0);
+        assert!((20.0..=28.0).contains(&result1));
+        assert!((20.0..=28.0).contains(&result2));
     }
 
     #[test]
@@ -357,7 +352,7 @@ mod tests {
 
         // Rolled through same shared interface
         let rolled_result = resolve_damage(DamagePolicy::Rolled, range, 42, "test_skill");
-        assert!(rolled_result >= 20.0 && rolled_result <= 28.0,
+        assert!((20.0..=28.0).contains(&rolled_result),
             "Rolled should return value in range [20, 28], got {}", rolled_result);
 
         // Verify both policies use the same interface entry point (resolve_damage)

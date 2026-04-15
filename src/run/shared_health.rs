@@ -63,6 +63,7 @@ impl SharedHealthPool {
     }
 
     /// Current pool HP (sum of all member HP).
+    #[allow(dead_code)]
     fn current_hp_fn(&self) -> f64 {
         self.current_hp
     }

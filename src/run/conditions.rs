@@ -19,7 +19,9 @@
 use std::collections::HashMap;
 
 use framework_combat::encounter::CombatSide;
-use framework_combat::effects::{EffectCondition, SlotRange};
+use framework_combat::effects::EffectCondition;
+#[allow(unused_imports)]
+use framework_combat::effects::SlotRange;
 use framework_rules::actor::{ActorAggregate, ActorId};
 use framework_rules::attributes::AttributeKey;
 use framework_rules::attributes::ATTR_HEALTH;
@@ -399,10 +401,9 @@ impl ConditionAdapter {
                     ConditionResult::Fail
                 }
             }
-            // ── Catch-all for non-exhaustive framework conditions ───────────────
-            // Any unrecognized framework condition variant is surfaced as Unknown
-            // rather than silently failing. This ensures missing implementations
-            // are observable instead of being hidden by false returns.
+            // Catch-all for framework conditions not yet handled by this adapter.
+            // If a new variant reaches here, it means the adapter needs updating.
+            #[allow(unreachable_patterns)]
             _ => ConditionResult::Unknown,
         }
     }

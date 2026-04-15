@@ -23,11 +23,11 @@ fn skill_targeting_semantics_are_preserved() {
         let skill = pack.get_skill(&SkillId::new(exp.name))
             .unwrap_or_else(|| panic!("Skill '{}' missing from ContentPack", exp.name));
 
-        let matches = match (&skill.target_selector, &exp.target_selector) {
-            (TargetSelector::AllEnemies, TargetSelectorPattern::AllEnemies) => true,
-            (TargetSelector::AllAllies, TargetSelectorPattern::AllAllies) => true,
-            _ => false,
-        };
+        let matches = matches!(
+            (&skill.target_selector, &exp.target_selector),
+            (TargetSelector::AllEnemies, TargetSelectorPattern::AllEnemies)
+                | (TargetSelector::AllAllies, TargetSelectorPattern::AllAllies)
+        );
         assert!(matches, "Skill '{}' targeting mismatch: expected {:?}, got {:?}",
             exp.name, exp.target_selector, skill.target_selector);
     }

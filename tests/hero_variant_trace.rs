@@ -77,7 +77,7 @@ fn hero_variant_switching_preserves_family_identity() {
 
             // The resolved variant must normalize back to the base family
             let normalized = registry
-                .normalize_to_base(*expected_variant)
+                .normalize_to_base(expected_variant)
                 .unwrap_or_else(|| {
                     panic!(
                         "{}: variant '{}' should normalize back to base",
@@ -134,7 +134,7 @@ fn hero_variant_switching_preserves_family_identity() {
             // After switching, the family lookup by the new variant ID still
             // points to the same family
             let family_after = registry
-                .get_family_by_variant(*expected_variant)
+                .get_family_by_variant(expected_variant)
                 .unwrap_or_else(|| {
                     panic!(
                         "{}: variant '{}' should resolve to a family",

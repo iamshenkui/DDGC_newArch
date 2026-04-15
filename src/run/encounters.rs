@@ -27,7 +27,7 @@ use crate::encounters::ddgc_targeting_rules::{
 use crate::monsters::build_registry as build_monster_registry;
 use crate::monsters::MonsterFamilyRegistry;
 use crate::trace::BattleTrace;
-use crate::run::conditions::{Condition, ConditionAdapter, ConditionContext, ConditionResult, DdgcCondition};
+use crate::run::conditions::{ConditionAdapter, ConditionContext, ConditionResult};
 use crate::run::hit_resolution::{HitPolicy, HitResolutionContext};
 use crate::run::capture_events::extract_capture_events;
 use crate::run::captor_state::{
@@ -122,6 +122,12 @@ pub struct EncounterResolver {
     pack_registry: EncounterPackRegistry,
     content_pack: ContentPack,
     monster_registry: MonsterFamilyRegistry,
+}
+
+impl Default for EncounterResolver {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 /// Default ally party for encounter battles.
@@ -516,11 +522,59 @@ impl EncounterResolver {
                         resolve_skill(skill, &mut ctx)
                     }; // ctx dropped here
 
+                    // ── DDGC Condition Evaluation ────────────────────────────
+                    // Evaluate deferred effects (effects with DDGC-specific conditions)
+                    // Re-create EffectContext for deferred effects processing.
+                    // This is done BEFORE downstream processors so that conditional effects
+                    // participate in summon extraction, capture extraction, and reactive events.
+                    let mut deferred_results = Vec::new();
+                    for deferred in &result.deferred {
+                        // Build condition context for DDGC condition evaluation
+                        let cond_ctx = ConditionContext::new(
+                            current_actor,
+                            targets.clone(),
+                            round - 1, // round is 1-indexed, condition context uses 0-indexed (0 = first round)
+                            actors.clone(),
+                            side_lookup.clone(),
+                            pack.dungeon,
+                        );
+                        let adapter = ConditionAdapter::new(cond_ctx);
+
+                        // Evaluate the condition tag using the shared ConditionAdapter.
+                        // evaluate_by_tag handles all DDGC condition tags (first_round, stress_above,
+                        // stress_below, deaths_door, target_has_status, actor_has_status, etc.)
+                        // and returns Unknown for unrecognized tags.
+                        let eval_result = adapter.evaluate_by_tag(&deferred.condition_tag);
+                        if eval_result == ConditionResult::Pass {
+                            // Condition passes - recreate EffectContext for execute_effect_node
+                            let mut effect_ctx = EffectContext::new(
+                                current_actor,
+                                targets.clone(),
+                                &mut formation,
+                                &mut actors,
+                            );
+                            // Condition passes - execute the effect
+                            let effect_result = execute_effect_node(
+                                &deferred.node,
+                                &mut effect_ctx,
+                                &targets,
+                            );
+                            deferred_results.push(effect_result);
+                        }
+                        // If condition fails or is unknown, skip the effect (do nothing)
+                    }
+
+                    // Combine normal results with deferred results for downstream processing
+                    let all_results: Vec<_> = result.results.iter()
+                        .chain(deferred_results.iter())
+                        .cloned()
+                        .collect();
+
                     // ── US-707: Summon event seam (non-mutating) ─────────────────────────
                     // Extract summon events from resolved skill effects without mutating
                     // encounter state. The events are stored for US-708 materialization.
                     // This is a pure extraction — no actor or formation state is modified.
-                    let summon_events = extract_summon_events(current_actor, &result.results);
+                    let summon_events = extract_summon_events(current_actor, &all_results);
 
                     // ── US-708: Summon unit materialization ───────────────────────────────
                     // Materialize summoned units from extracted summon events.
@@ -540,7 +594,7 @@ impl EncounterResolver {
                     // ── US-711: Capture event extraction and processing ─────────────────────
                     // Extract capture events from resolved skill effects. For necrodrake_embryosac's
                     // untimely_progeny skill, this detects when a hero should be captured.
-                    let capture_events = extract_capture_events(current_actor, &result.results, round);
+                    let capture_events = extract_capture_events(current_actor, &all_results, round);
 
                     for event in capture_events {
                         // The captor must be an egg_membrane_empty actor from the pack
@@ -613,9 +667,9 @@ impl EncounterResolver {
                         // Riposte detection: actor with riposte status who was hit
                         let candidates = detect_riposte_candidates(&actors);
                         for candidate in candidates {
-                            // Only create event if the candidate was actually hit (is in targets)
-                            if targets.contains(&candidate) {
-                                let damage_amount = result.results.iter().find_map(|r| r.values.get("amount").copied());
+                            // Only create event if the candidate was actually hit in this iteration (candidate == target)
+                            if candidate == target {
+                                let damage_amount = all_results.iter().find_map(|r| r.values.get("amount").copied());
                                 let ctx = DamageStepContext::new(
                                     current_actor,
                                     skill.id.clone(),
@@ -633,7 +687,7 @@ impl EncounterResolver {
                         let guard_relations = detect_guard_relations_for_target(target, &actors, &side_lookup);
                         for relation in guard_relations {
                             // Guard redirects damage for the protected target
-                            let damage_amount = result.results.iter().find_map(|r| r.values.get("amount").copied());
+                            let damage_amount = all_results.iter().find_map(|r| r.values.get("amount").copied());
                             let ctx = DamageStepContext::new(
                                 current_actor,
                                 skill.id.clone(),
@@ -767,54 +821,6 @@ impl EncounterResolver {
                         }
                     }
 
-                    // ── DDGC Condition Evaluation ────────────────────────────
-                    // Evaluate deferred effects (effects with DDGC-specific conditions)
-                    // Re-create EffectContext for deferred effects processing
-                    let mut deferred_results = Vec::new();
-                    for deferred in &result.deferred {
-                        // Build condition context for DDGC condition evaluation
-                        let cond_ctx = ConditionContext::new(
-                            current_actor,
-                            targets.clone(),
-                            round - 1, // round is 1-indexed, condition context uses 0-indexed (0 = first round)
-                            actors.clone(),
-                            side_lookup.clone(),
-                            pack.dungeon,
-                        );
-                        let adapter = ConditionAdapter::new(cond_ctx);
-
-                        // Parse the condition tag to determine the DDGC condition
-                        // Tags are formatted as "ddgc_<Kind>" e.g., "ddgc_Damage"
-                        let ddgc_condition = parse_ddgc_condition(&deferred.condition_tag);
-
-                        if let Some(cond) = ddgc_condition {
-                            let eval_result = adapter.evaluate_ddgc(&cond);
-                            if eval_result == ConditionResult::Pass {
-                                // Condition passes - recreate EffectContext for execute_effect_node
-                                let mut effect_ctx = EffectContext::new(
-                                    current_actor,
-                                    targets.clone(),
-                                    &mut formation,
-                                    &mut actors,
-                                );
-                                // Condition passes - execute the effect
-                                let effect_result = execute_effect_node(
-                                    &deferred.node,
-                                    &mut effect_ctx,
-                                    &targets,
-                                );
-                                deferred_results.push(effect_result);
-                            }
-                            // If condition fails, skip the effect (do nothing)
-                        }
-                    }
-
-                    // Combine normal results with deferred results
-                    let all_results = result.results.iter()
-                        .chain(deferred_results.iter())
-                        .cloned()
-                        .collect::<Vec<_>>();
-
                     trace.record_action(
                         round,
                         current_actor,
@@ -901,24 +907,6 @@ impl EncounterResolver {
             trace,
             pack_id: pack.id.0.clone(),
         }
-    }
-}
-
-/// Parse a DDGC condition tag from the framework into a DdgcCondition.
-///
-/// The framework generates tags in the format "ddgc_<Kind>" (e.g., "ddgc_Damage").
-/// The game layer interprets these tags to determine the actual DDGC condition
-/// to evaluate.
-///
-/// For US-605, only "ddgc_first_round" is mapped to DdgcCondition::FirstRound.
-/// Additional condition types can be added as needed.
-fn parse_ddgc_condition(tag: &str) -> Option<DdgcCondition> {
-    match tag {
-        "ddgc_first_round" => Some(DdgcCondition::FirstRound),
-        // Additional DDGC conditions can be added here:
-        // "ddgc_stress_above" => Some(DdgcCondition::StressAbove(threshold)),
-        // "ddgc_stress_below" => Some(DdgcCondition::StressBelow(threshold)),
-        _ => None,
     }
 }
 

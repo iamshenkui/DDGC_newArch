@@ -55,10 +55,6 @@ impl ReactiveEventKey {
     fn new(triggered_on: ActorId, reactor: ActorId) -> Self {
         ReactiveEventKey((triggered_on, reactor))
     }
-
-    fn reactor(self) -> ActorId {
-        self.0.1
-    }
 }
 
 impl Ord for ReactiveEventKey {

@@ -179,16 +179,10 @@ pub fn execute_phase_transition(
     }
 
     // Look up the final form family
-    let family = match monster_registry.get(&event.summon_family_id) {
-        Some(f) => f,
-        None => return None,
-    };
+    let family = monster_registry.get(&event.summon_family_id)?;
 
     // Get the archetype
-    let archetype = match content_pack.get_archetype(&family.archetype_name) {
-        Some(a) => a,
-        None => return None,
-    };
+    let archetype = content_pack.get_archetype(&family.archetype_name)?;
 
     // Create the new actor
     let actor_id = ActorId(*next_enemy_id);
@@ -206,7 +200,7 @@ pub fn execute_phase_transition(
     encounter
         .sides
         .entry(CombatSide::Enemy)
-        .or_insert_with(Vec::new)
+        .or_default()
         .push(actor_id);
 
     // Add to turn order

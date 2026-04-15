@@ -140,7 +140,7 @@ mod tests {
         let skill = buff_self();
         assert_eq!(skill.id.0, "buff_self");
         assert!(
-            skill.effects.len() >= 1,
+            !skill.effects.is_empty(),
             "buff_self should have damage effect"
         );
         let has_damage = skill

@@ -67,7 +67,7 @@ pub fn attack_reduce() -> SkillDefinition {
 ///
 /// DDGC reference: full weapon damage (0% mod, avg 31) + self-tagged for 3 rounds
 /// + self protection +10% buff.
-/// Game-gap: self-mark and prot buff not modeled — damage only.
+///   Game-gap: self-mark and prot buff not modeled — damage only.
 pub fn taunt_skill() -> SkillDefinition {
     SkillDefinition::new(
         SkillId::new("taunt_skill"),
@@ -82,7 +82,7 @@ pub fn taunt_skill() -> SkillDefinition {
 ///
 /// DDGC reference: -50% damage (avg 16) + mark enemy as tagged for 3 rounds
 /// + activate riposte counter for 3 rounds.
-/// Game-gap: riposte self-buff not modeled — damage + enemy tag only.
+///   Game-gap: riposte self-buff not modeled — damage + enemy tag only.
 pub fn active_riposte() -> SkillDefinition {
     SkillDefinition::new(
         SkillId::new("active_riposte"),

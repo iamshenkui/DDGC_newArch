@@ -189,8 +189,8 @@ pub fn bide() -> SkillDefinition {
 /// DDGC reference: dmg 1-3 (avg 2) to random enemy, atk 90%, crit 0%,
 /// effects "Vermilion Bird Magic Damage +10" (+10% magic dmg, permanent stacking)
 /// + "Heal Self Range 5-10" (avg 8),
-/// launch ranks 1-4, target $1234, .absorb_vb_pb 25 0.
-/// Phase 2 skill: core of the calm_nerves/explosion cycle.
+///   launch ranks 1-4, target $1234, .absorb_vb_pb 25 0.
+///   Phase 2 skill: core of the calm_nerves/explosion cycle.
 ///
 /// The heal + magic buff are performer-targeted (self), while the damage
 /// goes to a random enemy. Since the heal is the CORE identity of this

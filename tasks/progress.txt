@@ -1237,3 +1237,89 @@
   - `ConditionAdapter::evaluate_by_tag(condition_tag)` is the correct single pathway for all DDGC condition evaluation
   - `cargo clippy --tests` shows 23 lib warnings and 44 test warnings - most are style issues but unreachable pattern in conditions.rs is a code smell
 ---
+
+## 2026-04-15 - US-802
+- Replaced the local `parse_ddgc_condition()` function (which only recognized `ddgc_first_round`) with `ConditionAdapter::evaluate_by_tag()` which supports all DDGC condition tags
+- Removed the now-unused `parse_ddgc_condition()` function and cleaned up the `DdgcCondition` import
+- Files changed: `src/run/encounters.rs`
+- **Learnings for future iterations:**
+  - `ConditionAdapter::evaluate_by_tag(condition_tag)` is the correct single pathway for all DDGC condition evaluation
+  - The deferred effects processing block (lines 770-816) is positioned AFTER reactive processing (lines 606-648) which breaks downstream mechanics - US-803 addresses this
+  - `cargo test` passes, but `cargo clippy --tests -- -D warnings` has 44 pre-existing test errors unrelated to this change
+---
+
+## 2026-04-15 - US-803
+- Moved deferred DDGC condition evaluation from AFTER downstream processors to BEFORE them
+- The fix ensures conditional effects (via `result.deferred`) are evaluated and combined with unconditional results (`result.results`) before:
+  - `extract_summon_events()` - summon event extraction
+  - `extract_capture_events()` - capture event extraction
+  - Reactive event generation (damage amount lookup for riposte/guard redirect)
+- Changed all downstream processors to use `all_results` (combined) instead of `result.results` (unconditional only)
+- Removed the original deferred evaluation block that was incorrectly positioned after downstream processing
+- Removed unused `Condition` import from `encounters.rs`
+- Added regression test scenario `deferred_effect_battle.rs` to verify deferred effects appear in battle traces
+- Files changed: `src/run/encounters.rs`, `src/scenarios/mod.rs`, `src/scenarios/deferred_effect_battle.rs`
+- **Learnings for future iterations:**
+  - The battle pipeline order matters: skill resolution -> evaluate deferred -> downstream processing
+  - `all_results` is the authoritative input for all downstream mechanics after the fix
+  - Pre-existing clippy warnings in conditions.rs, hit_resolution.rs, reactive_queue.rs, shared_health.rs are lint debt for US-805
+  - `cargo test` passes; `cargo clippy --tests -- -D warnings` has pre-existing lint errors addressed by US-805
+---
+## 2026-04-16 - US-804
+- Fixed riposte detection bug in encounters.rs: changed `targets.contains(&candidate)` to `candidate == target` so riposte events are only generated for actors actually hit in the current target iteration
+- Added regression test scenario `multi_target_riposte_battle.rs` to verify per-target riposte correctness
+- Fixed pre-existing lint issues in touched runtime modules:
+  - conditions.rs: removed unused `SlotRange` import, added `#[allow(unreachable_patterns)]` to preserve catch-all for forward compatibility
+  - hit_resolution.rs: removed unused `AttributeValue` import, prefixed unused `content_pack` param with `_`
+  - reactive_queue.rs: removed dead code method `reactor()`
+  - shared_health.rs: marked `current_hp_fn()` with `#[allow(dead_code)]` (used in tests)
+- All 816 unit tests pass
+- Files changed: `src/run/encounters.rs`, `src/scenarios/multi_target_riposte_battle.rs` (new), `src/scenarios/mod.rs`, `src/run/conditions.rs`, `src/run/hit_resolution.rs`, `src/run/reactive_queue.rs`, `src/run/shared_health.rs`, `tasks/prd-post-merge-runtime-quality-followup.json`
+- **Learnings for future iterations:**
+  - The `targets.contains(&candidate)` bug causes riposte events to be generated for ANY candidate in the target set, not just the current target - the fix `candidate == target` ensures per-iteration correctness
+  - The reactive_battle.rs scenario already had the correct fix applied (line 194: `if target == candidate`) - the encounters.rs battle loop was the source of the bug
+  - `cargo clippy --tests -- -D warnings` has 43 errors across the codebase - these are pre-existing lint issues in runtime modules (damage_policy.rs, family_action_policy.rs, phase_transition.rs, content modules) that require broader cleanup beyond the scope of this stabilization PRD
+  - The `SlotRange` import in conditions.rs was needed for test code - restoring it with the understanding it's only used in `#[cfg(test)]` modules
+---
+## 2026-04-16 - US-805
+- Fixed all clippy lint issues to achieve `cargo clippy --tests -- -D warnings` passing
+- Changes across run modules: conditions.rs (unused import SlotRange), encounters.rs (new_without_default), damage_policy.rs (derivable_impls + range_contains), family_action_policy.rs (derivable_impls + field_reassign_with_default + struct update syntax), hit_resolution.rs (derivable_impls), flow.rs (new_without_default), captor_state.rs (is_multiple_of), phase_transition.rs (question_mark + or_insert_with)
+- Changes across content modules: tank.rs + vermilion_bird.rs (doc_lazy_continuation), 13 monster files (len_zero -> is_empty)
+- Fixed trace.rs + summon_materialization.rs (too_many_arguments with #[allow] + or_insert -> or_default)
+- Fixed deferred_effect_battle.rs (map returning unit), lib.rs (assertion always true), test files (match_like_matches_macro, explicit_auto_deref, assertion always true)
+- Files changed: src/run/*.rs (8 files), src/content/heroes/tank.rs, src/content/monsters/*.rs (13 files), src/lib.rs, src/scenarios/deferred_effect_battle.rs, src/trace.rs, tests/*.rs (3 files)
+- **Learnings for future iterations:**
+  - `SlotRange` import in conditions.rs is needed only in `#[cfg(test)]` modules - use `#[allow(unused_imports)]` since it's only used in tests
+  - `ActorActionState { field: value, ..Default::default() }` is flagged when struct has only one field - just use `ActorActionState { field: value }` instead
+  - `or_insert_with(Vec::new)` should be `or_default()` for HashMap/Entry API
+  - `len() >= 1` should be `!is_empty()` for cleaner code
+  - `match x { Some(y) => y, None => return None }` should be `x?` for Option
+  - too_many_arguments lint can be suppressed with `#[allow(clippy::too_many_arguments)]` when refactoring would be too invasive
+  - doc comments (`///`) that span multiple lines need proper indentation on continuation lines (2 spaces)
+---
+
+## 2026-04-16 - US-806
+- Verified all post-merge stabilization acceptance criteria are met:
+  - Regression tests cover all three fixes: shared DDGC condition path (via ConditionAdapter::evaluate_by_tag), downstream execution ordering (deferred effects before reactive processing), and per-target riposte (candidate == target)
+  - Progress ledger (progress.txt) documents all regressions identified and closed across US-801 through US-805
+  - cargo test: 816 tests pass (816 unit/integration + 0 ignored)
+  - cargo clippy --tests -- -D warnings: exits 0 (clean, no warnings)
+- No new code required — US-806 is a verification and documentation closeout story
+- Regression coverage comes from existing scenario tests:
+  - `scenarios::deferred_effect_battle::tests::deferred_effect_battle_runs_to_completion` — battle loop runs to completion
+  - `scenarios::deferred_effect_battle::tests::opening_strike_deferred_effect_appears_in_trace` — deferred effects appear in combined trace output (proves downstream ordering)
+  - `scenarios::multi_target_riposte_battle::tests::multi_target_riposte_battle_runs_to_completion` — battle loop runs to completion
+  - `scenarios::multi_target_riposte_battle::tests::multi_target_riposte_trace_is_deterministic` — trace output is deterministic
+  - `scenarios::multi_target_riposte_battle::tests::per_target_riposte_only_for_actors_hit` — per-target riposte correctness
+- Additional ConditionAdapter coverage from conditions.rs unit tests:
+  - `adapter_evaluates_ddgc_stress_above_condition`, `adapter_evaluates_ddgc_deaths_door_condition`
+  - `stress_above_condition_passes_when_stress_exceeds_threshold`, `stress_below_condition_passes_when_stress_below_threshold`
+  - `deaths_door_condition_passes_when_actor_at_deaths_door`, `deaths_door_effect_changes_outcome_across_threshold_boundary`
+  - `stress_condition_effect_changes_outcome_across_threshold_boundary`
+- Files changed: (verification only — no code changes for US-806)
+- **Learnings for future iterations:**
+  - US-806 is a closeout story — all substantive fixes were delivered in US-801 through US-805
+  - The stabilization PRD (prd-post-merge-runtime-quality-followup.json) covers three distinct runtime regressions: deferred condition parsing (US-802), execution ordering (US-803), and riposte detection (US-804)
+  - Clippy cleanliness (US-805) required fixes across 8 run modules and 13+ content modules — plan for this scope when doing similar lint cleanup
+  - The battle scenarios (deferred_effect_battle.rs, multi_target_riposte_battle.rs) serve as both documentation of the fixes and regression tests
+---

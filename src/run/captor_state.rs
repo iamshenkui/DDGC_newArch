@@ -165,7 +165,7 @@ pub fn apply_captor_dot(
     // Deterministic damage: use round number to seed the damage calculation
     // 5-6 damage range, using round % 2 to alternate
     let base_damage = 5.0;
-    let damage_variance = if round % 2 == 0 { 0.0 } else { 1.0 };
+    let damage_variance = if round.is_multiple_of(2) { 0.0 } else { 1.0 };
 
     let mut results = Vec::new();
     let mut to_release = Vec::new();

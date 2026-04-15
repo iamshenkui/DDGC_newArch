@@ -114,7 +114,7 @@ mod tests {
         let skill = normal_attack();
         assert_eq!(skill.id.0, "normal_attack");
         assert!(
-            skill.effects.len() >= 1,
+            !skill.effects.is_empty(),
             "normal_attack should have damage effect"
         );
     }

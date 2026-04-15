@@ -1,0 +1,87 @@
+{
+  "project": "game_ddgc_headless",
+  "branchName": "ralph/ddgc-post-merge-runtime-quality-followup",
+  "description": "Post-merge stabilization PRD for DDGC_newArch after integrating Phase 2 and Phase 3 onto master. This PRD closes the highest-risk runtime-quality regressions found in review: deferred DDGC conditions not flowing through the full battle pipeline, conditional effects being applied too late to participate in downstream mechanics, and riposte detection regressing on multi-target hits. It also requires a clippy-clean closeout for the touched runtime modules so the merged master branch is maintainable.",
+  "userStories": [
+    {
+      "id": "US-801",
+      "title": "Q0: Inventory post-merge runtime regressions",
+      "description": "As a developer, I need a checked-in inventory of the concrete post-merge runtime regressions so the follow-up work is driven by verified master-branch behavior rather than generic cleanup.",
+      "acceptanceCriteria": [
+        "A checked-in note or progress entry identifies the exact merged runtime regressions in conditional effect execution, downstream battle-pipeline ordering, and riposte detection",
+        "The inventory distinguishes correctness regressions from style-only issues surfaced by clippy",
+        "The inventory names the primary anchor files and tests for each follow-up slice"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Discovery slice for the post-merge review findings on master. Primary anchors are src/run/encounters.rs, src/run/conditions.rs, and src/run/reactive_queue.rs."
+    },
+    {
+      "id": "US-802",
+      "title": "Q1: Route deferred DDGC conditions through the shared adapter",
+      "description": "As a developer, I need deferred DDGC effects in encounter execution to use the shared ConditionAdapter tag parser instead of a local first-round-only parser so all implemented Phase 2 conditions work in real battles.",
+      "acceptanceCriteria": [
+        "Encounter execution no longer uses a local condition parser that recognizes only ddgc_first_round when evaluating deferred DDGC effects",
+        "Deferred effects support all DDGC tags already implemented in ConditionAdapter, including first_round, stress_above, stress_below, deaths_door, target_has_status, and actor_has_status",
+        "Unsupported DDGC condition tags remain observable as explicit unknown results rather than silently failing or being treated as unsupported by omission",
+        "A focused regression test proves at least one non-first-round DDGC condition executes end-to-end through the encounter battle loop"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Root-cause slice for the Phase 2 runtime disconnect introduced by the merge. Prefer using ConditionAdapter::evaluate_by_tag or an equivalent single shared pathway."
+    },
+    {
+      "id": "US-803",
+      "title": "Q2: Execute conditional effects before downstream runtime hooks",
+      "description": "As a developer, I need deferred conditional effects to participate in the same downstream battle pipeline as unconditional effects so summons, captures, reactive hooks, shared-health updates, and phase transitions observe the full resolved effect set.",
+      "acceptanceCriteria": [
+        "Conditional DDGC effects are applied early enough that downstream extractors and runtime mechanics consume the combined resolved effect set instead of only the unconditional subset",
+        "Summon extraction, capture extraction, reactive event generation, shared-health processing, and phase-transition press tracking operate on the final post-condition effect results where relevant",
+        "A focused regression test proves a deferred DDGC effect can influence at least one downstream runtime mechanic end-to-end",
+        "Trace output remains deterministic after the execution-order change"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "This is the main battle-pipeline ordering fix. Keep the implementation minimal but ensure the final resolved effect set is the authoritative input for later mechanics."
+    },
+    {
+      "id": "US-804",
+      "title": "Q3: Restore per-target riposte correctness on multi-target hits",
+      "description": "As a developer, I need riposte events to be generated only for actors actually hit by the current target iteration so multi-target attacks do not over-generate or misattribute reactive counter-attacks.",
+      "acceptanceCriteria": [
+        "Riposte candidate filtering in encounter execution checks the current hit target rather than broad membership in the overall target set",
+        "Multi-target attacks do not generate duplicate or misattributed riposte events for the same reactive candidate within one damage step",
+        "A deterministic regression test proves a multi-target action only triggers riposte for the actor actually hit in that iteration"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "Regression fix for the previously corrected target == candidate behavior that was lost during merge integration."
+    },
+    {
+      "id": "US-805",
+      "title": "Q4: Close runtime quality and lint debt for merged modules",
+      "description": "As a developer, I need the touched runtime modules cleaned up so the merged master branch is clippy-clean and future agents can build on the runtime fixes without carrying obvious dead code, unreachable branches, or stale helper paths.",
+      "acceptanceCriteria": [
+        "cargo clippy --tests -- -D warnings exits 0",
+        "The fix removes or justifies dead code, unreachable patterns, unused imports, and equivalent lint failures in the touched post-merge runtime modules instead of silencing them broadly",
+        "Any helper duplication introduced by the merge is reduced where practical so there is one authoritative pathway for condition-tag evaluation and related battle execution seams"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Quality closeout slice for the merged master branch. Scope this to touched modules from the follow-up work rather than broad unrelated cleanup."
+    },
+    {
+      "id": "US-806",
+      "title": "Q5: Add regression coverage and update ledgers",
+      "description": "As a developer, I need the post-merge fixes locked by regression tests and documented in the migration ledgers so the branch state reflects the repaired runtime behavior accurately.",
+      "acceptanceCriteria": [
+        "Regression tests cover the restored shared DDGC condition path, corrected downstream execution ordering, and the riposte per-target fix",
+        "Relevant ledger or progress documents reflect that these post-merge regressions were identified and closed",
+        "cargo test --manifest-path Cargo.toml exits 0 after the follow-up changes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Closeout story for the post-merge stabilization slice. All acceptance criteria verified: 816 tests pass, clippy clean, progress.txt documents all regressions closed."
+    }
+  ]
+}

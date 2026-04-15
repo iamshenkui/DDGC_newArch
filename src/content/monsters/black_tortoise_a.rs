@@ -331,7 +331,7 @@ mod tests {
         let skill = unexpectedly();
         assert_eq!(skill.id.0, "unexpectedly");
         assert!(
-            skill.effects.len() >= 1,
+            !skill.effects.is_empty(),
             "unexpectedly should have at least damage"
         );
     }
