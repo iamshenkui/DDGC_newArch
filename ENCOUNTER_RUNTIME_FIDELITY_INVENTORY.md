@@ -104,10 +104,10 @@ This document is the checked-in inventory for Phase 3 (DDGC Targeting, Boss Runt
 
 | Path | File | Trigger | Gap |
 |------|------|---------|-----|
-| `first_battle` fallback | `run/flow.rs` lines 128-139, 163-174 | `resolve_pack` or `resolve_boss_pack` returns `None` | Currently all 4 dungeons have packs — fallback never triggers for core dungeons |
+| Removed `first_battle` fallback | `run/flow.rs` | Formerly `resolve_pack` or `resolve_boss_pack` returning `None` | Run flow now fails fast with `expect(...)` for missing migrated DDGC packs, so migrated content is the only gameplay path |
 | `first_battle` | `scenarios/first_battle.rs` | Standalone scenario | Uses legacy Crusader/Vestal heroes (~30 HP) vs DDGC-scale heroes (135-192 HP) |
 
-**US-713 anchor:** `flow.rs` fallback block — while it doesn't trigger for core dungeons, it must be removed so migrated content is the only path.
+**US-713 anchor:** `run::flow::tests::run_slice_uses_no_fallback_content` proves representative run slices complete without `fallback_transitional` content, and `run_ddgc_slice()` no longer contains a runtime `first_battle` fallback.
 
 ---
 
@@ -136,7 +136,7 @@ This document is the checked-in inventory for Phase 3 (DDGC Targeting, Boss Runt
 | Multi-phase transitions | Resolved (P3) | US-710: white_tiger phase progression |
 | Captor/release | Resolved (P3) | US-711: CaptorTracker, capture_events, captive state in turn order |
 | Controller/paired-boss | Resolved (P3) | US-712: PairedBossTracker, HP averaging, bloodthirsty_assassin |
-| Remove run fallbacks | **GAME-GAP** | US-713: Transitional fallback removal pending |
+| Remove run fallbacks | Resolved (P3) | US-713: `run_ddgc_slice()` fails fast on missing migrated packs; `run_slice_uses_no_fallback_content` covers representative DDGC-only run flow |
 
 ---
 

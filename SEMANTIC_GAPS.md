@@ -177,8 +177,8 @@ This section documents the resolution of encounter-runtime fidelity gaps identif
 | Captor/release | CaptorTracker, CaptureEvent, captive state in turn order in `src/run/captor_state.rs`, `src/run/capture_events.rs` | US-711 |
 | Controller/paired-boss | PairedBossTracker, HP averaging, crimson_duet in `src/run/paired_boss.rs` | US-712 |
 
-### Remaining Gap
+### Phase 3 Closeout
 
 | Gap | Status | Notes |
 |-----|--------|-------|
-| Remove run fallbacks (US-713) | Pending | Transitional fallback removal not yet implemented |
+| Remove run fallbacks (US-713) | Resolved (P3) | `src/run/flow.rs` no longer falls back to `first_battle`; `run_slice_uses_no_fallback_content` verifies representative run slices use migrated DDGC content only |
