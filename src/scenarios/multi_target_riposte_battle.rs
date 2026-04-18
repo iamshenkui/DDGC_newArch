@@ -194,7 +194,8 @@ pub fn run_multi_target_riposte_battle() -> MultiTargetRiposteResult {
                 let effect_results = resolve_skill(skill, &mut ctx);
 
                 // ── Reactive Processing ─────────────────────────────────────
-                let damage_amount = effect_results.results.iter()
+                // resolve_skill returns Vec<EffectResult> directly
+                let damage_amount = effect_results.iter()
                     .find_map(|r| r.values.get("amount").copied());
 
                 if damage_amount.is_some() && damage_amount.unwrap() > 0.0 {
@@ -268,7 +269,7 @@ pub fn run_multi_target_riposte_battle() -> MultiTargetRiposteResult {
                     current_actor,
                     skill_name,
                     &targets,
-                    &effect_results.results,
+                    &effect_results,
                     &actors,
                 );
 

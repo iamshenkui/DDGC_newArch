@@ -68,8 +68,8 @@ pub fn execute_riposte(
     // Consume the riposte status from the reactor
     consume_riposte_status(actors, reactor);
 
-    // Note: Riposte skills should not have DDGC conditions, so we use .results
-    Some((skill_id, result.results))
+    // Note: resolve_skill returns Vec<EffectResult> directly
+    Some((skill_id, result))
 }
 
 /// Find the counter-attack skill for a reactor.

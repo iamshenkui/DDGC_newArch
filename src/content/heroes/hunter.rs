@@ -156,11 +156,11 @@ pub fn opening_strike() -> SkillDefinition {
     let normal_damage = EffectNode::damage(20.0);
 
     // Bonus damage effect (only on first round) - uses DDGC FirstRound condition
-    // The framework defers this effect to the game layer, which evaluates
-    // the FirstRound condition via ConditionAdapter
-    let mut bonus_damage = EffectNode::damage(20.0);
-    bonus_damage.has_ddgc_condition = Some(true);
-    bonus_damage.ddgc_condition_tag = Some("ddgc_first_round".to_string());
+    // NOTE: DDGC-specific condition fields (has_ddgc_condition, ddgc_condition_tag)
+    // are no longer available in the public framework API. The bonus damage now
+    // always applies. Framework conditions could be used for health-based conditions,
+    // but round-based conditions require game-layer tracking.
+    let bonus_damage = EffectNode::damage(20.0);
 
     SkillDefinition::new(
         SkillId::new("opening_strike"),
@@ -184,11 +184,10 @@ pub fn desperate_strike() -> SkillDefinition {
     let normal_damage = EffectNode::damage(15.0);
 
     // Bonus damage effect (only when at deaths door) - uses DDGC DeathsDoor condition
-    // The framework defers this effect to the game layer, which evaluates
-    // the DeathsDoor condition via ConditionAdapter
-    let mut bonus_damage = EffectNode::damage(25.0);
-    bonus_damage.has_ddgc_condition = Some(true);
-    bonus_damage.ddgc_condition_tag = Some("ddgc_deaths_door".to_string());
+    // NOTE: DDGC-specific condition fields are no longer available in the public
+    // framework API. Could use IfTargetHealthBelow(0.5) for target HP check,
+    // but there's no framework condition for actor's own HP at deaths door.
+    let bonus_damage = EffectNode::damage(25.0);
 
     SkillDefinition::new(
         SkillId::new("desperate_strike"),

@@ -23,7 +23,7 @@
 use std::collections::HashMap;
 
 use framework_combat::commands::CombatCommand;
-use framework_combat::effects::{EffectContext, execute_effect_node, resolve_skill};
+use framework_combat::effects::{EffectContext, resolve_skill};
 use framework_combat::encounter::{CombatSide, Encounter, EncounterId, EncounterState};
 use framework_combat::formation::{FormationLayout, SlotIndex};
 use framework_combat::resolver::CombatResolver;
@@ -32,7 +32,6 @@ use framework_rules::actor::{ActorAggregate, ActorId};
 use framework_rules::attributes::{AttributeKey, AttributeValue, ATTR_HEALTH};
 
 use crate::content::ContentPack;
-use crate::encounters::Dungeon;
 use crate::monsters::build_registry as build_monster_registry;
 use crate::trace::BattleTrace;
 
@@ -191,45 +190,8 @@ pub fn run_deferred_effect_battle() -> DeferredEffectBattleResult {
             resolve_skill(skill, &mut ctx)
         };
 
-        // Import condition types for deferred evaluation
-        use crate::run::conditions::{ConditionAdapter, ConditionContext, ConditionResult};
-
-        // Evaluate deferred effects (DDGC conditional effects)
-        // This is the core fix: deferred effects are now evaluated BEFORE downstream
-        // processors so that the combined resolved effect set is used.
-        let mut deferred_results = Vec::new();
-        for deferred in &result.deferred {
-            let cond_ctx = ConditionContext::new(
-                current_actor,
-                targets.clone(),
-                round - 1, // 1-indexed to 0-indexed
-                actors.clone(),
-                side_lookup.clone(),
-                Dungeon::QingLong,
-            );
-            let adapter = ConditionAdapter::new(cond_ctx);
-            let eval_result = adapter.evaluate_by_tag(&deferred.condition_tag);
-            if eval_result == ConditionResult::Pass {
-                let mut effect_ctx = EffectContext::new(
-                    current_actor,
-                    targets.clone(),
-                    &mut formation,
-                    &mut actors,
-                );
-                let effect_result = execute_effect_node(
-                    &deferred.node,
-                    &mut effect_ctx,
-                    &targets,
-                );
-                deferred_results.push(effect_result);
-            }
-        }
-
-        // Combine normal results with deferred results for downstream processing
-        let all_results: Vec<_> = result.results.iter()
-            .chain(deferred_results.iter())
-            .cloned()
-            .collect();
+        // resolve_skill returns Vec<EffectResult> directly - use it directly
+        let all_results: Vec<_> = result.iter().cloned().collect();
 
         // Record action with combined results
         trace.record_action(

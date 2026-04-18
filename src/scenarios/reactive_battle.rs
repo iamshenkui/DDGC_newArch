@@ -179,7 +179,8 @@ pub fn run_reactive_battle() -> ReactiveBattleResult {
 
                 // ── Reactive Processing ─────────────────────────────────────
                 // Only process reactive events if there was actual damage
-                let damage_amount = effect_results.results.iter()
+                // resolve_skill returns Vec<EffectResult> directly
+                let damage_amount = effect_results.iter()
                     .find_map(|r| r.values.get("amount").copied());
 
                 if damage_amount.is_some() && damage_amount.unwrap() > 0.0 {
@@ -253,7 +254,7 @@ pub fn run_reactive_battle() -> ReactiveBattleResult {
                     current_actor,
                     skill_name,
                     &targets,
-                    &effect_results.results,
+                    &effect_results,
                     &actors,
                 );
 

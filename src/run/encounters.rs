@@ -11,7 +11,7 @@
 use std::collections::HashMap;
 
 use framework_combat::commands::CombatCommand;
-use framework_combat::effects::{EffectContext, execute_effect_node, resolve_skill};
+use framework_combat::effects::{EffectContext, resolve_skill};
 use framework_combat::encounter::{CombatSide, Encounter, EncounterId, EncounterState};
 use framework_combat::formation::{FormationLayout, SlotIndex};
 use framework_combat::resolver::CombatResolver;
@@ -27,7 +27,6 @@ use crate::encounters::ddgc_targeting_rules::{
 use crate::monsters::build_registry as build_monster_registry;
 use crate::monsters::MonsterFamilyRegistry;
 use crate::trace::BattleTrace;
-use crate::run::conditions::{ConditionAdapter, ConditionContext, ConditionResult};
 use crate::run::hit_resolution::{HitPolicy, HitResolutionContext};
 use crate::run::capture_events::extract_capture_events;
 use crate::run::captor_state::{
@@ -522,53 +521,10 @@ impl EncounterResolver {
                         resolve_skill(skill, &mut ctx)
                     }; // ctx dropped here
 
-                    // ── DDGC Condition Evaluation ────────────────────────────
-                    // Evaluate deferred effects (effects with DDGC-specific conditions)
-                    // Re-create EffectContext for deferred effects processing.
-                    // This is done BEFORE downstream processors so that conditional effects
-                    // participate in summon extraction, capture extraction, and reactive events.
-                    let mut deferred_results = Vec::new();
-                    for deferred in &result.deferred {
-                        // Build condition context for DDGC condition evaluation
-                        let cond_ctx = ConditionContext::new(
-                            current_actor,
-                            targets.clone(),
-                            round - 1, // round is 1-indexed, condition context uses 0-indexed (0 = first round)
-                            actors.clone(),
-                            side_lookup.clone(),
-                            pack.dungeon,
-                        );
-                        let adapter = ConditionAdapter::new(cond_ctx);
-
-                        // Evaluate the condition tag using the shared ConditionAdapter.
-                        // evaluate_by_tag handles all DDGC condition tags (first_round, stress_above,
-                        // stress_below, deaths_door, target_has_status, actor_has_status, etc.)
-                        // and returns Unknown for unrecognized tags.
-                        let eval_result = adapter.evaluate_by_tag(&deferred.condition_tag);
-                        if eval_result == ConditionResult::Pass {
-                            // Condition passes - recreate EffectContext for execute_effect_node
-                            let mut effect_ctx = EffectContext::new(
-                                current_actor,
-                                targets.clone(),
-                                &mut formation,
-                                &mut actors,
-                            );
-                            // Condition passes - execute the effect
-                            let effect_result = execute_effect_node(
-                                &deferred.node,
-                                &mut effect_ctx,
-                                &targets,
-                            );
-                            deferred_results.push(effect_result);
-                        }
-                        // If condition fails or is unknown, skip the effect (do nothing)
-                    }
-
-                    // Combine normal results with deferred results for downstream processing
-                    let all_results: Vec<_> = result.results.iter()
-                        .chain(deferred_results.iter())
-                        .cloned()
-                        .collect();
+                    // ── Skill Resolution Results ─────────────────────────────────
+                    // resolve_skill returns Vec<EffectResult> directly - use it directly
+                    // for downstream processing (summon extraction, capture, reactive events).
+                    let all_results: Vec<_> = result.iter().cloned().collect();
 
                     // ── US-707: Summon event seam (non-mutating) ─────────────────────────
                     // Extract summon events from resolved skill effects without mutating

@@ -205,8 +205,9 @@ mod tests {
         let results = resolve_skill(&skill, &mut ctx);
 
         // Verify movement occurred (pull result)
-        assert!(!results.results.is_empty());
-        assert_eq!(results.results[0].kind, framework_combat::results::EffectResultKind::Pull);
+        // resolve_skill returns Vec<EffectResult> directly
+        assert!(!results.is_empty());
+        assert_eq!(results[0].kind, framework_combat::results::EffectResultKind::Pull);
 
         // Verify mantis moved forward 1 lane: slot 5 (lane 2) -> slot 3 (lane 1)
         assert_eq!(formation.find_actor(mantis_id), Some(SlotIndex(3)));
@@ -312,8 +313,9 @@ mod tests {
         let results = resolve_skill(&pull_skill, &mut ctx);
 
         // Verify pull occurred
-        assert!(!results.results.is_empty());
-        assert_eq!(results.results[0].kind, framework_combat::results::EffectResultKind::Pull);
+        // resolve_skill returns Vec<EffectResult> directly
+        assert!(!results.is_empty());
+        assert_eq!(results[0].kind, framework_combat::results::EffectResultKind::Pull);
 
         // Enemy moved from lane 3 (slot 6) to lane 2 (slot 4)
         assert_eq!(formation.find_actor(enemy_id), Some(SlotIndex(4)));

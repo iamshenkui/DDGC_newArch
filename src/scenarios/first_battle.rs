@@ -160,13 +160,13 @@ pub fn run_first_battle() -> BattleResult {
                 );
                 let result = resolve_skill(skill, &mut ctx);
 
-                // Record in trace
+                // Record in trace - resolve_skill returns Vec<EffectResult> directly
                 trace.record_action(
                     round,
                     current_actor,
                     skill_name,
                     &targets,
-                    &result.results,
+                    &result,
                     &actors,
                 );
 

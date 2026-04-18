@@ -1,0 +1,84 @@
+{
+  "title": "DDGC_newArch Framework API Drift Repair",
+  "introduction": "Repair DDGC_newArch after framework API drift so cargo test compiles and runs again. Align encounter/runtime code with current framework_combat APIs, replace removed EffectNode condition fields with supported condition plumbing, stop relying on private execute_effect_node internals, and restore deterministic battle pipeline behavior covered by migration documents and regression tests.",
+  "goals": [
+    "Restore `cargo check` and `cargo test` to a passing state for DDGC_newArch",
+    "Repair the DDGC conditional effect path using supported public framework APIs only",
+    "Remove reliance on private framework internals from encounter execution and scenarios",
+    "Preserve the migration's documented deterministic battle behavior where the current framework still supports it"
+  ],
+  "user_stories": [
+    {
+      "story_id": "US-001",
+      "title": "Inventory The API Drift Surface",
+      "description": "As a developer, I need an explicit inventory of compile failures and API mismatches so the repair effort is driven by the current codebase rather than stale migration ledgers.",
+      "acceptance_criteria": [
+        "A checked-in repair note or progress entry lists each incompatible API assumption currently blocking compilation",
+        "The inventory groups failures by subsystem such as encounter runtime, scenarios, hero content, and test fixtures",
+        "The inventory distinguishes framework API drift from true DDGC game-layer logic gaps"
+      ],
+      "priority_hint": 1,
+      "notes": []
+    },
+    {
+      "story_id": "US-002",
+      "title": "Realign Runtime Effect Resolution To Public Framework APIs",
+      "description": "As a developer, I need encounter execution and runtime helpers to work entirely through the current public `framework_combat` APIs so the game crate no longer depends on private helpers or obsolete return shapes.",
+      "acceptance_criteria": [
+        "`src/run/encounters.rs` no longer imports private framework functions",
+        "Runtime code compiles against the current `resolve_skill` and effect-result APIs",
+        "Riposte, deferred-effect, and battle-loop plumbing compile without referencing removed `results` or `deferred` wrapper fields"
+      ],
+      "priority_hint": 2,
+      "notes": []
+    },
+    {
+      "story_id": "US-003",
+      "title": "Reconnect DDGC Conditional Effects Through Supported Condition Plumbing",
+      "description": "As a developer, I need DDGC conditional skills to express their gating through supported condition structures or game-layer adapters so content compiles without writing removed `EffectNode` fields.",
+      "acceptance_criteria": [
+        "Hero or monster content no longer assigns nonexistent `EffectNode` fields",
+        "The replacement condition path uses supported framework conditions or the existing DDGC condition adapter seam in game-layer code",
+        "Conditional skills that served as documented anchors, including the Hunter condition skills, still participate in tests or runtime scenarios in an observable way"
+      ],
+      "priority_hint": 3,
+      "notes": []
+    },
+    {
+      "story_id": "US-004",
+      "title": "Repair Scenario And Regression Fixtures Against The Current Runtime Shape",
+      "description": "As a developer, I need regression scenarios and focused tests to match the repaired runtime interfaces so they validate current behavior instead of an outdated internal representation.",
+      "acceptance_criteria": [
+        "Scenario files under `src/scenarios/` compile against the repaired runtime interfaces",
+        "Focused tests that were asserting on obsolete result wrappers are updated to supported observable outputs",
+        "Deterministic trace-oriented coverage remains in place for the repaired battle pipeline where applicable"
+      ],
+      "priority_hint": 4,
+      "notes": []
+    },
+    {
+      "story_id": "US-005",
+      "title": "Close Out The Repair With Green Verification And Updated Planning Artifacts",
+      "description": "As a developer, I need the repair effort closed out with clean verification and updated planning artifacts so the repo state once again matches its recorded migration status.",
+      "acceptance_criteria": [
+        "`cargo check` exits 0 in DDGC_newArch",
+        "`cargo test` exits 0 in DDGC_newArch",
+        "The resulting PRD/task state in meta-agent reflects the decomposition of this repair effort",
+        "A progress artifact records what was repaired, what remains deferred, and any residual risks tied to framework evolution"
+      ],
+      "priority_hint": 5,
+      "notes": []
+    }
+  ],
+  "functional_requirements": [],
+  "non_goals": [
+    "Rewriting framework crates to reintroduce removed private APIs",
+    "Expanding DDGC migration scope beyond currently registered content",
+    "Solving deferred DDGC condition families that were already documented as future work unless required to restore compilation"
+  ],
+  "design_considerations": [],
+  "technical_considerations": [],
+  "success_metrics": [],
+  "open_questions": [],
+  "source_brief": "/mnt/d/GameDesign/\u6e38\u620f\u8fc1\u79fb/DDGC_newArch/changeplan/2026-04-18-ddgc-newarch-framework-api-drift-repair.md"
+}
