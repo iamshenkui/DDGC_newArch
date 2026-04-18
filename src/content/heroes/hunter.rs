@@ -150,17 +150,15 @@ pub fn buff_skill() -> SkillDefinition {
 /// is only applied when the battle is on round 1.
 ///
 /// Implementation: two effect nodes - normal damage always applies, bonus damage
-/// only applies on first round (via DDGC condition).
+/// only applies on first round (via GameCondition with ddgc_first_round tag).
 pub fn opening_strike() -> SkillDefinition {
     // Normal damage effect (always applies)
     let normal_damage = EffectNode::damage(20.0);
 
-    // Bonus damage effect (only on first round) - uses DDGC FirstRound condition
-    // NOTE: DDGC-specific condition fields (has_ddgc_condition, ddgc_condition_tag)
-    // are no longer available in the public framework API. The bonus damage now
-    // always applies. Framework conditions could be used for health-based conditions,
-    // but round-based conditions require game-layer tracking.
-    let bonus_damage = EffectNode::damage(20.0);
+    // Bonus damage effect (only on first round) - uses DDGC GameCondition
+    // The condition tag "ddgc_first_round" is evaluated by the game-layer
+    // ConditionAdapter via the game_condition_evaluator set on EffectContext.
+    let bonus_damage = EffectNode::damage(20.0).with_game_condition("ddgc_first_round");
 
     SkillDefinition::new(
         SkillId::new("opening_strike"),
@@ -178,16 +176,15 @@ pub fn opening_strike() -> SkillDefinition {
 /// is only applied when the actor's HP drops below 50%.
 ///
 /// Implementation: two effect nodes - normal damage always applies, bonus damage
-/// only applies when at deaths door (via DDGC condition).
+/// only applies when at deaths door (via GameCondition with ddgc_deaths_door tag).
 pub fn desperate_strike() -> SkillDefinition {
     // Normal damage effect (always applies)
     let normal_damage = EffectNode::damage(15.0);
 
-    // Bonus damage effect (only when at deaths door) - uses DDGC DeathsDoor condition
-    // NOTE: DDGC-specific condition fields are no longer available in the public
-    // framework API. Could use IfTargetHealthBelow(0.5) for target HP check,
-    // but there's no framework condition for actor's own HP at deaths door.
-    let bonus_damage = EffectNode::damage(25.0);
+    // Bonus damage effect (only when at deaths door) - uses DDGC GameCondition
+    // The condition tag "ddgc_deaths_door" is evaluated by the game-layer
+    // ConditionAdapter via the game_condition_evaluator set on EffectContext.
+    let bonus_damage = EffectNode::damage(25.0).with_game_condition("ddgc_deaths_door");
 
     SkillDefinition::new(
         SkillId::new("desperate_strike"),
