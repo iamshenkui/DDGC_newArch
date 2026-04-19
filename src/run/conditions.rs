@@ -1649,12 +1649,12 @@ mod adapter_tests {
 
         let retrieved = get_condition_context_ref();
         assert!(retrieved.is_some(), "Context should be retrievable after setting");
-        assert_eq!(retrieved.unwrap().actor_id(), ActorId(1));
+        assert_eq!(retrieved.as_ref().unwrap().actor_id(), ActorId(1));
 
-        // Verify it's a clone, not a reference to the same context
+        // Verify we can retrieve again (it's a clone stored in thread-local)
         let retrieved2 = get_condition_context_ref();
         assert!(retrieved2.is_some());
-        assert_eq!(retrieved.unwrap().actor_id(), retrieved2.unwrap().actor_id());
+        assert_eq!(retrieved.as_ref().unwrap().actor_id(), retrieved2.as_ref().unwrap().actor_id());
     }
 
     #[test]
