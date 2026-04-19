@@ -1,0 +1,381 @@
+[
+  {
+    "task_id": "US-001-a",
+    "title": "Inventory The API Drift Surface (adapter)",
+    "description": "As a developer, I need an explicit inventory of compile failures and API mismatches so the repair effort is driven by the current codebase rather than stale migration ledgers.\n\nFocus: implement the adapter-layer changes.",
+    "priority": 13,
+    "status": "blocked",
+    "acceptance_criteria": [
+      "A checked-in repair note or progress entry lists each incompatible API assumption currently blocking compilation",
+      "The inventory groups failures by subsystem such as encounter runtime, scenarios, hero content, and test fixtures",
+      "The inventory distinguishes framework API drift from true DDGC game-layer logic gaps",
+      "Typecheck passes",
+      "Changes are scoped to the adapter module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-001",
+    "source_ref": null,
+    "metadata": {
+      "notes": "",
+      "repo_path": "DDGC_newArch"
+    },
+    "repo_path": "DDGC_newArch",
+    "complexity": "high",
+    "risk": "low",
+    "module_scope": "adapter",
+    "retry_count": 0,
+    "failure_summary": "Runner reported a blocking issue.",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-001-b",
+    "title": "Inventory The API Drift Surface (tests)",
+    "description": "As a developer, I need an explicit inventory of compile failures and API mismatches so the repair effort is driven by the current codebase rather than stale migration ledgers.\n\nFocus: implement the tests-layer changes.",
+    "priority": 16,
+    "status": "blocked",
+    "acceptance_criteria": [
+      "A checked-in repair note or progress entry lists each incompatible API assumption currently blocking compilation",
+      "The inventory groups failures by subsystem such as encounter runtime, scenarios, hero content, and test fixtures",
+      "The inventory distinguishes framework API drift from true DDGC game-layer logic gaps",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-001",
+    "source_ref": null,
+    "metadata": {
+      "notes": "",
+      "repo_path": "DDGC_newArch"
+    },
+    "repo_path": "DDGC_newArch",
+    "complexity": "high",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "Runner reported a blocking issue.",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-002-a",
+    "title": "Realign Runtime Effect Resolution To Public Framework APIs (runner)",
+    "description": "As a developer, I need encounter execution and runtime helpers to work entirely through the current public `framework_combat` APIs so the game crate no longer depends on private helpers or obsolete return shapes.\n\nFocus: implement the runner-layer changes.",
+    "priority": 23,
+    "status": "verified_done",
+    "acceptance_criteria": [
+      "`src/run/encounters.rs` no longer imports private framework functions",
+      "Runtime code compiles against the current `resolve_skill` and effect-result APIs",
+      "Riposte, deferred-effect, and battle-loop plumbing compile without referencing removed `results` or `deferred` wrapper fields",
+      "Typecheck passes",
+      "Changes are scoped to the runner module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-002",
+    "source_ref": null,
+    "metadata": {
+      "notes": "",
+      "repo_path": "DDGC_newArch"
+    },
+    "repo_path": "DDGC_newArch",
+    "complexity": "medium",
+    "risk": "low",
+    "module_scope": "runner",
+    "retry_count": 0,
+    "failure_summary": null,
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-002-b",
+    "title": "Realign Runtime Effect Resolution To Public Framework APIs (adapter)",
+    "description": "As a developer, I need encounter execution and runtime helpers to work entirely through the current public `framework_combat` APIs so the game crate no longer depends on private helpers or obsolete return shapes.\n\nFocus: implement the adapter-layer changes.",
+    "priority": 23,
+    "status": "blocked",
+    "acceptance_criteria": [
+      "`src/run/encounters.rs` no longer imports private framework functions",
+      "Runtime code compiles against the current `resolve_skill` and effect-result APIs",
+      "Riposte, deferred-effect, and battle-loop plumbing compile without referencing removed `results` or `deferred` wrapper fields",
+      "Typecheck passes",
+      "Changes are scoped to the adapter module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-002",
+    "source_ref": null,
+    "metadata": {
+      "notes": "",
+      "repo_path": "DDGC_newArch"
+    },
+    "repo_path": "DDGC_newArch",
+    "complexity": "medium",
+    "risk": "low",
+    "module_scope": "adapter",
+    "retry_count": 0,
+    "failure_summary": "Runner reported a blocking issue.",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-003-a",
+    "title": "Reconnect DDGC Conditional Effects Through Supported Condition Plumbing (contracts)",
+    "description": "As a developer, I need DDGC conditional skills to express their gating through supported condition structures or game-layer adapters so content compiles without writing removed `EffectNode` fields.\n\nFocus: implement the contracts-layer changes.",
+    "priority": 31,
+    "status": "in_progress",
+    "acceptance_criteria": [
+      "Hero or monster content no longer assigns nonexistent `EffectNode` fields",
+      "The replacement condition path uses supported framework conditions or the existing DDGC condition adapter seam in game-layer code",
+      "Conditional skills that served as documented anchors, including the Hunter condition skills, still participate in tests or runtime scenarios in an observable way",
+      "Typecheck passes",
+      "Changes are scoped to the contracts module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-003",
+    "source_ref": null,
+    "metadata": {
+      "notes": "",
+      "repo_path": "DDGC_newArch"
+    },
+    "repo_path": "DDGC_newArch",
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "contracts",
+    "retry_count": 0,
+    "failure_summary": null,
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-003-b",
+    "title": "Reconnect DDGC Conditional Effects Through Supported Condition Plumbing (adapter)",
+    "description": "As a developer, I need DDGC conditional skills to express their gating through supported condition structures or game-layer adapters so content compiles without writing removed `EffectNode` fields.\n\nFocus: implement the adapter-layer changes.",
+    "priority": 33,
+    "status": "blocked",
+    "acceptance_criteria": [
+      "Hero or monster content no longer assigns nonexistent `EffectNode` fields",
+      "The replacement condition path uses supported framework conditions or the existing DDGC condition adapter seam in game-layer code",
+      "Conditional skills that served as documented anchors, including the Hunter condition skills, still participate in tests or runtime scenarios in an observable way",
+      "Typecheck passes",
+      "Changes are scoped to the adapter module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-003",
+    "source_ref": null,
+    "metadata": {
+      "notes": "",
+      "repo_path": "DDGC_newArch"
+    },
+    "repo_path": "DDGC_newArch",
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "adapter",
+    "retry_count": 0,
+    "failure_summary": "Runner reported a blocking issue.",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-003-c",
+    "title": "Reconnect DDGC Conditional Effects Through Supported Condition Plumbing (docs)",
+    "description": "As a developer, I need DDGC conditional skills to express their gating through supported condition structures or game-layer adapters so content compiles without writing removed `EffectNode` fields.\n\nFocus: implement the docs-layer changes.",
+    "priority": 35,
+    "status": "blocked",
+    "acceptance_criteria": [
+      "Hero or monster content no longer assigns nonexistent `EffectNode` fields",
+      "The replacement condition path uses supported framework conditions or the existing DDGC condition adapter seam in game-layer code",
+      "Conditional skills that served as documented anchors, including the Hunter condition skills, still participate in tests or runtime scenarios in an observable way",
+      "Typecheck passes",
+      "Changes are scoped to the docs module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-003",
+    "source_ref": null,
+    "metadata": {
+      "notes": "",
+      "repo_path": "DDGC_newArch"
+    },
+    "repo_path": "DDGC_newArch",
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "docs",
+    "retry_count": 0,
+    "failure_summary": "Runner reported a blocking issue.",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-003-d",
+    "title": "Reconnect DDGC Conditional Effects Through Supported Condition Plumbing (tests)",
+    "description": "As a developer, I need DDGC conditional skills to express their gating through supported condition structures or game-layer adapters so content compiles without writing removed `EffectNode` fields.\n\nFocus: implement the tests-layer changes.",
+    "priority": 36,
+    "status": "verified_done",
+    "acceptance_criteria": [
+      "Hero or monster content no longer assigns nonexistent `EffectNode` fields",
+      "The replacement condition path uses supported framework conditions or the existing DDGC condition adapter seam in game-layer code",
+      "Conditional skills that served as documented anchors, including the Hunter condition skills, still participate in tests or runtime scenarios in an observable way",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-003",
+    "source_ref": null,
+    "metadata": {
+      "notes": ""
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-004-a",
+    "title": "Repair Scenario And Regression Fixtures Against The Current Runtime Shape (state)",
+    "description": "As a developer, I need regression scenarios and focused tests to match the repaired runtime interfaces so they validate current behavior instead of an outdated internal representation.\n\nFocus: implement the state-layer changes.",
+    "priority": 42,
+    "status": "blocked",
+    "acceptance_criteria": [
+      "Scenario files under `src/scenarios/` compile against the repaired runtime interfaces",
+      "Focused tests that were asserting on obsolete result wrappers are updated to supported observable outputs",
+      "Deterministic trace-oriented coverage remains in place for the repaired battle pipeline where applicable",
+      "Typecheck passes",
+      "Changes are scoped to the state module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-004",
+    "source_ref": null,
+    "metadata": {
+      "notes": "",
+      "repo_path": "DDGC_newArch"
+    },
+    "repo_path": "DDGC_newArch",
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "state",
+    "retry_count": 0,
+    "failure_summary": "Runner reported a blocking issue.",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-004-b",
+    "title": "Repair Scenario And Regression Fixtures Against The Current Runtime Shape (tests)",
+    "description": "As a developer, I need regression scenarios and focused tests to match the repaired runtime interfaces so they validate current behavior instead of an outdated internal representation.\n\nFocus: implement the tests-layer changes.",
+    "priority": 46,
+    "status": "in_progress",
+    "acceptance_criteria": [
+      "Scenario files under `src/scenarios/` compile against the repaired runtime interfaces",
+      "Focused tests that were asserting on obsolete result wrappers are updated to supported observable outputs",
+      "Deterministic trace-oriented coverage remains in place for the repaired battle pipeline where applicable",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-004",
+    "source_ref": null,
+    "metadata": {
+      "notes": "",
+      "repo_path": "DDGC_newArch"
+    },
+    "repo_path": "DDGC_newArch",
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": null,
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-005-a",
+    "title": "Close Out The Repair With Green Verification And Updated Planning Artifacts (state)",
+    "description": "As a developer, I need the repair effort closed out with clean verification and updated planning artifacts so the repo state once again matches its recorded migration status.\n\nFocus: implement the state-layer changes.",
+    "priority": 52,
+    "status": "ready",
+    "acceptance_criteria": [
+      "`cargo check` exits 0 in DDGC_newArch",
+      "`cargo test` exits 0 in DDGC_newArch",
+      "The resulting PRD/task state in meta-agent reflects the decomposition of this repair effort",
+      "A progress artifact records what was repaired, what remains deferred, and any residual risks tied to framework evolution",
+      "Typecheck passes",
+      "Changes are scoped to the state module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-005",
+    "source_ref": null,
+    "metadata": {
+      "notes": "",
+      "repo_path": "DDGC_newArch"
+    },
+    "repo_path": "DDGC_newArch",
+    "complexity": "high",
+    "risk": "low",
+    "module_scope": "state",
+    "retry_count": 0,
+    "failure_summary": null,
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-005-b",
+    "title": "Close Out The Repair With Green Verification And Updated Planning Artifacts (planner)",
+    "description": "As a developer, I need the repair effort closed out with clean verification and updated planning artifacts so the repo state once again matches its recorded migration status.\n\nFocus: implement the planner-layer changes.",
+    "priority": 53,
+    "status": "ready",
+    "acceptance_criteria": [
+      "`cargo check` exits 0 in DDGC_newArch",
+      "`cargo test` exits 0 in DDGC_newArch",
+      "The resulting PRD/task state in meta-agent reflects the decomposition of this repair effort",
+      "A progress artifact records what was repaired, what remains deferred, and any residual risks tied to framework evolution",
+      "Typecheck passes",
+      "Changes are scoped to the planner module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-005",
+    "source_ref": null,
+    "metadata": {
+      "notes": "",
+      "repo_path": "DDGC_newArch"
+    },
+    "repo_path": "DDGC_newArch",
+    "complexity": "high",
+    "risk": "low",
+    "module_scope": "planner",
+    "retry_count": 0,
+    "failure_summary": null,
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-005-c",
+    "title": "Close Out The Repair With Green Verification And Updated Planning Artifacts (tests)",
+    "description": "As a developer, I need the repair effort closed out with clean verification and updated planning artifacts so the repo state once again matches its recorded migration status.\n\nFocus: implement the tests-layer changes.",
+    "priority": 56,
+    "status": "ready",
+    "acceptance_criteria": [
+      "`cargo check` exits 0 in DDGC_newArch",
+      "`cargo test` exits 0 in DDGC_newArch",
+      "The resulting PRD/task state in meta-agent reflects the decomposition of this repair effort",
+      "A progress artifact records what was repaired, what remains deferred, and any residual risks tied to framework evolution",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-005",
+    "source_ref": null,
+    "metadata": {
+      "notes": "",
+      "repo_path": "DDGC_newArch"
+    },
+    "repo_path": "DDGC_newArch",
+    "complexity": "high",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": null,
+    "next_tier": null,
+    "split_guidance": []
+  }
+]
