@@ -45,7 +45,7 @@ These conditions are evaluated via `ConditionAdapter::evaluate_ddgc()` in `src/r
 
 ### Migrated Skills Using DDGC Conditions
 
-The following skills use the deferred condition mechanism (`has_ddgc_condition = true` + `ddgc_condition_tag`):
+The following skills use the `ConditionAdapter` condition mechanism via the `.with_game_condition()` builder pattern:
 
 | Skill | File | Condition Tag | Status |
 |---|---|---|---|
