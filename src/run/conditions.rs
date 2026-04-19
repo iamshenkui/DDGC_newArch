@@ -1623,4 +1623,181 @@ mod adapter_tests {
             "Monsters should fail StressBelow regardless of tag"
         );
     }
+
+    // ── Game Condition Evaluator Wiring Tests ──────────────────────────────────
+
+    #[test]
+    fn set_and_get_condition_context_round_trips() {
+        // Verify that set_condition_context and get_condition_context_ref work together
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let ally = ActorAggregate::new(ActorId(1));
+        actors.insert(ActorId(1), ally);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx = ConditionContext::new(
+            ActorId(1),
+            vec![],
+            0,
+            actors,
+            side_lookup,
+            Dungeon::QingLong,
+        );
+
+        set_condition_context(ctx);
+
+        let retrieved = get_condition_context_ref();
+        assert!(retrieved.is_some(), "Context should be retrievable after setting");
+        assert_eq!(retrieved.unwrap().actor_id(), ActorId(1));
+
+        // Verify it's a clone, not a reference to the same context
+        let retrieved2 = get_condition_context_ref();
+        assert!(retrieved2.is_some());
+        assert_eq!(retrieved.unwrap().actor_id(), retrieved2.unwrap().actor_id());
+    }
+
+    #[test]
+    fn game_condition_evaluator_returns_true_for_pass_condition() {
+        // Set up a context on round 0 (first round)
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let ally = ActorAggregate::new(ActorId(1));
+        actors.insert(ActorId(1), ally);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx = ConditionContext::new(
+            ActorId(1),
+            vec![],
+            0, // first round
+            actors,
+            side_lookup,
+            Dungeon::QingLong,
+        );
+
+        set_condition_context(ctx);
+        let evaluator = create_game_condition_evaluator();
+
+        // ddgc_first_round should pass on round 0
+        assert!(evaluator("ddgc_first_round"),
+            "ddgc_first_round should pass on round 0");
+    }
+
+    #[test]
+    fn game_condition_evaluator_returns_false_for_fail_condition() {
+        // Set up a context on round 1 (not first round)
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let ally = ActorAggregate::new(ActorId(1));
+        actors.insert(ActorId(1), ally);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx = ConditionContext::new(
+            ActorId(1),
+            vec![],
+            1, // not first round
+            actors,
+            side_lookup,
+            Dungeon::QingLong,
+        );
+
+        set_condition_context(ctx);
+        let evaluator = create_game_condition_evaluator();
+
+        // ddgc_first_round should fail on round 1
+        assert!(!evaluator("ddgc_first_round"),
+            "ddgc_first_round should fail on round 1");
+    }
+
+    #[test]
+    fn game_condition_evaluator_returns_false_for_unknown_tag() {
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let ally = ActorAggregate::new(ActorId(1));
+        actors.insert(ActorId(1), ally);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx = ConditionContext::new(
+            ActorId(1),
+            vec![],
+            0,
+            actors,
+            side_lookup,
+            Dungeon::QingLong,
+        );
+
+        set_condition_context(ctx);
+        let evaluator = create_game_condition_evaluator();
+
+        // Unknown tag should return false (treated as failing)
+        assert!(!evaluator("unknown_condition_tag"),
+            "Unknown condition tags should return false");
+    }
+
+    #[test]
+    fn game_condition_evaluator_passes_for_deaths_door_when_at_threshold() {
+        // Actor at deaths door: 20/100 HP = 20% < 50%
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut ally = ActorAggregate::new(ActorId(1));
+        ally.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(20.0));
+        ally.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), ally);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx = ConditionContext::new(
+            ActorId(1),
+            vec![],
+            0,
+            actors,
+            side_lookup,
+            Dungeon::QingLong,
+        );
+
+        set_condition_context(ctx);
+        let evaluator = create_game_condition_evaluator();
+
+        // At 20% HP (below 50%), deaths_door should pass
+        assert!(evaluator("ddgc_deaths_door"),
+            "ddgc_deaths_door should pass when HP is 20/100 (20% < 50%)");
+    }
+
+    #[test]
+    fn game_condition_evaluator_fails_for_deaths_door_when_above_threshold() {
+        // Actor NOT at deaths door: 60/100 HP = 60% >= 50%
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut ally = ActorAggregate::new(ActorId(1));
+        ally.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(60.0));
+        ally.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), ally);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx = ConditionContext::new(
+            ActorId(1),
+            vec![],
+            0,
+            actors,
+            side_lookup,
+            Dungeon::QingLong,
+        );
+
+        set_condition_context(ctx);
+        let evaluator = create_game_condition_evaluator();
+
+        // At 60% HP (above 50%), deaths_door should fail
+        assert!(!evaluator("ddgc_deaths_door"),
+            "ddgc_deaths_door should fail when HP is 60/100 (60% >= 50%)");
+    }
 }
