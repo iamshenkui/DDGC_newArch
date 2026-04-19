@@ -1,8 +1,12 @@
 # Adapter API Drift Inventory (US-001-a)
 
-Inventory of compile-blocking mismatches and API surface drift between the
+Inventory of API surface drift and integration gaps between the
 `ConditionAdapter` (`src/run/conditions.rs`) and the framework crates it depends on.
-Generated from a live `cargo check` + `cargo clippy` pass against the current codebase.
+Generated from a live `cargo check` + `cargo clippy` + framework source audit
+against the current codebase.
+
+**Verification status:** `cargo check` passes (0 errors, 0 warnings).
+`cargo clippy` passes clean. `cargo test` passes (all 6 test suites, 0 failures).
 
 ---
 
@@ -13,7 +17,13 @@ Generated from a live `cargo check` + `cargo clippy` pass against the current co
 | Currently blocking typecheck (clippy) | 0 (fixed) |
 | Framework API drift — adapter handles correctly but with divergence risk | 2 |
 | Framework API drift — adapter cannot reach | 2 |
-| DDGC game-layer logic gaps | 2 |
+| DDGC game-layer logic gaps | 3 |
+
+**Framework API audit (verified):** `EffectCondition` enum has exactly 5 variants
+(`IfTargetHealthBelow`, `IfActorHasStatus`, `IfTargetPosition`, `Probability`,
+`GameCondition`). The adapter's `evaluate_framework` handles all 5 exhaustively.
+All framework types used by the adapter (`CombatSide`, `ActorAggregate`, `ActorId`,
+`AttributeKey`, `ATTR_HEALTH`, `SlotRange`) match current framework definitions.
 
 ---
 
@@ -23,10 +33,10 @@ Generated from a live `cargo check` + `cargo clippy` pass against the current co
 
 **Classification:** Framework API drift — adapter cannot reach
 
-**Detail:** The battle loop at `encounters.rs:515` creates `EffectContext::new(...)`
+**Detail:** The battle loop at `encounters.rs:516` creates `EffectContext::new(...)`
 without the `game_condition_evaluator` callback. The framework provides
-`EffectContext::new_with_game_condition_evaluator(...)` precisely for this purpose,
-but it has zero call sites across the entire game codebase.
+`EffectContext::new_with_game_condition_evaluator(actor, targets, formation, actors, fn(&str) -> bool)`
+precisely for this purpose, but it has zero call sites across the entire game codebase.
 
 **Impact:** Any `EffectCondition::GameCondition(tag)` embedded in a
 `SkillDefinition` effect node silently fails (returns `false`) when resolved
@@ -69,8 +79,11 @@ document this as a permanent limitation of the snapshot-based adapter design.
 
 **Detail:** `ConditionAdapter::evaluate_framework` duplicates the logic of
 `EffectContext::check_condition` for `IfTargetHealthBelow`, `IfActorHasStatus`,
-and `Probability` rather than delegating to the framework method. If the
-framework changes condition semantics, the adapter will silently diverge.
+and `Probability` rather than delegating to the framework method. Verified
+functionally identical: both compare `effective_attribute(ATTR_HEALTH).0 < threshold`
+for health, both use `statuses.active().values().any(|s| s.kind.0 == kind)` for
+status, both use `*p > 0.0` for probability. If the framework changes condition
+semantics, the adapter will silently diverge.
 
 **Impact:** Currently correct — both paths produce identical results. But the
 duplication creates a maintenance trap: any framework semantic change requires
@@ -161,6 +174,27 @@ totals.
 
 **Remediation direction:** Wire `game_condition_evaluator` in the encounter
 loop (see DRIFT-001).
+
+---
+
+### GAP-003: `desperate_strike` skill defined but not registered in `skill_pack()`
+
+**Classification:** DDGC game-layer logic gap
+
+**Detail:** `src/content/heroes/hunter.rs:180` defines `desperate_strike()` with
+a `ddgc_deaths_door` conditional bonus damage node (25 bonus damage when actor
+HP < 50%). However, `skill_pack()` at line 199 only includes 8 skills
+(mark, pull, aoe, stun, ignore_def, bleed, buff, opening_strike) and omits
+`desperate_strike`. The skill exists in code but cannot be retrieved from the
+content pack, making it dead code in any live battle path.
+
+**Impact:** Even if the `game_condition_evaluator` were wired (DRIFT-001/GAP-001),
+`desperate_strike` would never execute because it's not in the skill pack.
+The `ddgc_deaths_door` tag is correctly parsed by `ConditionAdapter::parse_condition_tag`,
+but the skill that uses it is unreachable.
+
+**Remediation direction:** Add `desperate_strike()` to the `skill_pack()` return
+value and update the doc comment from "All 8 Hunter base skills" to "All 9".
 
 ---
 
