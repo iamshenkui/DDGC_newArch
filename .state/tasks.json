@@ -110,9 +110,9 @@
     "complexity": "medium",
     "risk": "low",
     "module_scope": "adapter",
-    "retry_count": 1,
+    "retry_count": 2,
     "failure_summary": "Runner reported a blocking issue. Auto-requeued instead of blocking so the system can continue recovering without operator intervention.",
-    "next_tier": "default",
+    "next_tier": "strong",
     "split_guidance": []
   },
   {
@@ -149,7 +149,7 @@
     "title": "Reconnect DDGC Conditional Effects Through Supported Condition Plumbing (adapter)",
     "description": "As a developer, I need DDGC conditional skills to express their gating through supported condition structures or game-layer adapters so content compiles without writing removed `EffectNode` fields.\n\nFocus: implement the adapter-layer changes.",
     "priority": 33,
-    "status": "in_progress",
+    "status": "verified_done",
     "acceptance_criteria": [
       "Hero or monster content no longer assigns nonexistent `EffectNode` fields",
       "The replacement condition path uses supported framework conditions or the existing DDGC condition adapter seam in game-layer code",
@@ -169,7 +169,7 @@
     "risk": "low",
     "module_scope": "adapter",
     "retry_count": 0,
-    "failure_summary": null,
+    "failure_summary": "",
     "next_tier": null,
     "split_guidance": []
   },
