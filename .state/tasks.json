@@ -16,13 +16,15 @@
     "parent_task_id": "US-001",
     "source_ref": null,
     "metadata": {
-      "notes": ""
+      "notes": "",
+      "repo_path": "DDGC_newArch"
     },
+    "repo_path": "DDGC_newArch",
     "complexity": "high",
     "risk": "low",
     "module_scope": "adapter",
-    "retry_count": 2,
-    "failure_summary": "Guardrail converted strong-tier retry into block after repeated same-tier failures without enough new evidence.",
+    "retry_count": 0,
+    "failure_summary": "Runner reported a blocking issue.",
     "next_tier": null,
     "split_guidance": []
   },
@@ -43,13 +45,15 @@
     "parent_task_id": "US-001",
     "source_ref": null,
     "metadata": {
-      "notes": ""
+      "notes": "",
+      "repo_path": "DDGC_newArch"
     },
+    "repo_path": "DDGC_newArch",
     "complexity": "high",
     "risk": "low",
     "module_scope": "tests",
-    "retry_count": 2,
-    "failure_summary": "Guardrail converted strong-tier retry into block after repeated same-tier failures without enough new evidence.",
+    "retry_count": 0,
+    "failure_summary": "Runner reported a blocking issue.",
     "next_tier": null,
     "split_guidance": []
   },
@@ -58,7 +62,7 @@
     "title": "Realign Runtime Effect Resolution To Public Framework APIs (runner)",
     "description": "As a developer, I need encounter execution and runtime helpers to work entirely through the current public `framework_combat` APIs so the game crate no longer depends on private helpers or obsolete return shapes.\n\nFocus: implement the runner-layer changes.",
     "priority": 23,
-    "status": "blocked",
+    "status": "complete",
     "acceptance_criteria": [
       "`src/run/encounters.rs` no longer imports private framework functions",
       "Runtime code compiles against the current `resolve_skill` and effect-result APIs",
@@ -70,13 +74,15 @@
     "parent_task_id": "US-002",
     "source_ref": null,
     "metadata": {
-      "notes": ""
+      "notes": "",
+      "repo_path": "DDGC_newArch"
     },
+    "repo_path": "DDGC_newArch",
     "complexity": "medium",
     "risk": "low",
     "module_scope": "runner",
     "retry_count": 0,
-    "failure_summary": "Runner reported a blocking issue.",
+    "failure_summary": null,
     "next_tier": null,
     "split_guidance": []
   },
@@ -85,7 +91,7 @@
     "title": "Realign Runtime Effect Resolution To Public Framework APIs (adapter)",
     "description": "As a developer, I need encounter execution and runtime helpers to work entirely through the current public `framework_combat` APIs so the game crate no longer depends on private helpers or obsolete return shapes.\n\nFocus: implement the adapter-layer changes.",
     "priority": 23,
-    "status": "blocked",
+    "status": "ready",
     "acceptance_criteria": [
       "`src/run/encounters.rs` no longer imports private framework functions",
       "Runtime code compiles against the current `resolve_skill` and effect-result APIs",
@@ -97,13 +103,15 @@
     "parent_task_id": "US-002",
     "source_ref": null,
     "metadata": {
-      "notes": ""
+      "notes": "",
+      "repo_path": "DDGC_newArch"
     },
+    "repo_path": "DDGC_newArch",
     "complexity": "medium",
     "risk": "low",
     "module_scope": "adapter",
     "retry_count": 0,
-    "failure_summary": "Runner reported a blocking issue.",
+    "failure_summary": null,
     "next_tier": null,
     "split_guidance": []
   },
@@ -112,7 +120,7 @@
     "title": "Reconnect DDGC Conditional Effects Through Supported Condition Plumbing (contracts)",
     "description": "As a developer, I need DDGC conditional skills to express their gating through supported condition structures or game-layer adapters so content compiles without writing removed `EffectNode` fields.\n\nFocus: implement the contracts-layer changes.",
     "priority": 31,
-    "status": "blocked",
+    "status": "ready",
     "acceptance_criteria": [
       "Hero or monster content no longer assigns nonexistent `EffectNode` fields",
       "The replacement condition path uses supported framework conditions or the existing DDGC condition adapter seam in game-layer code",
@@ -124,13 +132,15 @@
     "parent_task_id": "US-003",
     "source_ref": null,
     "metadata": {
-      "notes": ""
+      "notes": "",
+      "repo_path": "DDGC_newArch"
     },
+    "repo_path": "DDGC_newArch",
     "complexity": "low",
     "risk": "low",
     "module_scope": "contracts",
     "retry_count": 0,
-    "failure_summary": "Runner reported a blocking issue.",
+    "failure_summary": null,
     "next_tier": null,
     "split_guidance": []
   },
@@ -139,7 +149,7 @@
     "title": "Reconnect DDGC Conditional Effects Through Supported Condition Plumbing (adapter)",
     "description": "As a developer, I need DDGC conditional skills to express their gating through supported condition structures or game-layer adapters so content compiles without writing removed `EffectNode` fields.\n\nFocus: implement the adapter-layer changes.",
     "priority": 33,
-    "status": "in_progress",
+    "status": "ready",
     "acceptance_criteria": [
       "Hero or monster content no longer assigns nonexistent `EffectNode` fields",
       "The replacement condition path uses supported framework conditions or the existing DDGC condition adapter seam in game-layer code",
@@ -151,13 +161,15 @@
     "parent_task_id": "US-003",
     "source_ref": null,
     "metadata": {
-      "notes": ""
+      "notes": "",
+      "repo_path": "DDGC_newArch"
     },
+    "repo_path": "DDGC_newArch",
     "complexity": "low",
     "risk": "low",
     "module_scope": "adapter",
     "retry_count": 0,
-    "failure_summary": "",
+    "failure_summary": null,
     "next_tier": null,
     "split_guidance": []
   },
@@ -178,13 +190,15 @@
     "parent_task_id": "US-003",
     "source_ref": null,
     "metadata": {
-      "notes": ""
+      "notes": "",
+      "repo_path": "DDGC_newArch"
     },
+    "repo_path": "DDGC_newArch",
     "complexity": "low",
     "risk": "low",
     "module_scope": "docs",
     "retry_count": 0,
-    "failure_summary": "",
+    "failure_summary": null,
     "next_tier": null,
     "split_guidance": []
   },
@@ -193,7 +207,7 @@
     "title": "Reconnect DDGC Conditional Effects Through Supported Condition Plumbing (tests)",
     "description": "As a developer, I need DDGC conditional skills to express their gating through supported condition structures or game-layer adapters so content compiles without writing removed `EffectNode` fields.\n\nFocus: implement the tests-layer changes.",
     "priority": 36,
-    "status": "ready",
+    "status": "verified_done",
     "acceptance_criteria": [
       "Hero or monster content no longer assigns nonexistent `EffectNode` fields",
       "The replacement condition path uses supported framework conditions or the existing DDGC condition adapter seam in game-layer code",
@@ -207,6 +221,7 @@
     "metadata": {
       "notes": ""
     },
+    "repo_path": null,
     "complexity": "low",
     "risk": "low",
     "module_scope": "tests",
@@ -232,13 +247,15 @@
     "parent_task_id": "US-004",
     "source_ref": null,
     "metadata": {
-      "notes": ""
+      "notes": "",
+      "repo_path": "DDGC_newArch"
     },
+    "repo_path": "DDGC_newArch",
     "complexity": "low",
     "risk": "low",
     "module_scope": "state",
     "retry_count": 0,
-    "failure_summary": "",
+    "failure_summary": null,
     "next_tier": null,
     "split_guidance": []
   },
@@ -259,13 +276,15 @@
     "parent_task_id": "US-004",
     "source_ref": null,
     "metadata": {
-      "notes": ""
+      "notes": "",
+      "repo_path": "DDGC_newArch"
     },
+    "repo_path": "DDGC_newArch",
     "complexity": "low",
     "risk": "low",
     "module_scope": "tests",
     "retry_count": 0,
-    "failure_summary": "",
+    "failure_summary": null,
     "next_tier": null,
     "split_guidance": []
   },
@@ -287,13 +306,15 @@
     "parent_task_id": "US-005",
     "source_ref": null,
     "metadata": {
-      "notes": ""
+      "notes": "",
+      "repo_path": "DDGC_newArch"
     },
+    "repo_path": "DDGC_newArch",
     "complexity": "high",
     "risk": "low",
     "module_scope": "state",
     "retry_count": 0,
-    "failure_summary": "",
+    "failure_summary": null,
     "next_tier": null,
     "split_guidance": []
   },
@@ -315,13 +336,15 @@
     "parent_task_id": "US-005",
     "source_ref": null,
     "metadata": {
-      "notes": ""
+      "notes": "",
+      "repo_path": "DDGC_newArch"
     },
+    "repo_path": "DDGC_newArch",
     "complexity": "high",
     "risk": "low",
     "module_scope": "planner",
     "retry_count": 0,
-    "failure_summary": "",
+    "failure_summary": null,
     "next_tier": null,
     "split_guidance": []
   },
@@ -343,13 +366,15 @@
     "parent_task_id": "US-005",
     "source_ref": null,
     "metadata": {
-      "notes": ""
+      "notes": "",
+      "repo_path": "DDGC_newArch"
     },
+    "repo_path": "DDGC_newArch",
     "complexity": "high",
     "risk": "low",
     "module_scope": "tests",
     "retry_count": 0,
-    "failure_summary": "",
+    "failure_summary": null,
     "next_tier": null,
     "split_guidance": []
   }
