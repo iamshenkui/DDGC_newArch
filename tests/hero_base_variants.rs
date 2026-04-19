@@ -6,7 +6,7 @@
 use framework_rules::actor::ActorId;
 use framework_rules::attributes::{AttributeKey, ATTR_HEALTH, ATTR_SPEED};
 
-use game_ddgc_headless::content::actors::ATTR_MAX_HEALTH;
+use game_ddgc_headless::content::actors::{ATTR_MAX_HEALTH, ATTR_STRESS};
 use game_ddgc_headless::heroes::base::all_base_variants;
 use game_ddgc_headless::heroes::families::HeroFamilyRegistry;
 
@@ -55,7 +55,7 @@ fn all_base_hero_variants_build_valid_actors() {
         );
 
         // Stress starts at 0
-        let stress = actor.effective_attribute(&AttributeKey::new("stress"));
+        let stress = actor.effective_attribute(&AttributeKey::new(ATTR_STRESS));
         assert_eq!(
             stress.0, 0.0,
             "{} starts with non-zero stress",
@@ -73,7 +73,7 @@ fn all_base_hero_variants_have_skill_packs() {
 
         // Each base variant has 7-8 skills (DDGC hero template + optional DDGC condition skills)
         // Hunter has 8 skills (includes opening_strike and desperate_strike for DDGC condition demos)
-        let is_hunter = variant.display_name.contains("Hunter");
+        let is_hunter = variant.class_id == "hunter";
         let expected = if is_hunter { 8 } else { 7 };
         assert_eq!(
             skills.len(),

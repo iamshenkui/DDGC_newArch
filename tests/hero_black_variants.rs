@@ -7,7 +7,7 @@
 use framework_rules::actor::ActorId;
 use framework_rules::attributes::{AttributeKey, ATTR_HEALTH, ATTR_SPEED};
 
-use game_ddgc_headless::content::actors::ATTR_MAX_HEALTH;
+use game_ddgc_headless::content::actors::{ATTR_MAX_HEALTH, ATTR_STRESS};
 use game_ddgc_headless::heroes::base::all_base_variants;
 use game_ddgc_headless::heroes::black::all_black_variants;
 use game_ddgc_headless::heroes::families::{ChaosMode, HeroFamilyRegistry};
@@ -57,7 +57,7 @@ fn all_black_hero_variants_build_valid_actors() {
         );
 
         // Stress starts at 0
-        let stress = actor.effective_attribute(&AttributeKey::new("stress"));
+        let stress = actor.effective_attribute(&AttributeKey::new(ATTR_STRESS));
         assert_eq!(
             stress.0, 0.0,
             "{} starts with non-zero stress",
