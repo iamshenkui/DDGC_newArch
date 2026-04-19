@@ -15,7 +15,30 @@
 //! framework-native conditions AND DDGC-specific conditions. Framework conditions
 //! are evaluated using the same logic as `EffectContext::check_condition` (no
 //! duplication), while DDGC conditions are evaluated via `ConditionContext`.
+//!
+//! # Game Condition Evaluator Wiring
+//!
+//! The framework's [`EffectCondition::GameCondition`] variant requires a game-layer
+//! evaluator function to be wired into `EffectContext::game_condition_evaluator`.
+//! This module provides thread-local infrastructure for this wiring:
+//!
+//! - [`set_condition_context()`] — stores the current `ConditionContext` in thread-local
+//! - [`get_condition_context_ref()`] — retrieves a reference to the stored context
+//! - [`create_game_condition_evaluator()`] — creates an evaluator function for use with
+//!   `EffectContext::new_with_game_condition_evaluator()`
+//!
+//! Usage in battle loop:
+//! ```ignore
+//! let ctx = ConditionContext::new(actor_id, targets, round, actors, sides, dungeon);
+//! set_condition_context(ctx);
+//! let evaluator = create_game_condition_evaluator();
+//! let mut effect_ctx = EffectContext::new_with_game_condition_evaluator(
+//!     actor, targets, formation, actors, evaluator
+//! );
+//! resolve_skill(skill, &mut effect_ctx);
+//! ```
 
+use std::cell::RefCell;
 use std::collections::HashMap;
 
 use framework_combat::encounter::CombatSide;
@@ -27,6 +50,60 @@ use framework_rules::attributes::ATTR_HEALTH;
 use crate::content::actors::ATTR_STRESS;
 use crate::encounters::Dungeon;
 
+// ── Thread-Local Condition Context ────────────────────────────────────────────
+
+thread_local! {
+    /// Thread-local storage for the current `ConditionContext`.
+    ///
+    /// This is used by [`create_game_condition_evaluator`] to provide battle state
+    /// to the framework's `EffectCondition::GameCondition` evaluator without
+    /// requiring the evaluator function to carry explicit state.
+    static CONDITION_CONTEXT: RefCell<Option<ConditionContext>> = const { RefCell::new(None) };
+}
+
+/// Set the current `ConditionContext` for game condition evaluation.
+///
+/// This should be called before entering the skill resolution path in the battle
+/// loop. The context is stored in thread-local storage and retrieved by the
+/// evaluator function created by [`create_game_condition_evaluator`].
+pub fn set_condition_context(ctx: ConditionContext) {
+    CONDITION_CONTEXT.with(|cell| {
+        *cell.borrow_mut() = Some(ctx);
+    });
+}
+
+/// Get a clone of the current thread-local `ConditionContext`, if set.
+pub fn get_condition_context_ref() -> Option<ConditionContext> {
+    CONDITION_CONTEXT.with(|cell| cell.borrow().clone())
+}
+
+/// Create a game condition evaluator function for use with
+/// `EffectContext::new_with_game_condition_evaluator()`.
+///
+/// The returned function reads the current thread-local `ConditionContext` set by
+/// [`set_condition_context`], creates a `ConditionAdapter`, and evaluates the
+/// condition tag through it.
+///
+/// - `ConditionResult::Pass` → `true` (condition passes)
+/// - `ConditionResult::Fail` → `false` (condition does not pass)
+/// - `ConditionResult::Unknown` → `false` (unrecognized tag treated as failing)
+///
+/// # Panics
+///
+/// Panics if no `ConditionContext` has been set via `set_condition_context`.
+pub fn create_game_condition_evaluator() -> fn(&str) -> bool {
+    fn evaluate(tag: &str) -> bool {
+        let ctx = get_condition_context_ref()
+            .expect("ConditionContext not set; call set_condition_context() before evaluating game conditions");
+        let adapter = ConditionAdapter::new(ctx);
+        match adapter.evaluate_by_tag(tag) {
+            ConditionResult::Pass => true,
+            ConditionResult::Fail | ConditionResult::Unknown => false,
+        }
+    }
+    evaluate
+}
+
 /// DDGC condition evaluation context.
 ///
 /// Created from in-progress combat state, this struct provides read-only
@@ -37,6 +114,7 @@ use crate::encounters::Dungeon;
 /// can be created and queried without introducing non-determinism.
 ///
 /// See unit tests in `run::conditions::tests` for usage examples.
+#[derive(Clone)]
 pub struct ConditionContext {
     /// The actor attempting to perform the action.
     actor_id: ActorId,

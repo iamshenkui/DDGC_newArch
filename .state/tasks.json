@@ -33,7 +33,7 @@
     "title": "Inventory The API Drift Surface (tests)",
     "description": "As a developer, I need an explicit inventory of compile failures and API mismatches so the repair effort is driven by the current codebase rather than stale migration ledgers.\n\nFocus: implement the tests-layer changes.",
     "priority": 16,
-    "status": "blocked",
+    "status": "in_progress",
     "acceptance_criteria": [
       "A checked-in repair note or progress entry lists each incompatible API assumption currently blocking compilation",
       "The inventory groups failures by subsystem such as encounter runtime, scenarios, hero content, and test fixtures",
@@ -53,7 +53,7 @@
     "risk": "low",
     "module_scope": "tests",
     "retry_count": 0,
-    "failure_summary": "Runner reported a blocking issue.",
+    "failure_summary": null,
     "next_tier": null,
     "split_guidance": []
   },
@@ -91,7 +91,7 @@
     "title": "Realign Runtime Effect Resolution To Public Framework APIs (adapter)",
     "description": "As a developer, I need encounter execution and runtime helpers to work entirely through the current public `framework_combat` APIs so the game crate no longer depends on private helpers or obsolete return shapes.\n\nFocus: implement the adapter-layer changes.",
     "priority": 23,
-    "status": "blocked",
+    "status": "in_progress",
     "acceptance_criteria": [
       "`src/run/encounters.rs` no longer imports private framework functions",
       "Runtime code compiles against the current `resolve_skill` and effect-result APIs",
@@ -110,9 +110,9 @@
     "complexity": "medium",
     "risk": "low",
     "module_scope": "adapter",
-    "retry_count": 0,
-    "failure_summary": "Runner reported a blocking issue.",
-    "next_tier": null,
+    "retry_count": 1,
+    "failure_summary": "Runner reported a blocking issue. Auto-requeued instead of blocking so the system can continue recovering without operator intervention.",
+    "next_tier": "default",
     "split_guidance": []
   },
   {
