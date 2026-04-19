@@ -198,7 +198,7 @@
     "risk": "low",
     "module_scope": "docs",
     "retry_count": 0,
-    "failure_summary": null,
+    "failure_summary": "",
     "next_tier": null,
     "split_guidance": []
   },
@@ -235,7 +235,7 @@
     "title": "Repair Scenario And Regression Fixtures Against The Current Runtime Shape (state)",
     "description": "As a developer, I need regression scenarios and focused tests to match the repaired runtime interfaces so they validate current behavior instead of an outdated internal representation.\n\nFocus: implement the state-layer changes.",
     "priority": 42,
-    "status": "ready",
+    "status": "verified_done",
     "acceptance_criteria": [
       "Scenario files under `src/scenarios/` compile against the repaired runtime interfaces",
       "Focused tests that were asserting on obsolete result wrappers are updated to supported observable outputs",
@@ -255,7 +255,7 @@
     "risk": "low",
     "module_scope": "state",
     "retry_count": 0,
-    "failure_summary": null,
+    "failure_summary": "",
     "next_tier": null,
     "split_guidance": []
   },
@@ -264,7 +264,7 @@
     "title": "Repair Scenario And Regression Fixtures Against The Current Runtime Shape (tests)",
     "description": "As a developer, I need regression scenarios and focused tests to match the repaired runtime interfaces so they validate current behavior instead of an outdated internal representation.\n\nFocus: implement the tests-layer changes.",
     "priority": 46,
-    "status": "ready",
+    "status": "in_progress",
     "acceptance_criteria": [
       "Scenario files under `src/scenarios/` compile against the repaired runtime interfaces",
       "Focused tests that were asserting on obsolete result wrappers are updated to supported observable outputs",
