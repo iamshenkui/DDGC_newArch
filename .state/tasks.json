@@ -4,7 +4,7 @@
     "title": "Inventory The API Drift Surface (adapter)",
     "description": "As a developer, I need an explicit inventory of compile failures and API mismatches so the repair effort is driven by the current codebase rather than stale migration ledgers.\n\nFocus: implement the adapter-layer changes.",
     "priority": 13,
-    "status": "blocked",
+    "status": "verified_done",
     "acceptance_criteria": [
       "A checked-in repair note or progress entry lists each incompatible API assumption currently blocking compilation",
       "The inventory groups failures by subsystem such as encounter runtime, scenarios, hero content, and test fixtures",
@@ -24,7 +24,7 @@
     "risk": "low",
     "module_scope": "adapter",
     "retry_count": 0,
-    "failure_summary": "Runner reported a blocking issue.",
+    "failure_summary": "",
     "next_tier": null,
     "split_guidance": []
   },
@@ -33,7 +33,7 @@
     "title": "Inventory The API Drift Surface (tests)",
     "description": "As a developer, I need an explicit inventory of compile failures and API mismatches so the repair effort is driven by the current codebase rather than stale migration ledgers.\n\nFocus: implement the tests-layer changes.",
     "priority": 16,
-    "status": "in_progress",
+    "status": "verified_done",
     "acceptance_criteria": [
       "A checked-in repair note or progress entry lists each incompatible API assumption currently blocking compilation",
       "The inventory groups failures by subsystem such as encounter runtime, scenarios, hero content, and test fixtures",
@@ -120,7 +120,7 @@
     "title": "Reconnect DDGC Conditional Effects Through Supported Condition Plumbing (contracts)",
     "description": "As a developer, I need DDGC conditional skills to express their gating through supported condition structures or game-layer adapters so content compiles without writing removed `EffectNode` fields.\n\nFocus: implement the contracts-layer changes.",
     "priority": 31,
-    "status": "in_progress",
+    "status": "verified_done",
     "acceptance_criteria": [
       "Hero or monster content no longer assigns nonexistent `EffectNode` fields",
       "The replacement condition path uses supported framework conditions or the existing DDGC condition adapter seam in game-layer code",
@@ -264,7 +264,7 @@
     "title": "Repair Scenario And Regression Fixtures Against The Current Runtime Shape (tests)",
     "description": "As a developer, I need regression scenarios and focused tests to match the repaired runtime interfaces so they validate current behavior instead of an outdated internal representation.\n\nFocus: implement the tests-layer changes.",
     "priority": 46,
-    "status": "in_progress",
+    "status": "verified_done",
     "acceptance_criteria": [
       "Scenario files under `src/scenarios/` compile against the repaired runtime interfaces",
       "Focused tests that were asserting on obsolete result wrappers are updated to supported observable outputs",
@@ -284,7 +284,7 @@
     "risk": "low",
     "module_scope": "tests",
     "retry_count": 0,
-    "failure_summary": null,
+    "failure_summary": "",
     "next_tier": null,
     "split_guidance": []
   },
@@ -293,7 +293,7 @@
     "title": "Close Out The Repair With Green Verification And Updated Planning Artifacts (state)",
     "description": "As a developer, I need the repair effort closed out with clean verification and updated planning artifacts so the repo state once again matches its recorded migration status.\n\nFocus: implement the state-layer changes.",
     "priority": 52,
-    "status": "ready",
+    "status": "verified_done",
     "acceptance_criteria": [
       "`cargo check` exits 0 in DDGC_newArch",
       "`cargo test` exits 0 in DDGC_newArch",
