@@ -524,7 +524,7 @@ impl EncounterResolver {
                     // ── Skill Resolution Results ─────────────────────────────────
                     // resolve_skill returns Vec<EffectResult> directly - use it directly
                     // for downstream processing (summon extraction, capture, reactive events).
-                    let all_results: Vec<_> = result.iter().cloned().collect();
+                    let all_results = result.to_vec();
 
                     // ── US-707: Summon event seam (non-mutating) ─────────────────────────
                     // Extract summon events from resolved skill effects without mutating

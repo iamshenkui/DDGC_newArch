@@ -20,8 +20,6 @@ use std::collections::HashMap;
 
 use framework_combat::encounter::CombatSide;
 use framework_combat::effects::EffectCondition;
-#[allow(unused_imports)]
-use framework_combat::effects::SlotRange;
 use framework_rules::actor::{ActorAggregate, ActorId};
 use framework_rules::attributes::AttributeKey;
 use framework_rules::attributes::ATTR_HEALTH;
@@ -280,7 +278,7 @@ impl ConditionContext {
 
 /// Check if an actor has an active status of the given kind.
 fn has_status_kind(actor: &ActorAggregate, kind: &str) -> bool {
-    actor.statuses.active().iter().any(|s| s.1.kind.0 == kind)
+    actor.statuses.active().values().any(|s| s.kind.0 == kind)
 }
 
 // ── DDGC-Specific Conditions ─────────────────────────────────────────────────
@@ -393,18 +391,19 @@ impl ConditionAdapter {
                 ConditionResult::Unknown
             }
             EffectCondition::Probability(p) => {
-                // Deterministic: probability < 1.0 always returns true
-                // (real random evaluation is game-specific)
+                // Deterministic: any probability > 0.0 passes in headless mode.
                 if *p > 0.0 {
                     ConditionResult::Pass
                 } else {
                     ConditionResult::Fail
                 }
             }
-            // Catch-all for framework conditions not yet handled by this adapter.
-            // If a new variant reaches here, it means the adapter needs updating.
-            #[allow(unreachable_patterns)]
-            _ => ConditionResult::Unknown,
+            EffectCondition::GameCondition(tag) => {
+                // Delegate to the DDGC condition evaluator via tag parsing.
+                // This is the adapter's bridge between framework GameCondition
+                // and DDGC-specific condition logic.
+                self.evaluate_by_tag(tag)
+            }
         }
     }
 
@@ -794,6 +793,7 @@ mod tests {
 #[cfg(test)]
 mod adapter_tests {
     use super::*;
+    use framework_combat::effects::SlotRange;
     use framework_rules::attributes::AttributeValue;
 
     fn make_adapter_context() -> ConditionAdapter {

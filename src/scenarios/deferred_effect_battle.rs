@@ -191,7 +191,7 @@ pub fn run_deferred_effect_battle() -> DeferredEffectBattleResult {
         };
 
         // resolve_skill returns Vec<EffectResult> directly - use it directly
-        let all_results: Vec<_> = result.iter().cloned().collect();
+        let all_results = result.to_vec();
 
         // Record action with combined results
         trace.record_action(
