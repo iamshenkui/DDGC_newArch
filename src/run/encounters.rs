@@ -28,6 +28,7 @@ use crate::encounters::ddgc_targeting_rules::{
 use crate::monsters::build_registry as build_monster_registry;
 use crate::monsters::MonsterFamilyRegistry;
 use crate::trace::BattleTrace;
+use crate::run::conditions::{ConditionContext, create_game_condition_evaluator, set_condition_context};
 use crate::run::hit_resolution::{HitPolicy, HitResolutionContext};
 use crate::run::capture_events::extract_capture_events;
 use crate::run::captor_state::{
@@ -512,12 +513,27 @@ impl EncounterResolver {
                     // ── Skill Resolution ───────────────────────────────────────
                     // Create EffectContext only for skill resolution, then drop it
                     // to allow reactive processing to borrow actors/formation.
+                    //
+                    // Wire the game condition evaluator into the EffectContext so that
+                    // EffectCondition::GameCondition variants are evaluated through the
+                    // DDGC ConditionAdapter (thread-local ConditionContext plumbing).
                     let result = {
-                        let mut ctx = EffectContext::new(
+                        let cond_ctx = ConditionContext::new(
+                            current_actor,
+                            targets.clone(),
+                            round,
+                            actors.clone(),
+                            side_lookup.clone(),
+                            pack.dungeon,
+                        );
+                        set_condition_context(cond_ctx);
+                        let evaluator = create_game_condition_evaluator();
+                        let mut ctx = EffectContext::new_with_game_condition_evaluator(
                             current_actor,
                             targets.clone(),
                             &mut formation,
                             &mut actors,
+                            evaluator,
                         );
                         resolve_skill(skill, &mut ctx)
                     }; // ctx dropped here

@@ -30,6 +30,7 @@ use framework_rules::actor::{ActorAggregate, ActorId};
 use std::collections::HashMap;
 
 use crate::content::ContentPack;
+use crate::run::conditions::{create_game_condition_evaluator, get_condition_context_ref};
 use crate::run::reactive_events::ReactiveEvent;
 
 /// The status kind key for riposte marker statuses.
@@ -61,9 +62,25 @@ pub fn execute_riposte(
     let skill = content_pack.get_skill(&skill_id)?;
 
     // Create a context for skill resolution
-    // The reactor counter-attacks the attacker using the skill
-    let mut ctx = EffectContext::new(reactor, vec![attacker], formation, actors);
-    let result = resolve_skill(skill, &mut ctx);
+    // The reactor counter-attacks the attacker using the skill.
+    // Wire the game condition evaluator through the thread-local ConditionContext
+    // that was set during the main battle loop's skill resolution.
+    // If no ConditionContext is set (e.g. in isolated tests), fall back to
+    // EffectContext::new() without the evaluator.
+    let result = if get_condition_context_ref().is_some() {
+        let evaluator = create_game_condition_evaluator();
+        let mut ctx = EffectContext::new_with_game_condition_evaluator(
+            reactor,
+            vec![attacker],
+            formation,
+            actors,
+            evaluator,
+        );
+        resolve_skill(skill, &mut ctx)
+    } else {
+        let mut ctx = EffectContext::new(reactor, vec![attacker], formation, actors);
+        resolve_skill(skill, &mut ctx)
+    };
 
     // Consume the riposte status from the reactor
     consume_riposte_status(actors, reactor);
