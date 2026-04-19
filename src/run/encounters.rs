@@ -15,6 +15,7 @@ use framework_combat::effects::{EffectContext, resolve_skill};
 use framework_combat::encounter::{CombatSide, Encounter, EncounterId, EncounterState};
 use framework_combat::formation::{FormationLayout, SlotIndex};
 use framework_combat::resolver::CombatResolver;
+use framework_combat::results::{EffectResult, EffectResultKind};
 use framework_combat::skills::SkillId;
 use framework_rules::actor::{ActorAggregate, ActorId};
 use framework_rules::attributes::{AttributeKey, ATTR_HEALTH};
@@ -524,7 +525,7 @@ impl EncounterResolver {
                     // ── Skill Resolution Results ─────────────────────────────────
                     // resolve_skill returns Vec<EffectResult> directly - use it directly
                     // for downstream processing (summon extraction, capture, reactive events).
-                    let all_results = result.to_vec();
+                    let all_results = result;
 
                     // ── US-707: Summon event seam (non-mutating) ─────────────────────────
                     // Extract summon events from resolved skill effects without mutating
@@ -704,15 +705,12 @@ impl EncounterResolver {
                                 // Build effect results for the redirect action
                                 // actor = original attacker, targets = guard (who absorbed the damage)
                                 let redirect_results = vec![
-                                    framework_combat::results::EffectResult {
-                                        kind: framework_combat::results::EffectResultKind::Damage,
-                                        actor: event.attacker,
-                                        targets: vec![event.reactor],
-                                        values: std::collections::HashMap::from([
-                                            ("amount".to_string(), redirected_damage),
-                                        ]),
-                                        applied_statuses: vec![],
-                                    }
+                                    EffectResult::new(
+                                        EffectResultKind::Damage,
+                                        event.attacker,
+                                        vec![event.reactor],
+                                    )
+                                    .with_value("amount", redirected_damage),
                                 ];
                                 trace.record_reactive(
                                     round,
