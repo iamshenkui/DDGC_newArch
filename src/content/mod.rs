@@ -322,4 +322,64 @@ mod tests {
         assert!(pack.get_damage_range("divine_grace").is_none(), "heal-only skill should not have damage range");
         assert!(pack.get_damage_range("move").is_none(), "movement-only skill should not have damage range");
     }
+
+    // ── US-808-c: SG-001 variance-restored acceptance tests ──────────────
+
+    #[test]
+    fn all_damage_ranges_resolve_with_fixed_average_policy() {
+        // SG-001 acceptance: FixedAverage policy returns the pre-computed average
+        // for every registered damage range, proving deterministic resolution.
+        use crate::run::damage_policy::DamagePolicy;
+        let pack = ContentPack::default();
+        for (skill_id, range) in &pack.damage_ranges {
+            let resolved = DamagePolicy::FixedAverage.resolve(*range, 1, skill_id);
+            assert_eq!(
+                resolved, range.average,
+                "FixedAverage for '{}' should return {}, got {}",
+                skill_id, range.average, resolved
+            );
+        }
+    }
+
+    #[test]
+    fn all_damage_ranges_resolve_with_rolled_policy_in_range() {
+        // SG-001 acceptance: Rolled policy returns a value within [min, max]
+        // for every registered damage range, proving variance is available.
+        use crate::run::damage_policy::DamagePolicy;
+        let pack = ContentPack::default();
+        for (skill_id, range) in &pack.damage_ranges {
+            for actor_id in 0..50u64 {
+                let resolved = DamagePolicy::Rolled.resolve(*range, actor_id, skill_id);
+                assert!(
+                    (range.min..=range.max).contains(&resolved),
+                    "Rolled for '{}' actor={} returned {}, outside [{}, {}]",
+                    skill_id, actor_id, resolved, range.min, range.max
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn rolled_policy_produces_variance_across_registered_ranges() {
+        // SG-001 acceptance: For non-fixed damage ranges, the Rolled policy
+        // produces different values for different actor IDs, proving variance
+        // is actually restored (not just in-range but varying).
+        use crate::run::damage_policy::DamagePolicy;
+        let pack = ContentPack::default();
+        for (skill_id, range) in &pack.damage_ranges {
+            if range.is_fixed() {
+                continue;
+            }
+            // Sample multiple actors and assert at least two values differ.
+            let values: Vec<f64> = (0..20u64)
+                .map(|actor| DamagePolicy::Rolled.resolve(*range, actor, skill_id))
+                .collect();
+            let has_variance = values.iter().any(|v| (*v - values[0]).abs() > f64::EPSILON);
+            assert!(
+                has_variance,
+                "Rolled policy for '{}' produced no variance across 20 actors",
+                skill_id
+            );
+        }
+    }
 }
