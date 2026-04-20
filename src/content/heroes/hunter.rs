@@ -195,7 +195,27 @@ pub fn desperate_strike() -> SkillDefinition {
     )
 }
 
-/// All 8 Hunter base skills (DDGC template + Opening Strike).
+/// Retribution Strike — bonus damage when actor HP is above 50%.
+///
+/// This skill demonstrates the HpAbove DDGC condition: the bonus damage effect
+/// is only applied when the actor's HP fraction exceeds the threshold.
+///
+/// Implementation: two effect nodes - normal damage always applies, bonus damage
+/// only applies when actor HP > 50% (via GameCondition with ddgc_hp_above_0.5 tag).
+pub fn retribution_strike() -> SkillDefinition {
+    let normal_damage = EffectNode::damage(15.0);
+    let bonus_damage = EffectNode::damage(20.0).with_game_condition("ddgc_hp_above_0.5");
+
+    SkillDefinition::new(
+        SkillId::new("retribution_strike"),
+        vec![normal_damage, bonus_damage],
+        TargetSelector::AllEnemies,
+        1,
+        None,
+    )
+}
+
+/// All Hunter base skills (DDGC template + Opening Strike).
 pub fn skill_pack() -> Vec<SkillDefinition> {
     vec![
         mark_skill(),

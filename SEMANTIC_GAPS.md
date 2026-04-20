@@ -81,7 +81,7 @@ differentiation as verified by parity tests._
 | Gap ID | Classification | Blocker |
 |---|---|---|
 | SG-001 | Acceptable approximation | B-006 |
-| SG-002 | Partially resolved | B-004 |
+| SG-002 | Partially resolved (HP-threshold conditions implemented) | B-004 |
 | SG-003 | Acceptable approximation (resolved) | B-008 |
 | SG-004 | Deferred parity work (resolved) | B-005 |
 
@@ -167,6 +167,9 @@ This section tracks DDGC condition implementations delivered in Phase 2 (US-601 
 | `StressAbove` | `ddgc_stress_above_<threshold>` | `ConditionContext::actor_stress_above()` | Heroes only; monsters always fail |
 | `StressBelow` | `ddgc_stress_below_<threshold>` | `ConditionContext::actor_stress_below()` | Heroes only; monsters always fail |
 | `DeathsDoor` | `ddgc_deaths_door` | `ConditionContext::actor_at_deaths_door()` | Actor HP < 50% of max |
+| `HpAbove` | `ddgc_hp_above_<threshold>` | `ConditionContext::actor_hp_fraction() > threshold` | Actor HP fraction above threshold |
+| `TargetHpAbove` | `ddgc_target_hp_above_<threshold>` | `ConditionContext::target_hp_fraction() > threshold` | Target HP fraction above threshold |
+| `TargetHpBelow` | `ddgc_target_hp_below_<threshold>` | `ConditionContext::target_hp_fraction() < threshold` | Target HP fraction below threshold |
 | `TargetHasStatus` | `ddgc_target_has_status_<kind>` | `ConditionContext::target_has_status()` | Checks first target |
 | `ActorHasStatus` | `ddgc_actor_has_status_<kind>` | `ConditionContext::actor_has_status()` | Checks performing actor |
 
@@ -187,10 +190,7 @@ The following are known DDGC conditions not yet implemented in `ConditionAdapter
 
 | Condition | DDGC Reference | Notes |
 |-----------|---------------|-------|
-| `InMode` | Dungeon-specific modes | Not yet modeled |
-| `HpAbove` | HP above threshold | Not yet implemented |
-| `TargetHpAbove` | Target HP above threshold | Not yet implemented |
-| `TargetHpBelow` (DDGC variant) | Target HP below threshold | Framework `IfTargetHealthBelow` is bridged |
+| `InMode` | Dungeon-specific modes | Not yet modeled; no migrated content depends on it |
 | Other DDGC-specific variants | `BuffRule` 35+ variants | Only a subset is implemented |
 
 **US-604 guardrail:** Unsupported conditions return `ConditionResult::Unknown`, which is surfaced explicitly rather than silently failing. This ensures missing implementations are observable.
@@ -260,7 +260,7 @@ DDGC conditions are grouped into families. Each family may have implemented vari
 
 | Condition Family | Implemented Variants | Unimplemented Variants | Migrated Content Using Family |
 |-----------------|---------------------|----------------------|------------------------------|
-| **HP-threshold** | `DeathsDoor` (HP < 50%), `IfTargetHealthBelow` (framework) | `HpAbove`, `TargetHpAbove` | `desperate_strike` (DeathsDoor) |
+| **HP-threshold** | `DeathsDoor` (HP < 50%), `HpAbove`, `TargetHpAbove`, `TargetHpBelow`, `IfTargetHealthBelow` (framework) | None | `desperate_strike` (DeathsDoor), `retribution_strike` (HpAbove, fixture) |
 | **Stress-threshold** | `StressAbove`, `StressBelow` | None | None |
 | **Round-trigger** | `FirstRound` | None | `opening_strike` (FirstRound) |
 | **Status-check** | `ActorHasStatus`, `TargetHasStatus`, `IfActorHasStatus` (framework) | None | None |
@@ -277,6 +277,7 @@ The following migrated skills use `EffectNode::with_game_condition("ddgc_...")` 
 |-------|------|--------------|-----------------|----------------|
 | `opening_strike` | `src/content/heroes/hunter.rs:154` | `ddgc_first_round` | Round-trigger | IMPLEMENTED |
 | `desperate_strike` | `src/content/heroes/hunter.rs:180` | `ddgc_deaths_door` | HP-threshold | IMPLEMENTED |
+| `retribution_strike` | `src/content/heroes/hunter.rs:197` | `ddgc_hp_above_0.5` | HP-threshold | IMPLEMENTED |
 
 **Note:** `desperate_strike` is defined at line 180 but is NOT registered in `skill_pack()` (line 199), making it unreachable in current battle paths. See GAP-003 in `tasks/adapter_api_drift_inventory.md`.
 

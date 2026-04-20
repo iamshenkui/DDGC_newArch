@@ -378,6 +378,12 @@ pub enum DdgcCondition {
     StressBelow(f64),
     /// Actor is at death's door (HP < 50% of max).
     DeathsDoor,
+    /// Actor's HP fraction is above the given threshold (0.0–1.0).
+    HpAbove(f64),
+    /// Target's HP fraction is above the given threshold (0.0–1.0).
+    TargetHpAbove(f64),
+    /// Target's HP fraction is below the given threshold (0.0–1.0).
+    TargetHpBelow(f64),
     /// Target has a specific status active.
     TargetHasStatus(String),
     /// Actor has a specific status active.
@@ -519,6 +525,27 @@ impl ConditionAdapter {
                     ConditionResult::Fail
                 }
             }
+            DdgcCondition::HpAbove(threshold) => {
+                if self.ctx.actor_hp_fraction() > *threshold {
+                    ConditionResult::Pass
+                } else {
+                    ConditionResult::Fail
+                }
+            }
+            DdgcCondition::TargetHpAbove(threshold) => {
+                if self.ctx.target_hp_fraction() > *threshold {
+                    ConditionResult::Pass
+                } else {
+                    ConditionResult::Fail
+                }
+            }
+            DdgcCondition::TargetHpBelow(threshold) => {
+                if self.ctx.target_hp_fraction() < *threshold {
+                    ConditionResult::Pass
+                } else {
+                    ConditionResult::Fail
+                }
+            }
             DdgcCondition::TargetHasStatus(kind) => {
                 if self.ctx.target_has_status(kind) {
                     ConditionResult::Pass
@@ -559,6 +586,9 @@ impl ConditionAdapter {
     /// - `"ddgc_stress_above_<threshold>"` → `DdgcCondition::StressAbove(threshold)`
     /// - `"ddgc_stress_below_<threshold>"` → `DdgcCondition::StressBelow(threshold)`
     /// - `"ddgc_deaths_door"` → `DdgcCondition::DeathsDoor`
+    /// - `"ddgc_hp_above_<threshold>"` → `DdgcCondition::HpAbove(threshold)`
+    /// - `"ddgc_target_hp_above_<threshold>"` → `DdgcCondition::TargetHpAbove(threshold)`
+    /// - `"ddgc_target_hp_below_<threshold>"` → `DdgcCondition::TargetHpBelow(threshold)`
     /// - `"ddgc_target_has_status_<kind>"` → `DdgcCondition::TargetHasStatus(kind)`
     /// - `"ddgc_actor_has_status_<kind>"` → `DdgcCondition::ActorHasStatus(kind)`
     ///
@@ -584,6 +614,27 @@ impl ConditionAdapter {
         if let Some(rest) = tag.strip_prefix("ddgc_stress_below_") {
             if let Ok(threshold) = rest.parse::<f64>() {
                 return Some(DdgcCondition::StressBelow(threshold));
+            }
+        }
+
+        // Parse hp_above_<threshold>
+        if let Some(rest) = tag.strip_prefix("ddgc_hp_above_") {
+            if let Ok(threshold) = rest.parse::<f64>() {
+                return Some(DdgcCondition::HpAbove(threshold));
+            }
+        }
+
+        // Parse target_hp_above_<threshold>
+        if let Some(rest) = tag.strip_prefix("ddgc_target_hp_above_") {
+            if let Ok(threshold) = rest.parse::<f64>() {
+                return Some(DdgcCondition::TargetHpAbove(threshold));
+            }
+        }
+
+        // Parse target_hp_below_<threshold>
+        if let Some(rest) = tag.strip_prefix("ddgc_target_hp_below_") {
+            if let Ok(threshold) = rest.parse::<f64>() {
+                return Some(DdgcCondition::TargetHpBelow(threshold));
             }
         }
 
@@ -1799,5 +1850,519 @@ mod adapter_tests {
         // At 60% HP (above 50%), deaths_door should fail
         assert!(!evaluator("ddgc_deaths_door"),
             "ddgc_deaths_door should fail when HP is 60/100 (60% >= 50%)");
+    }
+
+    // ── US-802: HP-threshold condition tests ────────────────────────────────────
+
+    #[test]
+    fn hp_above_passes_when_actor_hp_fraction_exceeds_threshold() {
+        // Actor 1: 80/100 = 0.8, threshold 0.5 → 0.8 > 0.5 → Pass
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut actor = ActorAggregate::new(ActorId(1));
+        actor.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(80.0));
+        actor.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx = ConditionContext::new(ActorId(1), vec![], 0, actors, side_lookup, Dungeon::QingLong);
+        let adapter = ConditionAdapter::new(ctx);
+
+        assert_eq!(
+            adapter.evaluate_by_tag("ddgc_hp_above_0.5"),
+            ConditionResult::Pass,
+            "HpAbove(0.5) should pass when HP is 80/100 (0.8 > 0.5)"
+        );
+    }
+
+    #[test]
+    fn hp_above_fails_when_actor_hp_fraction_below_threshold() {
+        // Actor 1: 30/100 = 0.3, threshold 0.5 → 0.3 < 0.5 → Fail
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut actor = ActorAggregate::new(ActorId(1));
+        actor.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(30.0));
+        actor.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx = ConditionContext::new(ActorId(1), vec![], 0, actors, side_lookup, Dungeon::QingLong);
+        let adapter = ConditionAdapter::new(ctx);
+
+        assert_eq!(
+            adapter.evaluate_by_tag("ddgc_hp_above_0.5"),
+            ConditionResult::Fail,
+            "HpAbove(0.5) should fail when HP is 30/100 (0.3 < 0.5)"
+        );
+    }
+
+    #[test]
+    fn hp_above_at_exact_threshold_returns_fail() {
+        // Actor 1: 50/100 = 0.5, threshold 0.5 → 0.5 > 0.5 is false → Fail
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut actor = ActorAggregate::new(ActorId(1));
+        actor.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(50.0));
+        actor.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx = ConditionContext::new(ActorId(1), vec![], 0, actors, side_lookup, Dungeon::QingLong);
+        let adapter = ConditionAdapter::new(ctx);
+
+        assert_eq!(
+            adapter.evaluate_by_tag("ddgc_hp_above_0.5"),
+            ConditionResult::Fail,
+            "HpAbove(0.5) should fail at exact threshold (strict greater-than)"
+        );
+    }
+
+    #[test]
+    fn target_hp_above_passes_when_target_hp_exceeds_threshold() {
+        // Target 2: 80/100 = 0.8, threshold 0.5 → Pass
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut actor = ActorAggregate::new(ActorId(1));
+        actor.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+        actor.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let mut target = ActorAggregate::new(ActorId(2));
+        target.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(80.0));
+        target.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(2), target);
+        side_lookup.insert(ActorId(2), CombatSide::Enemy);
+
+        let ctx = ConditionContext::new(ActorId(1), vec![ActorId(2)], 0, actors, side_lookup, Dungeon::QingLong);
+        let adapter = ConditionAdapter::new(ctx);
+
+        assert_eq!(
+            adapter.evaluate_by_tag("ddgc_target_hp_above_0.5"),
+            ConditionResult::Pass,
+            "TargetHpAbove(0.5) should pass when target HP is 80/100"
+        );
+    }
+
+    #[test]
+    fn target_hp_above_fails_when_target_hp_below_threshold() {
+        // Target 2: 30/100 = 0.3, threshold 0.5 → Fail
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut actor = ActorAggregate::new(ActorId(1));
+        actor.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+        actor.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let mut target = ActorAggregate::new(ActorId(2));
+        target.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(30.0));
+        target.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(2), target);
+        side_lookup.insert(ActorId(2), CombatSide::Enemy);
+
+        let ctx = ConditionContext::new(ActorId(1), vec![ActorId(2)], 0, actors, side_lookup, Dungeon::QingLong);
+        let adapter = ConditionAdapter::new(ctx);
+
+        assert_eq!(
+            adapter.evaluate_by_tag("ddgc_target_hp_above_0.5"),
+            ConditionResult::Fail,
+            "TargetHpAbove(0.5) should fail when target HP is 30/100"
+        );
+    }
+
+    #[test]
+    fn target_hp_above_at_exact_threshold_returns_fail() {
+        // Target 2: 50/100 = 0.5, threshold 0.5 → 0.5 > 0.5 is false → Fail
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut actor = ActorAggregate::new(ActorId(1));
+        actor.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+        actor.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let mut target = ActorAggregate::new(ActorId(2));
+        target.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(50.0));
+        target.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(2), target);
+        side_lookup.insert(ActorId(2), CombatSide::Enemy);
+
+        let ctx = ConditionContext::new(ActorId(1), vec![ActorId(2)], 0, actors, side_lookup, Dungeon::QingLong);
+        let adapter = ConditionAdapter::new(ctx);
+
+        assert_eq!(
+            adapter.evaluate_by_tag("ddgc_target_hp_above_0.5"),
+            ConditionResult::Fail,
+            "TargetHpAbove(0.5) should fail at exact threshold (strict greater-than)"
+        );
+    }
+
+    #[test]
+    fn target_hp_below_passes_when_target_hp_below_threshold() {
+        // Target 2: 30/100 = 0.3, threshold 0.5 → Pass
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut actor = ActorAggregate::new(ActorId(1));
+        actor.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+        actor.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let mut target = ActorAggregate::new(ActorId(2));
+        target.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(30.0));
+        target.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(2), target);
+        side_lookup.insert(ActorId(2), CombatSide::Enemy);
+
+        let ctx = ConditionContext::new(ActorId(1), vec![ActorId(2)], 0, actors, side_lookup, Dungeon::QingLong);
+        let adapter = ConditionAdapter::new(ctx);
+
+        assert_eq!(
+            adapter.evaluate_by_tag("ddgc_target_hp_below_0.5"),
+            ConditionResult::Pass,
+            "TargetHpBelow(0.5) should pass when target HP is 30/100"
+        );
+    }
+
+    #[test]
+    fn target_hp_below_fails_when_target_hp_above_threshold() {
+        // Target 2: 80/100 = 0.8, threshold 0.5 → Fail
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut actor = ActorAggregate::new(ActorId(1));
+        actor.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+        actor.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let mut target = ActorAggregate::new(ActorId(2));
+        target.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(80.0));
+        target.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(2), target);
+        side_lookup.insert(ActorId(2), CombatSide::Enemy);
+
+        let ctx = ConditionContext::new(ActorId(1), vec![ActorId(2)], 0, actors, side_lookup, Dungeon::QingLong);
+        let adapter = ConditionAdapter::new(ctx);
+
+        assert_eq!(
+            adapter.evaluate_by_tag("ddgc_target_hp_below_0.5"),
+            ConditionResult::Fail,
+            "TargetHpBelow(0.5) should fail when target HP is 80/100"
+        );
+    }
+
+    #[test]
+    fn target_hp_below_at_exact_threshold_returns_fail() {
+        // Target 2: 50/100 = 0.5, threshold 0.5 → 0.5 < 0.5 is false → Fail
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut actor = ActorAggregate::new(ActorId(1));
+        actor.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+        actor.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let mut target = ActorAggregate::new(ActorId(2));
+        target.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(50.0));
+        target.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(2), target);
+        side_lookup.insert(ActorId(2), CombatSide::Enemy);
+
+        let ctx = ConditionContext::new(ActorId(1), vec![ActorId(2)], 0, actors, side_lookup, Dungeon::QingLong);
+        let adapter = ConditionAdapter::new(ctx);
+
+        assert_eq!(
+            adapter.evaluate_by_tag("ddgc_target_hp_below_0.5"),
+            ConditionResult::Fail,
+            "TargetHpBelow(0.5) should fail at exact threshold (strict less-than)"
+        );
+    }
+
+    #[test]
+    fn hp_threshold_effect_changes_outcome_across_boundary() {
+        // Key acceptance test: same condition tag, different HP states,
+        // proving the effect changes outcome across the threshold boundary.
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        // Low-HP actor (20/100 = 0.2)
+        let mut low_hp = ActorAggregate::new(ActorId(1));
+        low_hp.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(20.0));
+        low_hp.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), low_hp);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        // High-HP actor (80/100 = 0.8)
+        let mut high_hp = ActorAggregate::new(ActorId(2));
+        high_hp.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(80.0));
+        high_hp.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(2), high_hp);
+        side_lookup.insert(ActorId(2), CombatSide::Ally);
+
+        // Low-HP context: 0.2 < 0.5 → HpAbove(0.5) fails
+        let ctx_low = ConditionContext::new(ActorId(1), vec![], 0, actors.clone(), side_lookup.clone(), Dungeon::QingLong);
+        let adapter_low = ConditionAdapter::new(ctx_low);
+
+        // High-HP context: 0.8 > 0.5 → HpAbove(0.5) passes
+        let ctx_high = ConditionContext::new(ActorId(2), vec![], 0, actors.clone(), side_lookup.clone(), Dungeon::QingLong);
+        let adapter_high = ConditionAdapter::new(ctx_high);
+
+        let result_low = adapter_low.evaluate_by_tag("ddgc_hp_above_0.5");
+        let result_high = adapter_high.evaluate_by_tag("ddgc_hp_above_0.5");
+
+        assert_eq!(result_low, ConditionResult::Fail, "Low-HP actor should fail HpAbove(0.5)");
+        assert_eq!(result_high, ConditionResult::Pass, "High-HP actor should pass HpAbove(0.5)");
+        assert_ne!(result_low, result_high,
+            "Same HpAbove condition tag should produce different outcomes across HP threshold boundary");
+    }
+
+    #[test]
+    fn target_hp_threshold_effect_changes_outcome_across_boundary() {
+        // Key acceptance test for TargetHpAbove/TargetHpBelow: same condition tag,
+        // different target HP states, proving different outcomes across threshold.
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut actor = ActorAggregate::new(ActorId(1));
+        actor.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+        actor.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        // Low-HP target (30/100 = 0.3)
+        let mut target_low = ActorAggregate::new(ActorId(2));
+        target_low.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(30.0));
+        target_low.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(2), target_low);
+        side_lookup.insert(ActorId(2), CombatSide::Enemy);
+
+        // High-HP target (70/100 = 0.7)
+        let mut target_high = ActorAggregate::new(ActorId(3));
+        target_high.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(70.0));
+        target_high.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(3), target_high);
+        side_lookup.insert(ActorId(3), CombatSide::Enemy);
+
+        // Context with low-HP target
+        let ctx_low = ConditionContext::new(ActorId(1), vec![ActorId(2)], 0, actors.clone(), side_lookup.clone(), Dungeon::QingLong);
+        let adapter_low = ConditionAdapter::new(ctx_low);
+
+        // Context with high-HP target
+        let ctx_high = ConditionContext::new(ActorId(1), vec![ActorId(3)], 0, actors.clone(), side_lookup.clone(), Dungeon::QingLong);
+        let adapter_high = ConditionAdapter::new(ctx_high);
+
+        // TargetHpAbove(0.5): low HP target fails, high HP target passes
+        let result_low = adapter_low.evaluate_by_tag("ddgc_target_hp_above_0.5");
+        let result_high = adapter_high.evaluate_by_tag("ddgc_target_hp_above_0.5");
+
+        assert_eq!(result_low, ConditionResult::Fail, "Low-HP target should fail TargetHpAbove(0.5)");
+        assert_eq!(result_high, ConditionResult::Pass, "High-HP target should pass TargetHpAbove(0.5)");
+        assert_ne!(result_low, result_high,
+            "Same TargetHpAbove condition tag should produce different outcomes across threshold boundary");
+
+        // TargetHpBelow(0.5): low HP target passes, high HP target fails
+        let result_low_below = adapter_low.evaluate_by_tag("ddgc_target_hp_below_0.5");
+        let result_high_below = adapter_high.evaluate_by_tag("ddgc_target_hp_below_0.5");
+
+        assert_eq!(result_low_below, ConditionResult::Pass, "Low-HP target should pass TargetHpBelow(0.5)");
+        assert_eq!(result_high_below, ConditionResult::Fail, "High-HP target should fail TargetHpBelow(0.5)");
+        assert_ne!(result_low_below, result_high_below,
+            "Same TargetHpBelow condition tag should produce different outcomes across threshold boundary");
+    }
+
+    #[test]
+    fn parse_condition_tag_recognizes_hp_threshold_formats() {
+        // HpAbove
+        assert!(matches!(
+            ConditionAdapter::parse_condition_tag("ddgc_hp_above_0.5"),
+            Some(DdgcCondition::HpAbove(t)) if (t - 0.5).abs() < f64::EPSILON
+        ));
+
+        // TargetHpAbove
+        assert!(matches!(
+            ConditionAdapter::parse_condition_tag("ddgc_target_hp_above_0.75"),
+            Some(DdgcCondition::TargetHpAbove(t)) if (t - 0.75).abs() < f64::EPSILON
+        ));
+
+        // TargetHpBelow
+        assert!(matches!(
+            ConditionAdapter::parse_condition_tag("ddgc_target_hp_below_0.25"),
+            Some(DdgcCondition::TargetHpBelow(t)) if (t - 0.25).abs() < f64::EPSILON
+        ));
+
+        // Zero threshold
+        assert!(matches!(
+            ConditionAdapter::parse_condition_tag("ddgc_hp_above_0"),
+            Some(DdgcCondition::HpAbove(0.0))
+        ));
+    }
+
+    #[test]
+    fn hp_threshold_conditions_are_deterministic() {
+        // Prove that evaluating the same HP-threshold condition multiple times
+        // with the same context always produces the same result.
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut actor = ActorAggregate::new(ActorId(1));
+        actor.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(80.0));
+        actor.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let mut target = ActorAggregate::new(ActorId(2));
+        target.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(30.0));
+        target.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(2), target);
+        side_lookup.insert(ActorId(2), CombatSide::Enemy);
+
+        let ctx = ConditionContext::new(ActorId(1), vec![ActorId(2)], 0, actors, side_lookup, Dungeon::QingLong);
+        let adapter = ConditionAdapter::new(ctx);
+
+        // Evaluate each HP-threshold condition 10 times and verify consistency
+        for _ in 0..10 {
+            assert_eq!(adapter.evaluate_by_tag("ddgc_hp_above_0.5"), ConditionResult::Pass);
+            assert_eq!(adapter.evaluate_by_tag("ddgc_target_hp_above_0.5"), ConditionResult::Fail);
+            assert_eq!(adapter.evaluate_by_tag("ddgc_target_hp_below_0.5"), ConditionResult::Pass);
+        }
+
+        // Also verify determinism at the exact threshold boundary
+        let mut actors2: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup2: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut actor2 = ActorAggregate::new(ActorId(1));
+        actor2.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(50.0));
+        actor2.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors2.insert(ActorId(1), actor2);
+        side_lookup2.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx2 = ConditionContext::new(ActorId(1), vec![], 0, actors2, side_lookup2, Dungeon::QingLong);
+        let adapter2 = ConditionAdapter::new(ctx2);
+
+        for _ in 0..10 {
+            assert_eq!(adapter2.evaluate_by_tag("ddgc_hp_above_0.5"), ConditionResult::Fail,
+                "HpAbove(0.5) at exact threshold must consistently fail");
+        }
+    }
+
+    #[test]
+    fn game_condition_evaluator_wires_hp_above_threshold() {
+        // Prove the thread-local game condition evaluator correctly routes
+        // HP-threshold tags through the adapter.
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut actor = ActorAggregate::new(ActorId(1));
+        actor.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(80.0));
+        actor.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let mut target = ActorAggregate::new(ActorId(2));
+        target.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(30.0));
+        target.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(2), target);
+        side_lookup.insert(ActorId(2), CombatSide::Enemy);
+
+        let ctx = ConditionContext::new(ActorId(1), vec![ActorId(2)], 0, actors, side_lookup, Dungeon::QingLong);
+        set_condition_context(ctx);
+        let evaluator = create_game_condition_evaluator();
+
+        // Actor HP 80/100 = 0.8 > 0.5 → true
+        assert!(evaluator("ddgc_hp_above_0.5"),
+            "Evaluator should return true for ddgc_hp_above_0.5 when actor HP is 80%");
+
+        // Target HP 30/100 = 0.3 < 0.5 → TargetHpAbove(0.5) fails → false
+        assert!(!evaluator("ddgc_target_hp_above_0.5"),
+            "Evaluator should return false for ddgc_target_hp_above_0.5 when target HP is 30%");
+
+        // Target HP 30/100 = 0.3 < 0.5 → TargetHpBelow(0.5) passes → true
+        assert!(evaluator("ddgc_target_hp_below_0.5"),
+            "Evaluator should return true for ddgc_target_hp_below_0.5 when target HP is 30%");
     }
 }
