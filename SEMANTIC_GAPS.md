@@ -33,6 +33,7 @@ differentiation as verified by parity tests._
   - **Original behavior:** Skills deal `DamageMin..DamageMax` range damage, rolled per use.
   - **Migration behavior:** Skills deal damage resolved by `DamagePolicy`: `FixedAverage` (deterministic average) or `Rolled` (deterministic hash-based roll within range). `DamageRange` is wired into all migrated skill definitions.
 - **Reason:** `DamagePolicy` with `FixedAverage` default and `Rolled` variant is implemented (US-609). `DamageRange` structs are registered for all migrated skills in `ContentPack` (US-806-a). Variance is restored via `Rolled` policy without changing parity test structure or requiring framework changes.
+- **Resolution:** Fully resolved — `DamagePolicy::FixedAverage` (default, deterministic) and `DamagePolicy::Rolled` (hash-based variance) implemented (US-609). `DamageRange` wired into all migrated skill definitions via ContentPack registration (US-806-a). Variance is restored without framework changes or parity test restructuring.
 - **Tracking:** MIGRATION_BLOCKERS.md B-006
 
 ---
