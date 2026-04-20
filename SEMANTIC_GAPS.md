@@ -339,7 +339,7 @@ All condition families referenced by migrated content are now implemented. The f
 | `ChaosBelow` / `ChaosAbove` | — | Low-impact deferred | — |
 | `Melee` / `Ranged` | — | Low-impact deferred | — |
 
-**Coverage summary:** 12 of 28+ distinct variants implemented (11 `DdgcCondition` + `IfTargetHealthBelow` framework bridge). 1 partial (`IfTargetPosition` returns Unknown). 15 variants classified as out-of-scope or low-impact deferred — none are used in migrated content.
+**Coverage summary:** 15 of 34 distinct DDGC BuffRule variants implemented through `ConditionAdapter` (11 `DdgcCondition` + 4 framework bridges), with 1 partial (`IfTargetPosition` returns Unknown). 19 remaining variants classified as out-of-scope (7: InCamp, InDungeon, InCorridor, InActivity, LightBelow, LightAbove, LightChanged) or low-impact deferred (12: Afflicted, Virtued, WalkBack, Dot, Size, EnemyType, Skill, Riposting, ChaosBelow, ChaosAbove, Melee, Ranged) — none are used in migrated content. Total enumerated variants (34) is consistent with the original "35+" approximation.
 
 ### Implemented Condition Families — Implementation Anchors
 
