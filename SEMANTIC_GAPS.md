@@ -28,11 +28,11 @@ differentiation as verified by parity tests._
 ### SG-001: Damage Range Averaging
 
 - **Gap ID:** SG-001
-- **Classification:** Acceptable approximation
+- **Classification:** Resolved — Rolled policy available
 - **Description:**
   - **Original behavior:** Skills deal `DamageMin..DamageMax` range damage, rolled per use.
-  - **Migration behavior:** Skills deal fixed damage equal to the average of min and max.
-- **Reason:** First slice uses fixed averages; variance can be restored via game-layer damage roll without changing parity test structure. The approximation is bounded — the fixed value matches the expected value over many rolls — and the restoration path does not require framework changes.
+  - **Migration behavior:** Skills deal damage resolved by `DamagePolicy`: `FixedAverage` (deterministic average) or `Rolled` (deterministic hash-based roll within range). `DamageRange` is wired into all migrated skill definitions.
+- **Reason:** `DamagePolicy` with `FixedAverage` default and `Rolled` variant is implemented (US-609). `DamageRange` structs are registered for all migrated skills in `ContentPack` (US-806-a). Variance is restored via `Rolled` policy without changing parity test structure or requiring framework changes.
 - **Tracking:** MIGRATION_BLOCKERS.md B-006
 
 ---
@@ -80,7 +80,7 @@ differentiation as verified by parity tests._
 
 | Gap ID | Classification | Blocker |
 |---|---|---|
-| SG-001 | Acceptable approximation | B-006 |
+| SG-001 | Resolved — Rolled policy available | B-006 |
 | SG-002 | Resolved | B-004 |
 | SG-003 | Acceptable approximation (resolved) | B-008 |
 | SG-004 | Deferred parity work (resolved) | B-005 |

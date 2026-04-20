@@ -58,7 +58,7 @@ Game-gap blockers are solved entirely within `game_ddgc_headless`.
 - **Batch:** 3 (Skills)
 - **Description:** DDGC skills deal `DamageMin..DamageMax` range damage. The framework's `EffectNode::damage(amount)` takes a single `f64`.
 - **Resolution:** Use the average of min/max as the fixed damage value for the first migration slice. If variance is needed later, add a game-layer damage roll step before submitting combat commands.
-- **Status:** Resolved — US-609 (DamagePolicy with FixedAverage default; Rolled policy available for future variance)
+- **Status:** Resolved — US-609 (DamagePolicy with FixedAverage default; Rolled policy available for variance). US-806-a wired DamageRange into all migrated skill definitions via ContentPack registration.
 
 ### B-007: Launch Ranks / Target Ranks (Formation Positioning)
 - **Classification:** framework-gap (partial)
