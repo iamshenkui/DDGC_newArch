@@ -14,6 +14,7 @@ use framework_progression::generation::{DefaultRoomGenerator, FloorConfig, RoomG
 use framework_progression::rooms::{RoomId, RoomKind};
 use framework_progression::run::{Run, RunId, RunResult};
 
+use crate::contracts::{get_dungeon_config, DungeonType, MapSize};
 use crate::encounters::Dungeon;
 use crate::run::encounters::EncounterResolver;
 use crate::run::rewards::{self, PostBattleUpdate};
@@ -33,16 +34,16 @@ const DDGC_ROOM_WEIGHTS: &[(RoomKind, f64)] = &[
 /// Configuration for a DDGC run slice.
 pub struct DdgcRunConfig {
     pub seed: u64,
-    pub room_count: u32,
     pub dungeon: Dungeon,
+    pub map_size: MapSize,
 }
 
 impl Default for DdgcRunConfig {
     fn default() -> Self {
         DdgcRunConfig {
             seed: 42,
-            room_count: 3,
             dungeon: Dungeon::QingLong,
+            map_size: MapSize::Short,
         }
     }
 }
@@ -101,12 +102,24 @@ pub struct DdgcRunResult {
 /// All four core DDGC dungeons (QingLong, BaiHu, ZhuQue, XuanWu) have migrated
 /// encounter packs — this function will panic if a pack is missing, indicating
 /// a developer error in the migration.
+///
+/// Room generation uses `DungeonMapConfig` parameters for the current dungeon:
+/// room count comes from `base_room_number`, and connectivity drives `max_connections`.
 pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
+    // Look up the DungeonMapConfig for this dungeon type and size
+    let dungeon_type = DungeonType::from_dungeon(config.dungeon)
+        .expect("DungeonMapConfig required for core dungeons (QingLong/BaiHu/ZhuQue/XuanWu)");
+    let map_config = get_dungeon_config(dungeon_type, config.map_size)
+        .expect("DungeonMapConfig must exist for the given dungeon type and size");
+
+    let room_count = map_config.base_room_number;
+    let max_connections = map_config.max_connections();
+
     let gen = DefaultRoomGenerator;
     let floor_config = FloorConfig::new(
-        config.room_count,
+        room_count,
         DDGC_ROOM_WEIGHTS.to_vec(),
-        2, // max_connections
+        max_connections,
     );
 
     let mut floor = gen.generate_floor(FloorId(0), config.seed, &floor_config);
@@ -212,6 +225,7 @@ mod tests {
     use super::*;
     use framework_progression::rooms::RoomState;
     use framework_progression::run::RunState;
+    use crate::contracts::{QINGLONG_MEDIUM_EXPLORE, QINGLONG_SHORT_EXPLORE};
 
     #[test]
     fn ddgc_run_slice_progresses_room_by_room() {
@@ -245,11 +259,11 @@ mod tests {
 
     #[test]
     fn ddgc_run_slice_applies_post_battle_updates() {
-        // Use enough rooms to guarantee combat rooms appear
+        // Use medium map to get 14 rooms, guaranteeing combat rooms appear
         let config = DdgcRunConfig {
             seed: 99,
-            room_count: 10,
             dungeon: Dungeon::QingLong,
+            map_size: MapSize::Medium,
         };
         let result = run_ddgc_slice(&config);
 
@@ -322,17 +336,18 @@ mod tests {
         );
 
         // All rooms should be cleared
+        let room_count = result.floor.rooms.len() as u32;
         assert_eq!(
             result.state.rooms_cleared,
-            config.room_count,
+            room_count,
             "All {} rooms should be cleared",
-            config.room_count
+            room_count
         );
 
         // Run should have visited all rooms
         assert_eq!(
             result.state.visited_rooms.len(),
-            config.room_count as usize,
+            room_count as usize,
             "Should have visited all rooms"
         );
 
@@ -394,8 +409,8 @@ mod tests {
         // and run fallbacks."
         let config = DdgcRunConfig {
             seed: 42,
-            room_count: 5,
             dungeon: Dungeon::QingLong,
+            map_size: MapSize::Short,
         };
         let result = run_ddgc_slice(&config);
 
@@ -412,10 +427,10 @@ mod tests {
             })
             .count();
 
-        // There should be battle rooms (combat-heavy weights + 5 rooms)
+        // There should be battle rooms (combat-heavy weights + short map has 9 rooms)
         assert!(
             battle_room_count > 0,
-            "Expected battle rooms with 5 rooms and combat-heavy weights"
+            "Expected battle rooms with 9 rooms and combat-heavy weights"
         );
 
         // Every battle pack_id must be a real pack (not the fallback marker)
@@ -443,5 +458,105 @@ mod tests {
             result.state.battles_lost, 0,
             "No battles should be lost"
         );
+    }
+
+    // ── US-810-a: DungeonMapConfig wiring tests ──────────────────────────────────
+
+    #[test]
+    fn qinglong_maps_have_correct_room_count() {
+        // QingLong short config has base_room_number = 9, medium = 14
+        let short_config = DdgcRunConfig {
+            seed: 42,
+            dungeon: Dungeon::QingLong,
+            map_size: MapSize::Short,
+        };
+        let short_result = run_ddgc_slice(&short_config);
+        assert_eq!(
+            short_result.floor.rooms.len() as u32,
+            QINGLONG_SHORT_EXPLORE.base_room_number,
+            "QingLong short should have {} rooms",
+            QINGLONG_SHORT_EXPLORE.base_room_number
+        );
+
+        let medium_config = DdgcRunConfig {
+            seed: 42,
+            dungeon: Dungeon::QingLong,
+            map_size: MapSize::Medium,
+        };
+        let medium_result = run_ddgc_slice(&medium_config);
+        assert_eq!(
+            medium_result.floor.rooms.len() as u32,
+            QINGLONG_MEDIUM_EXPLORE.base_room_number,
+            "QingLong medium should have {} rooms",
+            QINGLONG_MEDIUM_EXPLORE.base_room_number
+        );
+    }
+
+    #[test]
+    fn baihu_maps_have_lower_connectivity_than_zhuque() {
+        // BaiHu connectivity (0.85) < ZhuQue connectivity (0.95)
+        // This should produce floors with measurably fewer connections.
+        // We use the same seed so the random sequence is identical,
+        // only max_connections differs based on dungeon config.
+        let baihu_config = DdgcRunConfig {
+            seed: 3,
+            dungeon: Dungeon::BaiHu,
+            map_size: MapSize::Short,
+        };
+        let zhuque_config = DdgcRunConfig {
+            seed: 3,
+            dungeon: Dungeon::ZhuQue,
+            map_size: MapSize::Short,
+        };
+
+        let baihu_result = run_ddgc_slice(&baihu_config);
+        let zhuque_result = run_ddgc_slice(&zhuque_config);
+
+        // Compute average connections per room for each floor
+        let baihu_avg_conn = avg_connections_per_room(&baihu_result.floor);
+        let zhuque_avg_conn = avg_connections_per_room(&zhuque_result.floor);
+
+        assert!(
+            baihu_avg_conn < zhuque_avg_conn,
+            "BaiHu avg connections ({:.2}) should be less than ZhuQue ({:.2})",
+            baihu_avg_conn, zhuque_avg_conn
+        );
+    }
+
+    #[test]
+    fn short_vs_medium_maps_differ_in_room_count() {
+        // Short variants have 9 rooms, medium variants have 14
+        for dungeon in [Dungeon::QingLong, Dungeon::BaiHu, Dungeon::ZhuQue, Dungeon::XuanWu] {
+            let short_config = DdgcRunConfig {
+                seed: 42,
+                dungeon,
+                map_size: MapSize::Short,
+            };
+            let medium_config = DdgcRunConfig {
+                seed: 42,
+                dungeon,
+                map_size: MapSize::Medium,
+            };
+
+            let short_result = run_ddgc_slice(&short_config);
+            let medium_result = run_ddgc_slice(&medium_config);
+
+            assert!(
+                short_result.floor.rooms.len() < medium_result.floor.rooms.len(),
+                "{:?} short ({}) should have fewer rooms than medium ({})",
+                dungeon,
+                short_result.floor.rooms.len(),
+                medium_result.floor.rooms.len()
+            );
+        }
+    }
+
+    /// Compute the average number of connections per room in a floor.
+    fn avg_connections_per_room(floor: &Floor) -> f64 {
+        if floor.rooms_map.is_empty() {
+            return 0.0;
+        }
+        let total_connections: usize = floor.rooms_map.values().map(|r| r.connections.len()).sum();
+        total_connections as f64 / floor.rooms_map.len() as f64
     }
 }

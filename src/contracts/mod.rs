@@ -63,6 +63,20 @@ impl DungeonType {
             DungeonType::XuanWu => "xuanwu",
         }
     }
+
+    /// Convert from the game-layer `Dungeon` enum to `DungeonType`.
+    ///
+    /// Returns `None` for `Dungeon::Cross`, which has no associated map config.
+    pub fn from_dungeon(dungeon: crate::monsters::families::Dungeon) -> Option<DungeonType> {
+        use crate::monsters::families::Dungeon as D;
+        match dungeon {
+            D::QingLong => Some(DungeonType::QingLong),
+            D::BaiHu => Some(DungeonType::BaiHu),
+            D::ZhuQue => Some(DungeonType::ZhuQue),
+            D::XuanWu => Some(DungeonType::XuanWu),
+            D::Cross => None,
+        }
+    }
 }
 
 /// Size variant for dungeon maps.
@@ -210,6 +224,20 @@ impl DungeonMapConfig {
     /// Returns true if this config matches the given dungeon type and size.
     pub fn matches(&self, dungeon_type: DungeonType, size: MapSize) -> bool {
         self.dungeon_type == dungeon_type && self.size == size
+    }
+
+    /// Derives `max_connections` for floor generation from the `connectivity` parameter.
+    ///
+    /// Connectivity is a float in [0.0, 1.0] representing how interconnected the dungeon is.
+    /// Higher connectivity → more connections between rooms.
+    ///
+    /// The formula maps the DDGC connectivity range (0.85–0.95) to max_connections (10–12),
+    /// which controls how many extra random connections the room generator adds per room.
+    pub fn max_connections(&self) -> u32 {
+        // Map [0.85, 0.95] → [10, 12] using linear scaling:
+        // max_connections = ((connectivity - 0.5) * 20.0).round() as u32 + 3
+        // 0.85 → 10, 0.9 → 11, 0.95 → 12
+        ((self.connectivity - 0.5) * 20.0).round() as u32 + 3
     }
 }
 
@@ -632,5 +660,31 @@ mod tests {
             assert_eq!(config.hallway_obstacle.min, 0);
             assert_eq!(config.hallway_obstacle.max, 0);
         }
+    }
+
+    #[test]
+    fn max_connections_derives_correctly_from_connectivity() {
+        // Formula: ((connectivity - 0.5) * 20.0).round() as u32 + 3
+        // BaiHu (0.85) → 10, QingLong (0.9) → 11, ZhuQue (0.95) → 12
+        assert_eq!(BAIHU_SHORT_EXPLORE.max_connections(), 10);
+        assert_eq!(QINGLONG_SHORT_EXPLORE.max_connections(), 11);
+        assert_eq!(ZHUQUE_SHORT_EXPLORE.max_connections(), 12);
+    }
+
+    #[test]
+    fn baihu_has_lower_max_connections_than_zhuque() {
+        // Since BaiHu connectivity (0.85) < ZhuQue connectivity (0.95),
+        // BaiHu max_connections (5) < ZhuQue max_connections (6)
+        assert!(BAIHU_SHORT_EXPLORE.max_connections() < ZHUQUE_SHORT_EXPLORE.max_connections());
+    }
+
+    #[test]
+    fn dungeon_type_from_dungeon_converts_correctly() {
+        use crate::monsters::families::Dungeon;
+        assert_eq!(DungeonType::from_dungeon(Dungeon::QingLong), Some(DungeonType::QingLong));
+        assert_eq!(DungeonType::from_dungeon(Dungeon::BaiHu), Some(DungeonType::BaiHu));
+        assert_eq!(DungeonType::from_dungeon(Dungeon::ZhuQue), Some(DungeonType::ZhuQue));
+        assert_eq!(DungeonType::from_dungeon(Dungeon::XuanWu), Some(DungeonType::XuanWu));
+        assert_eq!(DungeonType::from_dungeon(Dungeon::Cross), None);
     }
 }
