@@ -1,0 +1,4 @@
+# Ralph Progress Log
+Started: Sun Apr 20 2026
+Branch: ralph/ddgc-phase4-condition-damage-dungeon
+---

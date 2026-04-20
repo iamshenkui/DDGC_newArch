@@ -1,0 +1,202 @@
+{
+    "project": "game_ddgc_headless",
+    "branchName": "ralph/ddgc-reactive-and-usage-closure",
+    "description": "Phase 1 of 2 \u2014 DDGC Reactive Hooks And Skill Usage Limits. Close the highest-leverage open game-gap blockers first by building deterministic reactive combat plumbing, implementing riposte and guard semantics, and enforcing LimitPerTurn / LimitPerBattle through game-layer state.",
+    "userStories": [
+        {
+            "id": "US-501",
+            "title": "P1-0: Inventory reactive and limited-use touchpoints",
+            "description": "As a developer, I need a precise inventory of the migrated skills, statuses, and encounters that depend on riposte, guard, or usage limits so Phase 1 implementation is driven by real DDGC touchpoints instead of generic guesses.",
+            "acceptanceCriteria": [
+                "A checked-in note or section in progress/logging docs lists the migrated DDGC units or skills that currently rely on riposte, guard, per-turn limits, or per-battle limits",
+                "The inventory distinguishes already-migrated content from future content that can wait for later phases",
+                "At least one concrete reactive case and one concrete usage-limit case are selected as implementation anchors for later stories"
+            ],
+            "priority": 1,
+            "passes": true,
+            "notes": "Discovery slice. Keep output lightweight and implementation-focused."
+        },
+        {
+            "id": "US-502",
+            "title": "P1-1: Add reactive combat event types",
+            "description": "As a developer, I need explicit reactive-event data structures so post-hit reactions are represented as first-class game-layer events rather than implicit side effects hidden inside damage resolution.",
+            "acceptanceCriteria": [
+                "Game-layer combat code exposes explicit event or record types for reactive follow-up work",
+                "The event model can represent who was hit, who may react, and what triggered the reaction",
+                "A focused test proves the event structure can be created deterministically from a resolved damage step"
+            ],
+            "priority": 2,
+            "passes": true,
+            "notes": "Data-model slice only. Do not execute reactions yet."
+        },
+        {
+            "id": "US-503",
+            "title": "P1-2: Add deterministic reactive queue harness",
+            "description": "As a developer, I need a deterministic queue or ordering harness for reactive follow-ups so multiple reaction candidates can be evaluated in one stable sequence.",
+            "acceptanceCriteria": [
+                "A dedicated game-layer helper or module exists for scheduling reactive follow-up actions",
+                "When multiple reactions are possible, evaluation order is deterministic and documented in tests",
+                "A focused test proves queued reactions do not re-apply the original hit or recurse indefinitely"
+            ],
+            "priority": 3,
+            "passes": true,
+            "notes": "Plumbing slice. This is the execution backbone for riposte and guard."
+        },
+        {
+            "id": "US-504",
+            "title": "P1-3: Trace reactive events explicitly",
+            "description": "As a developer, I need reactive events to appear in battle traces so later semantic review can distinguish the base attack from the follow-up action it caused.",
+            "acceptanceCriteria": [
+                "Reactive follow-up actions produce explicit trace entries instead of blending into the original attack output",
+                "Trace output identifies the trigger relationship between the original hit and the reaction",
+                "A focused test proves trace serialization is stable when a reactive event is present"
+            ],
+            "priority": 4,
+            "passes": true,
+            "notes": "Observability slice before full mechanic enablement."
+        },
+        {
+            "id": "US-505",
+            "title": "P1-4: Detect riposte-ready actors",
+            "description": "As a developer, I need the reactive harness to recognize riposte marker statuses on the correct actor set so the game knows when a counter-attack is eligible.",
+            "acceptanceCriteria": [
+                "Game-layer combat code can detect riposte markers from the active combat state without framework changes",
+                "The detection logic only marks valid riposte candidates for qualifying incoming hits",
+                "A focused test proves non-riposte actors are ignored while riposte-marked actors are surfaced once"
+            ],
+            "priority": 5,
+            "passes": true,
+            "notes": "Eligibility slice only. No counter-attack execution yet."
+        },
+        {
+            "id": "US-506",
+            "title": "P1-5: Execute riposte counter-attacks",
+            "description": "As a developer, I need riposte-eligible actors to execute a single deterministic counter-attack through the reactive harness so migrated DDGC riposte units stop behaving like passive status carriers.",
+            "acceptanceCriteria": [
+                "A riposte-marked actor can issue exactly one reactive counter-attack per qualifying hit",
+                "At least one migrated DDGC family or encounter fixture proves riposte behavior end-to-end",
+                "MIGRATION_BLOCKERS.md and SEMANTIC_GAPS.md are updated if riposte support meaningfully closes part of B-008"
+            ],
+            "priority": 6,
+            "passes": true,
+            "notes": "First real B-008 behavior slice."
+        },
+        {
+            "id": "US-507",
+            "title": "P1-6: Detect guard protection relationships",
+            "description": "As a developer, I need the combat layer to resolve which ally is guarding which target so incoming attacks can be redirected intentionally instead of merely tagged.",
+            "acceptanceCriteria": [
+                "Game-layer combat state can resolve a protected target and its guarding actor deterministically",
+                "Detection works from existing status or content data without requiring framework-crate changes",
+                "A focused test proves the correct guard relationship is selected when a protected target is attacked"
+            ],
+            "priority": 7,
+            "passes": true,
+            "notes": "Relationship-resolution slice only."
+        },
+        {
+            "id": "US-508",
+            "title": "P1-7: Redirect guarded damage",
+            "description": "As a developer, I need guarded hits to land on the guarding ally instead of the protected actor so defensive DDGC behavior preserves actual battlefield protection semantics.",
+            "acceptanceCriteria": [
+                "A guarded target no longer receives the original damage directly when redirection succeeds",
+                "The guarding ally receives the redirected hit through one deterministic pathway",
+                "A focused test proves guard redirection coexists cleanly with the reactive queue and trace output"
+            ],
+            "priority": 8,
+            "passes": true,
+            "notes": "Second real B-008 behavior slice."
+        },
+        {
+            "id": "US-509",
+            "title": "P1-8: Add reactive golden trace coverage",
+            "description": "As a developer, I need a committed reactive trace fixture so future refactors cannot silently reorder or remove riposte and guard follow-up behavior.",
+            "acceptanceCriteria": [
+                "A committed fixture under fixtures/semantic_battles or fixtures/encounters captures at least one reactive combat sequence",
+                "A regression test compares live output against the committed reactive trace",
+                "The trace clearly separates original attacks, redirected hits, and counter-attacks for review"
+            ],
+            "priority": 9,
+            "passes": true,
+            "notes": "Locks Phase 1 reactive behavior before moving on."
+        },
+        {
+            "id": "US-510",
+            "title": "P1-9: Add skill usage counter state",
+            "description": "As a developer, I need dedicated per-skill counter state for turn scope and battle scope so usage-limit enforcement has a concrete runtime model.",
+            "acceptanceCriteria": [
+                "Game-layer combat state tracks usage counts by actor and skill for both turn and battle scopes",
+                "The counters are isolated from cooldown logic rather than overloading cooldown fields",
+                "A focused test proves unrelated skills do not affect each other's counters"
+            ],
+            "priority": 10,
+            "passes": true,
+            "notes": "State-model slice for B-005 only."
+        },
+        {
+            "id": "US-511",
+            "title": "P1-10: Reset counters at turn boundaries",
+            "description": "As a developer, I need turn-scoped counters to reset at the right time so per-turn limits behave consistently across actor turns and round transitions.",
+            "acceptanceCriteria": [
+                "Turn-scoped usage counters reset when the relevant actor turn boundary advances",
+                "Battle-scoped counters do not reset during the same transition",
+                "A focused test proves the reset boundary is deterministic and not tied to unrelated combat events"
+            ],
+            "priority": 11,
+            "passes": true,
+            "notes": "Lifecycle slice before any enforcement."
+        },
+        {
+            "id": "US-512",
+            "title": "P1-11: Reset counters at battle boundaries",
+            "description": "As a developer, I need encounter-scoped counters to reset only when a new battle starts so per-battle limits survive cooldown refreshes but not new encounters.",
+            "acceptanceCriteria": [
+                "Battle-scoped counters persist for the full encounter lifetime",
+                "Starting a fresh encounter resets battle-scoped counts cleanly",
+                "A focused test proves battle reset behavior without depending on manual state cleanup"
+            ],
+            "priority": 12,
+            "passes": true,
+            "notes": "Completes the B-005 state lifecycle model."
+        },
+        {
+            "id": "US-513",
+            "title": "P1-12: Enforce per-turn usage limits",
+            "description": "As a developer, I need the game layer to reject or skip commands that exceed per-turn limits so DDGC skills with turn-bounded usage stop repeating freely.",
+            "acceptanceCriteria": [
+                "At least one migrated or fixture-backed skill can declare a per-turn usage limit in DDGC game-layer metadata",
+                "Command resolution blocks or skips only the over-limit skill use while leaving legal commands intact",
+                "A deterministic test proves the same skill becomes available again after the correct turn reset"
+            ],
+            "priority": 13,
+            "passes": true,
+            "notes": "First enforcement slice for B-005."
+        },
+        {
+            "id": "US-514",
+            "title": "P1-13: Enforce per-battle usage limits",
+            "description": "As a developer, I need the game layer to enforce encounter-wide limits so once-per-battle DDGC skills preserve their intended rarity even if cooldowns would otherwise allow reuse.",
+            "acceptanceCriteria": [
+                "At least one migrated or fixture-backed skill can declare a per-battle limit in DDGC game-layer metadata",
+                "Over-limit battle-scope usage is rejected or skipped deterministically within the same encounter",
+                "A deterministic test proves a new encounter restores availability while the current encounter does not"
+            ],
+            "priority": 14,
+            "passes": true,
+            "notes": "Second enforcement slice for B-005."
+        },
+        {
+            "id": "US-515",
+            "title": "P1-14: Add regression coverage for reactive hooks and usage limits",
+            "description": "As a developer, I need Phase 1 mechanics locked by regression tests so later conditional or hit-policy work cannot silently break the newly closed semantic gaps.",
+            "acceptanceCriteria": [
+                "Regression tests cover riposte, guard redirection, per-turn limits, and per-battle limits",
+                "The test suite uses game_ddgc_headless public APIs rather than framework internals",
+                "cargo test --manifest-path Cargo.toml exits 0 with the full Phase 1 coverage enabled"
+            ],
+            "priority": 15,
+            "passes": true,
+            "notes": "Phase 1 closeout story. Start Phase 2 only after this passes."
+        }
+    ]
+}

@@ -1,0 +1,406 @@
+{
+  "project": "game_ddgc_headless",
+  "branchName": "ralph/ddgc-phase5-town-curio-equipment",
+  "description": "Phase 5 — DDGC Town Meta-Loop, Curio Interaction, and Equipment Systems. Implement the full meta-game cycle: town buildings, curio/trap/obstacle dungeon interactions, trinket/equipment progression, quirk/disease system, and affliction/virtue overstress mechanics.",
+  "userStories": [
+    {
+      "id": "US-901",
+      "title": "P5a-0: Define curio, trap, and obstacle data model",
+      "description": "As a developer, I need data structures for curios, traps, and obstacles so the game layer can represent room and corridor interactions beyond combat.",
+      "acceptanceCriteria": [
+        "CurioDefinition struct in src/interaction/ with: id (String), dungeon_scope (Vec<Dungeon>), results (Vec<CurioResult>), item_interactions (Vec<ItemInteraction>), tags (Vec<String>)",
+        "CurioResult struct: weight (u32), chance (f64), result_type (CurioResultType enum: Nothing/Loot/Quirk/Effect/Purge/Scouting/Teleport/Disease), result_id (String)",
+        "ItemInteraction struct: item_id (String), overrides_result_id (String)",
+        "TrapDefinition struct: id (String), success_effects (Vec<String>), fail_effects (Vec<String>), health_fraction (f64), difficulty_variations (Vec<TrapVariation>)",
+        "TrapVariation struct: level (u32), fail_effects (Vec<String>), health_fraction (f64)",
+        "ObstacleDefinition struct: id (String), fail_effects (Vec<String>), health_fraction (f64), torchlight_penalty (f64)",
+        "All structs derive Serialize/Deserialize/Clone/Debug",
+        "Focused test proves struct construction and serde round-trip are deterministic",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "Data-model slice only. Match schemas from Curios.csv, Traps.json, Obstacles.json. Place in new src/interaction/ module."
+    },
+    {
+      "id": "US-902",
+      "title": "P5a-1: Parse DDGC trap and obstacle definitions from JSON",
+      "description": "As a developer, I need DDGC trap and obstacle data parsed from Traps.json and Obstacles.json so actual game content drives hazard interactions.",
+      "acceptanceCriteria": [
+        "A TrapRegistry struct holds TrapDefinition entries parsed from DreamDeveloperGame-Crossover/Assets/Resources/Data/Curios/Traps.json",
+        "An ObstacleRegistry struct holds ObstacleDefinition entries parsed from DreamDeveloperGame-Crossover/Assets/Resources/Data/Curios/Obstacles.json",
+        "All 3 trap types (poison_cloud, spikes, blade_wheel) and all 5 obstacle types (thorny_thicket, rubble, shipwreck, ancestor, town_rubble) are parsed",
+        "Trap difficulty variations (level 3 and level 5) are preserved with correct fail_effects and health_fraction values",
+        "Focused test proves: (a) registry lookup by ID works, (b) trap variation lookup by level works, (c) obstacle ancestor has zero health_fraction and torchlight_penalty",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "Traps.json and Obstacles.json are standard JSON with a 'props' array. Parse using serde_json. Source files are in DreamDeveloperGame-Crossover/Assets/Resources/Data/Curios/."
+    },
+    {
+      "id": "US-903",
+      "title": "P5a-2: Parse DDGC curio definitions from Curios.csv",
+      "description": "As a developer, I need DDGC curio data parsed from Curios.csv so room exploration can use actual curio content with weighted result tables and item interactions.",
+      "acceptanceCriteria": [
+        "A CurioRegistry struct holds CurioDefinition entries parsed from DreamDeveloperGame-Crossover/Assets/Resources/Data/Curios/Curios.csv",
+        "Curios.csv uses a multi-row block format — a custom parser extracts curio blocks with ID, results, item interactions, tags, and dungeon scope",
+        "At least 12 curios are parsed (3 per dungeon region: QingLong, BaiHu, ZhuQue, XuanWu)",
+        "Focused test proves: (a) registry lookup by ID works, (b) dungeon-scoped curio filtering returns only curios for that dungeon, (c) item interaction overrides are preserved with correct item_id and result_id",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "Curios.csv uses a multi-row block format (not standard CSV). Each curio block spans ~10 rows: row 1 = index/name/category, row 3 = id/result types/weights/chances, rows below = region/tags/item interactions. Need a custom line-by-line parser."
+    },
+    {
+      "id": "US-904",
+      "title": "P5a-3: Implement curio interaction resolution",
+      "description": "As a developer, I need a deterministic curio interaction resolver so room exploration produces outcomes matching DDGC's weighted result system.",
+      "acceptanceCriteria": [
+        "resolve_curio_interaction(curio_id, has_item, item_id, seed, registry) returns CurioInteractionOutcome",
+        "Without item: selects result from weighted result table using seeded probability (cumulative weight + seed-based selection)",
+        "With item: checks item_interactions for a matching item_id override; if found, uses override result_id; otherwise falls back to weighted table",
+        "CurioInteractionOutcome struct: result_type (CurioResultType), result_id (String), applied_effects (Vec<String>)",
+        "Focused test proves: (a) bare interaction follows weighted probabilities deterministically for a given seed, (b) item interaction produces override result, (c) unknown curio returns a fallback outcome",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "DDGC curios have result types like Loot, Quirk, Effect, Disease — the resolver dispatches by type but actual effect application (e.g., applying a quirk) is deferred to the relevant subsystem. Use cumulative-weight selection with seed."
+    },
+    {
+      "id": "US-905",
+      "title": "P5a-4: Implement trap and obstacle resolution",
+      "description": "As a developer, I need deterministic trap and obstacle interaction so corridor and room hazards produce correct damage and debuff outcomes.",
+      "acceptanceCriteria": [
+        "resolve_trap_interaction(trap_id, trap_level, resist_chance, seed, registry) returns TrapOutcome enum (Success with effects, Fail with effects and health_fraction)",
+        "Trap difficulty variations are applied: base (level 0), level 3, level 5 — each with potentially different fail_effects and health_fraction",
+        "resolve_obstacle_interaction(obstacle_id, registry) returns ObstacleOutcome with fail_effects, health_fraction, and torchlight_penalty",
+        "Focused tests prove: (a) trap succeeds when resist roll passes, (b) trap fails with correct difficulty-scaled effects for each level, (c) obstacles apply uniform penalty (5% HP, -20 torchlight except ancestor=0)",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "Traps have a resist check using seed. Obstacles always apply fail effects. DDGC MapGenerator currently sets hallway trap/obstacle density to 0, but the resolution logic must exist for completeness."
+    },
+    {
+      "id": "US-906",
+      "title": "P5a-5: Wire curio/trap/obstacle into room exploration flow",
+      "description": "As a developer, I need room exploration events to trigger curio, trap, and obstacle interactions so the dungeon run produces the full exploration cycle.",
+      "acceptanceCriteria": [
+        "Room metadata gains optional interaction fields: curio_id (Option<String>), trap_id (Option<String>), obstacle_id (Option<String>)",
+        "Run flow: entering a room with a curio produces a CurioInteractionOutcome recorded in the run trace",
+        "Run flow: traversing a corridor with a trap produces a TrapOutcome recorded in the run trace",
+        "At least one run slice (e.g., a QingLong short variant) produces curio interaction and trap interaction entries in its trace",
+        "Existing run slices continue passing without modification",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "Integration slice. Room generation should assign curios/traps based on DungeonMapConfig densities from Phase 4c. Add interaction event types to the run trace (similar to reactive event trace entries)."
+    },
+    {
+      "id": "US-907",
+      "title": "P5b-0: Define town building and upgrade data model",
+      "description": "As a developer, I need data structures for town buildings, their upgrade trees, and town state so the game layer can represent the between-run meta state.",
+      "acceptanceCriteria": [
+        "TownBuilding struct in src/town/ with: id (String), building_type (BuildingType enum: Abbey/Blacksmith/StageCoach/Guild/NomadWagon/Sanitarium/Tavern/Garden/LegacyTower/CampingTrainer), unlock_quest_count (u32), upgrade_trees (Vec<UpgradeTree>)",
+        "UpgradeTree struct: tree_id (String), levels (Vec<UpgradeLevel>)",
+        "UpgradeLevel struct: code (String, a-g), cost (u32), effects (Vec<UpgradeEffect>)",
+        "UpgradeEffect enum: SlotCount(u32), StressHealRange(u32, u32), RecruitCount(u32), GoldCost(u32) plus building-specific variants",
+        "TownState struct: building_levels (HashMap<String, u32>), gold (u32), heirloom_currencies (HashMap<String, u32>), hero_roster (Vec<HeroRosterSlot>)",
+        "All structs derive Serialize/Deserialize/Clone/Debug",
+        "Focused test proves TownState construction and upgrade level application are deterministic",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "Data-model slice. Place in new src/town/ module. DDGC buildings have variable structures — Abbey has 3 activity sub-trees, StageCoach has 3 parallel upgrade trees. UpgradeEffect must be extensible for building-specific fields."
+    },
+    {
+      "id": "US-908",
+      "title": "P5b-1: Parse DDGC core building definitions (StageCoach, Abbey, Guild)",
+      "description": "As a developer, I need the 3 most critical DDGC building definitions parsed so the town visit cycle can offer stress heal, recruit, and upgrade services.",
+      "acceptanceCriteria": [
+        "A BuildingRegistry struct holds TownBuilding entries parsed from .building.json files",
+        "StageCoach building is fully parsed: roster_size_upgrades, number_of_recruits_upgrades, upgraded_recruits_upgrades with all levels (codes a-e)",
+        "Abbey building is fully parsed: 3 activities (meditation, prayer, flagellation) each with slot_upgrades, stress_upgrades, side_effects",
+        "Guild building is fully parsed with upgrade trees",
+        "Focused test proves: (a) building lookup by ID works, (b) StageCoach roster size 9->31 across 5 upgrade levels, (c) Abbey stress heal ranges per activity tier (meditation: 45/56/70)",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "Source files: DreamDeveloperGame-Crossover/Assets/Resources/Data/Buildings/Building/stage_coach.building.json, abbey.building.json, guild.building.json. Each .building.json has a unique structure — use serde_json::Value for building-specific fields and extract known patterns."
+    },
+    {
+      "id": "US-909",
+      "title": "P5b-2: Implement town visit cycle with Abbey and StageCoach",
+      "description": "As a developer, I need a town visit phase that offers Abbey stress heal and StageCoach recruit services so the meta-game loop (town -> dungeon -> town) is functional.",
+      "acceptanceCriteria": [
+        "TownVisit struct represents a single town phase with: town_state (TownState), available_activities computed from building_levels",
+        "perform_stress_heal(hero_index, activity_name) reduces hero stress by the configured range for the current Abbey upgrade level, deducts gold",
+        "perform_recruit() generates a new hero from StageCoach using HeroFamilyRegistry, adds to roster if slot available, deducts gold",
+        "TownVisit produces a TownVisitTrace with Vec<TownActivity> entries",
+        "Focused test proves: (a) Abbey stress heal reduces hero stress by correct range, (b) gold is deducted, (c) StageCoach recruit adds hero to roster, (d) results are deterministic for given state",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "Start with Abbey (3 activities: meditation, prayer, flagellation) and StageCoach (recruit). Stress heal ranges by tier: meditation 45/56/70, prayer 55/69/86, flagellation 65/81/100. Gold costs come from upgrade level cost tables."
+    },
+    {
+      "id": "US-910",
+      "title": "P5b-3: Wire town visit into run flow",
+      "description": "As a developer, I need the run flow to include town visits between dungeon runs so the full game loop operates headlessly.",
+      "acceptanceCriteria": [
+        "After a dungeon run completes (RunState::Victory or defeat), a town visit phase begins",
+        "Town visit reads hero roster (surviving heroes with HP/stress), gold, heirloom currencies from the completed run",
+        "Town visit allows Abbey stress heal and StageCoach recruit",
+        "Run trace records town activities alongside dungeon run events",
+        "A full-loop run slice (town -> dungeon -> town) completes with heroes progressing between runs (stress reduced, XP gained)",
+        "Existing run slices continue passing without modification",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "Integration slice. The run loop becomes: initialize -> town_visit -> dungeon_run -> town_visit -> dungeon_run -> ... Add a new scenario function (e.g., run_full_loop_slice) that exercises the full cycle."
+    },
+    {
+      "id": "US-911",
+      "title": "P5b-4: Implement hero XP and leveling from Campaign.json",
+      "description": "As a developer, I need hero experience and leveling so heroes can progress through resolve levels between dungeon runs.",
+      "acceptanceCriteria": [
+        "HeroProgress struct in src/town/ or src/heroes/: xp (u32), hero_level (u32), resolve_level (u32)",
+        "LEVEL_THRESHOLD_TABLE constant: [0, 2, 6, 10, 16, 22, 32, 42] from Campaign.json",
+        "RESOLVE_THRESHOLD_TABLE constant: [0, 2, 8, 14, 30, 62, 94] from Campaign.json",
+        "add_xp(amount) method advances hero_level when xp crosses level thresholds, and resolve_level when xp crosses resolve thresholds",
+        "resolve_level method gates dungeon access: hero with resolve_level > dungeon_level cannot enter low-level dungeons (returns false)",
+        "Focused test proves: (a) hero starts at level 0/resolve 0, (b) adding 2 XP reaches hero level 1, (c) adding 8 XP reaches resolve level 1, (d) all threshold boundaries produce correct level-ups",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "Source: DreamDeveloperGame-Crossover/Assets/Resources/Data/Mechanics/Campaign.json. quest_completion_xp_table: [0, 2, 3, 4]. DDGC level and resolve level are separate — both advance based on total XP but use different threshold tables."
+    },
+    {
+      "id": "US-912",
+      "title": "P5c-0: Define trinket and equipment data model",
+      "description": "As a developer, I need data structures for trinkets and equipment upgrades so hero stats can be computed from gear rather than hardcoded values.",
+      "acceptanceCriteria": [
+        "TrinketDefinition struct in src/equipment/: id (String), buffs (Vec<String>), hero_class_requirements (Vec<String>), rarity (TrinketRarity enum), price (u32), limit (u32), origin_dungeon (String)",
+        "TrinketRarity enum: VeryCommon, Common, Uncommon, Rare, VeryRare, Collector, Ancestral, DarkestDungeon, Trophy, Kickstarter + other DDGC tiers",
+        "EquipmentDefinition struct: id (String), hero_class_id (String), slot (EquipmentSlot enum: Weapon/Armor), upgrade_level (u32), stat_modifiers (Vec<AttributeModifier>)",
+        "AttributeModifier struct: attribute_key (String), value (f64)",
+        "All structs derive Serialize/Deserialize/Clone/Debug",
+        "Focused test proves construction and lookup are deterministic",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "Data-model slice. Place in new src/equipment/ module. Trinket buffs reference JsonBuffs.json buff IDs that map to AttributeModifier entries."
+    },
+    {
+      "id": "US-913",
+      "title": "P5c-1: Parse DDGC trinket definitions from JsonTrinkets.json",
+      "description": "As a developer, I need DDGC trinket data parsed so the loot and shop systems can use actual trinket content.",
+      "acceptanceCriteria": [
+        "A TrinketRegistry struct holds TrinketDefinition entries parsed from DreamDeveloperGame-Crossover/Assets/Resources/Data/JsonTrinkets.json",
+        "Trinkets are indexed by ID and have working lookup by ID",
+        "At least 10 trinkets across multiple rarity tiers (common, uncommon, rare, very_rare) are parsed and verified with correct buffs, class requirements, and price",
+        "Class-requirement filtering: trinkets_for_class(class_id) returns only trinkets whose hero_class_requirements include the given class_id or are empty (no restriction)",
+        "Focused test proves: (a) registry lookup returns correct trinket, (b) class filtering works for hunter/diviner/tank, (c) rarity categorization matches source data",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": "Source: DreamDeveloperGame-Crossover/Assets/Resources/Data/JsonTrinkets.json. Format: {props: [{id, buffs, hero_class_requirements, rarity, price, limit, origin_dungeon}]}. Parse using serde_json."
+    },
+    {
+      "id": "US-914",
+      "title": "P5c-2: Implement BuffRegistry for buff-ID-to-modifier resolution",
+      "description": "As a developer, I need trinket/quirk buff references resolved to concrete attribute modifiers so equipped trinkets and acquired quirks modify hero stats correctly.",
+      "acceptanceCriteria": [
+        "A BuffRegistry struct maps buff IDs (String) to Vec<AttributeModifier>",
+        "BuffRegistry parses DDGC buff naming conventions: MAXHP-15 -> {key: ATTR_MAX_HEALTH, value: -0.15}, DMGL-25 -> {key: ATTR_ATTACK, value: -0.25}, GIVE_STRESSDMG20 -> {key: stress_damage_given, value: 0.20}",
+        "resolve_buffs(buff_ids) takes a Vec<String> and returns aggregated Vec<AttributeModifier> for all resolved buffs",
+        "At least 10 buff IDs are registered with correct attribute key and value mappings",
+        "Focused test proves: (a) positive and negative modifiers resolve correctly, (b) percentage-based and flat modifiers are distinguished, (c) multi-buff trinkets aggregate all modifiers, (d) unknown buff IDs are skipped with no panic",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": "DDGC buff IDs use mixed naming conventions. Key patterns: MAXHP +/-N -> max HP percentage, DMGL/DMGH +/-N -> damage low/high percentage, STRESSDMG +/-N -> stress damage, RESIST +/-N -> resistance, SPD +/-N -> speed, etc. Build a lookup table + pattern parser for known conventions."
+    },
+    {
+      "id": "US-915",
+      "title": "P5c-3: Parse hero equipment upgrade data and compute stats from gear",
+      "description": "As a developer, I need hero combat stats computed from equipment level instead of hardcoded values so the equipment progression system changes hero power.",
+      "acceptanceCriteria": [
+        "EquipmentUpgradeData struct per hero class: weapon_levels (Vec<EquipmentLevel>), armor_levels (Vec<EquipmentLevel>)",
+        "EquipmentLevel struct: upgrade_level (u32), stat_modifiers (Vec<AttributeModifier>)",
+        "Parse at least 2 hero classes' upgrade data (e.g., Hunter, Tank) from Upgrades/Heroes/*.upgrades.json files",
+        "compute_hero_stats(hero_class_id, weapon_level, armor_level, trinket_buffs) returns HashMap<String, f64> of attribute values",
+        "Level-0 weapon + level-0 armor + no trinkets produces same stats as current hardcoded values (backward compatibility for Tank: HP 192, ATK 31, SPD 7; Hunter: HP 152, ATK 40, SPD 6)",
+        "Focused test proves: (a) level 0 = current stats, (b) level 1 weapon has higher ATK than level 0, (c) trinket buffs modify the computed stats",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": "Source: DreamDeveloperGame-Crossover/Assets/Resources/Data/Upgrades/Heroes/*.upgrades.json. Current hardcoded hero stats in src/content/heroes/ are level-0 values. Parse upgrade trees to get stat modifiers per level. The compute function combines weapon + armor + trinket modifiers."
+    },
+    {
+      "id": "US-916",
+      "title": "P5c-4: Wire equipment into hero archetype creation",
+      "description": "As a developer, I need hero archetype creation to accept equipment parameters so the same hero class can have different power levels based on gear.",
+      "acceptanceCriteria": [
+        "Hero archetype creation functions in src/content/heroes/ accept optional (weapon_level, armor_level) parameters (default: 0, 0 for backward compatibility)",
+        "When equipment parameters are provided, compute_hero_stats is used instead of hardcoded values",
+        "All existing tests continue passing without modification (default level-0 equipment)",
+        "At least one new test proves a level-1 equipped hero has different ATK stat than level-0",
+        "Trinket equip is a separate step: equip_trinket(hero, trinket_id) applies buff modifiers on top of equipment stats",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": "Integration slice. All existing archetype creation calls use default (0,0) — no changes needed in existing code. Add optional parameters or builder methods for equipment levels."
+    },
+    {
+      "id": "US-917",
+      "title": "P5d-0: Define quirk data model and parse DDGC quirks from JsonQuirks.json",
+      "description": "As a developer, I need quirk definitions parsed from JsonQuirks.json so heroes can acquire and be affected by quirks and diseases.",
+      "acceptanceCriteria": [
+        "QuirkDefinition struct in src/quirk/: id (String), is_positive (bool), is_disease (bool), classification (String), buffs (Vec<String>), incompatible_quirks (Vec<String>), curio_tag (String), curio_tag_chance (f64)",
+        "A QuirkRegistry struct holds QuirkDefinition entries parsed from DreamDeveloperGame-Crossover/Assets/Resources/Data/Mechanics/JsonQuirks.json",
+        "At least 10 quirks are parsed: mix of positive, negative, and disease types",
+        "Quirk buffs are resolvable through BuffRegistry from US-914 (cross-reference, no reimplementation)",
+        "Focused test proves: (a) quirk lookup by ID works, (b) positive/negative/disease classification is correct, (c) buff IDs are preserved for later resolution",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": "Source: DreamDeveloperGame-Crossover/Assets/Resources/Data/Mechanics/JsonQuirks.json. Format: {props: [{id, is_positive, is_disease, classification, incompatible_quirks, curio_tag, curio_tag_chance, buffs}]}. Quirks use the same buff ID system as trinkets."
+    },
+    {
+      "id": "US-918",
+      "title": "P5d-1: Implement quirk application and HeroQuirkState",
+      "description": "As a developer, I need heroes to carry active quirks that modify their attributes so the quirk system affects gameplay.",
+      "acceptanceCriteria": [
+        "HeroQuirkState struct: positive_quirks (Vec<String>), negative_quirks (Vec<String>), diseases (Vec<String>), max_positive (5), max_negative (5)",
+        "apply_quirk(state, quirk_id, registry) adds the quirk to the correct category, enforcing: (a) incompatible quirk replacement (check incompatible_quirks list), (b) max slot limit with random replacement when full",
+        "resolve_quirk_modifiers(state, buff_registry) returns aggregated Vec<AttributeModifier> from all active quirks' buff IDs",
+        "Quirk modifiers integrate into compute_hero_stats alongside equipment and trinket modifiers",
+        "Focused test proves: (a) quirk adds modifier to hero stats, (b) incompatible quirk replaces existing quirk, (c) disease quirks tracked in diseases vec not negative_quirks, (d) max slot limit enforced",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 18,
+      "passes": false,
+      "notes": "DDGC limits heroes to 5 positive and 5 negative quirks. When applying a new quirk and the category is full, randomly replace one existing quirk in that category. Diseases are tracked separately from negative quirks but count against the negative limit."
+    },
+    {
+      "id": "US-919",
+      "title": "P5d-2: Wire quirk acquisition into curio and combat events",
+      "description": "As a developer, I need quirks to be acquired from curio interactions and combat events so the hero's quirk profile evolves during runs.",
+      "acceptanceCriteria": [
+        "CurioInteractionOutcome result_type Quirk triggers apply_quirk with the result's result_id as quirk_id",
+        "CurioInteractionOutcome result_type Disease triggers apply_quirk with the result's result_id as disease quirk_id",
+        "Combat disease effects (monster skills with .disease) trigger apply_quirk after combat resolution",
+        "At least one end-to-end test proves: (a) curio interaction adds a quirk to a hero, (b) disease from combat is applied, (c) quirk modifiers affect subsequent combat stats",
+        "Existing tests continue passing",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 19,
+      "passes": false,
+      "notes": "Integration slice connecting curio system (US-904), combat system, and quirk system (US-918). Curio result dispatch happens in the room exploration flow. Combat disease dispatch happens in the battle loop post-resolution."
+    },
+    {
+      "id": "US-920",
+      "title": "P5e-0: Define trait/affliction data model and parse from JsonTraits.json",
+      "description": "As a developer, I need trait (affliction/virtue) definitions parsed from JsonTraits.json so the overstress system can resolve correctly.",
+      "acceptanceCriteria": [
+        "TraitDefinition struct in src/stress/: id (String), overstress_type (OverstressType enum: Affliction/Virtue), buff_ids (Vec<String>), combat_start_turn_act_outs (Vec<ActOutEntry>), reaction_act_outs (Vec<ReactionEntry>)",
+        "ActOutEntry struct: action (ActOutAction enum: Nothing/BarkStress/ChangePosition/IgnoreCommand/RandomCommand/RetreatFromCombat/AttackFriendly/AttackSelf/MarkSelf/StressHealSelf/StressHealParty/BuffRandomPartyMember/BuffParty/HealSelf), weight (u32)",
+        "ReactionEntry struct: trigger (ReactionTrigger enum), probability (f64), effect (Option<String>)",
+        "A TraitRegistry holds TraitDefinition entries parsed from DreamDeveloperGame-Crossover/Assets/Resources/Data/Mechanics/JsonTraits.json",
+        "At least 2 afflictions (e.g., fearful, hopeless) and 1 virtue (e.g., courageous) are parsed with correct act-out weight tables and reaction probabilities",
+        "Focused test proves: (a) trait lookup by ID, (b) act-out weight tables are preserved, (c) reaction probabilities are preserved",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 20,
+      "passes": false,
+      "notes": "Source: DreamDeveloperGame-Crossover/Assets/Resources/Data/Mechanics/JsonTraits.json. Format: {props: [{id, overstress_type, curio_tag, buff_ids, combat_start_turn_act_outs, reaction_act_outs}]}. Act-out format: {action: weight}. Parse carefully — nested arrays."
+    },
+    {
+      "id": "US-921",
+      "title": "P5e-1: Implement overstress resolution (affliction/virtue roll)",
+      "description": "As a developer, I need the overstress resolution implemented so heroes who exceed max stress get an affliction or virtue instead of being stuck at max stress.",
+      "acceptanceCriteria": [
+        "resolve_overstress(hero_id, seed, trait_registry) rolls between affliction (~90-95% weighted) and virtue (~5-10%) using seeded RNG",
+        "Affliction selection uses weighted random from all available affliction TraitDefinitions in the registry",
+        "The selected trait is returned as OverstressOutcome { trait_id, overstress_type, buff_ids }",
+        "Trait buffs modify hero attributes through the same modifier pipeline (BuffRegistry + compute_hero_stats)",
+        "Focused test proves: (a) overstress produces an affliction with high probability across 100 seeded rolls, (b) virtue is possible but rare (at least 1 virtue in 100 rolls), (c) result is deterministic for a given seed",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 21,
+      "passes": false,
+      "notes": "DDGC's virtue chance is approximately 5-10%. Use seeded RNG. When a hero's stress exceeds ATTR_MAX_STRESS (typically 200), this function is called. The result applies the trait's buff_ids as attribute modifiers to the hero."
+    },
+    {
+      "id": "US-922",
+      "title": "P5e-2: Implement affliction combat act-outs",
+      "description": "As a developer, I need affliction combat behavior (act-outs) implemented so afflicted heroes occasionally disobey orders during combat.",
+      "acceptanceCriteria": [
+        "resolve_act_out(affliction_id, seed, trait_registry) selects an action from the trait's combat_start_turn_act_outs weighted table using seeded RNG",
+        "ActOutResult enum: Obey (do nothing, hero acts normally), Disobey(ActOutAction) with the selected disruptive action",
+        "Disobey actions: IgnoreCommand (skip turn), ChangePosition (random move), BarkStress (stress ally), AttackFriendly, MarkSelf",
+        "Act-out result is recorded in the battle trace with the hero ID and action taken",
+        "Focused test proves: (a) Nothing/Obey is the most common outcome for fearful (weight 6 of ~10), (b) IgnoreCommand and BarkStress outcomes are possible, (c) resolution is deterministic for a given seed",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 22,
+      "passes": false,
+      "notes": "DDGC act-out weights make 'nothing' dominant (weight ~6 out of ~10 total). Other actions have smaller weights (1 each). Use cumulative-weight selection with the seed."
+    },
+    {
+      "id": "US-923",
+      "title": "P5e-3: Wire overstress and act-outs into battle loop",
+      "description": "As a developer, I need the battle loop to check for overstress and resolve act-outs so the stress mechanic produces consequences during combat.",
+      "acceptanceCriteria": [
+        "When a hero's stress (ATTR_STRESS) exceeds ATTR_MAX_STRESS, resolve_overstress is called and the resulting trait is applied",
+        "At the start of an afflicted hero's turn, resolve_act_out is called; if Disobey, the hero's commanded action is replaced or skipped",
+        "Battle trace records overstress events with the resulting trait_id and act-out events with the action taken",
+        "At least one end-to-end test proves: (a) stress damage pushes hero over threshold, (b) affliction is applied, (c) act-out occurs on a subsequent turn for that hero",
+        "Existing battle tests continue passing (no hero reaches max stress in existing fixtures)",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 23,
+      "passes": false,
+      "notes": "Integration slice. This completes the stress -> affliction -> combat behavior chain. Add a test fixture that applies heavy stress damage to trigger overstress. Ensure existing tests are unaffected (heroes don't reach max stress in normal scenarios)."
+    }
+  ]
+}
