@@ -341,6 +341,7 @@ impl EncounterResolver {
         let mut actor_states: HashMap<ActorId, ActorActionState> = HashMap::new();
         let mut round: u32 = 0;
         let mut dot_applied_this_round = false;
+        let mut kill_tracker: HashMap<ActorId, Vec<ActorId>> = HashMap::new();
         let max_rounds = 100;
 
         while encounter.state == EncounterState::Active && round < max_rounds {
@@ -518,13 +519,15 @@ impl EncounterResolver {
                     // EffectCondition::GameCondition variants are evaluated through the
                     // DDGC ConditionAdapter (thread-local ConditionContext plumbing).
                     let result = {
-                        let cond_ctx = ConditionContext::new(
+                        let kills_this_turn = kill_tracker.get(&current_actor).cloned().unwrap_or_default();
+                        let cond_ctx = ConditionContext::new_with_kills(
                             current_actor,
                             targets.clone(),
                             round,
                             actors.clone(),
                             side_lookup.clone(),
                             pack.dungeon,
+                            kills_this_turn,
                         );
                         set_condition_context(cond_ctx);
                         let evaluator = create_game_condition_evaluator();
@@ -800,7 +803,7 @@ impl EncounterResolver {
                         &actors,
                     );
 
-                    // Remove defeated actors
+                    // Remove defeated actors and track kills
                     let all_ids: Vec<ActorId> = encounter
                         .allies()
                         .iter()
@@ -810,6 +813,11 @@ impl EncounterResolver {
                     for id in all_ids {
                         let hp = actors[&id].effective_attribute(&AttributeKey::new(ATTR_HEALTH));
                         if hp.0 <= 0.0 {
+                            // Track that current_actor killed this actor
+                            kill_tracker
+                                .entry(current_actor)
+                                .or_default()
+                                .push(id);
                             remove_defeated(&mut encounter, &mut actors, &mut captor_tracker, id, round, &mut trace);
                         }
                     }

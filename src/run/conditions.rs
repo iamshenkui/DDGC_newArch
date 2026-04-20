@@ -128,10 +128,28 @@ pub struct ConditionContext {
     side_lookup: HashMap<ActorId, CombatSide>,
     /// The dungeon this encounter is taking place in.
     dungeon: Dungeon,
+    /// Actor IDs killed by the actor on the previous turn.
+    /// Used to evaluate `OnKill` / `ddgc_on_kill` conditions.
+    kills_this_turn: Vec<ActorId>,
 }
 
 impl ConditionContext {
-    /// Create a new condition context from combat state.
+    /// Create a new condition context from combat state without kill tracking.
+    ///
+    /// Convenience constructor for tests and contexts where kill tracking is not needed.
+    /// Kill tracking is initialized as empty.
+    pub fn new(
+        actor_id: ActorId,
+        target_ids: Vec<ActorId>,
+        current_round: u32,
+        actors: HashMap<ActorId, ActorAggregate>,
+        side_lookup: HashMap<ActorId, CombatSide>,
+        dungeon: Dungeon,
+    ) -> Self {
+        Self::new_with_kills(actor_id, target_ids, current_round, actors, side_lookup, dungeon, vec![])
+    }
+
+    /// Create a new condition context from combat state with kill tracking.
     ///
     /// All parameters must come from deterministic combat state so the
     /// context itself is deterministic.
@@ -144,13 +162,15 @@ impl ConditionContext {
     /// * `actors` — all actors in the encounter
     /// * `side_lookup` — map from actor ID to combat side
     /// * `dungeon` — the dungeon this encounter is in
-    pub fn new(
+    /// * `kills_this_turn` — actor IDs killed by the actor on the previous turn
+    pub fn new_with_kills(
         actor_id: ActorId,
         target_ids: Vec<ActorId>,
         current_round: u32,
         actors: HashMap<ActorId, ActorAggregate>,
         side_lookup: HashMap<ActorId, CombatSide>,
         dungeon: Dungeon,
+        kills_this_turn: Vec<ActorId>,
     ) -> Self {
         ConditionContext {
             actor_id,
@@ -159,6 +179,7 @@ impl ConditionContext {
             actors,
             side_lookup,
             dungeon,
+            kills_this_turn,
         }
     }
 
@@ -361,6 +382,14 @@ impl ConditionContext {
     pub fn is_in_mode(&self, mode: &str) -> bool {
         dungeon_mode_name(self.dungeon) == mode
     }
+
+    /// Returns whether the actor killed an enemy on the previous turn.
+    ///
+    /// DDGC reference: `OnKill` — checks if the actor has any kills recorded
+    /// from their previous turn. This is used to evaluate `ddgc_on_kill` conditions.
+    pub fn actor_killed_enemy(&self) -> bool {
+        !self.kills_this_turn.is_empty()
+    }
 }
 
 /// Returns the snake_case mode name for a Dungeon variant.
@@ -413,6 +442,12 @@ pub enum DdgcCondition {
     /// Current encounter is in the specified dungeon or mode.
     /// Matches against `ConditionContext::dungeon` using snake_case dungeon names.
     InMode(String),
+    /// Actor killed an enemy on the previous turn.
+    ///
+    /// DDGC reference: `OnKill` — triggers bonus effects when the actor has
+    /// killed an enemy during their most recent turn. This enables skills that
+    /// provide follow-up bonuses after a kill.
+    OnKill,
 }
 
 /// Result of evaluating a condition through the adapter.
@@ -592,6 +627,13 @@ impl ConditionAdapter {
                     ConditionResult::Fail
                 }
             }
+            DdgcCondition::OnKill => {
+                if self.ctx.actor_killed_enemy() {
+                    ConditionResult::Pass
+                } else {
+                    ConditionResult::Fail
+                }
+            }
         }
     }
 
@@ -624,6 +666,7 @@ impl ConditionAdapter {
     /// - `"ddgc_target_has_status_<kind>"` → `DdgcCondition::TargetHasStatus(kind)`
     /// - `"ddgc_actor_has_status_<kind>"` → `DdgcCondition::ActorHasStatus(kind)`
     /// - `"ddgc_in_mode_<mode>"` → `DdgcCondition::InMode(mode)`
+    /// - `"ddgc_on_kill"` → `DdgcCondition::OnKill`
     ///
     /// Returns `None` if the tag is not recognized.
     pub fn parse_condition_tag(tag: &str) -> Option<DdgcCondition> {
@@ -690,6 +733,11 @@ impl ConditionAdapter {
             if !rest.is_empty() {
                 return Some(DdgcCondition::InMode(rest.to_string()));
             }
+        }
+
+        // Parse on_kill
+        if tag == "ddgc_on_kill" {
+            return Some(DdgcCondition::OnKill);
         }
 
         None
@@ -2404,6 +2452,168 @@ mod adapter_tests {
         // Target HP 30/100 = 0.3 < 0.5 → TargetHpBelow(0.5) passes → true
         assert!(evaluator("ddgc_target_hp_below_0.5"),
             "Evaluator should return true for ddgc_target_hp_below_0.5 when target HP is 30%");
+    }
+
+    // ── US-804: OnKill condition tests ─────────────────────────────────────────
+
+    #[test]
+    fn on_kill_passes_when_actor_killed_enemy_previous_turn() {
+        // Actor 1 killed Actor 2 on their previous turn
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let actor = ActorAggregate::new(ActorId(1));
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx = ConditionContext::new_with_kills(
+            ActorId(1),
+            vec![],
+            0,
+            actors,
+            side_lookup,
+            Dungeon::QingLong,
+            vec![ActorId(2)], // Actor 1 killed Actor 2 on previous turn
+        );
+        let adapter = ConditionAdapter::new(ctx);
+
+        assert_eq!(
+            adapter.evaluate_by_tag("ddgc_on_kill"),
+            ConditionResult::Pass,
+            "OnKill should pass when actor killed an enemy on previous turn"
+        );
+    }
+
+    #[test]
+    fn on_kill_fails_when_no_kill_previous_turn() {
+        // Actor 1 did not kill anyone on their previous turn
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let actor = ActorAggregate::new(ActorId(1));
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let ctx = ConditionContext::new_with_kills(
+            ActorId(1),
+            vec![],
+            0,
+            actors,
+            side_lookup,
+            Dungeon::QingLong,
+            vec![], // No kills on previous turn
+        );
+        let adapter = ConditionAdapter::new(ctx);
+
+        assert_eq!(
+            adapter.evaluate_by_tag("ddgc_on_kill"),
+            ConditionResult::Fail,
+            "OnKill should fail when actor did not kill on previous turn"
+        );
+    }
+
+    #[test]
+    fn on_kill_condition_changes_outcome_based_on_kill() {
+        // Same actor, different kill histories - proves condition is stateful
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let actor = ActorAggregate::new(ActorId(1));
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        // Context with kill
+        let ctx_with_kill = ConditionContext::new_with_kills(
+            ActorId(1),
+            vec![],
+            0,
+            actors.clone(),
+            side_lookup.clone(),
+            Dungeon::QingLong,
+            vec![ActorId(2)],
+        );
+        let adapter_with_kill = ConditionAdapter::new(ctx_with_kill);
+
+        // Context without kill
+        let ctx_without_kill = ConditionContext::new_with_kills(
+            ActorId(1),
+            vec![],
+            0,
+            actors,
+            side_lookup,
+            Dungeon::QingLong,
+            vec![],
+        );
+        let adapter_without_kill = ConditionAdapter::new(ctx_without_kill);
+
+        let result_with = adapter_with_kill.evaluate_by_tag("ddgc_on_kill");
+        let result_without = adapter_without_kill.evaluate_by_tag("ddgc_on_kill");
+
+        assert_eq!(result_with, ConditionResult::Pass, "Should pass with kill");
+        assert_eq!(result_without, ConditionResult::Fail, "Should fail without kill");
+        assert_ne!(result_with, result_without,
+            "Same OnKill condition should produce different outcomes based on kill state");
+    }
+
+    #[test]
+    fn on_kill_by_tag_parsing() {
+        assert!(matches!(
+            ConditionAdapter::parse_condition_tag("ddgc_on_kill"),
+            Some(DdgcCondition::OnKill)
+        ));
+    }
+
+    #[test]
+    fn on_kill_evaluator_wiring() {
+        // Wire test through the game condition evaluator
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let actor = ActorAggregate::new(ActorId(1));
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        // Set context with kill
+        let ctx = ConditionContext::new_with_kills(
+            ActorId(1),
+            vec![],
+            0,
+            actors,
+            side_lookup,
+            Dungeon::QingLong,
+            vec![ActorId(2)],
+        );
+        set_condition_context(ctx);
+        let evaluator = create_game_condition_evaluator();
+
+        assert!(evaluator("ddgc_on_kill"),
+            "Evaluator should return true when actor killed on previous turn");
+    }
+
+    #[test]
+    fn on_kill_evaluator_returns_false_when_no_kill() {
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let actor = ActorAggregate::new(ActorId(1));
+        actors.insert(ActorId(1), actor);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        // Set context without kill
+        let ctx = ConditionContext::new_with_kills(
+            ActorId(1),
+            vec![],
+            0,
+            actors,
+            side_lookup,
+            Dungeon::QingLong,
+            vec![],
+        );
+        set_condition_context(ctx);
+        let evaluator = create_game_condition_evaluator();
+
+        assert!(!evaluator("ddgc_on_kill"),
+            "Evaluator should return false when actor did not kill on previous turn");
     }
 
     // ── US-803: InMode condition tests ─────────────────────────────────────────

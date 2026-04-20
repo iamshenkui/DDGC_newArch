@@ -235,7 +235,28 @@ pub fn xuanwu_strike() -> SkillDefinition {
     )
 }
 
-/// All Hunter base skills (DDGC template + Opening Strike + Retribution Strike).
+/// Executioner Strike — bonus damage after a kill.
+///
+/// DDGC reference: bonus damage when the actor has killed an enemy on a previous turn.
+/// This skill demonstrates the OnKill DDGC condition: the bonus damage effect
+/// is only applied when the actor's last turn resulted in a kill.
+///
+/// Implementation: two effect nodes - normal damage always applies, bonus damage
+/// only applies when actor killed on previous turn (via GameCondition with ddgc_on_kill tag).
+pub fn executioner_strike() -> SkillDefinition {
+    let normal_damage = EffectNode::damage(20.0);
+    let bonus_damage = EffectNode::damage(25.0).with_game_condition("ddgc_on_kill");
+
+    SkillDefinition::new(
+        SkillId::new("executioner_strike"),
+        vec![normal_damage, bonus_damage],
+        TargetSelector::AllEnemies,
+        1,
+        None,
+    )
+}
+
+/// All Hunter base skills (DDGC template + Opening Strike + Retribution Strike + Executioner Strike).
 pub fn skill_pack() -> Vec<SkillDefinition> {
     vec![
         mark_skill(),
@@ -247,5 +268,6 @@ pub fn skill_pack() -> Vec<SkillDefinition> {
         buff_skill(),
         opening_strike(),
         retribution_strike(),
+        executioner_strike(),
     ]
 }
