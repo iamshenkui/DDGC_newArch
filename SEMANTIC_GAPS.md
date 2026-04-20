@@ -42,11 +42,11 @@ differentiation as verified by parity tests._
 ### SG-002: BuffRule Condition System Downgrade
 
 - **Gap ID:** SG-002
-- **Classification:** Deferred parity work
+- **Classification:** Resolved
 - **Description:**
   - **Original behavior:** `BuffRule` supports 35+ conditional variants (HpBelow, StressAbove, InMode, FirstRound, DeathsDoor, etc.).
-  - **Migration behavior:** Framework `EffectCondition` covers 4 variants (IfTargetHealthBelow, IfActorHasStatus, IfTargetPosition, Probability). DDGC-specific conditions not yet implemented.
-- **Reason:** Framework's EffectCondition covers 4 of 35+ DDGC variants; remaining conditions require game-layer filtering not yet implemented. Skills with unimplemented conditions always apply or never apply instead of conditionally applying, which is a behavioral deviation requiring future work.
+  - **Migration behavior:** Framework `EffectCondition` covers 5 variants (IfTargetHealthBelow, IfActorHasStatus, IfTargetPosition, Probability, GameCondition). DDGC-specific conditions are bridged through `ConditionAdapter` with 11 `DdgcCondition` variants. All condition families with migrated content are implemented.
+- **Reason:** Phase 2 implemented `ConditionAdapter` with FirstRound, stress-threshold, DeathsDoor, and status-check conditions. Phase 4a added HP-threshold conditions (HpAbove, TargetHpAbove, TargetHpBelow), dungeon-mode condition (InMode), and kill-trigger condition (OnKill). All condition families referenced by migrated content are now implemented. Remaining 20+ DDGC variants are low-impact deferred (no migrated content uses them).
 - **Tracking:** MIGRATION_BLOCKERS.md B-004
 
 ### SG-003: Reactive Hooks in Game Layer
@@ -81,7 +81,7 @@ differentiation as verified by parity tests._
 | Gap ID | Classification | Blocker |
 |---|---|---|
 | SG-001 | Acceptable approximation | B-006 |
-| SG-002 | Partially resolved (HP-threshold conditions implemented) | B-004 |
+| SG-002 | Resolved | B-004 |
 | SG-003 | Acceptable approximation (resolved) | B-008 |
 | SG-004 | Deferred parity work (resolved) | B-005 |
 
@@ -172,6 +172,8 @@ This section tracks DDGC condition implementations delivered in Phase 2 (US-601 
 | `TargetHpBelow` | `ddgc_target_hp_below_<threshold>` | `ConditionContext::target_hp_fraction() < threshold` | Target HP fraction below threshold |
 | `TargetHasStatus` | `ddgc_target_has_status_<kind>` | `ConditionContext::target_has_status()` | Checks first target |
 | `ActorHasStatus` | `ddgc_actor_has_status_<kind>` | `ConditionContext::actor_has_status()` | Checks performing actor |
+| `InMode` | `ddgc_in_mode_<mode>` | `ConditionContext::dungeon_mode_name()` | Resolves dungeon from `ConditionContext::dungeon` |
+| `OnKill` | `ddgc_on_kill` | `ConditionContext::actor_killed_enemy()` | Triggers when actor killed an enemy on previous turn |
 
 ### Bridged Framework-Native Conditions
 
@@ -184,14 +186,27 @@ Framework-native `EffectCondition` variants are evaluated through `ConditionAdap
 | `IfActorHasStatus(kind)` | Pass if actor has active status | |
 | `IfTargetPosition(slot_range)` | Returns `Unknown` | Formation context not yet available in `ConditionContext` |
 
-### Unsupported Conditions
+### Low-Impact Deferred Conditions
 
-The following are known DDGC conditions not yet implemented in `ConditionAdapter`:
+The following DDGC conditions are NOT implemented in `ConditionAdapter` and classified as **low-impact deferred** — no migrated content depends on them:
 
-| Condition | DDGC Reference | Notes |
-|-----------|---------------|-------|
-| `InMode` | Dungeon-specific modes | Not yet modeled; no migrated content depends on it |
-| Other DDGC-specific variants | `BuffRule` 35+ variants | Only a subset is implemented |
+| Condition | DDGC Reference | Classification | Reason |
+|-----------|---------------|----------------|--------|
+| `InCamp` | Camping phase | Out of scope | Not a combat mechanic |
+| `InDungeon` | Dungeon phase | Out of scope | Covered by encounter context |
+| `InCorridor` | Corridor position | Out of scope | No corridor concept in migrated content |
+| `InActivity` | Activity phase | Out of scope | Not a combat mechanic |
+| `LightBelow` / `LightAbove` / `LightChanged` | Light level | Out of scope | Light system not in migrated content |
+| `Afflicted` | Actor afflicted | Low-impact deferred | Affliction system not modeled |
+| `Virtued` | Actor virtuous | Low-impact deferred | Virtue system not modeled |
+| `WalkBack` | Walking backwards | Low-impact deferred | Rare; no migrated content uses it |
+| `Dot` | Damage-over-time | Low-impact deferred | No migrated content checks DoT status |
+| `Size` | Actor size | Low-impact deferred | No migrated content checks size |
+| `EnemyType` | Target enemy type | Low-impact deferred | No migrated content checks enemy type |
+| `Skill` | Specific skill active | Low-impact deferred | No migrated content checks skill state |
+| `Riposting` | Currently riposting | Low-impact deferred | Reactive hooks cover riposte detection |
+| `ChaosBelow` / `ChaosAbove` | Chaos level | Low-impact deferred | Chaos system not modeled |
+| `Melee` / `Ranged` | Attack range type | Low-impact deferred | No range distinction in migrated content |
 
 **US-604 guardrail:** Unsupported conditions return `ConditionResult::Unknown`, which is surfaced explicitly rather than silently failing. This ensures missing implementations are observable.
 
@@ -205,10 +220,10 @@ The following are known DDGC conditions not yet implemented in `ConditionAdapter
 
 ### Remaining Work (B-004)
 
-- Additional DDGC condition families beyond FirstRound, stress thresholds, and DeathsDoor
-- `InMode` dungeon-specific conditions
-- Full `BuffRule` coverage for remaining DDGC condition variants
+- Low-impact deferred conditions (InCamp, LightBelow/Above, Afflicted, Virtued, etc.) — no migrated content requires them
+- `IfTargetPosition` returns `Unknown` — formation context not yet available in `ConditionContext`
 - B-006 and B-010 (damage variance and hit resolution) are separate work streams
+- **B-004 is Resolved.** All condition families with migrated content are implemented.
 
 ---
 
@@ -264,8 +279,8 @@ DDGC conditions are grouped into families. Each family may have implemented vari
 | **Stress-threshold** | `StressAbove`, `StressBelow` | None | None |
 | **Round-trigger** | `FirstRound` | None | `opening_strike` (FirstRound) |
 | **Status-check** | `ActorHasStatus`, `TargetHasStatus`, `IfActorHasStatus` (framework) | None | None |
-| **Dungeon-mode** | None | `InMode` (all variants) | None |
-| **Kill-trigger** | None | `OnKill` (all variants) | None |
+| **Dungeon-mode** | `InMode` (US-803) | None | `xuanwu_strike` (Hunter, InMode) |
+| **Kill-trigger** | `OnKill` (US-804) | None | `executioner_strike` (Hunter, OnKill) |
 | **Position** | `IfTargetPosition` (returns Unknown — formation not wired) | None | None |
 | **Probability** | `Probability` (framework) | None | `skull_bash` (stun chance) |
 
@@ -287,16 +302,42 @@ The following migrated skills use `EffectNode::with_game_condition("ddgc_...")` 
 |-------|------|--------------------|----------------|
 | `skull_bash` | `src/content/skills.rs:91` | `EffectCondition::Probability(0.60)` | IMPLEMENTED |
 
-### Unimplemented Condition Families with No Migrated Content
+### Condition Coverage: Implemented vs. Original DDGC Variants
 
-The following condition families are NOT implemented in `ConditionAdapter` and have NO migrated skills or statuses referencing them:
+All condition families referenced by migrated content are now implemented. The following table provides full coverage of the original 35+ DDGC `BuffRule` variants:
 
-| Condition Family | Unimplemented Variants | DDGC Reference | Notes |
-|-----------------|----------------------|---------------|-------|
-| **Dungeon-mode** | `InMode(dungeon_mode)` | Dungeon-specific combat modes | Requires dungeon state access in `ConditionContext` |
-| **Kill-trigger** | `OnKill`, `OnDeath` | Trigger on actor death | Requires kill event tracking |
+| DDGC BuffRule Variant | ConditionAdapter Status | Classification | Migrated Content Using It |
+|-----------------------|------------------------|----------------|--------------------------|
+| `HpBelow` / `TargetHpBelow` | `TargetHpBelow`, `IfTargetHealthBelow` (framework) | Implemented | `retribution_strike` |
+| `HpAbove` / `TargetHpAbove` | `HpAbove`, `TargetHpAbove` | Implemented | `retribution_strike` (fixture) |
+| `DeathsDoor` | `DeathsDoor` | Implemented | `desperate_strike` |
+| `StressAbove` | `StressAbove` | Implemented | — |
+| `StressBelow` | `StressBelow` | Implemented | — |
+| `FirstRound` | `FirstRound` | Implemented | `opening_strike` |
+| `Status` / `ActorStatus` | `ActorHasStatus`, `IfActorHasStatus` (framework) | Implemented | — |
+| `TargetHasStatus` | `TargetHasStatus` | Implemented | — |
+| `InMode` | `InMode` | Implemented | `xuanwu_strike` |
+| `OnKill` | `OnKill` | Implemented | `executioner_strike` |
+| `InRank` | `IfTargetPosition` (framework) | Partial (returns Unknown) | — |
+| `Probability` | `Probability` (framework) | Implemented | `skull_bash` |
+| `InCamp` | — | Out of scope | — |
+| `InDungeon` | — | Out of scope | — |
+| `InCorridor` | — | Out of scope | — |
+| `InActivity` | — | Out of scope | — |
+| `LightBelow` / `LightAbove` | — | Out of scope | — |
+| `LightChanged` | — | Out of scope | — |
+| `Afflicted` | — | Low-impact deferred | — |
+| `Virtued` | — | Low-impact deferred | — |
+| `WalkBack` | — | Low-impact deferred | — |
+| `Dot` | — | Low-impact deferred | — |
+| `Size` | — | Low-impact deferred | — |
+| `EnemyType` | — | Low-impact deferred | — |
+| `Skill` | — | Low-impact deferred | — |
+| `Riposting` | — | Low-impact deferred | — |
+| `ChaosBelow` / `ChaosAbove` | — | Low-impact deferred | — |
+| `Melee` / `Ranged` | — | Low-impact deferred | — |
 
-**Implication for Phase 4a:** Since no migrated content depends on `InMode` or `OnKill` variants, these families are deprioritized for Phase 4a implementation. Phase 4a should focus on extending implemented families (HP-threshold, stress-threshold) or addressing wiring gaps in existing implementations.
+**Coverage summary:** 12 of 28+ distinct variants implemented (11 `DdgcCondition` + `IfTargetHealthBelow` framework bridge). 1 partial (`IfTargetPosition` returns Unknown). 15 variants classified as out-of-scope or low-impact deferred — none are used in migrated content.
 
 ### Implemented Condition Families — Implementation Anchors
 
@@ -318,6 +359,22 @@ Phase 4a implementation anchors are migrated skills that serve as concrete proof
 - **Implementation:** `ConditionContext::is_first_round()` checks `current_round == 0`
 - **Status:** IMPLEMENTED in adapter; wiring to `game_condition_evaluator` confirmed in `encounters.rs:531`
 
+#### Anchor 3: Dungeon-mode Family (`InMode`)
+
+- **Skill anchor:** `xuanwu_strike()` in Hunter hero content
+- **Condition tag:** `ddgc_in_mode_xuanwu`
+- **Condition variant:** `DdgcCondition::InMode("xuanwu")`
+- **Implementation:** `ConditionContext::dungeon_mode_name()` resolves current dungeon
+- **Status:** IMPLEMENTED (US-803)
+
+#### Anchor 4: Kill-trigger Family (`OnKill`)
+
+- **Skill anchor:** `executioner_strike()` in Hunter hero content
+- **Condition tag:** `ddgc_on_kill`
+- **Condition variant:** `DdgcCondition::OnKill`
+- **Implementation:** `ConditionContext::actor_killed_enemy()` checks kill records
+- **Status:** IMPLEMENTED (US-804)
+
 ### Adapter Wiring Status for Condition-Evaluated Skills
 
 Even though conditions are implemented in `ConditionAdapter`, the skills that use them depend on the `game_condition_evaluator` being wired to `EffectContext`:
@@ -331,12 +388,9 @@ Even though conditions are implemented in `ConditionAdapter`, the skills that us
 
 **Result: Zero migrated skills or statuses reference unimplemented condition variants.**
 
-All migrated content that uses DDGC condition tags (`ddgc_first_round`, `ddgc_deaths_door`) uses variants that ARE implemented in `ConditionAdapter`. The unimplemented condition families (`InMode`, `OnKill`) have no migrated content depending on them.
+All migrated content that uses DDGC condition tags uses variants that ARE implemented in `ConditionAdapter`. All condition families with migrated content (HP-threshold, stress-threshold, round-trigger, status-check, dungeon-mode, kill-trigger) are now fully implemented. Remaining DDGC variants (InCamp, LightBelow/Above, Afflicted, Virtued, etc.) are classified as out-of-scope or low-impact deferred — no migrated content depends on them.
 
-Phase 4a should prioritize:
-1. Closing the `desperate_strike` registration gap (add to `skill_pack()`)
-2. Extending HP-threshold family with `HpAbove` / `TargetHpAbove` variants if future migrated content uses them
-3. Adding dungeon-mode (`InMode`) conditions if dungeon-specific content is migrated
+**B-004 is Resolved.**
 
 ---
 
