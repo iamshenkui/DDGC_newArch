@@ -1,84 +1,373 @@
 {
-  "title": "DDGC_newArch Framework API Drift Repair",
-  "introduction": "Repair DDGC_newArch after framework API drift so cargo test compiles and runs again. Align encounter/runtime code with current framework_combat APIs, replace removed EffectNode condition fields with supported condition plumbing, stop relying on private execute_effect_node internals, and restore deterministic battle pipeline behavior covered by migration documents and regression tests.",
+  "title": "Phase 5 — DDGC Town Meta-Loop, Curio Interaction, and Equipment Systems",
+  "introduction": "Implement the DDGC meta-game loop: town buildings, curio, trap, and obstacle interactions during dungeon runs, and the trinket and equipment systems that drive hero progression so a headless campaign can cycle from town to dungeon and back.",
   "goals": [
-    "Restore `cargo check` and `cargo test` to a passing state for DDGC_newArch",
-    "Repair the DDGC conditional effect path using supported public framework APIs only",
-    "Remove reliance on private framework internals from encounter execution and scenarios",
-    "Preserve the migration's documented deterministic battle behavior where the current framework still supports it"
+    "Implement curio, trap, and obstacle interactions during exploration.",
+    "Add the town building meta-loop between dungeon runs.",
+    "Compute hero power from equipment, trinkets, quirks, diseases, afflictions, and virtues rather than hardcoded stats."
   ],
   "user_stories": [
     {
-      "story_id": "US-001",
-      "title": "Inventory The API Drift Surface",
-      "description": "As a developer, I need an explicit inventory of compile failures and API mismatches so the repair effort is driven by the current codebase rather than stale migration ledgers.",
+      "story_id": "US-901",
+      "title": "P5a-0: Define curio, trap, and obstacle data model",
+      "description": "As a developer, I need data structures for curios, traps, and obstacles so the game layer can represent room and corridor interactions beyond combat.",
       "acceptance_criteria": [
-        "A checked-in repair note or progress entry lists each incompatible API assumption currently blocking compilation",
-        "The inventory groups failures by subsystem such as encounter runtime, scenarios, hero content, and test fixtures",
-        "The inventory distinguishes framework API drift from true DDGC game-layer logic gaps"
+        "CurioDefinition exists with id, dungeon_scope, results, and item_interactions.",
+        "CurioResult captures weight, chance, result_type, and result_id.",
+        "ItemInteraction captures item_id and overrides_result_id.",
+        "TrapDefinition captures id, success_effects, fail_effects, health_fraction, and difficulty_variations.",
+        "ObstacleDefinition captures id, fail_effects, health_fraction, and torchlight_penalty.",
+        "All structs derive Serialize, Deserialize, Clone, and Debug.",
+        "Focused tests prove struct construction and serialization are deterministic."
       ],
       "priority_hint": 1,
-      "notes": []
+      "notes": [
+        "Data-model slice only. Match the schemas observed in Curios.csv, Traps.json, and Obstacles.json."
+      ]
     },
     {
-      "story_id": "US-002",
-      "title": "Realign Runtime Effect Resolution To Public Framework APIs",
-      "description": "As a developer, I need encounter execution and runtime helpers to work entirely through the current public `framework_combat` APIs so the game crate no longer depends on private helpers or obsolete return shapes.",
+      "story_id": "US-902",
+      "title": "P5a-1: Parse DDGC curio, trap, and obstacle definitions",
+      "description": "As a developer, I need the DDGC curio, trap, and obstacle data parsed into the data model so actual game content drives interactions.",
       "acceptance_criteria": [
-        "`src/run/encounters.rs` no longer imports private framework functions",
-        "Runtime code compiles against the current `resolve_skill` and effect-result APIs",
-        "Riposte, deferred-effect, and battle-loop plumbing compile without referencing removed `results` or `deferred` wrapper fields"
+        "A CurioRegistry holds all DDGC curio definitions parsed from Curios.csv.",
+        "A TrapRegistry holds all DDGC trap definitions parsed from Traps.json.",
+        "An ObstacleRegistry holds all DDGC obstacle definitions parsed from Obstacles.json.",
+        "At least 3 curios per dungeon region are parsed for QingLong, BaiHu, ZhuQue, and XuanWu.",
+        "All 3 trap types and all 5 obstacle types are parsed.",
+        "Focused tests prove registry lookup by ID, dungeon-scoped curio filtering, and item interaction overrides are preserved."
       ],
       "priority_hint": 2,
-      "notes": []
+      "notes": [
+        "Curios.csv uses a multi-row block format per curio and requires custom parsing. Traps.json and Obstacles.json are standard JSON."
+      ]
     },
     {
-      "story_id": "US-003",
-      "title": "Reconnect DDGC Conditional Effects Through Supported Condition Plumbing",
-      "description": "As a developer, I need DDGC conditional skills to express their gating through supported condition structures or game-layer adapters so content compiles without writing removed `EffectNode` fields.",
+      "story_id": "US-903",
+      "title": "P5a-2: Implement curio interaction resolution",
+      "description": "As a developer, I need a deterministic curio interaction resolver so room exploration produces outcomes matching DDGC's weighted result system.",
       "acceptance_criteria": [
-        "Hero or monster content no longer assigns nonexistent `EffectNode` fields",
-        "The replacement condition path uses supported framework conditions or the existing DDGC condition adapter seam in game-layer code",
-        "Conditional skills that served as documented anchors, including the Hunter condition skills, still participate in tests or runtime scenarios in an observable way"
+        "resolve_curio_interaction(curio_id, has_item, item_id, seed) returns a CurioInteractionOutcome.",
+        "Without an item, the resolver selects a result from the weighted table using seeded probability.",
+        "With an item, the resolver uses an override result when one exists and otherwise falls back to the weighted table.",
+        "CurioInteractionOutcome includes result_type, result_id, and applied_effects.",
+        "Focused tests prove weighted bare interaction, item override behavior, and deterministic results for a given seed."
       ],
       "priority_hint": 3,
-      "notes": []
+      "notes": [
+        "Actual effect application such as applying a quirk is deferred to the relevant subsystem."
+      ]
     },
     {
-      "story_id": "US-004",
-      "title": "Repair Scenario And Regression Fixtures Against The Current Runtime Shape",
-      "description": "As a developer, I need regression scenarios and focused tests to match the repaired runtime interfaces so they validate current behavior instead of an outdated internal representation.",
+      "story_id": "US-904",
+      "title": "P5a-3: Implement trap and obstacle resolution",
+      "description": "As a developer, I need deterministic trap and obstacle interaction so corridor and room hazards produce correct damage and debuff outcomes.",
       "acceptance_criteria": [
-        "Scenario files under `src/scenarios/` compile against the repaired runtime interfaces",
-        "Focused tests that were asserting on obsolete result wrappers are updated to supported observable outputs",
-        "Deterministic trace-oriented coverage remains in place for the repaired battle pipeline where applicable"
+        "resolve_trap_interaction(trap_id, trap_level, resist_chance, seed) returns TrapOutcome with success or fail effects and HP fraction.",
+        "Trap difficulty variations are applied based on dungeon level.",
+        "resolve_obstacle_interaction(obstacle_id) returns ObstacleOutcome with fail effects, HP fraction, and torchlight penalty.",
+        "Focused tests prove trap success, difficulty-scaled trap failure, and the uniform obstacle penalty pattern."
       ],
       "priority_hint": 4,
-      "notes": []
+      "notes": [
+        "Traps have a resist or disarm check; obstacles always apply their fail effects."
+      ]
     },
     {
-      "story_id": "US-005",
-      "title": "Close Out The Repair With Green Verification And Updated Planning Artifacts",
-      "description": "As a developer, I need the repair effort closed out with clean verification and updated planning artifacts so the repo state once again matches its recorded migration status.",
+      "story_id": "US-905",
+      "title": "P5a-4: Wire curio, trap, and obstacle into room exploration",
+      "description": "As a developer, I need room exploration events to trigger curio, trap, and obstacle interactions so the dungeon run produces the full exploration cycle.",
       "acceptance_criteria": [
-        "`cargo check` exits 0 in DDGC_newArch",
-        "`cargo test` exits 0 in DDGC_newArch",
-        "The resulting PRD/task state in meta-agent reflects the decomposition of this repair effort",
-        "A progress artifact records what was repaired, what remains deferred, and any residual risks tied to framework evolution"
+        "RoomKind::Event rooms can carry a curio_id reference.",
+        "RoomKind::Corridor rooms can carry optional trap_id and curio_id.",
+        "Entering a room with a curio or obstacle produces an interaction outcome in the run trace.",
+        "Traversing a corridor with a trap produces a trap outcome in the run trace.",
+        "At least one run slice produces curio interaction and trap interaction entries.",
+        "cargo test passes with interaction events in the trace."
       ],
       "priority_hint": 5,
-      "notes": []
+      "notes": [
+        "Integration slice. Room generation from Phase 4c should assign curios and traps based on DungeonMapConfig densities."
+      ]
+    },
+    {
+      "story_id": "US-906",
+      "title": "P5b-0: Define town building data model",
+      "description": "As a developer, I need data structures for town buildings, their upgrade trees, and their services so the game layer can represent the between-run meta state.",
+      "acceptance_criteria": [
+        "TownBuilding tracks id, building_type, unlock_conditions, and upgrade_trees.",
+        "UpgradeTree tracks tree_id and levels.",
+        "UpgradeLevel tracks code, cost, and building-specific effects.",
+        "TownState tracks current upgrade level per building, gold, and heirloom currencies.",
+        "All structs derive Serialize, Deserialize, Clone, and Debug.",
+        "Focused tests prove TownState construction and upgrade application are deterministic."
+      ],
+      "priority_hint": 6,
+      "notes": [
+        "Data-model slice. DDGC buildings have variable upgrade structures such as Abbey sub-trees and StageCoach parallel trees."
+      ]
+    },
+    {
+      "story_id": "US-907",
+      "title": "P5b-1: Parse DDGC building definitions",
+      "description": "As a developer, I need DDGC building data parsed into the town model so actual building parameters drive the meta loop.",
+      "acceptance_criteria": [
+        "A BuildingRegistry holds all 10 DDGC building definitions parsed from *.building.json files.",
+        "Each building has correct unlock conditions, upgrade trees, and service parameters.",
+        "At least 3 buildings including StageCoach, Abbey, and Guild are fully parsed with all upgrade levels.",
+        "Focused tests prove building lookup, upgrade tree traversal, and loading of all 10 buildings."
+      ],
+      "priority_hint": 7,
+      "notes": [
+        "Each .building.json has a unique structure, so the parser must handle building-specific fields generically."
+      ]
+    },
+    {
+      "story_id": "US-908",
+      "title": "P5b-2: Implement town visit cycle",
+      "description": "As a developer, I need a town visit phase that occurs between dungeon runs so the meta-game loop is complete.",
+      "acceptance_criteria": [
+        "TownVisit represents a single town phase with available services, hero roster state, and gold and heirloom balances.",
+        "perform_town_activity(building_id, activity, hero_id, upgrade_level) resolves a building service.",
+        "Town visit produces a trace of activities performed.",
+        "At least one end-to-end test proves entering town after a dungeon run, performing a stress heal at the Abbey, reducing hero stress, and deducting gold.",
+        "Town visit is deterministic for given state and activity choices."
+      ],
+      "priority_hint": 8,
+      "notes": [
+        "Start with Abbey stress heal and StageCoach recruit as the two most critical buildings."
+      ]
+    },
+    {
+      "story_id": "US-909",
+      "title": "P5b-3: Wire town visit into run flow",
+      "description": "As a developer, I need the run flow to include town visits between dungeon runs so the full game loop operates headlessly.",
+      "acceptance_criteria": [
+        "After a dungeon run completes, a town visit phase begins.",
+        "Town visit reads hero roster, gold, and heirloom currencies.",
+        "Town visit allows at least Abbey stress heal and StageCoach recruit.",
+        "Run trace records town activities alongside dungeon run events.",
+        "A full-loop run slice from town to dungeon to town completes with heroes progressing between runs.",
+        "cargo test passes with the town phase active."
+      ],
+      "priority_hint": 9,
+      "notes": [
+        "Integration slice. The run loop becomes initialize, town_visit, dungeon_run, town_visit, dungeon_run, and so on until victory or defeat."
+      ]
+    },
+    {
+      "story_id": "US-910",
+      "title": "P5b-4: Implement hero XP and leveling",
+      "description": "As a developer, I need hero experience and leveling so heroes can progress through resolve levels between dungeon runs.",
+      "acceptance_criteria": [
+        "HeroProgress tracks xp, resolve_level, and hero_level.",
+        "XP thresholds match Campaign.json for level_threshold_table and resolve_thresholds.",
+        "add_xp(amount) advances hero level and resolve level when thresholds are crossed.",
+        "Resolve level gates dungeon access so heroes above resolve level cannot enter low-level dungeons.",
+        "Focused tests prove leveling at each threshold boundary."
+      ],
+      "priority_hint": 10,
+      "notes": [
+        "DDGC's level system is separate from resolve level. Both use XP from Campaign.json."
+      ]
+    },
+    {
+      "story_id": "US-911",
+      "title": "P5c-0: Define trinket and equipment data model",
+      "description": "As a developer, I need data structures for trinkets and equipment upgrades so hero stats can be computed from gear rather than hardcoded values.",
+      "acceptance_criteria": [
+        "TrinketDefinition tracks id, buffs, hero_class_requirements, rarity, price, limit, and origin_dungeon.",
+        "EquipmentDefinition tracks id, hero_class_id, slot, upgrade_level, and stat_modifiers.",
+        "AttributeModifier tracks attribute_key and value.",
+        "All structs derive Serialize, Deserialize, Clone, and Debug.",
+        "Focused tests prove construction and lookup are deterministic."
+      ],
+      "priority_hint": 11,
+      "notes": [
+        "Trinket buffs reference JsonBuffs.json buff IDs that map to attribute modifiers in the game layer."
+      ]
+    },
+    {
+      "story_id": "US-912",
+      "title": "P5c-1: Parse DDGC trinket definitions",
+      "description": "As a developer, I need DDGC trinket data parsed into the trinket model so the loot and shop systems can use actual trinket content.",
+      "acceptance_criteria": [
+        "A TrinketRegistry holds all DDGC trinket definitions parsed from JsonTrinkets.json.",
+        "Trinkets are indexed by ID, class requirement, rarity, and origin dungeon.",
+        "At least 10 trinkets across multiple rarity tiers are parsed and verified.",
+        "Class-requirement filtering works so trinkets_for_class returns only eligible trinkets.",
+        "Focused tests prove lookup, filtering, and rarity categorization."
+      ],
+      "priority_hint": 12,
+      "notes": [
+        "JsonTrinkets.json references buff IDs from JsonBuffs.json; the buff-resolution layer is a separate concern."
+      ]
+    },
+    {
+      "story_id": "US-913",
+      "title": "P5c-2: Implement buff resolution from trinket references",
+      "description": "As a developer, I need trinket buff references resolved to concrete attribute modifiers so equipped trinkets modify hero stats correctly.",
+      "acceptance_criteria": [
+        "A BuffRegistry maps DDGC buff IDs to attribute modifiers.",
+        "Buff IDs follow DDGC naming conventions with stat abbreviations and sign or suffix conventions.",
+        "resolve_buffs(trinket) returns all AttributeModifier entries for that trinket's buff list.",
+        "At least 5 buff IDs are resolved to correct attribute modifications.",
+        "Focused tests prove positive and negative modifiers, percentage-based versus flat modifiers, and multi-buff aggregation."
+      ],
+      "priority_hint": 13,
+      "notes": [
+        "Need a buff ID to modifier parser for mixed naming such as MAXHP-15, GIVE_STRESSDMG20, DMGL-25, and DMGH-25."
+      ]
+    },
+    {
+      "story_id": "US-914",
+      "title": "P5c-3: Compute hero stats from equipment",
+      "description": "As a developer, I need hero combat stats computed from base, equipment, and trinkets instead of hardcoded values so the equipment progression system changes hero power.",
+      "acceptance_criteria": [
+        "compute_hero_stats(hero_class, weapon_level, armor_level, trinkets) returns a full attribute map.",
+        "Level-0 equipment with no trinkets produces the same stats as current hardcoded values.",
+        "Higher weapon levels increase ATK and higher armor levels increase DEF or HP.",
+        "Equipping a trinket applies its resolved modifiers to the attribute map.",
+        "Focused tests prove level 0 equals current stats, level 1 weapon exceeds level 0 weapon ATK, and a trinket modifies the correct attribute."
+      ],
+      "priority_hint": 14,
+      "notes": [
+        "Parse upgrade data from Upgrades/Heroes/ JSON files."
+      ]
+    },
+    {
+      "story_id": "US-915",
+      "title": "P5c-4: Wire equipment into hero archetype creation",
+      "description": "As a developer, I need hero archetype creation to accept equipment parameters so the same hero class can have different power levels based on gear.",
+      "acceptance_criteria": [
+        "Archetype creation for heroes accepts optional weapon_level, armor_level, and trinkets parameters.",
+        "The default path without parameters produces current level-0 stats.",
+        "All existing tests continue passing without modification.",
+        "At least one test proves a level-1 equipped hero has different stats than level-0.",
+        "cargo test passes with equipment-aware archetype creation."
+      ],
+      "priority_hint": 15,
+      "notes": [
+        "This is the point where hero stats stop being hardcoded and start being computed."
+      ]
+    },
+    {
+      "story_id": "US-916",
+      "title": "P5d-0: Define quirk data model and parse DDGC quirks",
+      "description": "As a developer, I need quirk definitions parsed from JsonQuirks.json so heroes can acquire and be affected by quirks and diseases.",
+      "acceptance_criteria": [
+        "QuirkDefinition tracks id, is_positive, is_disease, classification, buffs, incompatible_quirks, and curio_tag.",
+        "A QuirkRegistry holds all DDGC quirk definitions.",
+        "At least 10 quirks including positive, negative, and disease entries are parsed.",
+        "Buffs are resolved through the BuffRegistry from US-913.",
+        "Focused tests prove lookup, positive or negative or disease classification, and buff resolution."
+      ],
+      "priority_hint": 16,
+      "notes": [
+        "Quirks use the same buff ID system as trinkets and depend on the BuffRegistry."
+      ]
+    },
+    {
+      "story_id": "US-917",
+      "title": "P5d-1: Implement quirk application to heroes",
+      "description": "As a developer, I need heroes to carry active quirks that modify their attributes so the quirk system actually affects gameplay.",
+      "acceptance_criteria": [
+        "HeroQuirkState tracks active positive quirks, negative quirks, and diseases.",
+        "apply_quirk(hero, quirk_id) adds a quirk while enforcing incompatible quirk replacement and category slot limits.",
+        "Quirk modifiers are applied alongside equipment and trinket modifiers in compute_hero_stats.",
+        "Focused tests prove quirk modifiers change hero attributes, incompatible quirks replace existing ones, and diseases are tracked separately."
+      ],
+      "priority_hint": 17,
+      "notes": [
+        "DDGC typically limits heroes to five positive and five negative quirks."
+      ]
+    },
+    {
+      "story_id": "US-918",
+      "title": "P5d-2: Wire quirk acquisition into curio and combat events",
+      "description": "As a developer, I need quirks to be acquired from curio interactions and combat events so the hero's quirk profile evolves during runs.",
+      "acceptance_criteria": [
+        "Curio result type Quirk triggers apply_quirk with the result quirk ID.",
+        "Curio result type Disease triggers apply_quirk with the disease quirk ID.",
+        "Combat events that cause disease trigger apply_quirk.",
+        "At least one end-to-end test proves a curio adds a quirk, disease from combat is applied, and quirk modifiers affect subsequent combat stats.",
+        "cargo test passes with quirk acquisition active."
+      ],
+      "priority_hint": 18,
+      "notes": [
+        "Integration slice connecting the curio system, combat system, and quirk system."
+      ]
+    },
+    {
+      "story_id": "US-919",
+      "title": "P5e-0: Define trait and affliction data model and parse DDGC traits",
+      "description": "As a developer, I need trait definitions for afflictions and virtues parsed from JsonTraits.json so the overstress system can resolve correctly.",
+      "acceptance_criteria": [
+        "TraitDefinition tracks id, overstress_type, buff_ids, combat_start_turn_act_outs, and reaction_act_outs.",
+        "ActOutEntry tracks action and weight.",
+        "ReactionEntry tracks trigger, probability, and effect.",
+        "A TraitRegistry holds all DDGC trait definitions.",
+        "At least 2 afflictions and 1 virtue are parsed.",
+        "Focused tests prove trait lookup, act-out weight preservation, and reaction probability preservation."
+      ],
+      "priority_hint": 19,
+      "notes": [
+        "JsonTraits.json uses nested arrays for act-outs and reactions."
+      ]
+    },
+    {
+      "story_id": "US-920",
+      "title": "P5e-1: Implement overstress resolution",
+      "description": "As a developer, I need overstress resolution implemented so heroes who exceed max stress get an affliction or virtue instead of being stuck at max stress.",
+      "acceptance_criteria": [
+        "resolve_overstress(hero_id, seed) rolls between affliction and virtue outcomes.",
+        "Affliction selection uses DDGC's weighted trait table.",
+        "The selected trait is applied to the hero as an active affliction or virtue.",
+        "Trait buffs modify hero attributes through the same modifier pipeline as quirks and trinkets.",
+        "Focused tests prove affliction is common, virtue is possible but rare, and trait buffs modify hero stats."
+      ],
+      "priority_hint": 20,
+      "notes": [
+        "Use seeded RNG for deterministic resolution."
+      ]
+    },
+    {
+      "story_id": "US-921",
+      "title": "P5e-2: Implement affliction combat behavior",
+      "description": "As a developer, I need affliction combat behavior implemented so afflicted heroes occasionally disobey orders during combat.",
+      "acceptance_criteria": [
+        "resolve_act_out(affliction_id, seed) rolls against the weighted act-out table at the start of an afflicted hero's turn.",
+        "Possible outcomes include Nothing, IgnoreCommand, ChangePosition, BarkStress, AttackFriendly, and MarkSelf.",
+        "Act-out results are recorded in the battle trace.",
+        "Focused tests prove Nothing is the most common outcome, other outcomes are possible, and act-out resolution is deterministic for a given seed."
+      ],
+      "priority_hint": 21,
+      "notes": [
+        "DDGC's act-out weights make nothing dominant with smaller chances for disruptive actions."
+      ]
+    },
+    {
+      "story_id": "US-922",
+      "title": "P5e-3: Wire overstress into battle loop",
+      "description": "As a developer, I need the battle loop to check for overstress and resolve it so the stress mechanic produces consequences during combat.",
+      "acceptance_criteria": [
+        "When a hero's stress exceeds ATTR_MAX_STRESS, resolve_overstress is called.",
+        "The resulting affliction or virtue takes effect immediately with buffs applied and act-outs enabled.",
+        "Battle trace records overstress events with the resulting trait.",
+        "At least one end-to-end test proves stress damage pushes a hero over threshold, affliction is applied, and act-out occurs on a subsequent turn.",
+        "cargo test passes with overstress resolution active."
+      ],
+      "priority_hint": 22,
+      "notes": [
+        "Integration slice completing the stress to affliction to combat behavior chain."
+      ]
     }
   ],
   "functional_requirements": [],
-  "non_goals": [
-    "Rewriting framework crates to reintroduce removed private APIs",
-    "Expanding DDGC migration scope beyond currently registered content",
-    "Solving deferred DDGC condition families that were already documented as future work unless required to restore compilation"
-  ],
+  "non_goals": [],
   "design_considerations": [],
   "technical_considerations": [],
   "success_metrics": [],
   "open_questions": [],
-  "source_brief": "/mnt/d/GameDesign/\u6e38\u620f\u8fc1\u79fb/DDGC_newArch/changeplan/2026-04-18-ddgc-newarch-framework-api-drift-repair.md"
+  "source_brief": "/mnt/d/GameDesign/游戏迁移/DDGC_newArch/tasks/prd-phase5-town-curio-trinket.md"
 }

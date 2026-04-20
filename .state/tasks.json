@@ -1,5 +1,241 @@
 [
   {
+    "task_id": "US-903",
+    "title": "P5a-2: Implement curio interaction resolution",
+    "description": "As a developer, I need a deterministic curio interaction resolver so room exploration produces outcomes matching DDGC's weighted result system.",
+    "priority": 3,
+    "status": "ready",
+    "acceptance_criteria": [
+      "resolve_curio_interaction(curio_id, has_item, item_id, seed) returns a CurioInteractionOutcome.",
+      "Without an item, the resolver selects a result from the weighted table using seeded probability.",
+      "With an item, the resolver uses an override result when one exists and otherwise falls back to the weighted table.",
+      "CurioInteractionOutcome includes result_type, result_id, and applied_effects.",
+      "Focused tests prove weighted bare interaction, item override behavior, and deterministic results for a given seed.",
+      "Typecheck passes"
+    ],
+    "dependencies": [],
+    "parent_task_id": null,
+    "source_ref": null,
+    "metadata": {
+      "notes": "Actual effect application such as applying a quirk is deferred to the relevant subsystem."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-904",
+    "title": "P5a-3: Implement trap and obstacle resolution",
+    "description": "As a developer, I need deterministic trap and obstacle interaction so corridor and room hazards produce correct damage and debuff outcomes.",
+    "priority": 4,
+    "status": "ready",
+    "acceptance_criteria": [
+      "resolve_trap_interaction(trap_id, trap_level, resist_chance, seed) returns TrapOutcome with success or fail effects and HP fraction.",
+      "Trap difficulty variations are applied based on dungeon level.",
+      "resolve_obstacle_interaction(obstacle_id) returns ObstacleOutcome with fail effects, HP fraction, and torchlight penalty.",
+      "Focused tests prove trap success, difficulty-scaled trap failure, and the uniform obstacle penalty pattern.",
+      "Typecheck passes"
+    ],
+    "dependencies": [],
+    "parent_task_id": null,
+    "source_ref": null,
+    "metadata": {
+      "notes": "Traps have a resist or disarm check; obstacles always apply their fail effects."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "medium",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-807",
+    "title": "P4b-1: Activate Rolled damage policy in battle loop",
+    "description": "As a developer, I need the Rolled damage policy active in the battle loop so combat produces variance matching the original DDGC damage range behavior.",
+    "priority": 7,
+    "status": "ready",
+    "acceptance_criteria": [
+      "EncounterResolver or the battle loop accepts a DamagePolicy parameter.",
+      "When DamagePolicy::Rolled is selected, each damage effect resolves to a value within the configured range using a seeded RNG.",
+      "When DamagePolicy::FixedAverage is selected, behavior is identical to current and all existing tests pass unchanged.",
+      "A deterministic test using a fixed seed proves rolled damage stays within range bounds.",
+      "A variance test proves rolled damage distribution includes both near-min and near-max values over sufficient samples.",
+      "Typecheck passes"
+    ],
+    "dependencies": [],
+    "parent_task_id": null,
+    "source_ref": null,
+    "metadata": {
+      "notes": "The Rolled policy must use the same seed source as other deterministic systems. Use DamageRange::roll(&mut rng)."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-909",
+    "title": "P5b-3: Wire town visit into run flow",
+    "description": "As a developer, I need the run flow to include town visits between dungeon runs so the full game loop operates headlessly.",
+    "priority": 9,
+    "status": "ready",
+    "acceptance_criteria": [
+      "After a dungeon run completes, a town visit phase begins.",
+      "Town visit reads hero roster, gold, and heirloom currencies.",
+      "Town visit allows at least Abbey stress heal and StageCoach recruit.",
+      "Run trace records town activities alongside dungeon run events.",
+      "A full-loop run slice from town to dungeon to town completes with heroes progressing between runs.",
+      "cargo test passes with the town phase active.",
+      "Typecheck passes"
+    ],
+    "dependencies": [],
+    "parent_task_id": null,
+    "source_ref": null,
+    "metadata": {
+      "notes": "Integration slice. The run loop becomes initialize, town_visit, dungeon_run, town_visit, dungeon_run, and so on until victory or defeat."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-901-a",
+    "title": "P5a-0: Define curio, trap, and obstacle data model (contracts)",
+    "description": "As a developer, I need data structures for curios, traps, and obstacles so the game layer can represent room and corridor interactions beyond combat.\n\nFocus: implement the contracts-layer changes.",
+    "priority": 11,
+    "status": "ready",
+    "acceptance_criteria": [
+      "CurioDefinition exists with id, dungeon_scope, results, and item_interactions.",
+      "CurioResult captures weight, chance, result_type, and result_id.",
+      "ItemInteraction captures item_id and overrides_result_id.",
+      "TrapDefinition captures id, success_effects, fail_effects, health_fraction, and difficulty_variations.",
+      "ObstacleDefinition captures id, fail_effects, health_fraction, and torchlight_penalty.",
+      "All structs derive Serialize, Deserialize, Clone, and Debug.",
+      "Focused tests prove struct construction and serialization are deterministic.",
+      "Typecheck passes",
+      "Changes are scoped to the contracts module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-901",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Data-model slice only. Match the schemas observed in Curios.csv, Traps.json, and Obstacles.json."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "contracts",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-801-a",
+    "title": "P4a-0: Inventory remaining condition touchpoints (state)",
+    "description": "As a developer, I need a precise inventory of which migrated DDGC skills and statuses depend on unimplemented condition variants so Phase 4a targets only the conditions with real migrated content.\n\nFocus: implement the state-layer changes.",
+    "priority": 12,
+    "status": "ready",
+    "acceptance_criteria": [
+      "A checked-in inventory (in SEMANTIC_GAPS.md or a dedicated file) lists every migrated skill/status that references a condition not yet implemented in ConditionAdapter.",
+      "The inventory maps each unimplemented condition to the skills that require it, grouped by condition family (HP-threshold, dungeon-mode, kill-trigger, etc.).",
+      "At least 2 condition families are selected as implementation anchors with concrete skill anchors.",
+      "Typecheck passes",
+      "Changes are scoped to the state module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-801",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Discovery slice. Scan src/content/heroes/ and src/content/monsters/ for .with_game_condition() calls that reference unimplemented tags."
+    },
+    "repo_path": null,
+    "complexity": "medium",
+    "risk": "low",
+    "module_scope": "state",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-812",
+    "title": "P4c-3: Validate dungeon fidelity end-to-end",
+    "description": "As a developer, I need an end-to-end run slice that uses DDGC-configured dungeon maps and encounter packs so the full Phase 4c integration is verified.",
+    "priority": 12,
+    "status": "ready",
+    "acceptance_criteria": [
+      "A run slice using a DDGC dungeon such as QingLong short completes with correct room count, correct encounter types, and correct monster families per room.",
+      "The run trace records dungeon type, map parameters, and encounter composition.",
+      "Existing run slices continue passing.",
+      "cargo test passes with DDGC dungeon configs active.",
+      "Typecheck passes"
+    ],
+    "dependencies": [],
+    "parent_task_id": null,
+    "source_ref": null,
+    "metadata": {
+      "notes": "Integration validation slice. This is the Phase 4c closeout."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-901-b",
+    "title": "P5a-0: Define curio, trap, and obstacle data model (state)",
+    "description": "As a developer, I need data structures for curios, traps, and obstacles so the game layer can represent room and corridor interactions beyond combat.\n\nFocus: implement the state-layer changes.",
+    "priority": 12,
+    "status": "ready",
+    "acceptance_criteria": [
+      "CurioDefinition exists with id, dungeon_scope, results, and item_interactions.",
+      "CurioResult captures weight, chance, result_type, and result_id.",
+      "ItemInteraction captures item_id and overrides_result_id.",
+      "TrapDefinition captures id, success_effects, fail_effects, health_fraction, and difficulty_variations.",
+      "ObstacleDefinition captures id, fail_effects, health_fraction, and torchlight_penalty.",
+      "All structs derive Serialize, Deserialize, Clone, and Debug.",
+      "Focused tests prove struct construction and serialization are deterministic.",
+      "Typecheck passes",
+      "Changes are scoped to the state module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-901",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Data-model slice only. Match the schemas observed in Curios.csv, Traps.json, and Obstacles.json."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "state",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
     "task_id": "US-001-a",
     "title": "Inventory The API Drift Surface (adapter)",
     "description": "As a developer, I need an explicit inventory of compile failures and API mismatches so the repair effort is driven by the current codebase rather than stale migration ledgers.\n\nFocus: implement the adapter-layer changes.",
@@ -23,6 +259,120 @@
     "complexity": "high",
     "risk": "low",
     "module_scope": "adapter",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-801-b",
+    "title": "P4a-0: Inventory remaining condition touchpoints (adapter)",
+    "description": "As a developer, I need a precise inventory of which migrated DDGC skills and statuses depend on unimplemented condition variants so Phase 4a targets only the conditions with real migrated content.\n\nFocus: implement the adapter-layer changes.",
+    "priority": 13,
+    "status": "ready",
+    "acceptance_criteria": [
+      "A checked-in inventory (in SEMANTIC_GAPS.md or a dedicated file) lists every migrated skill/status that references a condition not yet implemented in ConditionAdapter.",
+      "The inventory maps each unimplemented condition to the skills that require it, grouped by condition family (HP-threshold, dungeon-mode, kill-trigger, etc.).",
+      "At least 2 condition families are selected as implementation anchors with concrete skill anchors.",
+      "Typecheck passes",
+      "Changes are scoped to the adapter module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-801",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Discovery slice. Scan src/content/heroes/ and src/content/monsters/ for .with_game_condition() calls that reference unimplemented tags."
+    },
+    "repo_path": null,
+    "complexity": "medium",
+    "risk": "low",
+    "module_scope": "adapter",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-913",
+    "title": "P5c-2: Implement buff resolution from trinket references",
+    "description": "As a developer, I need trinket buff references resolved to concrete attribute modifiers so equipped trinkets modify hero stats correctly.",
+    "priority": 13,
+    "status": "ready",
+    "acceptance_criteria": [
+      "A BuffRegistry maps DDGC buff IDs to attribute modifiers.",
+      "Buff IDs follow DDGC naming conventions with stat abbreviations and sign or suffix conventions.",
+      "resolve_buffs(trinket) returns all AttributeModifier entries for that trinket's buff list.",
+      "At least 5 buff IDs are resolved to correct attribute modifications.",
+      "Focused tests prove positive and negative modifiers, percentage-based versus flat modifiers, and multi-buff aggregation.",
+      "Typecheck passes"
+    ],
+    "dependencies": [],
+    "parent_task_id": null,
+    "source_ref": null,
+    "metadata": {
+      "notes": "Need a buff ID to modifier parser for mixed naming such as MAXHP-15, GIVE_STRESSDMG20, DMGL-25, and DMGH-25."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-914",
+    "title": "P5c-3: Compute hero stats from equipment",
+    "description": "As a developer, I need hero combat stats computed from base, equipment, and trinkets instead of hardcoded values so the equipment progression system changes hero power.",
+    "priority": 14,
+    "status": "ready",
+    "acceptance_criteria": [
+      "compute_hero_stats(hero_class, weapon_level, armor_level, trinkets) returns a full attribute map.",
+      "Level-0 equipment with no trinkets produces the same stats as current hardcoded values.",
+      "Higher weapon levels increase ATK and higher armor levels increase DEF or HP.",
+      "Equipping a trinket applies its resolved modifiers to the attribute map.",
+      "Focused tests prove level 0 equals current stats, level 1 weapon exceeds level 0 weapon ATK, and a trinket modifies the correct attribute.",
+      "Typecheck passes"
+    ],
+    "dependencies": [],
+    "parent_task_id": null,
+    "source_ref": null,
+    "metadata": {
+      "notes": "Parse upgrade data from Upgrades/Heroes/ JSON files."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-801-c",
+    "title": "P4a-0: Inventory remaining condition touchpoints (docs)",
+    "description": "As a developer, I need a precise inventory of which migrated DDGC skills and statuses depend on unimplemented condition variants so Phase 4a targets only the conditions with real migrated content.\n\nFocus: implement the docs-layer changes.",
+    "priority": 15,
+    "status": "ready",
+    "acceptance_criteria": [
+      "A checked-in inventory (in SEMANTIC_GAPS.md or a dedicated file) lists every migrated skill/status that references a condition not yet implemented in ConditionAdapter.",
+      "The inventory maps each unimplemented condition to the skills that require it, grouped by condition family (HP-threshold, dungeon-mode, kill-trigger, etc.).",
+      "At least 2 condition families are selected as implementation anchors with concrete skill anchors.",
+      "Typecheck passes",
+      "Changes are scoped to the docs module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-801",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Discovery slice. Scan src/content/heroes/ and src/content/monsters/ for .with_game_condition() calls that reference unimplemented tags."
+    },
+    "repo_path": null,
+    "complexity": "medium",
+    "risk": "low",
+    "module_scope": "docs",
     "retry_count": 0,
     "failure_summary": "",
     "next_tier": null,
@@ -53,7 +403,159 @@
     "risk": "low",
     "module_scope": "tests",
     "retry_count": 0,
-    "failure_summary": null,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-901-c",
+    "title": "P5a-0: Define curio, trap, and obstacle data model (tests)",
+    "description": "As a developer, I need data structures for curios, traps, and obstacles so the game layer can represent room and corridor interactions beyond combat.\n\nFocus: implement the tests-layer changes.",
+    "priority": 16,
+    "status": "ready",
+    "acceptance_criteria": [
+      "CurioDefinition exists with id, dungeon_scope, results, and item_interactions.",
+      "CurioResult captures weight, chance, result_type, and result_id.",
+      "ItemInteraction captures item_id and overrides_result_id.",
+      "TrapDefinition captures id, success_effects, fail_effects, health_fraction, and difficulty_variations.",
+      "ObstacleDefinition captures id, fail_effects, health_fraction, and torchlight_penalty.",
+      "All structs derive Serialize, Deserialize, Clone, and Debug.",
+      "Focused tests prove struct construction and serialization are deterministic.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-901",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Data-model slice only. Match the schemas observed in Curios.csv, Traps.json, and Obstacles.json."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-920",
+    "title": "P5e-1: Implement overstress resolution",
+    "description": "As a developer, I need overstress resolution implemented so heroes who exceed max stress get an affliction or virtue instead of being stuck at max stress.",
+    "priority": 20,
+    "status": "ready",
+    "acceptance_criteria": [
+      "resolve_overstress(hero_id, seed) rolls between affliction and virtue outcomes.",
+      "Affliction selection uses DDGC's weighted trait table.",
+      "The selected trait is applied to the hero as an active affliction or virtue.",
+      "Trait buffs modify hero attributes through the same modifier pipeline as quirks and trinkets.",
+      "Focused tests prove affliction is common, virtue is possible but rare, and trait buffs modify hero stats.",
+      "Typecheck passes"
+    ],
+    "dependencies": [],
+    "parent_task_id": null,
+    "source_ref": null,
+    "metadata": {
+      "notes": "Use seeded RNG for deterministic resolution."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-902-a",
+    "title": "P5a-1: Parse DDGC curio, trap, and obstacle definitions (contracts)",
+    "description": "As a developer, I need the DDGC curio, trap, and obstacle data parsed into the data model so actual game content drives interactions.\n\nFocus: implement the contracts-layer changes.",
+    "priority": 21,
+    "status": "ready",
+    "acceptance_criteria": [
+      "A CurioRegistry holds all DDGC curio definitions parsed from Curios.csv.",
+      "A TrapRegistry holds all DDGC trap definitions parsed from Traps.json.",
+      "An ObstacleRegistry holds all DDGC obstacle definitions parsed from Obstacles.json.",
+      "At least 3 curios per dungeon region are parsed for QingLong, BaiHu, ZhuQue, and XuanWu.",
+      "All 3 trap types and all 5 obstacle types are parsed.",
+      "Focused tests prove registry lookup by ID, dungeon-scoped curio filtering, and item interaction overrides are preserved.",
+      "Typecheck passes",
+      "Changes are scoped to the contracts module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-902",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Curios.csv uses a multi-row block format per curio and requires custom parsing. Traps.json and Obstacles.json are standard JSON."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "contracts",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-902-b",
+    "title": "P5a-1: Parse DDGC curio, trap, and obstacle definitions (state)",
+    "description": "As a developer, I need the DDGC curio, trap, and obstacle data parsed into the data model so actual game content drives interactions.\n\nFocus: implement the state-layer changes.",
+    "priority": 22,
+    "status": "ready",
+    "acceptance_criteria": [
+      "A CurioRegistry holds all DDGC curio definitions parsed from Curios.csv.",
+      "A TrapRegistry holds all DDGC trap definitions parsed from Traps.json.",
+      "An ObstacleRegistry holds all DDGC obstacle definitions parsed from Obstacles.json.",
+      "At least 3 curios per dungeon region are parsed for QingLong, BaiHu, ZhuQue, and XuanWu.",
+      "All 3 trap types and all 5 obstacle types are parsed.",
+      "Focused tests prove registry lookup by ID, dungeon-scoped curio filtering, and item interaction overrides are preserved.",
+      "Typecheck passes",
+      "Changes are scoped to the state module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-902",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Curios.csv uses a multi-row block format per curio and requires custom parsing. Traps.json and Obstacles.json are standard JSON."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "state",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-922",
+    "title": "P5e-3: Wire overstress into battle loop",
+    "description": "As a developer, I need the battle loop to check for overstress and resolve it so the stress mechanic produces consequences during combat.",
+    "priority": 22,
+    "status": "ready",
+    "acceptance_criteria": [
+      "When a hero's stress exceeds ATTR_MAX_STRESS, resolve_overstress is called.",
+      "The resulting affliction or virtue takes effect immediately with buffs applied and act-outs enabled.",
+      "Battle trace records overstress events with the resulting trait.",
+      "At least one end-to-end test proves stress damage pushes a hero over threshold, affliction is applied, and act-out occurs on a subsequent turn.",
+      "cargo test passes with overstress resolution active.",
+      "Typecheck passes"
+    ],
+    "dependencies": [],
+    "parent_task_id": null,
+    "source_ref": null,
+    "metadata": {
+      "notes": "Integration slice completing the stress to affliction to combat behavior chain."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
     "next_tier": null,
     "split_guidance": []
   },
@@ -82,7 +584,7 @@
     "risk": "low",
     "module_scope": "runner",
     "retry_count": 0,
-    "failure_summary": null,
+    "failure_summary": "",
     "next_tier": null,
     "split_guidance": []
   },
@@ -116,6 +618,157 @@
     "split_guidance": []
   },
   {
+    "task_id": "US-802-a",
+    "title": "P4a-1: Implement HP-threshold conditions (arbiter)",
+    "description": "As a developer, I need HpAbove, TargetHpAbove, and TargetHpBelow DDGC conditions implemented so HP-threshold skill gating works correctly instead of being always-on or always-off.\n\nFocus: implement the arbiter-layer changes.",
+    "priority": 23,
+    "status": "ready",
+    "acceptance_criteria": [
+      "ConditionAdapter evaluates ddgc_hp_above_<threshold>, ddgc_target_hp_above_<threshold>, and ddgc_target_hp_below_<threshold> condition tags.",
+      "HP-threshold evaluation reads ATTR_HEALTH and ATTR_MAX_HEALTH from the appropriate actor or target and compares against the fractional threshold.",
+      "At least one migrated or fixture skill uses an HP-threshold condition through the adapter.",
+      "Focused tests prove condition passes above threshold, fails below threshold, and is deterministic at the exact threshold boundary.",
+      "MIGRATION_BLOCKERS.md B-004 status is updated.",
+      "Typecheck passes",
+      "Changes are scoped to the arbiter module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-802",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Primary anchor: any boss or hero skill that applies bonus effects when HP is above or below a threshold. ConditionContext already exposes actors HashMap; read HP attributes directly."
+    },
+    "repo_path": null,
+    "complexity": "high",
+    "risk": "low",
+    "module_scope": "arbiter",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-802-b",
+    "title": "P4a-1: Implement HP-threshold conditions (adapter)",
+    "description": "As a developer, I need HpAbove, TargetHpAbove, and TargetHpBelow DDGC conditions implemented so HP-threshold skill gating works correctly instead of being always-on or always-off.\n\nFocus: implement the adapter-layer changes.",
+    "priority": 23,
+    "status": "ready",
+    "acceptance_criteria": [
+      "ConditionAdapter evaluates ddgc_hp_above_<threshold>, ddgc_target_hp_above_<threshold>, and ddgc_target_hp_below_<threshold> condition tags.",
+      "HP-threshold evaluation reads ATTR_HEALTH and ATTR_MAX_HEALTH from the appropriate actor or target and compares against the fractional threshold.",
+      "At least one migrated or fixture skill uses an HP-threshold condition through the adapter.",
+      "Focused tests prove condition passes above threshold, fails below threshold, and is deterministic at the exact threshold boundary.",
+      "MIGRATION_BLOCKERS.md B-004 status is updated.",
+      "Typecheck passes",
+      "Changes are scoped to the adapter module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-802",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Primary anchor: any boss or hero skill that applies bonus effects when HP is above or below a threshold. ConditionContext already exposes actors HashMap; read HP attributes directly."
+    },
+    "repo_path": null,
+    "complexity": "high",
+    "risk": "low",
+    "module_scope": "adapter",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-802-c",
+    "title": "P4a-1: Implement HP-threshold conditions (docs)",
+    "description": "As a developer, I need HpAbove, TargetHpAbove, and TargetHpBelow DDGC conditions implemented so HP-threshold skill gating works correctly instead of being always-on or always-off.\n\nFocus: implement the docs-layer changes.",
+    "priority": 25,
+    "status": "ready",
+    "acceptance_criteria": [
+      "ConditionAdapter evaluates ddgc_hp_above_<threshold>, ddgc_target_hp_above_<threshold>, and ddgc_target_hp_below_<threshold> condition tags.",
+      "HP-threshold evaluation reads ATTR_HEALTH and ATTR_MAX_HEALTH from the appropriate actor or target and compares against the fractional threshold.",
+      "At least one migrated or fixture skill uses an HP-threshold condition through the adapter.",
+      "Focused tests prove condition passes above threshold, fails below threshold, and is deterministic at the exact threshold boundary.",
+      "MIGRATION_BLOCKERS.md B-004 status is updated.",
+      "Typecheck passes",
+      "Changes are scoped to the docs module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-802",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Primary anchor: any boss or hero skill that applies bonus effects when HP is above or below a threshold. ConditionContext already exposes actors HashMap; read HP attributes directly."
+    },
+    "repo_path": null,
+    "complexity": "high",
+    "risk": "low",
+    "module_scope": "docs",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-802-d",
+    "title": "P4a-1: Implement HP-threshold conditions (tests)",
+    "description": "As a developer, I need HpAbove, TargetHpAbove, and TargetHpBelow DDGC conditions implemented so HP-threshold skill gating works correctly instead of being always-on or always-off.\n\nFocus: implement the tests-layer changes.",
+    "priority": 26,
+    "status": "ready",
+    "acceptance_criteria": [
+      "ConditionAdapter evaluates ddgc_hp_above_<threshold>, ddgc_target_hp_above_<threshold>, and ddgc_target_hp_below_<threshold> condition tags.",
+      "HP-threshold evaluation reads ATTR_HEALTH and ATTR_MAX_HEALTH from the appropriate actor or target and compares against the fractional threshold.",
+      "At least one migrated or fixture skill uses an HP-threshold condition through the adapter.",
+      "Focused tests prove condition passes above threshold, fails below threshold, and is deterministic at the exact threshold boundary.",
+      "MIGRATION_BLOCKERS.md B-004 status is updated.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-802",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Primary anchor: any boss or hero skill that applies bonus effects when HP is above or below a threshold. ConditionContext already exposes actors HashMap; read HP attributes directly."
+    },
+    "repo_path": null,
+    "complexity": "high",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-902-c",
+    "title": "P5a-1: Parse DDGC curio, trap, and obstacle definitions (tests)",
+    "description": "As a developer, I need the DDGC curio, trap, and obstacle data parsed into the data model so actual game content drives interactions.\n\nFocus: implement the tests-layer changes.",
+    "priority": 26,
+    "status": "ready",
+    "acceptance_criteria": [
+      "A CurioRegistry holds all DDGC curio definitions parsed from Curios.csv.",
+      "A TrapRegistry holds all DDGC trap definitions parsed from Traps.json.",
+      "An ObstacleRegistry holds all DDGC obstacle definitions parsed from Obstacles.json.",
+      "At least 3 curios per dungeon region are parsed for QingLong, BaiHu, ZhuQue, and XuanWu.",
+      "All 3 trap types and all 5 obstacle types are parsed.",
+      "Focused tests prove registry lookup by ID, dungeon-scoped curio filtering, and item interaction overrides are preserved.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-902",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Curios.csv uses a multi-row block format per curio and requires custom parsing. Traps.json and Obstacles.json are standard JSON."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
     "task_id": "US-003-a",
     "title": "Reconnect DDGC Conditional Effects Through Supported Condition Plumbing (contracts)",
     "description": "As a developer, I need DDGC conditional skills to express their gating through supported condition structures or game-layer adapters so content compiles without writing removed `EffectNode` fields.\n\nFocus: implement the contracts-layer changes.",
@@ -140,7 +793,67 @@
     "risk": "low",
     "module_scope": "contracts",
     "retry_count": 0,
-    "failure_summary": null,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-803-a",
+    "title": "P4a-2: Implement dungeon-mode condition (contracts)",
+    "description": "As a developer, I need the InMode DDGC condition implemented so skills that behave differently in specific dungeon modes can diverge correctly.\n\nFocus: implement the contracts-layer changes.",
+    "priority": 31,
+    "status": "ready",
+    "acceptance_criteria": [
+      "ConditionAdapter evaluates ddgc_in_mode_<mode> condition tags.",
+      "Mode resolution reads from ConditionContext::dungeon and any game-layer mode state.",
+      "At least one fixture skill uses an InMode condition.",
+      "Focused test proves the condition passes when the current dungeon or mode matches and fails otherwise.",
+      "MIGRATION_BLOCKERS.md B-004 status is updated to reflect InMode implementation.",
+      "Typecheck passes",
+      "Changes are scoped to the contracts module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-803",
+    "source_ref": null,
+    "metadata": {
+      "notes": "DDGC's InMode is tied to dungeon-specific battle modifiers. The ConditionContext already carries dungeon: Dungeon; extend with an optional mode flag."
+    },
+    "repo_path": null,
+    "complexity": "high",
+    "risk": "low",
+    "module_scope": "contracts",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-803-b",
+    "title": "P4a-2: Implement dungeon-mode condition (state)",
+    "description": "As a developer, I need the InMode DDGC condition implemented so skills that behave differently in specific dungeon modes can diverge correctly.\n\nFocus: implement the state-layer changes.",
+    "priority": 32,
+    "status": "ready",
+    "acceptance_criteria": [
+      "ConditionAdapter evaluates ddgc_in_mode_<mode> condition tags.",
+      "Mode resolution reads from ConditionContext::dungeon and any game-layer mode state.",
+      "At least one fixture skill uses an InMode condition.",
+      "Focused test proves the condition passes when the current dungeon or mode matches and fails otherwise.",
+      "MIGRATION_BLOCKERS.md B-004 status is updated to reflect InMode implementation.",
+      "Typecheck passes",
+      "Changes are scoped to the state module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-803",
+    "source_ref": null,
+    "metadata": {
+      "notes": "DDGC's InMode is tied to dungeon-specific battle modifiers. The ConditionContext already carries dungeon: Dungeon; extend with an optional mode flag."
+    },
+    "repo_path": null,
+    "complexity": "high",
+    "risk": "low",
+    "module_scope": "state",
+    "retry_count": 0,
+    "failure_summary": "",
     "next_tier": null,
     "split_guidance": []
   },
@@ -166,6 +879,66 @@
     },
     "repo_path": "DDGC_newArch",
     "complexity": "low",
+    "risk": "low",
+    "module_scope": "adapter",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-803-c",
+    "title": "P4a-2: Implement dungeon-mode condition (arbiter)",
+    "description": "As a developer, I need the InMode DDGC condition implemented so skills that behave differently in specific dungeon modes can diverge correctly.\n\nFocus: implement the arbiter-layer changes.",
+    "priority": 33,
+    "status": "ready",
+    "acceptance_criteria": [
+      "ConditionAdapter evaluates ddgc_in_mode_<mode> condition tags.",
+      "Mode resolution reads from ConditionContext::dungeon and any game-layer mode state.",
+      "At least one fixture skill uses an InMode condition.",
+      "Focused test proves the condition passes when the current dungeon or mode matches and fails otherwise.",
+      "MIGRATION_BLOCKERS.md B-004 status is updated to reflect InMode implementation.",
+      "Typecheck passes",
+      "Changes are scoped to the arbiter module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-803",
+    "source_ref": null,
+    "metadata": {
+      "notes": "DDGC's InMode is tied to dungeon-specific battle modifiers. The ConditionContext already carries dungeon: Dungeon; extend with an optional mode flag."
+    },
+    "repo_path": null,
+    "complexity": "high",
+    "risk": "low",
+    "module_scope": "arbiter",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-803-d",
+    "title": "P4a-2: Implement dungeon-mode condition (adapter)",
+    "description": "As a developer, I need the InMode DDGC condition implemented so skills that behave differently in specific dungeon modes can diverge correctly.\n\nFocus: implement the adapter-layer changes.",
+    "priority": 33,
+    "status": "ready",
+    "acceptance_criteria": [
+      "ConditionAdapter evaluates ddgc_in_mode_<mode> condition tags.",
+      "Mode resolution reads from ConditionContext::dungeon and any game-layer mode state.",
+      "At least one fixture skill uses an InMode condition.",
+      "Focused test proves the condition passes when the current dungeon or mode matches and fails otherwise.",
+      "MIGRATION_BLOCKERS.md B-004 status is updated to reflect InMode implementation.",
+      "Typecheck passes",
+      "Changes are scoped to the adapter module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-803",
+    "source_ref": null,
+    "metadata": {
+      "notes": "DDGC's InMode is tied to dungeon-specific battle modifiers. The ConditionContext already carries dungeon: Dungeon; extend with an optional mode flag."
+    },
+    "repo_path": null,
+    "complexity": "high",
     "risk": "low",
     "module_scope": "adapter",
     "retry_count": 0,
@@ -203,6 +976,36 @@
     "split_guidance": []
   },
   {
+    "task_id": "US-803-e",
+    "title": "P4a-2: Implement dungeon-mode condition (docs)",
+    "description": "As a developer, I need the InMode DDGC condition implemented so skills that behave differently in specific dungeon modes can diverge correctly.\n\nFocus: implement the docs-layer changes.",
+    "priority": 35,
+    "status": "ready",
+    "acceptance_criteria": [
+      "ConditionAdapter evaluates ddgc_in_mode_<mode> condition tags.",
+      "Mode resolution reads from ConditionContext::dungeon and any game-layer mode state.",
+      "At least one fixture skill uses an InMode condition.",
+      "Focused test proves the condition passes when the current dungeon or mode matches and fails otherwise.",
+      "MIGRATION_BLOCKERS.md B-004 status is updated to reflect InMode implementation.",
+      "Typecheck passes",
+      "Changes are scoped to the docs module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-803",
+    "source_ref": null,
+    "metadata": {
+      "notes": "DDGC's InMode is tied to dungeon-specific battle modifiers. The ConditionContext already carries dungeon: Dungeon; extend with an optional mode flag."
+    },
+    "repo_path": null,
+    "complexity": "high",
+    "risk": "low",
+    "module_scope": "docs",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
     "task_id": "US-003-d",
     "title": "Reconnect DDGC Conditional Effects Through Supported Condition Plumbing (tests)",
     "description": "As a developer, I need DDGC conditional skills to express their gating through supported condition structures or game-layer adapters so content compiles without writing removed `EffectNode` fields.\n\nFocus: implement the tests-layer changes.",
@@ -223,6 +1026,36 @@
     },
     "repo_path": null,
     "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-803-f",
+    "title": "P4a-2: Implement dungeon-mode condition (tests)",
+    "description": "As a developer, I need the InMode DDGC condition implemented so skills that behave differently in specific dungeon modes can diverge correctly.\n\nFocus: implement the tests-layer changes.",
+    "priority": 36,
+    "status": "ready",
+    "acceptance_criteria": [
+      "ConditionAdapter evaluates ddgc_in_mode_<mode> condition tags.",
+      "Mode resolution reads from ConditionContext::dungeon and any game-layer mode state.",
+      "At least one fixture skill uses an InMode condition.",
+      "Focused test proves the condition passes when the current dungeon or mode matches and fails otherwise.",
+      "MIGRATION_BLOCKERS.md B-004 status is updated to reflect InMode implementation.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-803",
+    "source_ref": null,
+    "metadata": {
+      "notes": "DDGC's InMode is tied to dungeon-specific battle modifiers. The ConditionContext already carries dungeon: Dungeon; extend with an optional mode flag."
+    },
+    "repo_path": null,
+    "complexity": "high",
     "risk": "low",
     "module_scope": "tests",
     "retry_count": 0,
@@ -260,6 +1093,93 @@
     "split_guidance": []
   },
   {
+    "task_id": "US-804-a",
+    "title": "P4a-3: Implement kill-trigger condition (runner)",
+    "description": "As a developer, I need an OnKill DDGC condition implemented so skills that trigger bonus effects on enemy death can execute correctly.\n\nFocus: implement the runner-layer changes.",
+    "priority": 43,
+    "status": "ready",
+    "acceptance_criteria": [
+      "ConditionAdapter evaluates a ddgc_on_kill condition tag.",
+      "Kill detection reads from a game-layer kill event tracker that records which actors died this turn.",
+      "At least one fixture or migrated skill uses the OnKill condition.",
+      "Focused test proves the condition passes on a turn where the actor killed an enemy and fails when no kill occurred.",
+      "Typecheck passes",
+      "Changes are scoped to the runner module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-804",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Requires a lightweight kill-event accumulator in the game layer similar to UsageCounters. Add KillTracker to src/run/."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "runner",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-804-b",
+    "title": "P4a-3: Implement kill-trigger condition (arbiter)",
+    "description": "As a developer, I need an OnKill DDGC condition implemented so skills that trigger bonus effects on enemy death can execute correctly.\n\nFocus: implement the arbiter-layer changes.",
+    "priority": 43,
+    "status": "ready",
+    "acceptance_criteria": [
+      "ConditionAdapter evaluates a ddgc_on_kill condition tag.",
+      "Kill detection reads from a game-layer kill event tracker that records which actors died this turn.",
+      "At least one fixture or migrated skill uses the OnKill condition.",
+      "Focused test proves the condition passes on a turn where the actor killed an enemy and fails when no kill occurred.",
+      "Typecheck passes",
+      "Changes are scoped to the arbiter module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-804",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Requires a lightweight kill-event accumulator in the game layer similar to UsageCounters. Add KillTracker to src/run/."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "arbiter",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-804-c",
+    "title": "P4a-3: Implement kill-trigger condition (adapter)",
+    "description": "As a developer, I need an OnKill DDGC condition implemented so skills that trigger bonus effects on enemy death can execute correctly.\n\nFocus: implement the adapter-layer changes.",
+    "priority": 43,
+    "status": "ready",
+    "acceptance_criteria": [
+      "ConditionAdapter evaluates a ddgc_on_kill condition tag.",
+      "Kill detection reads from a game-layer kill event tracker that records which actors died this turn.",
+      "At least one fixture or migrated skill uses the OnKill condition.",
+      "Focused test proves the condition passes on a turn where the actor killed an enemy and fails when no kill occurred.",
+      "Typecheck passes",
+      "Changes are scoped to the adapter module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-804",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Requires a lightweight kill-event accumulator in the game layer similar to UsageCounters. Add KillTracker to src/run/."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "adapter",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
     "task_id": "US-004-b",
     "title": "Repair Scenario And Regression Fixtures Against The Current Runtime Shape (tests)",
     "description": "As a developer, I need regression scenarios and focused tests to match the repaired runtime interfaces so they validate current behavior instead of an outdated internal representation.\n\nFocus: implement the tests-layer changes.",
@@ -280,6 +1200,35 @@
       "repo_path": "DDGC_newArch"
     },
     "repo_path": "DDGC_newArch",
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-804-d",
+    "title": "P4a-3: Implement kill-trigger condition (tests)",
+    "description": "As a developer, I need an OnKill DDGC condition implemented so skills that trigger bonus effects on enemy death can execute correctly.\n\nFocus: implement the tests-layer changes.",
+    "priority": 46,
+    "status": "ready",
+    "acceptance_criteria": [
+      "ConditionAdapter evaluates a ddgc_on_kill condition tag.",
+      "Kill detection reads from a game-layer kill event tracker that records which actors died this turn.",
+      "At least one fixture or migrated skill uses the OnKill condition.",
+      "Focused test proves the condition passes on a turn where the actor killed an enemy and fails when no kill occurred.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-804",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Requires a lightweight kill-event accumulator in the game layer similar to UsageCounters. Add KillTracker to src/run/."
+    },
+    "repo_path": null,
     "complexity": "low",
     "risk": "low",
     "module_scope": "tests",
@@ -314,7 +1263,7 @@
     "risk": "low",
     "module_scope": "state",
     "retry_count": 0,
-    "failure_summary": null,
+    "failure_summary": "",
     "next_tier": null,
     "split_guidance": []
   },
@@ -323,7 +1272,7 @@
     "title": "Close Out The Repair With Green Verification And Updated Planning Artifacts (planner)",
     "description": "As a developer, I need the repair effort closed out with clean verification and updated planning artifacts so the repo state once again matches its recorded migration status.\n\nFocus: implement the planner-layer changes.",
     "priority": 53,
-    "status": "ready",
+    "status": "in_progress",
     "acceptance_criteria": [
       "`cargo check` exits 0 in DDGC_newArch",
       "`cargo test` exits 0 in DDGC_newArch",
@@ -344,7 +1293,67 @@
     "risk": "low",
     "module_scope": "planner",
     "retry_count": 0,
-    "failure_summary": null,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-905-a",
+    "title": "P5a-4: Wire curio, trap, and obstacle into room exploration (cli)",
+    "description": "As a developer, I need room exploration events to trigger curio, trap, and obstacle interactions so the dungeon run produces the full exploration cycle.\n\nFocus: implement the cli-layer changes.",
+    "priority": 54,
+    "status": "ready",
+    "acceptance_criteria": [
+      "RoomKind::Event rooms can carry a curio_id reference.",
+      "RoomKind::Corridor rooms can carry optional trap_id and curio_id.",
+      "Entering a room with a curio or obstacle produces an interaction outcome in the run trace.",
+      "Traversing a corridor with a trap produces a trap outcome in the run trace.",
+      "At least one run slice produces curio interaction and trap interaction entries.",
+      "cargo test passes with interaction events in the trace.",
+      "Typecheck passes",
+      "Changes are scoped to the cli module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-905",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Integration slice. Room generation from Phase 4c should assign curios and traps based on DungeonMapConfig densities."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "cli",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-805-a",
+    "title": "P4a-4: Update condition coverage and close B-004 (docs)",
+    "description": "As a developer, I need the condition system's coverage documented and B-004 fully resolved so no further condition work is tracked as a blocker.\n\nFocus: implement the docs-layer changes.",
+    "priority": 55,
+    "status": "ready",
+    "acceptance_criteria": [
+      "SEMANTIC_GAPS.md SG-002 is updated to reflect all newly implemented conditions.",
+      "MIGRATION_BLOCKERS.md B-004 status is changed from Partially resolved to Resolved.",
+      "A condition coverage table lists all implemented DDGC conditions versus the original 35+ variants, with remaining ones classified as low-impact deferred or not used in migrated content.",
+      "cargo test passes with full condition coverage.",
+      "Typecheck passes",
+      "Changes are scoped to the docs module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-805",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Closeout slice. Remaining unimplemented conditions, if any, should be documented as low-priority rather than blockers."
+    },
+    "repo_path": null,
+    "complexity": "high",
+    "risk": "low",
+    "module_scope": "docs",
+    "retry_count": 0,
+    "failure_summary": "",
     "next_tier": null,
     "split_guidance": []
   },
@@ -374,7 +1383,1341 @@
     "risk": "low",
     "module_scope": "tests",
     "retry_count": 0,
-    "failure_summary": null,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-805-b",
+    "title": "P4a-4: Update condition coverage and close B-004 (tests)",
+    "description": "As a developer, I need the condition system's coverage documented and B-004 fully resolved so no further condition work is tracked as a blocker.\n\nFocus: implement the tests-layer changes.",
+    "priority": 56,
+    "status": "ready",
+    "acceptance_criteria": [
+      "SEMANTIC_GAPS.md SG-002 is updated to reflect all newly implemented conditions.",
+      "MIGRATION_BLOCKERS.md B-004 status is changed from Partially resolved to Resolved.",
+      "A condition coverage table lists all implemented DDGC conditions versus the original 35+ variants, with remaining ones classified as low-impact deferred or not used in migrated content.",
+      "cargo test passes with full condition coverage.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-805",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Closeout slice. Remaining unimplemented conditions, if any, should be documented as low-priority rather than blockers."
+    },
+    "repo_path": null,
+    "complexity": "high",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-905-b",
+    "title": "P5a-4: Wire curio, trap, and obstacle into room exploration (tests)",
+    "description": "As a developer, I need room exploration events to trigger curio, trap, and obstacle interactions so the dungeon run produces the full exploration cycle.\n\nFocus: implement the tests-layer changes.",
+    "priority": 56,
+    "status": "ready",
+    "acceptance_criteria": [
+      "RoomKind::Event rooms can carry a curio_id reference.",
+      "RoomKind::Corridor rooms can carry optional trap_id and curio_id.",
+      "Entering a room with a curio or obstacle produces an interaction outcome in the run trace.",
+      "Traversing a corridor with a trap produces a trap outcome in the run trace.",
+      "At least one run slice produces curio interaction and trap interaction entries.",
+      "cargo test passes with interaction events in the trace.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-905",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Integration slice. Room generation from Phase 4c should assign curios and traps based on DungeonMapConfig densities."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-906-a",
+    "title": "P5b-0: Define town building data model (contracts)",
+    "description": "As a developer, I need data structures for town buildings, their upgrade trees, and their services so the game layer can represent the between-run meta state.\n\nFocus: implement the contracts-layer changes.",
+    "priority": 61,
+    "status": "ready",
+    "acceptance_criteria": [
+      "TownBuilding tracks id, building_type, unlock_conditions, and upgrade_trees.",
+      "UpgradeTree tracks tree_id and levels.",
+      "UpgradeLevel tracks code, cost, and building-specific effects.",
+      "TownState tracks current upgrade level per building, gold, and heirloom currencies.",
+      "All structs derive Serialize, Deserialize, Clone, and Debug.",
+      "Focused tests prove TownState construction and upgrade application are deterministic.",
+      "Typecheck passes",
+      "Changes are scoped to the contracts module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-906",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Data-model slice. DDGC buildings have variable upgrade structures such as Abbey sub-trees and StageCoach parallel trees."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "contracts",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-806-a",
+    "title": "P4b-0: Wire DamageRange into migrated skill definitions (state)",
+    "description": "As a developer, I need migrated skill definitions to carry DamageRange min/max metadata instead of pre-averaged values so the damage policy can choose between fixed and rolled modes.\n\nFocus: implement the state-layer changes.",
+    "priority": 62,
+    "status": "ready",
+    "acceptance_criteria": [
+      "All hero and monster skill definitions that deal damage store DamageRange::new(min, max) alongside the current EffectNode::damage(average) call.",
+      "A lookup or mapping exists from skill ID to its DamageRange.",
+      "Existing tests continue passing under FixedAverage policy with no behavior change.",
+      "At least 5 migrated skills have verified min/max values matching DDGC source data.",
+      "Typecheck passes",
+      "Changes are scoped to the state module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-806",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Do not change EffectNode::damage() calls yet. Add a parallel DamageRange registry keyed by skill ID."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "state",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-906-b",
+    "title": "P5b-0: Define town building data model (state)",
+    "description": "As a developer, I need data structures for town buildings, their upgrade trees, and their services so the game layer can represent the between-run meta state.\n\nFocus: implement the state-layer changes.",
+    "priority": 62,
+    "status": "ready",
+    "acceptance_criteria": [
+      "TownBuilding tracks id, building_type, unlock_conditions, and upgrade_trees.",
+      "UpgradeTree tracks tree_id and levels.",
+      "UpgradeLevel tracks code, cost, and building-specific effects.",
+      "TownState tracks current upgrade level per building, gold, and heirloom currencies.",
+      "All structs derive Serialize, Deserialize, Clone, and Debug.",
+      "Focused tests prove TownState construction and upgrade application are deterministic.",
+      "Typecheck passes",
+      "Changes are scoped to the state module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-906",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Data-model slice. DDGC buildings have variable upgrade structures such as Abbey sub-trees and StageCoach parallel trees."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "state",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-806-b",
+    "title": "P4b-0: Wire DamageRange into migrated skill definitions (tests)",
+    "description": "As a developer, I need migrated skill definitions to carry DamageRange min/max metadata instead of pre-averaged values so the damage policy can choose between fixed and rolled modes.\n\nFocus: implement the tests-layer changes.",
+    "priority": 66,
+    "status": "ready",
+    "acceptance_criteria": [
+      "All hero and monster skill definitions that deal damage store DamageRange::new(min, max) alongside the current EffectNode::damage(average) call.",
+      "A lookup or mapping exists from skill ID to its DamageRange.",
+      "Existing tests continue passing under FixedAverage policy with no behavior change.",
+      "At least 5 migrated skills have verified min/max values matching DDGC source data.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-806",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Do not change EffectNode::damage() calls yet. Add a parallel DamageRange registry keyed by skill ID."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-906-c",
+    "title": "P5b-0: Define town building data model (tests)",
+    "description": "As a developer, I need data structures for town buildings, their upgrade trees, and their services so the game layer can represent the between-run meta state.\n\nFocus: implement the tests-layer changes.",
+    "priority": 66,
+    "status": "ready",
+    "acceptance_criteria": [
+      "TownBuilding tracks id, building_type, unlock_conditions, and upgrade_trees.",
+      "UpgradeTree tracks tree_id and levels.",
+      "UpgradeLevel tracks code, cost, and building-specific effects.",
+      "TownState tracks current upgrade level per building, gold, and heirloom currencies.",
+      "All structs derive Serialize, Deserialize, Clone, and Debug.",
+      "Focused tests prove TownState construction and upgrade application are deterministic.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-906",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Data-model slice. DDGC buildings have variable upgrade structures such as Abbey sub-trees and StageCoach parallel trees."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-907-a",
+    "title": "P5b-1: Parse DDGC building definitions (contracts)",
+    "description": "As a developer, I need DDGC building data parsed into the town model so actual building parameters drive the meta loop.\n\nFocus: implement the contracts-layer changes.",
+    "priority": 71,
+    "status": "ready",
+    "acceptance_criteria": [
+      "A BuildingRegistry holds all 10 DDGC building definitions parsed from *.building.json files.",
+      "Each building has correct unlock conditions, upgrade trees, and service parameters.",
+      "At least 3 buildings including StageCoach, Abbey, and Guild are fully parsed with all upgrade levels.",
+      "Focused tests prove building lookup, upgrade tree traversal, and loading of all 10 buildings.",
+      "Typecheck passes",
+      "Changes are scoped to the contracts module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-907",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Each .building.json has a unique structure, so the parser must handle building-specific fields generically."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "contracts",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-907-b",
+    "title": "P5b-1: Parse DDGC building definitions (state)",
+    "description": "As a developer, I need DDGC building data parsed into the town model so actual building parameters drive the meta loop.\n\nFocus: implement the state-layer changes.",
+    "priority": 72,
+    "status": "ready",
+    "acceptance_criteria": [
+      "A BuildingRegistry holds all 10 DDGC building definitions parsed from *.building.json files.",
+      "Each building has correct unlock conditions, upgrade trees, and service parameters.",
+      "At least 3 buildings including StageCoach, Abbey, and Guild are fully parsed with all upgrade levels.",
+      "Focused tests prove building lookup, upgrade tree traversal, and loading of all 10 buildings.",
+      "Typecheck passes",
+      "Changes are scoped to the state module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-907",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Each .building.json has a unique structure, so the parser must handle building-specific fields generically."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "state",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-907-c",
+    "title": "P5b-1: Parse DDGC building definitions (tests)",
+    "description": "As a developer, I need DDGC building data parsed into the town model so actual building parameters drive the meta loop.\n\nFocus: implement the tests-layer changes.",
+    "priority": 76,
+    "status": "ready",
+    "acceptance_criteria": [
+      "A BuildingRegistry holds all 10 DDGC building definitions parsed from *.building.json files.",
+      "Each building has correct unlock conditions, upgrade trees, and service parameters.",
+      "At least 3 buildings including StageCoach, Abbey, and Guild are fully parsed with all upgrade levels.",
+      "Focused tests prove building lookup, upgrade tree traversal, and loading of all 10 buildings.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-907",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Each .building.json has a unique structure, so the parser must handle building-specific fields generically."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-808-a",
+    "title": "P4b-2: Update damage variance semantic gap status (state)",
+    "description": "As a developer, I need SG-001 damage range averaging reclassified so the semantic gap ledger accurately reflects that variance is restored.\n\nFocus: implement the state-layer changes.",
+    "priority": 82,
+    "status": "ready",
+    "acceptance_criteria": [
+      "SEMANTIC_GAPS.md SG-001 classification is updated from Acceptable approximation to Resolved \u2014 Rolled policy available.",
+      "MIGRATION_BLOCKERS.md B-006 notes are updated to reflect DamageRange wired into all skill definitions.",
+      "cargo test passes with both FixedAverage and Rolled modes.",
+      "Typecheck passes",
+      "Changes are scoped to the state module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-808",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Closeout slice for B-006."
+    },
+    "repo_path": null,
+    "complexity": "high",
+    "risk": "low",
+    "module_scope": "state",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-908-a",
+    "title": "P5b-2: Implement town visit cycle (state)",
+    "description": "As a developer, I need a town visit phase that occurs between dungeon runs so the meta-game loop is complete.\n\nFocus: implement the state-layer changes.",
+    "priority": 82,
+    "status": "ready",
+    "acceptance_criteria": [
+      "TownVisit represents a single town phase with available services, hero roster state, and gold and heirloom balances.",
+      "perform_town_activity(building_id, activity, hero_id, upgrade_level) resolves a building service.",
+      "Town visit produces a trace of activities performed.",
+      "At least one end-to-end test proves entering town after a dungeon run, performing a stress heal at the Abbey, reducing hero stress, and deducting gold.",
+      "Town visit is deterministic for given state and activity choices.",
+      "Typecheck passes",
+      "Changes are scoped to the state module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-908",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Start with Abbey stress heal and StageCoach recruit as the two most critical buildings."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "state",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-808-b",
+    "title": "P4b-2: Update damage variance semantic gap status (docs)",
+    "description": "As a developer, I need SG-001 damage range averaging reclassified so the semantic gap ledger accurately reflects that variance is restored.\n\nFocus: implement the docs-layer changes.",
+    "priority": 85,
+    "status": "ready",
+    "acceptance_criteria": [
+      "SEMANTIC_GAPS.md SG-001 classification is updated from Acceptable approximation to Resolved \u2014 Rolled policy available.",
+      "MIGRATION_BLOCKERS.md B-006 notes are updated to reflect DamageRange wired into all skill definitions.",
+      "cargo test passes with both FixedAverage and Rolled modes.",
+      "Typecheck passes",
+      "Changes are scoped to the docs module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-808",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Closeout slice for B-006."
+    },
+    "repo_path": null,
+    "complexity": "high",
+    "risk": "low",
+    "module_scope": "docs",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-808-c",
+    "title": "P4b-2: Update damage variance semantic gap status (tests)",
+    "description": "As a developer, I need SG-001 damage range averaging reclassified so the semantic gap ledger accurately reflects that variance is restored.\n\nFocus: implement the tests-layer changes.",
+    "priority": 86,
+    "status": "ready",
+    "acceptance_criteria": [
+      "SEMANTIC_GAPS.md SG-001 classification is updated from Acceptable approximation to Resolved \u2014 Rolled policy available.",
+      "MIGRATION_BLOCKERS.md B-006 notes are updated to reflect DamageRange wired into all skill definitions.",
+      "cargo test passes with both FixedAverage and Rolled modes.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-808",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Closeout slice for B-006."
+    },
+    "repo_path": null,
+    "complexity": "high",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-908-b",
+    "title": "P5b-2: Implement town visit cycle (tests)",
+    "description": "As a developer, I need a town visit phase that occurs between dungeon runs so the meta-game loop is complete.\n\nFocus: implement the tests-layer changes.",
+    "priority": 86,
+    "status": "ready",
+    "acceptance_criteria": [
+      "TownVisit represents a single town phase with available services, hero roster state, and gold and heirloom balances.",
+      "perform_town_activity(building_id, activity, hero_id, upgrade_level) resolves a building service.",
+      "Town visit produces a trace of activities performed.",
+      "At least one end-to-end test proves entering town after a dungeon run, performing a stress heal at the Abbey, reducing hero stress, and deducting gold.",
+      "Town visit is deterministic for given state and activity choices.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-908",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Start with Abbey stress heal and StageCoach recruit as the two most critical buildings."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-809-a",
+    "title": "P4c-0: Parse DDGC MapGenerator parameters (contracts)",
+    "description": "As a developer, I need the DDGC map generation parameters parsed and available at runtime so each dungeon generates maps matching the original structure.\n\nFocus: implement the contracts-layer changes.",
+    "priority": 91,
+    "status": "ready",
+    "acceptance_criteria": [
+      "A DungeonMapConfig struct exists with fields matching MapGenerator.txt including room counts, corridor counts, gridsize, connectivity, min_final_distance, hallway densities, and room densities.",
+      "Four dungeon configs are defined for QingLong, BaiHu, ZhuQue, and XuanWu with parameters extracted from MapGenerator.txt.",
+      "At least 2 size variants per dungeon, short and medium, are supported.",
+      "Focused tests prove each dungeon config matches the corresponding MapGenerator.txt values.",
+      "Typecheck passes",
+      "Changes are scoped to the contracts module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-809",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Data-model slice only. Do not integrate with DefaultRoomGenerator yet."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "contracts",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-809-b",
+    "title": "P4c-0: Parse DDGC MapGenerator parameters (tests)",
+    "description": "As a developer, I need the DDGC map generation parameters parsed and available at runtime so each dungeon generates maps matching the original structure.\n\nFocus: implement the tests-layer changes.",
+    "priority": 96,
+    "status": "ready",
+    "acceptance_criteria": [
+      "A DungeonMapConfig struct exists with fields matching MapGenerator.txt including room counts, corridor counts, gridsize, connectivity, min_final_distance, hallway densities, and room densities.",
+      "Four dungeon configs are defined for QingLong, BaiHu, ZhuQue, and XuanWu with parameters extracted from MapGenerator.txt.",
+      "At least 2 size variants per dungeon, short and medium, are supported.",
+      "Focused tests prove each dungeon config matches the corresponding MapGenerator.txt values.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-809",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Data-model slice only. Do not integrate with DefaultRoomGenerator yet."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-810-a",
+    "title": "P4c-1: Wire dungeon map configs into room generation (contracts)",
+    "description": "As a developer, I need DungeonMapConfig parameters fed into the framework's room generation so generated maps reflect DDGC's dungeon structure.\n\nFocus: implement the contracts-layer changes.",
+    "priority": 101,
+    "status": "ready",
+    "acceptance_criteria": [
+      "Run or Floor creation reads the appropriate DungeonMapConfig for the current dungeon.",
+      "Room generation uses per-dungeon room and corridor counts, connectivity, and grid size.",
+      "A deterministic test proves QingLong maps have the correct room count, BaiHu maps have lower connectivity than ZhuQue, and short versus medium maps differ in room count.",
+      "cargo test passes with DDGC-configured generation.",
+      "Typecheck passes",
+      "Changes are scoped to the contracts module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-810",
+    "source_ref": null,
+    "metadata": {
+      "notes": "May require extending DefaultRoomGenerator parameters or using a custom RoomGenerator implementation. Prefer configuration over code changes."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "contracts",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-910-a",
+    "title": "P5b-4: Implement hero XP and leveling (state)",
+    "description": "As a developer, I need hero experience and leveling so heroes can progress through resolve levels between dungeon runs.\n\nFocus: implement the state-layer changes.",
+    "priority": 102,
+    "status": "ready",
+    "acceptance_criteria": [
+      "HeroProgress tracks xp, resolve_level, and hero_level.",
+      "XP thresholds match Campaign.json for level_threshold_table and resolve_thresholds.",
+      "add_xp(amount) advances hero level and resolve level when thresholds are crossed.",
+      "Resolve level gates dungeon access so heroes above resolve level cannot enter low-level dungeons.",
+      "Focused tests prove leveling at each threshold boundary.",
+      "Typecheck passes",
+      "Changes are scoped to the state module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-910",
+    "source_ref": null,
+    "metadata": {
+      "notes": "DDGC's level system is separate from resolve level. Both use XP from Campaign.json."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "state",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-810-b",
+    "title": "P4c-1: Wire dungeon map configs into room generation (tests)",
+    "description": "As a developer, I need DungeonMapConfig parameters fed into the framework's room generation so generated maps reflect DDGC's dungeon structure.\n\nFocus: implement the tests-layer changes.",
+    "priority": 106,
+    "status": "ready",
+    "acceptance_criteria": [
+      "Run or Floor creation reads the appropriate DungeonMapConfig for the current dungeon.",
+      "Room generation uses per-dungeon room and corridor counts, connectivity, and grid size.",
+      "A deterministic test proves QingLong maps have the correct room count, BaiHu maps have lower connectivity than ZhuQue, and short versus medium maps differ in room count.",
+      "cargo test passes with DDGC-configured generation.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-810",
+    "source_ref": null,
+    "metadata": {
+      "notes": "May require extending DefaultRoomGenerator parameters or using a custom RoomGenerator implementation. Prefer configuration over code changes."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-910-b",
+    "title": "P5b-4: Implement hero XP and leveling (tests)",
+    "description": "As a developer, I need hero experience and leveling so heroes can progress through resolve levels between dungeon runs.\n\nFocus: implement the tests-layer changes.",
+    "priority": 106,
+    "status": "ready",
+    "acceptance_criteria": [
+      "HeroProgress tracks xp, resolve_level, and hero_level.",
+      "XP thresholds match Campaign.json for level_threshold_table and resolve_thresholds.",
+      "add_xp(amount) advances hero level and resolve level when thresholds are crossed.",
+      "Resolve level gates dungeon access so heroes above resolve level cannot enter low-level dungeons.",
+      "Focused tests prove leveling at each threshold boundary.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-910",
+    "source_ref": null,
+    "metadata": {
+      "notes": "DDGC's level system is separate from resolve level. Both use XP from Campaign.json."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-911-a",
+    "title": "P5c-0: Define trinket and equipment data model (contracts)",
+    "description": "As a developer, I need data structures for trinkets and equipment upgrades so hero stats can be computed from gear rather than hardcoded values.\n\nFocus: implement the contracts-layer changes.",
+    "priority": 111,
+    "status": "ready",
+    "acceptance_criteria": [
+      "TrinketDefinition tracks id, buffs, hero_class_requirements, rarity, price, limit, and origin_dungeon.",
+      "EquipmentDefinition tracks id, hero_class_id, slot, upgrade_level, and stat_modifiers.",
+      "AttributeModifier tracks attribute_key and value.",
+      "All structs derive Serialize, Deserialize, Clone, and Debug.",
+      "Focused tests prove construction and lookup are deterministic.",
+      "Typecheck passes",
+      "Changes are scoped to the contracts module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-911",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Trinket buffs reference JsonBuffs.json buff IDs that map to attribute modifiers in the game layer."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "contracts",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-811-a",
+    "title": "P4c-2: Parse DDGC encounter pack weights from dungeon .bytes (state)",
+    "description": "As a developer, I need the encounter pack weights from DDGC dungeon .bytes files available at runtime so monster composition in rooms matches the original game.\n\nFocus: implement the state-layer changes.",
+    "priority": 112,
+    "status": "ready",
+    "acceptance_criteria": [
+      "A DungeonEncounterConfig struct captures the weighted encounter definitions from dungeon .bytes files.",
+      "Each dungeon's hall, room, and boss encounter packs are registered with correct monster IDs and chances.",
+      "At least one dungeon, QingLong, has fully parsed encounter data matching its .bytes source.",
+      "Focused tests prove encounter selection produces the expected monster composition for a given seed.",
+      "Typecheck passes",
+      "Changes are scoped to the state module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-811",
+    "source_ref": null,
+    "metadata": {
+      "notes": "The dungeon .bytes format uses mash blocks with chance and types fields. Parse into the existing EncounterPackRegistry structure."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "state",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-911-b",
+    "title": "P5c-0: Define trinket and equipment data model (state)",
+    "description": "As a developer, I need data structures for trinkets and equipment upgrades so hero stats can be computed from gear rather than hardcoded values.\n\nFocus: implement the state-layer changes.",
+    "priority": 112,
+    "status": "ready",
+    "acceptance_criteria": [
+      "TrinketDefinition tracks id, buffs, hero_class_requirements, rarity, price, limit, and origin_dungeon.",
+      "EquipmentDefinition tracks id, hero_class_id, slot, upgrade_level, and stat_modifiers.",
+      "AttributeModifier tracks attribute_key and value.",
+      "All structs derive Serialize, Deserialize, Clone, and Debug.",
+      "Focused tests prove construction and lookup are deterministic.",
+      "Typecheck passes",
+      "Changes are scoped to the state module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-911",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Trinket buffs reference JsonBuffs.json buff IDs that map to attribute modifiers in the game layer."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "state",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-811-b",
+    "title": "P4c-2: Parse DDGC encounter pack weights from dungeon .bytes (tests)",
+    "description": "As a developer, I need the encounter pack weights from DDGC dungeon .bytes files available at runtime so monster composition in rooms matches the original game.\n\nFocus: implement the tests-layer changes.",
+    "priority": 116,
+    "status": "ready",
+    "acceptance_criteria": [
+      "A DungeonEncounterConfig struct captures the weighted encounter definitions from dungeon .bytes files.",
+      "Each dungeon's hall, room, and boss encounter packs are registered with correct monster IDs and chances.",
+      "At least one dungeon, QingLong, has fully parsed encounter data matching its .bytes source.",
+      "Focused tests prove encounter selection produces the expected monster composition for a given seed.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-811",
+    "source_ref": null,
+    "metadata": {
+      "notes": "The dungeon .bytes format uses mash blocks with chance and types fields. Parse into the existing EncounterPackRegistry structure."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-911-c",
+    "title": "P5c-0: Define trinket and equipment data model (tests)",
+    "description": "As a developer, I need data structures for trinkets and equipment upgrades so hero stats can be computed from gear rather than hardcoded values.\n\nFocus: implement the tests-layer changes.",
+    "priority": 116,
+    "status": "ready",
+    "acceptance_criteria": [
+      "TrinketDefinition tracks id, buffs, hero_class_requirements, rarity, price, limit, and origin_dungeon.",
+      "EquipmentDefinition tracks id, hero_class_id, slot, upgrade_level, and stat_modifiers.",
+      "AttributeModifier tracks attribute_key and value.",
+      "All structs derive Serialize, Deserialize, Clone, and Debug.",
+      "Focused tests prove construction and lookup are deterministic.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-911",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Trinket buffs reference JsonBuffs.json buff IDs that map to attribute modifiers in the game layer."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-912-a",
+    "title": "P5c-1: Parse DDGC trinket definitions (contracts)",
+    "description": "As a developer, I need DDGC trinket data parsed into the trinket model so the loot and shop systems can use actual trinket content.\n\nFocus: implement the contracts-layer changes.",
+    "priority": 121,
+    "status": "ready",
+    "acceptance_criteria": [
+      "A TrinketRegistry holds all DDGC trinket definitions parsed from JsonTrinkets.json.",
+      "Trinkets are indexed by ID, class requirement, rarity, and origin dungeon.",
+      "At least 10 trinkets across multiple rarity tiers are parsed and verified.",
+      "Class-requirement filtering works so trinkets_for_class returns only eligible trinkets.",
+      "Focused tests prove lookup, filtering, and rarity categorization.",
+      "Typecheck passes",
+      "Changes are scoped to the contracts module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-912",
+    "source_ref": null,
+    "metadata": {
+      "notes": "JsonTrinkets.json references buff IDs from JsonBuffs.json; the buff-resolution layer is a separate concern."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "contracts",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-912-b",
+    "title": "P5c-1: Parse DDGC trinket definitions (state)",
+    "description": "As a developer, I need DDGC trinket data parsed into the trinket model so the loot and shop systems can use actual trinket content.\n\nFocus: implement the state-layer changes.",
+    "priority": 122,
+    "status": "ready",
+    "acceptance_criteria": [
+      "A TrinketRegistry holds all DDGC trinket definitions parsed from JsonTrinkets.json.",
+      "Trinkets are indexed by ID, class requirement, rarity, and origin dungeon.",
+      "At least 10 trinkets across multiple rarity tiers are parsed and verified.",
+      "Class-requirement filtering works so trinkets_for_class returns only eligible trinkets.",
+      "Focused tests prove lookup, filtering, and rarity categorization.",
+      "Typecheck passes",
+      "Changes are scoped to the state module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-912",
+    "source_ref": null,
+    "metadata": {
+      "notes": "JsonTrinkets.json references buff IDs from JsonBuffs.json; the buff-resolution layer is a separate concern."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "state",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-912-c",
+    "title": "P5c-1: Parse DDGC trinket definitions (tests)",
+    "description": "As a developer, I need DDGC trinket data parsed into the trinket model so the loot and shop systems can use actual trinket content.\n\nFocus: implement the tests-layer changes.",
+    "priority": 126,
+    "status": "ready",
+    "acceptance_criteria": [
+      "A TrinketRegistry holds all DDGC trinket definitions parsed from JsonTrinkets.json.",
+      "Trinkets are indexed by ID, class requirement, rarity, and origin dungeon.",
+      "At least 10 trinkets across multiple rarity tiers are parsed and verified.",
+      "Class-requirement filtering works so trinkets_for_class returns only eligible trinkets.",
+      "Focused tests prove lookup, filtering, and rarity categorization.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-912",
+    "source_ref": null,
+    "metadata": {
+      "notes": "JsonTrinkets.json references buff IDs from JsonBuffs.json; the buff-resolution layer is a separate concern."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-915-a",
+    "title": "P5c-4: Wire equipment into hero archetype creation (cli)",
+    "description": "As a developer, I need hero archetype creation to accept equipment parameters so the same hero class can have different power levels based on gear.\n\nFocus: implement the cli-layer changes.",
+    "priority": 154,
+    "status": "ready",
+    "acceptance_criteria": [
+      "Archetype creation for heroes accepts optional weapon_level, armor_level, and trinkets parameters.",
+      "The default path without parameters produces current level-0 stats.",
+      "All existing tests continue passing without modification.",
+      "At least one test proves a level-1 equipped hero has different stats than level-0.",
+      "cargo test passes with equipment-aware archetype creation.",
+      "Typecheck passes",
+      "Changes are scoped to the cli module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-915",
+    "source_ref": null,
+    "metadata": {
+      "notes": "This is the point where hero stats stop being hardcoded and start being computed."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "cli",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-915-b",
+    "title": "P5c-4: Wire equipment into hero archetype creation (tests)",
+    "description": "As a developer, I need hero archetype creation to accept equipment parameters so the same hero class can have different power levels based on gear.\n\nFocus: implement the tests-layer changes.",
+    "priority": 156,
+    "status": "ready",
+    "acceptance_criteria": [
+      "Archetype creation for heroes accepts optional weapon_level, armor_level, and trinkets parameters.",
+      "The default path without parameters produces current level-0 stats.",
+      "All existing tests continue passing without modification.",
+      "At least one test proves a level-1 equipped hero has different stats than level-0.",
+      "cargo test passes with equipment-aware archetype creation.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-915",
+    "source_ref": null,
+    "metadata": {
+      "notes": "This is the point where hero stats stop being hardcoded and start being computed."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-916-a",
+    "title": "P5d-0: Define quirk data model and parse DDGC quirks (contracts)",
+    "description": "As a developer, I need quirk definitions parsed from JsonQuirks.json so heroes can acquire and be affected by quirks and diseases.\n\nFocus: implement the contracts-layer changes.",
+    "priority": 161,
+    "status": "ready",
+    "acceptance_criteria": [
+      "QuirkDefinition tracks id, is_positive, is_disease, classification, buffs, incompatible_quirks, and curio_tag.",
+      "A QuirkRegistry holds all DDGC quirk definitions.",
+      "At least 10 quirks including positive, negative, and disease entries are parsed.",
+      "Buffs are resolved through the BuffRegistry from US-913.",
+      "Focused tests prove lookup, positive or negative or disease classification, and buff resolution.",
+      "Typecheck passes",
+      "Changes are scoped to the contracts module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-916",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Quirks use the same buff ID system as trinkets and depend on the BuffRegistry."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "contracts",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-916-b",
+    "title": "P5d-0: Define quirk data model and parse DDGC quirks (state)",
+    "description": "As a developer, I need quirk definitions parsed from JsonQuirks.json so heroes can acquire and be affected by quirks and diseases.\n\nFocus: implement the state-layer changes.",
+    "priority": 162,
+    "status": "ready",
+    "acceptance_criteria": [
+      "QuirkDefinition tracks id, is_positive, is_disease, classification, buffs, incompatible_quirks, and curio_tag.",
+      "A QuirkRegistry holds all DDGC quirk definitions.",
+      "At least 10 quirks including positive, negative, and disease entries are parsed.",
+      "Buffs are resolved through the BuffRegistry from US-913.",
+      "Focused tests prove lookup, positive or negative or disease classification, and buff resolution.",
+      "Typecheck passes",
+      "Changes are scoped to the state module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-916",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Quirks use the same buff ID system as trinkets and depend on the BuffRegistry."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "state",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-916-c",
+    "title": "P5d-0: Define quirk data model and parse DDGC quirks (adapter)",
+    "description": "As a developer, I need quirk definitions parsed from JsonQuirks.json so heroes can acquire and be affected by quirks and diseases.\n\nFocus: implement the adapter-layer changes.",
+    "priority": 163,
+    "status": "ready",
+    "acceptance_criteria": [
+      "QuirkDefinition tracks id, is_positive, is_disease, classification, buffs, incompatible_quirks, and curio_tag.",
+      "A QuirkRegistry holds all DDGC quirk definitions.",
+      "At least 10 quirks including positive, negative, and disease entries are parsed.",
+      "Buffs are resolved through the BuffRegistry from US-913.",
+      "Focused tests prove lookup, positive or negative or disease classification, and buff resolution.",
+      "Typecheck passes",
+      "Changes are scoped to the adapter module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-916",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Quirks use the same buff ID system as trinkets and depend on the BuffRegistry."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "adapter",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-916-d",
+    "title": "P5d-0: Define quirk data model and parse DDGC quirks (tests)",
+    "description": "As a developer, I need quirk definitions parsed from JsonQuirks.json so heroes can acquire and be affected by quirks and diseases.\n\nFocus: implement the tests-layer changes.",
+    "priority": 166,
+    "status": "ready",
+    "acceptance_criteria": [
+      "QuirkDefinition tracks id, is_positive, is_disease, classification, buffs, incompatible_quirks, and curio_tag.",
+      "A QuirkRegistry holds all DDGC quirk definitions.",
+      "At least 10 quirks including positive, negative, and disease entries are parsed.",
+      "Buffs are resolved through the BuffRegistry from US-913.",
+      "Focused tests prove lookup, positive or negative or disease classification, and buff resolution.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-916",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Quirks use the same buff ID system as trinkets and depend on the BuffRegistry."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-917-a",
+    "title": "P5d-1: Implement quirk application to heroes (state)",
+    "description": "As a developer, I need heroes to carry active quirks that modify their attributes so the quirk system actually affects gameplay.\n\nFocus: implement the state-layer changes.",
+    "priority": 172,
+    "status": "ready",
+    "acceptance_criteria": [
+      "HeroQuirkState tracks active positive quirks, negative quirks, and diseases.",
+      "apply_quirk(hero, quirk_id) adds a quirk while enforcing incompatible quirk replacement and category slot limits.",
+      "Quirk modifiers are applied alongside equipment and trinket modifiers in compute_hero_stats.",
+      "Focused tests prove quirk modifiers change hero attributes, incompatible quirks replace existing ones, and diseases are tracked separately.",
+      "Typecheck passes",
+      "Changes are scoped to the state module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-917",
+    "source_ref": null,
+    "metadata": {
+      "notes": "DDGC typically limits heroes to five positive and five negative quirks."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "state",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-917-b",
+    "title": "P5d-1: Implement quirk application to heroes (adapter)",
+    "description": "As a developer, I need heroes to carry active quirks that modify their attributes so the quirk system actually affects gameplay.\n\nFocus: implement the adapter-layer changes.",
+    "priority": 173,
+    "status": "ready",
+    "acceptance_criteria": [
+      "HeroQuirkState tracks active positive quirks, negative quirks, and diseases.",
+      "apply_quirk(hero, quirk_id) adds a quirk while enforcing incompatible quirk replacement and category slot limits.",
+      "Quirk modifiers are applied alongside equipment and trinket modifiers in compute_hero_stats.",
+      "Focused tests prove quirk modifiers change hero attributes, incompatible quirks replace existing ones, and diseases are tracked separately.",
+      "Typecheck passes",
+      "Changes are scoped to the adapter module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-917",
+    "source_ref": null,
+    "metadata": {
+      "notes": "DDGC typically limits heroes to five positive and five negative quirks."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "adapter",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-917-c",
+    "title": "P5d-1: Implement quirk application to heroes (tests)",
+    "description": "As a developer, I need heroes to carry active quirks that modify their attributes so the quirk system actually affects gameplay.\n\nFocus: implement the tests-layer changes.",
+    "priority": 176,
+    "status": "ready",
+    "acceptance_criteria": [
+      "HeroQuirkState tracks active positive quirks, negative quirks, and diseases.",
+      "apply_quirk(hero, quirk_id) adds a quirk while enforcing incompatible quirk replacement and category slot limits.",
+      "Quirk modifiers are applied alongside equipment and trinket modifiers in compute_hero_stats.",
+      "Focused tests prove quirk modifiers change hero attributes, incompatible quirks replace existing ones, and diseases are tracked separately.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-917",
+    "source_ref": null,
+    "metadata": {
+      "notes": "DDGC typically limits heroes to five positive and five negative quirks."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-918-a",
+    "title": "P5d-2: Wire quirk acquisition into curio and combat events (state)",
+    "description": "As a developer, I need quirks to be acquired from curio interactions and combat events so the hero's quirk profile evolves during runs.\n\nFocus: implement the state-layer changes.",
+    "priority": 182,
+    "status": "ready",
+    "acceptance_criteria": [
+      "Curio result type Quirk triggers apply_quirk with the result quirk ID.",
+      "Curio result type Disease triggers apply_quirk with the disease quirk ID.",
+      "Combat events that cause disease trigger apply_quirk.",
+      "At least one end-to-end test proves a curio adds a quirk, disease from combat is applied, and quirk modifiers affect subsequent combat stats.",
+      "cargo test passes with quirk acquisition active.",
+      "Typecheck passes",
+      "Changes are scoped to the state module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-918",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Integration slice connecting the curio system, combat system, and quirk system."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "state",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-918-b",
+    "title": "P5d-2: Wire quirk acquisition into curio and combat events (tests)",
+    "description": "As a developer, I need quirks to be acquired from curio interactions and combat events so the hero's quirk profile evolves during runs.\n\nFocus: implement the tests-layer changes.",
+    "priority": 186,
+    "status": "ready",
+    "acceptance_criteria": [
+      "Curio result type Quirk triggers apply_quirk with the result quirk ID.",
+      "Curio result type Disease triggers apply_quirk with the disease quirk ID.",
+      "Combat events that cause disease trigger apply_quirk.",
+      "At least one end-to-end test proves a curio adds a quirk, disease from combat is applied, and quirk modifiers affect subsequent combat stats.",
+      "cargo test passes with quirk acquisition active.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-918",
+    "source_ref": null,
+    "metadata": {
+      "notes": "Integration slice connecting the curio system, combat system, and quirk system."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-919-a",
+    "title": "P5e-0: Define trait and affliction data model and parse DDGC traits (contracts)",
+    "description": "As a developer, I need trait definitions for afflictions and virtues parsed from JsonTraits.json so the overstress system can resolve correctly.\n\nFocus: implement the contracts-layer changes.",
+    "priority": 191,
+    "status": "ready",
+    "acceptance_criteria": [
+      "TraitDefinition tracks id, overstress_type, buff_ids, combat_start_turn_act_outs, and reaction_act_outs.",
+      "ActOutEntry tracks action and weight.",
+      "ReactionEntry tracks trigger, probability, and effect.",
+      "A TraitRegistry holds all DDGC trait definitions.",
+      "At least 2 afflictions and 1 virtue are parsed.",
+      "Focused tests prove trait lookup, act-out weight preservation, and reaction probability preservation.",
+      "Typecheck passes",
+      "Changes are scoped to the contracts module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-919",
+    "source_ref": null,
+    "metadata": {
+      "notes": "JsonTraits.json uses nested arrays for act-outs and reactions."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "contracts",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-919-b",
+    "title": "P5e-0: Define trait and affliction data model and parse DDGC traits (state)",
+    "description": "As a developer, I need trait definitions for afflictions and virtues parsed from JsonTraits.json so the overstress system can resolve correctly.\n\nFocus: implement the state-layer changes.",
+    "priority": 192,
+    "status": "ready",
+    "acceptance_criteria": [
+      "TraitDefinition tracks id, overstress_type, buff_ids, combat_start_turn_act_outs, and reaction_act_outs.",
+      "ActOutEntry tracks action and weight.",
+      "ReactionEntry tracks trigger, probability, and effect.",
+      "A TraitRegistry holds all DDGC trait definitions.",
+      "At least 2 afflictions and 1 virtue are parsed.",
+      "Focused tests prove trait lookup, act-out weight preservation, and reaction probability preservation.",
+      "Typecheck passes",
+      "Changes are scoped to the state module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-919",
+    "source_ref": null,
+    "metadata": {
+      "notes": "JsonTraits.json uses nested arrays for act-outs and reactions."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "state",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-919-c",
+    "title": "P5e-0: Define trait and affliction data model and parse DDGC traits (tests)",
+    "description": "As a developer, I need trait definitions for afflictions and virtues parsed from JsonTraits.json so the overstress system can resolve correctly.\n\nFocus: implement the tests-layer changes.",
+    "priority": 196,
+    "status": "ready",
+    "acceptance_criteria": [
+      "TraitDefinition tracks id, overstress_type, buff_ids, combat_start_turn_act_outs, and reaction_act_outs.",
+      "ActOutEntry tracks action and weight.",
+      "ReactionEntry tracks trigger, probability, and effect.",
+      "A TraitRegistry holds all DDGC trait definitions.",
+      "At least 2 afflictions and 1 virtue are parsed.",
+      "Focused tests prove trait lookup, act-out weight preservation, and reaction probability preservation.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-919",
+    "source_ref": null,
+    "metadata": {
+      "notes": "JsonTraits.json uses nested arrays for act-outs and reactions."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-921-a",
+    "title": "P5e-2: Implement affliction combat behavior (cli)",
+    "description": "As a developer, I need affliction combat behavior implemented so afflicted heroes occasionally disobey orders during combat.\n\nFocus: implement the cli-layer changes.",
+    "priority": 214,
+    "status": "ready",
+    "acceptance_criteria": [
+      "resolve_act_out(affliction_id, seed) rolls against the weighted act-out table at the start of an afflicted hero's turn.",
+      "Possible outcomes include Nothing, IgnoreCommand, ChangePosition, BarkStress, AttackFriendly, and MarkSelf.",
+      "Act-out results are recorded in the battle trace.",
+      "Focused tests prove Nothing is the most common outcome, other outcomes are possible, and act-out resolution is deterministic for a given seed.",
+      "Typecheck passes",
+      "Changes are scoped to the cli module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-921",
+    "source_ref": null,
+    "metadata": {
+      "notes": "DDGC's act-out weights make nothing dominant with smaller chances for disruptive actions."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "cli",
+    "retry_count": 0,
+    "failure_summary": "",
+    "next_tier": null,
+    "split_guidance": []
+  },
+  {
+    "task_id": "US-921-b",
+    "title": "P5e-2: Implement affliction combat behavior (tests)",
+    "description": "As a developer, I need affliction combat behavior implemented so afflicted heroes occasionally disobey orders during combat.\n\nFocus: implement the tests-layer changes.",
+    "priority": 216,
+    "status": "ready",
+    "acceptance_criteria": [
+      "resolve_act_out(affliction_id, seed) rolls against the weighted act-out table at the start of an afflicted hero's turn.",
+      "Possible outcomes include Nothing, IgnoreCommand, ChangePosition, BarkStress, AttackFriendly, and MarkSelf.",
+      "Act-out results are recorded in the battle trace.",
+      "Focused tests prove Nothing is the most common outcome, other outcomes are possible, and act-out resolution is deterministic for a given seed.",
+      "Typecheck passes",
+      "Changes are scoped to the tests module."
+    ],
+    "dependencies": [],
+    "parent_task_id": "US-921",
+    "source_ref": null,
+    "metadata": {
+      "notes": "DDGC's act-out weights make nothing dominant with smaller chances for disruptive actions."
+    },
+    "repo_path": null,
+    "complexity": "low",
+    "risk": "low",
+    "module_scope": "tests",
+    "retry_count": 0,
+    "failure_summary": "",
     "next_tier": null,
     "split_guidance": []
   }

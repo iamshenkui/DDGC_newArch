@@ -1,202 +1,204 @@
 {
-    "project": "game_ddgc_headless",
-    "branchName": "ralph/ddgc-reactive-and-usage-closure",
-    "description": "Phase 1 of 2 \u2014 DDGC Reactive Hooks And Skill Usage Limits. Close the highest-leverage open game-gap blockers first by building deterministic reactive combat plumbing, implementing riposte and guard semantics, and enforcing LimitPerTurn / LimitPerBattle through game-layer state.",
-    "userStories": [
-        {
-            "id": "US-501",
-            "title": "P1-0: Inventory reactive and limited-use touchpoints",
-            "description": "As a developer, I need a precise inventory of the migrated skills, statuses, and encounters that depend on riposte, guard, or usage limits so Phase 1 implementation is driven by real DDGC touchpoints instead of generic guesses.",
-            "acceptanceCriteria": [
-                "A checked-in note or section in progress/logging docs lists the migrated DDGC units or skills that currently rely on riposte, guard, per-turn limits, or per-battle limits",
-                "The inventory distinguishes already-migrated content from future content that can wait for later phases",
-                "At least one concrete reactive case and one concrete usage-limit case are selected as implementation anchors for later stories"
-            ],
-            "priority": 1,
-            "passes": true,
-            "notes": "Discovery slice. Keep output lightweight and implementation-focused."
-        },
-        {
-            "id": "US-502",
-            "title": "P1-1: Add reactive combat event types",
-            "description": "As a developer, I need explicit reactive-event data structures so post-hit reactions are represented as first-class game-layer events rather than implicit side effects hidden inside damage resolution.",
-            "acceptanceCriteria": [
-                "Game-layer combat code exposes explicit event or record types for reactive follow-up work",
-                "The event model can represent who was hit, who may react, and what triggered the reaction",
-                "A focused test proves the event structure can be created deterministically from a resolved damage step"
-            ],
-            "priority": 2,
-            "passes": true,
-            "notes": "Data-model slice only. Do not execute reactions yet."
-        },
-        {
-            "id": "US-503",
-            "title": "P1-2: Add deterministic reactive queue harness",
-            "description": "As a developer, I need a deterministic queue or ordering harness for reactive follow-ups so multiple reaction candidates can be evaluated in one stable sequence.",
-            "acceptanceCriteria": [
-                "A dedicated game-layer helper or module exists for scheduling reactive follow-up actions",
-                "When multiple reactions are possible, evaluation order is deterministic and documented in tests",
-                "A focused test proves queued reactions do not re-apply the original hit or recurse indefinitely"
-            ],
-            "priority": 3,
-            "passes": true,
-            "notes": "Plumbing slice. This is the execution backbone for riposte and guard."
-        },
-        {
-            "id": "US-504",
-            "title": "P1-3: Trace reactive events explicitly",
-            "description": "As a developer, I need reactive events to appear in battle traces so later semantic review can distinguish the base attack from the follow-up action it caused.",
-            "acceptanceCriteria": [
-                "Reactive follow-up actions produce explicit trace entries instead of blending into the original attack output",
-                "Trace output identifies the trigger relationship between the original hit and the reaction",
-                "A focused test proves trace serialization is stable when a reactive event is present"
-            ],
-            "priority": 4,
-            "passes": true,
-            "notes": "Observability slice before full mechanic enablement."
-        },
-        {
-            "id": "US-505",
-            "title": "P1-4: Detect riposte-ready actors",
-            "description": "As a developer, I need the reactive harness to recognize riposte marker statuses on the correct actor set so the game knows when a counter-attack is eligible.",
-            "acceptanceCriteria": [
-                "Game-layer combat code can detect riposte markers from the active combat state without framework changes",
-                "The detection logic only marks valid riposte candidates for qualifying incoming hits",
-                "A focused test proves non-riposte actors are ignored while riposte-marked actors are surfaced once"
-            ],
-            "priority": 5,
-            "passes": true,
-            "notes": "Eligibility slice only. No counter-attack execution yet."
-        },
-        {
-            "id": "US-506",
-            "title": "P1-5: Execute riposte counter-attacks",
-            "description": "As a developer, I need riposte-eligible actors to execute a single deterministic counter-attack through the reactive harness so migrated DDGC riposte units stop behaving like passive status carriers.",
-            "acceptanceCriteria": [
-                "A riposte-marked actor can issue exactly one reactive counter-attack per qualifying hit",
-                "At least one migrated DDGC family or encounter fixture proves riposte behavior end-to-end",
-                "MIGRATION_BLOCKERS.md and SEMANTIC_GAPS.md are updated if riposte support meaningfully closes part of B-008"
-            ],
-            "priority": 6,
-            "passes": true,
-            "notes": "First real B-008 behavior slice."
-        },
-        {
-            "id": "US-507",
-            "title": "P1-6: Detect guard protection relationships",
-            "description": "As a developer, I need the combat layer to resolve which ally is guarding which target so incoming attacks can be redirected intentionally instead of merely tagged.",
-            "acceptanceCriteria": [
-                "Game-layer combat state can resolve a protected target and its guarding actor deterministically",
-                "Detection works from existing status or content data without requiring framework-crate changes",
-                "A focused test proves the correct guard relationship is selected when a protected target is attacked"
-            ],
-            "priority": 7,
-            "passes": true,
-            "notes": "Relationship-resolution slice only."
-        },
-        {
-            "id": "US-508",
-            "title": "P1-7: Redirect guarded damage",
-            "description": "As a developer, I need guarded hits to land on the guarding ally instead of the protected actor so defensive DDGC behavior preserves actual battlefield protection semantics.",
-            "acceptanceCriteria": [
-                "A guarded target no longer receives the original damage directly when redirection succeeds",
-                "The guarding ally receives the redirected hit through one deterministic pathway",
-                "A focused test proves guard redirection coexists cleanly with the reactive queue and trace output"
-            ],
-            "priority": 8,
-            "passes": true,
-            "notes": "Second real B-008 behavior slice."
-        },
-        {
-            "id": "US-509",
-            "title": "P1-8: Add reactive golden trace coverage",
-            "description": "As a developer, I need a committed reactive trace fixture so future refactors cannot silently reorder or remove riposte and guard follow-up behavior.",
-            "acceptanceCriteria": [
-                "A committed fixture under fixtures/semantic_battles or fixtures/encounters captures at least one reactive combat sequence",
-                "A regression test compares live output against the committed reactive trace",
-                "The trace clearly separates original attacks, redirected hits, and counter-attacks for review"
-            ],
-            "priority": 9,
-            "passes": true,
-            "notes": "Locks Phase 1 reactive behavior before moving on."
-        },
-        {
-            "id": "US-510",
-            "title": "P1-9: Add skill usage counter state",
-            "description": "As a developer, I need dedicated per-skill counter state for turn scope and battle scope so usage-limit enforcement has a concrete runtime model.",
-            "acceptanceCriteria": [
-                "Game-layer combat state tracks usage counts by actor and skill for both turn and battle scopes",
-                "The counters are isolated from cooldown logic rather than overloading cooldown fields",
-                "A focused test proves unrelated skills do not affect each other's counters"
-            ],
-            "priority": 10,
-            "passes": true,
-            "notes": "State-model slice for B-005 only."
-        },
-        {
-            "id": "US-511",
-            "title": "P1-10: Reset counters at turn boundaries",
-            "description": "As a developer, I need turn-scoped counters to reset at the right time so per-turn limits behave consistently across actor turns and round transitions.",
-            "acceptanceCriteria": [
-                "Turn-scoped usage counters reset when the relevant actor turn boundary advances",
-                "Battle-scoped counters do not reset during the same transition",
-                "A focused test proves the reset boundary is deterministic and not tied to unrelated combat events"
-            ],
-            "priority": 11,
-            "passes": true,
-            "notes": "Lifecycle slice before any enforcement."
-        },
-        {
-            "id": "US-512",
-            "title": "P1-11: Reset counters at battle boundaries",
-            "description": "As a developer, I need encounter-scoped counters to reset only when a new battle starts so per-battle limits survive cooldown refreshes but not new encounters.",
-            "acceptanceCriteria": [
-                "Battle-scoped counters persist for the full encounter lifetime",
-                "Starting a fresh encounter resets battle-scoped counts cleanly",
-                "A focused test proves battle reset behavior without depending on manual state cleanup"
-            ],
-            "priority": 12,
-            "passes": true,
-            "notes": "Completes the B-005 state lifecycle model."
-        },
-        {
-            "id": "US-513",
-            "title": "P1-12: Enforce per-turn usage limits",
-            "description": "As a developer, I need the game layer to reject or skip commands that exceed per-turn limits so DDGC skills with turn-bounded usage stop repeating freely.",
-            "acceptanceCriteria": [
-                "At least one migrated or fixture-backed skill can declare a per-turn usage limit in DDGC game-layer metadata",
-                "Command resolution blocks or skips only the over-limit skill use while leaving legal commands intact",
-                "A deterministic test proves the same skill becomes available again after the correct turn reset"
-            ],
-            "priority": 13,
-            "passes": true,
-            "notes": "First enforcement slice for B-005."
-        },
-        {
-            "id": "US-514",
-            "title": "P1-13: Enforce per-battle usage limits",
-            "description": "As a developer, I need the game layer to enforce encounter-wide limits so once-per-battle DDGC skills preserve their intended rarity even if cooldowns would otherwise allow reuse.",
-            "acceptanceCriteria": [
-                "At least one migrated or fixture-backed skill can declare a per-battle limit in DDGC game-layer metadata",
-                "Over-limit battle-scope usage is rejected or skipped deterministically within the same encounter",
-                "A deterministic test proves a new encounter restores availability while the current encounter does not"
-            ],
-            "priority": 14,
-            "passes": true,
-            "notes": "Second enforcement slice for B-005."
-        },
-        {
-            "id": "US-515",
-            "title": "P1-14: Add regression coverage for reactive hooks and usage limits",
-            "description": "As a developer, I need Phase 1 mechanics locked by regression tests so later conditional or hit-policy work cannot silently break the newly closed semantic gaps.",
-            "acceptanceCriteria": [
-                "Regression tests cover riposte, guard redirection, per-turn limits, and per-battle limits",
-                "The test suite uses game_ddgc_headless public APIs rather than framework internals",
-                "cargo test --manifest-path Cargo.toml exits 0 with the full Phase 1 coverage enabled"
-            ],
-            "priority": 15,
-            "passes": true,
-            "notes": "Phase 1 closeout story. Start Phase 2 only after this passes."
-        }
-    ]
+  "project": "game_ddgc_headless",
+  "branchName": "ralph/ddgc-phase4-condition-damage-dungeon",
+  "description": "Phase 4 — DDGC Condition Closure, Damage Variance, and Dungeon Fidelity. Close B-004 by implementing remaining DDGC conditions (HP-threshold, InMode, OnKill), activate rolled damage policy, and align dungeon map generation with DDGC's original MapGenerator parameters.",
+  "userStories": [
+    {
+      "id": "US-801",
+      "title": "P4a-0: Inventory remaining condition touchpoints",
+      "description": "As a developer, I need a precise inventory of which migrated DDGC skills and statuses depend on unimplemented condition variants so Phase 4a targets only the conditions with real migrated content.",
+      "acceptanceCriteria": [
+        "A checked-in inventory file (e.g., tasks/phase4_condition_inventory.md) lists every migrated skill/status that references a condition not yet implemented in ConditionAdapter",
+        "The inventory maps each unimplemented condition to the skills that require it, grouped by condition family (HP-threshold, dungeon-mode, kill-trigger, etc.)",
+        "At least 2 condition families are selected as implementation anchors with concrete skill anchor names",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "Discovery slice. Scan src/content/heroes/ and src/content/monsters/ for .with_game_condition() calls referencing unimplemented tags. Also scan for ddgc_ prefixed condition strings in skill definitions."
+    },
+    {
+      "id": "US-802",
+      "title": "P4a-1: Implement HP-threshold conditions in ConditionAdapter",
+      "description": "As a developer, I need HpAbove, TargetHpAbove, and TargetHpBelow DDGC conditions implemented in ConditionAdapter so HP-threshold skill gating works correctly instead of being always-on or always-off.",
+      "acceptanceCriteria": [
+        "ConditionAdapter::evaluate_ddgc() handles ddgc_hp_above_<threshold>, ddgc_target_hp_above_<threshold>, and ddgc_target_hp_below_<threshold> tags",
+        "HP-threshold evaluation reads ATTR_HEALTH and ATTR_MAX_HEALTH from the actor or target in ConditionContext, computing fractional HP as health/max_health, and compares against the threshold",
+        "At least one fixture skill (e.g., hp_above_strike) is added to src/content/skills.rs or a test fixture that uses an HP-threshold condition via .with_game_condition()",
+        "Focused tests prove: (a) condition passes when HP fraction is above threshold, (b) fails when below threshold, (c) boundary at exact threshold is deterministic",
+        "MIGRATION_BLOCKERS.md B-004 notes are updated to mention HP-threshold conditions as implemented",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "ConditionContext already exposes actors HashMap. Read ATTR_HEALTH and ATTR_MAX_HEALTH attributes directly. Threshold is fractional (0.0-1.0), e.g., ddgc_hp_above_0.5 means HP > 50% of max."
+    },
+    {
+      "id": "US-803",
+      "title": "P4a-2: Implement InMode dungeon condition in ConditionAdapter",
+      "description": "As a developer, I need the InMode DDGC condition implemented so skills that behave differently in specific dungeon modes can diverge correctly.",
+      "acceptanceCriteria": [
+        "ConditionAdapter::evaluate_ddgc() handles ddgc_in_mode_<mode> tags",
+        "ConditionContext gains an optional mode field (String or enum) that can be set alongside the existing dungeon field",
+        "Mode resolution reads from ConditionContext::dungeon (already present) and the new mode field",
+        "At least one fixture skill uses an InMode condition via .with_game_condition()",
+        "Focused test proves: (a) condition passes when current dungeon/mode matches the tag, (b) fails when dungeon/mode does not match",
+        "MIGRATION_BLOCKERS.md B-004 notes are updated to mention InMode as implemented",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "DDGC's InMode is tied to dungeon-specific battle modifiers (e.g., in_black_tortoise_field). The ConditionContext already carries dungeon: Dungeon. Add mode: Option<String> field. Mode is set by the encounter resolver when entering a boss room with a battle modifier."
+    },
+    {
+      "id": "US-804",
+      "title": "P4a-3: Implement OnKill condition with KillTracker",
+      "description": "As a developer, I need an OnKill DDGC condition implemented so skills that trigger bonus effects on enemy death can execute correctly.",
+      "acceptanceCriteria": [
+        "A KillTracker struct is added to src/run/ (similar pattern to UsageCounters in src/run/usage_counters.rs)",
+        "KillTracker records which actors killed an enemy on the current turn, reset at end of turn",
+        "ConditionAdapter::evaluate_ddgc() handles ddgc_on_kill tags by checking KillTracker for the current actor",
+        "ConditionContext gains access to KillTracker data (either direct reference or through the thread-local pattern)",
+        "At least one fixture skill uses the OnKill condition via .with_game_condition()",
+        "Focused test proves: (a) condition passes on a turn where the actor killed an enemy, (b) fails when no kill occurred this turn",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "KillTracker needs: record_kill(actor_id, target_id) called after a combat resolution results in target death, reset_turn() called at end of turn, actor_killed_this_turn(actor_id) -> bool for condition evaluation."
+    },
+    {
+      "id": "US-805",
+      "title": "P4a-4: Close B-004 condition blocker and update documentation",
+      "description": "As a developer, I need the condition system's coverage documented and B-004 fully resolved so no further condition work is tracked as a blocker.",
+      "acceptanceCriteria": [
+        "SEMANTIC_GAPS.md SG-002 (BuffRule condition downgrade) is updated: classification changed from partially resolved to resolved, description updated to list all implemented DDGC conditions",
+        "MIGRATION_BLOCKERS.md B-004 status is changed from 'Partially resolved' to 'Resolved'",
+        "A condition coverage table in SEMANTIC_GAPS.md or a dedicated file lists: (a) all implemented DDGC conditions (9+), (b) original 35+ variants, (c) remaining unimplemented conditions classified as 'low-impact deferred' or 'not used in migrated content'",
+        "cargo test passes with all condition implementations active",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "Closeout slice. After US-801 through US-804, the ConditionAdapter covers: FirstRound, StressAbove, StressBelow, DeathsDoor, TargetHasStatus, ActorHasStatus, HpAbove, TargetHpAbove, TargetHpBelow, InMode, OnKill = 11 DDGC conditions plus 3 framework-native bridges."
+    },
+    {
+      "id": "US-806",
+      "title": "P4b-0: Add DamageRange registry for migrated skill definitions",
+      "description": "As a developer, I need a registry that maps skill IDs to their DDGC DamageRange (min/max) so the damage policy can choose between fixed and rolled modes without changing skill definitions.",
+      "acceptanceCriteria": [
+        "A SkillDamageRegistry struct exists in src/run/ (or src/run/damage_policy.rs) that maps skill_id: &str -> DamageRange",
+        "SkillDamageRegistry is populated with DamageRange entries for at least 10 migrated skills (mix of hero and monster skills)",
+        "SkillDamageRegistry min/max values are verified against DDGC source data (e.g., crusading_strike 8-15, rend 4-8 from PHASE2_CONDITION_HITPOLICY_INVENTORY.md)",
+        "Existing EffectNode::damage(average) calls in skill definitions are NOT changed — registry is parallel/additive",
+        "Focused test proves: (a) registry lookup returns correct DamageRange, (b) missing skill ID returns a fallback (fixed DamageRange from average), (c) min <= max for all entries",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "Do NOT change EffectNode::damage() calls. Add a parallel SkillDamageRegistry keyed by skill ID. The registry stores DamageRange::new(min, max) from DDGC data. When a skill ID is not in the registry, use DamageRange::fixed(current_average_value) as fallback."
+    },
+    {
+      "id": "US-807",
+      "title": "P4b-1: Wire DamagePolicy into EncounterResolver battle loop",
+      "description": "As a developer, I need the EncounterResolver to accept a DamagePolicy parameter so the battle loop can resolve damage using either FixedAverage or Rolled mode.",
+      "acceptanceCriteria": [
+        "EncounterResolver gains a damage_policy field of type DamagePolicy (default: FixedAverage for backward compatibility)",
+        "When resolving a damage effect, the battle loop queries SkillDamageRegistry for the skill's DamageRange and applies the active DamagePolicy to compute the resolved damage value",
+        "When DamagePolicy::FixedAverage is active, all damage values match current behavior (existing tests pass unchanged)",
+        "When DamagePolicy::Rolled is active, each damage effect resolves to a value within [min, max] using a seeded RNG",
+        "A deterministic test using a fixed seed proves Rolled damage stays within range bounds for at least 3 different skills",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "The EncounterResolver already uses a seeded approach for encounter selection. Extend the RNG or seed to cover damage rolls. DamagePolicy::Rolled uses DamageRange::roll(&mut rng). All existing tests use FixedAverage by default — no behavior change."
+    },
+    {
+      "id": "US-808",
+      "title": "P4b-2: Update damage variance documentation and close B-006",
+      "description": "As a developer, I need SG-001 and B-006 updated to reflect that damage variance is now available so the semantic gap ledger is accurate.",
+      "acceptanceCriteria": [
+        "SEMANTIC_GAPS.md SG-001 classification is updated from 'Acceptable approximation' to 'Resolved — Rolled policy available; FixedAverage remains default for deterministic testing'",
+        "MIGRATION_BLOCKERS.md B-006 notes are updated to mention SkillDamageRegistry and DamagePolicy wiring",
+        "cargo test passes with both FixedAverage (default) and a smoke test that exercises Rolled mode",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "Closeout slice for B-006. The Rolled policy is now available but FixedAverage remains the default for test stability."
+    },
+    {
+      "id": "US-809",
+      "title": "P4c-0: Define DungeonMapConfig struct and populate from MapGenerator.txt",
+      "description": "As a developer, I need a DungeonMapConfig struct with DDGC map generation parameters so each dungeon generates maps matching the original's structure.",
+      "acceptanceCriteria": [
+        "A DungeonMapConfig struct exists in src/run/ (or src/run/dungeon_config.rs) with fields: base_room_number, base_corridor_number, gridsize (rows, cols), connectivity (f64), min_final_distance, hallway_battle (min, max), hallway_curio (min, max), hallway_hunger (min, max), total_room_battles (min, max), room_guarded_curio (min, max), room_guarded_treasure (min, max)",
+        "DungeonSize enum exists: Short, Medium",
+        "A function dungeon_map_config(dungeon: Dungeon, size: DungeonSize) -> DungeonMapConfig returns the correct config for each combination",
+        "4 dungeon configs x 2 sizes = 8 DungeonMapConfig instances are defined with values extracted from MapGenerator.txt in DreamDeveloperGame-Crossover/Assets/Resources/Data/Mechanics/",
+        "Focused test proves: (a) QingLong short has base_room_number=9, (b) BaiHu connectivity=0.85, (c) ZhuQue connectivity=0.95, (d) medium configs have more rooms than short configs",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "Data-model slice only. Do not integrate with DefaultRoomGenerator yet. Read values directly from MapGenerator.txt source file. Key values: QingLong short=9 rooms/10 corridors/4x3 grid/0.9 connectivity; BaiHu short=9/10/5x4/0.85; ZhuQue short=9/10/5x5/0.95; XuanWu short=9/10/6x3/0.9."
+    },
+    {
+      "id": "US-810",
+      "title": "P4c-1: Wire DungeonMapConfig into floor generation",
+      "description": "As a developer, I need DungeonMapConfig parameters fed into the framework's room/floor generation so generated maps reflect DDGC's dungeon structure.",
+      "acceptanceCriteria": [
+        "Floor creation or Run initialization reads the appropriate DungeonMapConfig for the current dungeon and size",
+        "Room generation uses per-dungeon room count, corridor count, connectivity, and grid size from the config",
+        "A deterministic test proves: (a) QingLong short maps have 9 rooms, (b) BaiHu maps have lower connectivity than ZhuQue maps, (c) short vs medium maps differ in room count (9 vs 14)",
+        "Existing run slices continue passing (backward compatibility with generic room generation as fallback)",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "The framework's DefaultRoomGenerator or Floor generation needs to accept these parameters. If the framework API doesn't support custom configs, implement a DDGC-specific room generator that delegates to the framework with configured parameters. Prefer configuration over framework patches."
+    },
+    {
+      "id": "US-811",
+      "title": "P4c-2: Parse DDGC encounter pack weights from dungeon .bytes files",
+      "description": "As a developer, I need the encounter pack weights from DDGC dungeon .bytes files available at runtime so monster composition in rooms matches the original game.",
+      "acceptanceCriteria": [
+        "A DungeonEncounterConfig struct captures the weighted encounter definitions from dungeon .bytes files (mash blocks with hall/room/boss lines and .chance/.types fields)",
+        "At least one dungeon (QingLong) has fully parsed encounter data from QingLong.bytes matching its mash block structure",
+        "Each parsed encounter pack is registered in the existing EncounterPackRegistry with correct monster IDs and chance weights",
+        "Focused test proves encounter selection produces the expected monster composition for a given seed (e.g., seed=0 selects a specific pack)",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "The dungeon .bytes files are text format (not binary despite extension). They use mash: blocks with hall:/room:/boss: lines. Each line has .chance N and .types monster_id1 monster_id2... Parse into the existing EncounterPackRegistry. Start with QingLong.bytes as the anchor."
+    },
+    {
+      "id": "US-812",
+      "title": "P4c-3: Validate dungeon fidelity end-to-end with DDGC configs",
+      "description": "As a developer, I need an end-to-end run slice that uses DDGC-configured dungeon maps and encounter packs so the full Phase 4c integration is verified.",
+      "acceptanceCriteria": [
+        "A run slice using a DDGC dungeon (QingLong short) completes successfully with correct room count (9), correct encounter types, and correct monster families per room",
+        "The run trace records dungeon type, map parameters (room count, corridor count), and encounter composition per room",
+        "Existing run slices (e.g., run_ddgc_slice) continue passing without modification (backward compatibility)",
+        "cargo test passes with DDGC dungeon configs active in the new run slice",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "Integration validation slice. This is the Phase 4c closeout. Add a new scenario or run slice function (e.g., run_qinglong_short_slice) that exercises the DDGC-configured dungeon path. Do not modify existing run slices."
+    }
+  ]
 }
