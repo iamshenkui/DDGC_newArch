@@ -30,6 +30,22 @@ pub enum Dungeon {
     Cross,
 }
 
+impl Dungeon {
+    /// Convert from the contracts-layer `DungeonType` to `Dungeon`.
+    ///
+    /// Returns `None` for `DungeonType::Cross` (which doesn't exist in the
+    /// contracts layer since cross-dungeon bosses have no associated map config).
+    pub fn from_dungeon_type(dungeon: crate::contracts::DungeonType) -> Dungeon {
+        use crate::contracts::DungeonType as DT;
+        match dungeon {
+            DT::QingLong => Dungeon::QingLong,
+            DT::BaiHu => Dungeon::BaiHu,
+            DT::ZhuQue => Dungeon::ZhuQue,
+            DT::XuanWu => Dungeon::XuanWu,
+        }
+    }
+}
+
 // ── Tier Classification ────────────────────────────────────────────────────
 
 /// DDGC migration tier — faithful to the game's two-tier system.

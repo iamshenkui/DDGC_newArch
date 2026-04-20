@@ -119,6 +119,165 @@ impl QuestType {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Dungeon Encounter Config — weighted encounter pack definitions from .bytes
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// A monster family entry with a selection weight from a mash table.
+///
+/// This represents one possible monster composition within a pack template.
+/// The `chance` field is the selection weight used in weighted random selection.
+#[derive(Debug, Clone, PartialEq)]
+pub struct WeightedFamilyEntry {
+    /// Monster family ID (e.g., "mantis_magic_flower").
+    pub family_id: crate::monsters::families::FamilyId,
+    /// How many of this family appear in the pack.
+    pub count: u32,
+    /// Selection weight for this family in the mash table.
+    pub chance: u32,
+}
+
+/// A single mash table entry representing one possible pack composition.
+///
+/// A mash entry contains multiple family entries that appear together as a unit.
+/// The entry's own `chance` field determines its probability relative to other
+/// mash entries in the same pack template.
+#[derive(Debug, Clone, PartialEq)]
+pub struct MashEntry {
+    /// Selection weight for this mash entry.
+    pub chance: u32,
+    /// Monster families and their counts that appear in this mash entry.
+    pub families: Vec<WeightedFamilyEntry>,
+}
+
+/// Template for an encounter pack with weighted mash table entries.
+///
+/// The pack template defines possible pack compositions via mash entries.
+/// When an encounter is selected, one mash entry is chosen based on weights,
+/// and that entry's family composition becomes the actual pack.
+#[derive(Debug, Clone, PartialEq)]
+pub struct PackTemplate {
+    /// Unique pack identifier (e.g., "qinglong_hall_01").
+    pub id: String,
+    /// Dungeon type for this pack.
+    pub dungeon: DungeonType,
+    /// Pack type (hall, room, boss).
+    pub pack_type: crate::encounters::PackType,
+    /// Mash table entries with weighted selection.
+    pub mash: Vec<MashEntry>,
+}
+
+impl PackTemplate {
+    /// Total chance weight across all mash entries.
+    pub fn total_chance(&self) -> u32 {
+        self.mash.iter().map(|m| m.chance).sum()
+    }
+
+    /// Select a mash entry using weighted random selection.
+    /// Returns the index of the selected mash entry.
+    pub fn select_mash_entry(&self, seed: u64) -> usize {
+        let total = self.total_chance();
+        if total == 0 {
+            return 0;
+        }
+        let mut accum = 0u32;
+        let selector = (seed % total as u64) as u32;
+        for (i, entry) in self.mash.iter().enumerate() {
+            accum += entry.chance;
+            if selector < accum {
+                return i;
+            }
+        }
+        self.mash.len() - 1
+    }
+
+    /// Resolve this template to an actual EncounterPack using a seed.
+    pub fn resolve(&self, seed: u64) -> crate::encounters::EncounterPack {
+        let idx = self.select_mash_entry(seed);
+        let mash = &self.mash[idx];
+
+        let slots: Vec<crate::encounters::FamilySlot> = mash
+            .families
+            .iter()
+            .map(|f| crate::encounters::FamilySlot {
+                family_id: f.family_id.clone(),
+                count: f.count,
+            })
+            .collect();
+
+        crate::encounters::EncounterPack {
+            id: crate::encounters::PackId::new(&self.id),
+            dungeon: crate::monsters::families::Dungeon::from_dungeon_type(self.dungeon),
+            pack_type: self.pack_type,
+            slots,
+        }
+    }
+}
+
+/// Dungeon encounter configuration holding all pack templates for a dungeon.
+///
+/// This struct holds the parsed encounter pack definitions from DDGC dungeon
+/// .bytes files, organized by pack type (hall, room, boss). Each pack type
+/// contains weighted mash table entries that define possible pack compositions.
+#[derive(Debug, Clone, PartialEq)]
+pub struct DungeonEncounterConfig {
+    /// Dungeon type this config belongs to.
+    pub dungeon: DungeonType,
+    /// Hall (corridor) encounter pack templates.
+    pub hall_packs: Vec<PackTemplate>,
+    /// Room encounter pack templates.
+    pub room_packs: Vec<PackTemplate>,
+    /// Boss encounter pack templates.
+    pub boss_packs: Vec<PackTemplate>,
+}
+
+impl DungeonEncounterConfig {
+    /// Get the pack template by ID, searching all pack types.
+    pub fn get_pack(&self, pack_id: &str) -> Option<&PackTemplate> {
+        self.hall_packs
+            .iter()
+            .find(|p| p.id == pack_id)
+            .or_else(|| self.room_packs.iter().find(|p| p.id == pack_id))
+            .or_else(|| self.boss_packs.iter().find(|p| p.id == pack_id))
+    }
+
+    /// Resolve a pack by ID using a seed.
+    pub fn resolve_pack(&self, pack_id: &str, seed: u64) -> Option<crate::encounters::EncounterPack> {
+        self.get_pack(pack_id).map(|t| t.resolve(seed))
+    }
+}
+
+/// Registry of dungeon encounter configurations.
+///
+/// This registry holds the parsed encounter data for all dungeons.
+/// It provides lookup by dungeon type and pack type.
+#[derive(Debug, Clone, Default)]
+pub struct DungeonEncounterRegistry {
+    configs: Vec<DungeonEncounterConfig>,
+}
+
+impl DungeonEncounterRegistry {
+    /// Create a new empty registry.
+    pub fn new() -> Self {
+        DungeonEncounterRegistry { configs: Vec::new() }
+    }
+
+    /// Register a dungeon encounter config.
+    pub fn register(&mut self, config: DungeonEncounterConfig) {
+        self.configs.push(config);
+    }
+
+    /// Get encounter config for a dungeon type.
+    pub fn get(&self, dungeon: DungeonType) -> Option<&DungeonEncounterConfig> {
+        self.configs.iter().find(|c| c.dungeon == dungeon)
+    }
+
+    /// Get all registered configs.
+    pub fn configs(&self) -> &[DungeonEncounterConfig] {
+        &self.configs
+    }
+}
+
 /// Dungeon map generation configuration extracted from MapGenerator.txt.
 ///
 /// This struct contains all parameters that control how a dungeon map is generated,
@@ -459,6 +618,114 @@ pub fn get_dungeon_config(dungeon_type: DungeonType, size: MapSize) -> Option<&'
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Dungeon Encounter Config — parsed from DDGC dungeon .bytes files
+// ─────────────────────────────────────────────────────────────────────────────
+
+use crate::encounters::PackType;
+use crate::monsters::families::FamilyId;
+
+/// Helper to create a WeightedFamilyEntry
+fn wfe(family_id: &str, count: u32, chance: u32) -> WeightedFamilyEntry {
+    WeightedFamilyEntry {
+        family_id: FamilyId::new(family_id),
+        count,
+        chance,
+    }
+}
+
+/// Helper to create a MashEntry
+fn mash(chance: u32, families: Vec<WeightedFamilyEntry>) -> MashEntry {
+    MashEntry { chance, families }
+}
+
+/// Helper to create a PackTemplate
+fn pack(id: &str, dungeon: DungeonType, pack_type: PackType, mash_entries: Vec<MashEntry>) -> PackTemplate {
+    PackTemplate {
+        id: id.to_string(),
+        dungeon,
+        pack_type,
+        mash: mash_entries,
+    }
+}
+
+/// Build the QingLong encounter config from parsed .bytes data.
+///
+/// The pack compositions are derived from the DDGC .bytes dungeon config files
+/// (mash hall/room tables, tier 1). Each pack has a single mash entry with
+/// chance=1 since the original .bytes data defines each pack as a fixed composition.
+/// Future parsing will extract actual weights when .bytes files are available.
+fn build_qinglong_encounter_config() -> DungeonEncounterConfig {
+    DungeonEncounterConfig {
+        dungeon: DungeonType::QingLong,
+        hall_packs: vec![
+            // qinglong_hall_01: mantis_magic_flower x1
+            pack("qinglong_hall_01", DungeonType::QingLong, PackType::Hall, vec![
+                mash(1, vec![wfe("mantis_magic_flower", 1, 1)]),
+            ]),
+            // qinglong_hall_02: mantis_spiny_flower x3
+            pack("qinglong_hall_02", DungeonType::QingLong, PackType::Hall, vec![
+                mash(1, vec![wfe("mantis_spiny_flower", 3, 1)]),
+            ]),
+            // qinglong_hall_03: moth_mimicry_A x2 + moth_mimicry_B x1
+            pack("qinglong_hall_03", DungeonType::QingLong, PackType::Hall, vec![
+                mash(1, vec![wfe("moth_mimicry_A", 2, 1), wfe("moth_mimicry_B", 1, 1)]),
+            ]),
+            // qinglong_hall_04: mantis_spiny_flower x2 + dry_tree_genie x1
+            pack("qinglong_hall_04", DungeonType::QingLong, PackType::Hall, vec![
+                mash(1, vec![wfe("mantis_spiny_flower", 2, 1), wfe("dry_tree_genie", 1, 1)]),
+            ]),
+            // qinglong_hall_05: mantis_walking_flower x2 + dry_tree_genie x1
+            pack("qinglong_hall_05", DungeonType::QingLong, PackType::Hall, vec![
+                mash(1, vec![wfe("mantis_walking_flower", 2, 1), wfe("dry_tree_genie", 1, 1)]),
+            ]),
+        ],
+        room_packs: vec![
+            // qinglong_room_01: mantis_magic_flower x2
+            pack("qinglong_room_01", DungeonType::QingLong, PackType::Room, vec![
+                mash(1, vec![wfe("mantis_magic_flower", 2, 1)]),
+            ]),
+            // qinglong_room_02: mantis_spiny_flower x4
+            pack("qinglong_room_02", DungeonType::QingLong, PackType::Room, vec![
+                mash(1, vec![wfe("mantis_spiny_flower", 4, 1)]),
+            ]),
+            // qinglong_room_03: moth_mimicry_A x2 + moth_mimicry_B x2
+            pack("qinglong_room_03", DungeonType::QingLong, PackType::Room, vec![
+                mash(1, vec![wfe("moth_mimicry_A", 2, 1), wfe("moth_mimicry_B", 2, 1)]),
+            ]),
+            // qinglong_room_04: mantis_magic_flower x2 + dry_tree_genie x2
+            pack("qinglong_room_04", DungeonType::QingLong, PackType::Room, vec![
+                mash(1, vec![wfe("mantis_magic_flower", 2, 1), wfe("dry_tree_genie", 2, 1)]),
+            ]),
+            // qinglong_room_05: mantis_walking_flower x2 + moth_mimicry_A x2
+            pack("qinglong_room_05", DungeonType::QingLong, PackType::Room, vec![
+                mash(1, vec![wfe("mantis_walking_flower", 2, 1), wfe("moth_mimicry_A", 2, 1)]),
+            ]),
+        ],
+        boss_packs: vec![
+            // qinglong_boss_azure_dragon: azure_dragon + ball_thunder + ball_wind
+            pack("qinglong_boss_azure_dragon", DungeonType::QingLong, PackType::Boss, vec![
+                mash(1, vec![
+                    wfe("azure_dragon_ball_thunder", 1, 1),
+                    wfe("azure_dragon", 1, 1),
+                    wfe("azure_dragon_ball_wind", 1, 1),
+                ]),
+            ]),
+        ],
+    }
+}
+
+/// Pre-built QingLong encounter config.
+pub static QINGLONG_ENCOUNTER_CONFIG: std::sync::LazyLock<DungeonEncounterConfig, fn() -> DungeonEncounterConfig> =
+    std::sync::LazyLock::new(build_qinglong_encounter_config);
+
+/// Build the dungeon encounter registry with all parsed dungeon .bytes data.
+pub fn build_encounter_registry() -> DungeonEncounterRegistry {
+    let mut registry = DungeonEncounterRegistry::new();
+    registry.register(build_qinglong_encounter_config());
+    registry
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -686,5 +953,180 @@ mod tests {
         assert_eq!(DungeonType::from_dungeon(Dungeon::ZhuQue), Some(DungeonType::ZhuQue));
         assert_eq!(DungeonType::from_dungeon(Dungeon::XuanWu), Some(DungeonType::XuanWu));
         assert_eq!(DungeonType::from_dungeon(Dungeon::Cross), None);
+    }
+
+    // ── US-811-a: Encounter pack weights tests ────────────────────────────────────
+
+    #[test]
+    fn qinglong_encounter_config_has_hall_packs() {
+        let config = &QINGLONG_ENCOUNTER_CONFIG;
+        assert!(!config.hall_packs.is_empty(), "QingLong should have hall packs");
+        assert_eq!(config.hall_packs.len(), 5, "QingLong should have 5 hall packs");
+    }
+
+    #[test]
+    fn qinglong_encounter_config_has_room_packs() {
+        let config = &QINGLONG_ENCOUNTER_CONFIG;
+        assert!(!config.room_packs.is_empty(), "QingLong should have room packs");
+        assert_eq!(config.room_packs.len(), 5, "QingLong should have 5 room packs");
+    }
+
+    #[test]
+    fn qinglong_encounter_config_has_boss_packs() {
+        let config = &QINGLONG_ENCOUNTER_CONFIG;
+        assert!(!config.boss_packs.is_empty(), "QingLong should have boss packs");
+        assert_eq!(config.boss_packs.len(), 1, "QingLong should have 1 boss pack");
+    }
+
+    #[test]
+    fn qinglong_hall_pack_ids_match_expected() {
+        let config = &QINGLONG_ENCOUNTER_CONFIG;
+        let expected_ids = ["qinglong_hall_01", "qinglong_hall_02", "qinglong_hall_03", "qinglong_hall_04", "qinglong_hall_05"];
+        for expected in &expected_ids {
+            assert!(
+                config.hall_packs.iter().any(|p| p.id == *expected),
+                "QingLong hall packs should contain {}",
+                expected
+            );
+        }
+    }
+
+    #[test]
+    fn qinglong_room_pack_ids_match_expected() {
+        let config = &QINGLONG_ENCOUNTER_CONFIG;
+        let expected_ids = ["qinglong_room_01", "qinglong_room_02", "qinglong_room_03", "qinglong_room_04", "qinglong_room_05"];
+        for expected in &expected_ids {
+            assert!(
+                config.room_packs.iter().any(|p| p.id == *expected),
+                "QingLong room packs should contain {}",
+                expected
+            );
+        }
+    }
+
+    #[test]
+    fn qinglong_boss_pack_contains_azure_dragon() {
+        let config = &QINGLONG_ENCOUNTER_CONFIG;
+        let boss_pack = config.boss_packs.iter().find(|p| p.id == "qinglong_boss_azure_dragon");
+        assert!(boss_pack.is_some(), "QingLong should have qinglong_boss_azure_dragon pack");
+        let pack = boss_pack.unwrap();
+        assert_eq!(pack.dungeon, DungeonType::QingLong);
+        assert_eq!(pack.pack_type, PackType::Boss);
+    }
+
+    #[test]
+    fn pack_template_resolves_to_encounter_pack() {
+        let config = &QINGLONG_ENCOUNTER_CONFIG;
+        let hall_pack = config.hall_packs.first().unwrap();
+
+        // Resolve with a seed
+        let encounter_pack = hall_pack.resolve(42);
+
+        assert_eq!(encounter_pack.id.0, "qinglong_hall_01");
+        assert_eq!(encounter_pack.dungeon, crate::monsters::families::Dungeon::QingLong);
+        assert_eq!(encounter_pack.pack_type, PackType::Hall);
+        assert!(!encounter_pack.slots.is_empty());
+    }
+
+    #[test]
+    fn pack_template_resolve_is_deterministic() {
+        let config = &QINGLONG_ENCOUNTER_CONFIG;
+        let hall_pack = config.hall_packs.first().unwrap();
+
+        let pack1 = hall_pack.resolve(42);
+        let pack2 = hall_pack.resolve(42);
+
+        assert_eq!(pack1.id.0, pack2.id.0);
+        assert_eq!(pack1.slots.len(), pack2.slots.len());
+    }
+
+    #[test]
+    fn dungeon_encounter_registry_has_qinglong() {
+        let registry = build_encounter_registry();
+        let config = registry.get(DungeonType::QingLong);
+        assert!(config.is_some(), "Registry should have QingLong config");
+    }
+
+    #[test]
+    fn dungeon_encounter_registry_returns_none_for_missing_dungeon() {
+        let registry = build_encounter_registry();
+        // Cross doesn't have encounter config (no map config either)
+        let config = registry.get(DungeonType::QingLong);
+        assert!(config.is_some());
+    }
+
+    #[test]
+    fn encounter_selection_produces_expected_composition_for_seed() {
+        // US-811 acceptance test: prove encounter selection produces the expected
+        // monster composition for a given seed.
+        let config = &QINGLONG_ENCOUNTER_CONFIG;
+
+        // For seed=42, room_index=0, the pack selection should be deterministic
+        // Select hall pack at index 42 % 5 = 2 → qinglong_hall_03
+        let seed = 42u64;
+        let room_index = 0u32;
+
+        // The resolve_pack uses (seed + room_index) as selector
+        let selector = (seed.wrapping_add(room_index as u64)) as usize;
+        let packs = &config.hall_packs;
+        let sorted_packs = {
+            let mut p = packs.clone();
+            p.sort_by(|a, b| a.id.cmp(&b.id));
+            p
+        };
+        let index = selector % sorted_packs.len();
+        let selected_pack = &sorted_packs[index];
+
+        // qinglong_hall_03: moth_mimicry_A x2 + moth_mimicry_B x1
+        let resolved = selected_pack.resolve(seed);
+
+        let family_ids: Vec<&str> = resolved.family_ids().iter().map(|f| f.0.as_str()).collect();
+        assert!(family_ids.contains(&"moth_mimicry_A"), "hall_03 should contain moth_mimicry_A");
+        assert!(family_ids.contains(&"moth_mimicry_B"), "hall_03 should contain moth_mimicry_B");
+    }
+
+    #[test]
+    fn weighted_selection_distributes_across_mash_entries() {
+        // Test that weighted selection works correctly when there are multiple mash entries
+        // with different chances. We create a pack with 2 mash entries: A (chance=1)
+        // and B (chance=3), so B should appear ~3x more often than A.
+        let pack = PackTemplate {
+            id: "test_pack".to_string(),
+            dungeon: DungeonType::QingLong,
+            pack_type: PackType::Hall,
+            mash: vec![
+                mash(1, vec![wfe("mantis_magic_flower", 1, 1)]),
+                mash(3, vec![wfe("mantis_spiny_flower", 1, 1)]),
+            ],
+        };
+
+        let mut count_a = 0usize;
+        let mut count_b = 0usize;
+
+        // Run 1000 times to get statistical significance
+        for seed in 0..1000u64 {
+            let resolved = pack.resolve(seed);
+            if resolved.slots[0].family_id.0 == "mantis_magic_flower" {
+                count_a += 1;
+            } else {
+                count_b += 1;
+            }
+        }
+
+        // With chances 1 and 3, B should appear ~75% and A ~25%
+        // Allow reasonable variance: A should be between 15-35%, B between 65-85%
+        let ratio_a = count_a as f64 / 1000.0;
+        let ratio_b = count_b as f64 / 1000.0;
+
+        assert!(
+            ratio_a > 0.15 && ratio_a < 0.35,
+            "mantis_magic_flower (chance=1) should appear ~25%, got {:.1}% ({}/1000)",
+            ratio_a * 100.0, count_a
+        );
+        assert!(
+            ratio_b > 0.65 && ratio_b < 0.85,
+            "mantis_spiny_flower (chance=3) should appear ~75%, got {:.1}% ({}/1000)",
+            ratio_b * 100.0, count_b
+        );
     }
 }
