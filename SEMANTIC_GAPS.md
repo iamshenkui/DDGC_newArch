@@ -247,3 +247,96 @@ This section documents the resolution of encounter-runtime fidelity gaps identif
 | Gap | Status | Notes |
 |-----|--------|-------|
 | Remove run fallbacks (US-713) | Resolved (P3) | `src/run/flow.rs` no longer falls back to `first_battle`; `run_slice_uses_no_fallback_content` verifies representative run slices use migrated DDGC content only |
+
+---
+
+## Phase 4a DDGC Condition Touchpoints Inventory (US-801-b)
+
+This section inventories migrated DDGC skills and statuses that reference condition variants, serving as the implementation anchor for Phase 4a work targeting only conditions with real migrated content.
+
+### Condition Family Classification
+
+DDGC conditions are grouped into families. Each family may have implemented variants (supported by `ConditionAdapter`) and unimplemented variants (not yet supported).
+
+| Condition Family | Implemented Variants | Unimplemented Variants | Migrated Content Using Family |
+|-----------------|---------------------|----------------------|------------------------------|
+| **HP-threshold** | `DeathsDoor` (HP < 50%), `IfTargetHealthBelow` (framework) | `HpAbove`, `TargetHpAbove` | `desperate_strike` (DeathsDoor) |
+| **Stress-threshold** | `StressAbove`, `StressBelow` | None | None |
+| **Round-trigger** | `FirstRound` | None | `opening_strike` (FirstRound) |
+| **Status-check** | `ActorHasStatus`, `TargetHasStatus`, `IfActorHasStatus` (framework) | None | None |
+| **Dungeon-mode** | None | `InMode` (all variants) | None |
+| **Kill-trigger** | None | `OnKill` (all variants) | None |
+| **Position** | `IfTargetPosition` (returns Unknown — formation not wired) | None | None |
+| **Probability** | `Probability` (framework) | None | `skull_bash` (stun chance) |
+
+### Migrated Skills Referencing DDGC Condition Tags
+
+The following migrated skills use `EffectNode::with_game_condition("ddgc_...")` tags evaluated by `ConditionAdapter`:
+
+| Skill | File | Condition Tag | Condition Family | Adapter Status |
+|-------|------|--------------|-----------------|----------------|
+| `opening_strike` | `src/content/heroes/hunter.rs:154` | `ddgc_first_round` | Round-trigger | IMPLEMENTED |
+| `desperate_strike` | `src/content/heroes/hunter.rs:180` | `ddgc_deaths_door` | HP-threshold | IMPLEMENTED |
+
+**Note:** `desperate_strike` is defined at line 180 but is NOT registered in `skill_pack()` (line 199), making it unreachable in current battle paths. See GAP-003 in `tasks/adapter_api_drift_inventory.md`.
+
+### Migrated Skills Using Framework EffectConditions
+
+| Skill | File | Framework Condition | Adapter Status |
+|-------|------|--------------------|----------------|
+| `skull_bash` | `src/content/skills.rs:91` | `EffectCondition::Probability(0.60)` | IMPLEMENTED |
+
+### Unimplemented Condition Families with No Migrated Content
+
+The following condition families are NOT implemented in `ConditionAdapter` and have NO migrated skills or statuses referencing them:
+
+| Condition Family | Unimplemented Variants | DDGC Reference | Notes |
+|-----------------|----------------------|---------------|-------|
+| **Dungeon-mode** | `InMode(dungeon_mode)` | Dungeon-specific combat modes | Requires dungeon state access in `ConditionContext` |
+| **Kill-trigger** | `OnKill`, `OnDeath` | Trigger on actor death | Requires kill event tracking |
+
+**Implication for Phase 4a:** Since no migrated content depends on `InMode` or `OnKill` variants, these families are deprioritized for Phase 4a implementation. Phase 4a should focus on extending implemented families (HP-threshold, stress-threshold) or addressing wiring gaps in existing implementations.
+
+### Implemented Condition Families — Implementation Anchors
+
+Phase 4a implementation anchors are migrated skills that serve as concrete proof-of-concept for each condition family:
+
+#### Anchor 1: HP-threshold Family (`DeathsDoor`)
+
+- **Skill anchor:** `desperate_strike()` in `src/content/heroes/hunter.rs:180`
+- **Condition tag:** `ddgc_deaths_door`
+- **Condition variant:** `DdgcCondition::DeathsDoor` (actor HP < 50%)
+- **Implementation:** `ConditionContext::actor_at_deaths_door()` evaluates HP fraction
+- **Status:** IMPLEMENTED in adapter; `desperate_strike` NOT registered in `skill_pack()` (wiring gap)
+
+#### Anchor 2: Round-trigger Family (`FirstRound`)
+
+- **Skill anchor:** `opening_strike()` in `src/content/heroes/hunter.rs:154`
+- **Condition tag:** `ddgc_first_round`
+- **Condition variant:** `DdgcCondition::FirstRound`
+- **Implementation:** `ConditionContext::is_first_round()` checks `current_round == 0`
+- **Status:** IMPLEMENTED in adapter; wiring to `game_condition_evaluator` confirmed in `encounters.rs:531`
+
+### Adapter Wiring Status for Condition-Evaluated Skills
+
+Even though conditions are implemented in `ConditionAdapter`, the skills that use them depend on the `game_condition_evaluator` being wired to `EffectContext`:
+
+| Skill | Evaluator Wired? | File:Line | Notes |
+|-------|----------------|------------|-------|
+| `opening_strike` | YES | `encounters.rs:531` | `game_condition_evaluator` set via `create_game_condition_evaluator()` |
+| `desperate_strike` | YES (if reached) | `encounters.rs:531` | Same wiring path, but skill not in `skill_pack()` |
+
+### Summary: Migrated Content Referencing Unimplemented Conditions
+
+**Result: Zero migrated skills or statuses reference unimplemented condition variants.**
+
+All migrated content that uses DDGC condition tags (`ddgc_first_round`, `ddgc_deaths_door`) uses variants that ARE implemented in `ConditionAdapter`. The unimplemented condition families (`InMode`, `OnKill`) have no migrated content depending on them.
+
+Phase 4a should prioritize:
+1. Closing the `desperate_strike` registration gap (add to `skill_pack()`)
+2. Extending HP-threshold family with `HpAbove` / `TargetHpAbove` variants if future migrated content uses them
+3. Adding dungeon-mode (`InMode`) conditions if dungeon-specific content is migrated
+
+---
+
+*Generated by US-801-b task: P4a-0: Inventory remaining condition touchpoints (adapter)*
