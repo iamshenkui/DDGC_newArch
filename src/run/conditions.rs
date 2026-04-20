@@ -352,6 +352,28 @@ impl ConditionContext {
     pub fn actor_side(&self) -> Option<CombatSide> {
         self.side_lookup.get(&self.actor_id).copied()
     }
+
+    /// Returns whether the current encounter is in the specified mode.
+    ///
+    /// DDGC reference: `InMode(mode)` — checks if the current dungeon matches
+    /// the given mode string. Mode strings use snake_case dungeon names:
+    /// `qinglong`, `baihu`, `zhuque`, `xuanwu`, `cross`.
+    pub fn is_in_mode(&self, mode: &str) -> bool {
+        dungeon_mode_name(self.dungeon) == mode
+    }
+}
+
+/// Returns the snake_case mode name for a Dungeon variant.
+///
+/// Used by `InMode` condition to match tag strings against the current dungeon.
+fn dungeon_mode_name(dungeon: Dungeon) -> &'static str {
+    match dungeon {
+        Dungeon::QingLong => "qinglong",
+        Dungeon::BaiHu => "baihu",
+        Dungeon::ZhuQue => "zhuque",
+        Dungeon::XuanWu => "xuanwu",
+        Dungeon::Cross => "cross",
+    }
 }
 
 /// Check if an actor has an active status of the given kind.
@@ -388,6 +410,9 @@ pub enum DdgcCondition {
     TargetHasStatus(String),
     /// Actor has a specific status active.
     ActorHasStatus(String),
+    /// Current encounter is in the specified dungeon or mode.
+    /// Matches against `ConditionContext::dungeon` using snake_case dungeon names.
+    InMode(String),
 }
 
 /// Result of evaluating a condition through the adapter.
@@ -560,6 +585,13 @@ impl ConditionAdapter {
                     ConditionResult::Fail
                 }
             }
+            DdgcCondition::InMode(mode) => {
+                if self.ctx.is_in_mode(mode) {
+                    ConditionResult::Pass
+                } else {
+                    ConditionResult::Fail
+                }
+            }
         }
     }
 
@@ -591,6 +623,7 @@ impl ConditionAdapter {
     /// - `"ddgc_target_hp_below_<threshold>"` → `DdgcCondition::TargetHpBelow(threshold)`
     /// - `"ddgc_target_has_status_<kind>"` → `DdgcCondition::TargetHasStatus(kind)`
     /// - `"ddgc_actor_has_status_<kind>"` → `DdgcCondition::ActorHasStatus(kind)`
+    /// - `"ddgc_in_mode_<mode>"` → `DdgcCondition::InMode(mode)`
     ///
     /// Returns `None` if the tag is not recognized.
     pub fn parse_condition_tag(tag: &str) -> Option<DdgcCondition> {
@@ -649,6 +682,13 @@ impl ConditionAdapter {
         if let Some(rest) = tag.strip_prefix("ddgc_actor_has_status_") {
             if !rest.is_empty() {
                 return Some(DdgcCondition::ActorHasStatus(rest.to_string()));
+            }
+        }
+
+        // Parse in_mode_<mode>
+        if let Some(rest) = tag.strip_prefix("ddgc_in_mode_") {
+            if !rest.is_empty() {
+                return Some(DdgcCondition::InMode(rest.to_string()));
             }
         }
 
@@ -2364,5 +2404,122 @@ mod adapter_tests {
         // Target HP 30/100 = 0.3 < 0.5 → TargetHpBelow(0.5) passes → true
         assert!(evaluator("ddgc_target_hp_below_0.5"),
             "Evaluator should return true for ddgc_target_hp_below_0.5 when target HP is 30%");
+    }
+
+    // ── US-803: InMode condition tests ─────────────────────────────────────────
+
+    #[test]
+    fn in_mode_passes_when_dungeon_matches() {
+        let adapter = make_adapter_context(); // default dungeon is QingLong
+        let cond = DdgcCondition::InMode("qinglong".to_string());
+        assert_eq!(adapter.evaluate_ddgc(&cond), ConditionResult::Pass,
+            "InMode(qinglong) should pass when dungeon is QingLong");
+    }
+
+    #[test]
+    fn in_mode_fails_when_dungeon_differs() {
+        let adapter = make_adapter_context(); // default dungeon is QingLong
+        let cond = DdgcCondition::InMode("xuanwu".to_string());
+        assert_eq!(adapter.evaluate_ddgc(&cond), ConditionResult::Fail,
+            "InMode(xuanwu) should fail when dungeon is QingLong");
+    }
+
+    #[test]
+    fn in_mode_tag_parses_and_evaluates() {
+        let adapter = make_adapter_context(); // default dungeon is QingLong
+
+        // Matching tag
+        assert_eq!(adapter.evaluate_by_tag("ddgc_in_mode_qinglong"), ConditionResult::Pass,
+            "Tag ddgc_in_mode_qinglong should pass in QingLong dungeon");
+
+        // Non-matching tag
+        assert_eq!(adapter.evaluate_by_tag("ddgc_in_mode_baihu"), ConditionResult::Fail,
+            "Tag ddgc_in_mode_baihu should fail in QingLong dungeon");
+
+        // Unknown tag returns Unknown
+        assert_eq!(adapter.evaluate_by_tag("ddgc_in_mode_"), ConditionResult::Unknown,
+            "Empty mode tag should return Unknown");
+    }
+
+    #[test]
+    fn in_mode_cross_dungeon_boundary() {
+        let (actors, side_lookup) = build_adapter_actors();
+
+        // Build adapter with XuanWu dungeon
+        let ctx_xuanwu = ConditionContext::new(
+            ActorId(1),
+            vec![ActorId(2)],
+            0,
+            actors.clone(),
+            side_lookup.clone(),
+            Dungeon::XuanWu,
+        );
+        let adapter_xuanwu = ConditionAdapter::new(ctx_xuanwu);
+
+        assert_eq!(adapter_xuanwu.evaluate_ddgc(&DdgcCondition::InMode("xuanwu".to_string())),
+            ConditionResult::Pass, "InMode(xuanwu) should pass in XuanWu dungeon");
+        assert_eq!(adapter_xuanwu.evaluate_ddgc(&DdgcCondition::InMode("qinglong".to_string())),
+            ConditionResult::Fail, "InMode(qinglong) should fail in XuanWu dungeon");
+
+        // Build adapter with Cross dungeon
+        let ctx_cross = ConditionContext::new(
+            ActorId(1),
+            vec![ActorId(2)],
+            0,
+            actors,
+            side_lookup,
+            Dungeon::Cross,
+        );
+        let adapter_cross = ConditionAdapter::new(ctx_cross);
+
+        assert_eq!(adapter_cross.evaluate_ddgc(&DdgcCondition::InMode("cross".to_string())),
+            ConditionResult::Pass, "InMode(cross) should pass in Cross dungeon");
+    }
+
+    #[test]
+    fn in_mode_game_condition_evaluator() {
+        let (actors, side_lookup) = build_adapter_actors();
+        let ctx = ConditionContext::new(
+            ActorId(1),
+            vec![ActorId(2)],
+            0,
+            actors,
+            side_lookup,
+            Dungeon::ZhuQue,
+        );
+
+        set_condition_context(ctx);
+        let evaluator = create_game_condition_evaluator();
+
+        assert!(evaluator("ddgc_in_mode_zhuque"),
+            "Evaluator should return true for ddgc_in_mode_zhuque in ZhuQue dungeon");
+        assert!(!evaluator("ddgc_in_mode_qinglong"),
+            "Evaluator should return false for ddgc_in_mode_qinglong in ZhuQue dungeon");
+    }
+
+    /// Shared actor setup for US-803 InMode tests.
+    fn build_adapter_actors() -> (HashMap<ActorId, ActorAggregate>, HashMap<ActorId, CombatSide>) {
+        let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
+        let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+
+        let mut ally = ActorAggregate::new(ActorId(1));
+        ally.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(100.0));
+        ally.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(100.0),
+        );
+        actors.insert(ActorId(1), ally);
+        side_lookup.insert(ActorId(1), CombatSide::Ally);
+
+        let mut enemy = ActorAggregate::new(ActorId(2));
+        enemy.set_base(AttributeKey::new(ATTR_HEALTH), AttributeValue(50.0));
+        enemy.set_base(
+            AttributeKey::new(crate::content::actors::ATTR_MAX_HEALTH),
+            AttributeValue(50.0),
+        );
+        actors.insert(ActorId(2), enemy);
+        side_lookup.insert(ActorId(2), CombatSide::Enemy);
+
+        (actors, side_lookup)
     }
 }

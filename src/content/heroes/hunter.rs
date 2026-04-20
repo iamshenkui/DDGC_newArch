@@ -215,6 +215,26 @@ pub fn retribution_strike() -> SkillDefinition {
     )
 }
 
+/// XuanWu Strike — bonus damage when fighting in XuanWu dungeon.
+///
+/// This skill demonstrates the InMode DDGC condition: the bonus damage effect
+/// is only applied when the encounter takes place in the XuanWu dungeon.
+///
+/// Implementation: two effect nodes - normal damage always applies, bonus damage
+/// only applies in XuanWu dungeon (via GameCondition with ddgc_in_mode_xuanwu tag).
+pub fn xuanwu_strike() -> SkillDefinition {
+    let normal_damage = EffectNode::damage(15.0);
+    let bonus_damage = EffectNode::damage(20.0).with_game_condition("ddgc_in_mode_xuanwu");
+
+    SkillDefinition::new(
+        SkillId::new("xuanwu_strike"),
+        vec![normal_damage, bonus_damage],
+        TargetSelector::AllEnemies,
+        1,
+        None,
+    )
+}
+
 /// All Hunter base skills (DDGC template + Opening Strike + Retribution Strike).
 pub fn skill_pack() -> Vec<SkillDefinition> {
     vec![
