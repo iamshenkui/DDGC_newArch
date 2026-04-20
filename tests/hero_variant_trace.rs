@@ -116,9 +116,9 @@ fn hero_variant_switching_preserves_family_identity() {
                 expected_mode
             );
             let skills = skills.unwrap();
-            // Hunter Normal has 8 skills (includes opening_strike and desperate_strike)
+            // Hunter Normal has 9 skills (includes opening_strike and retribution_strike)
             let expected = if family.base_id == "hunter" && *expected_mode == ChaosMode::Normal {
-                8
+                9
             } else {
                 7
             };

@@ -215,7 +215,7 @@ pub fn retribution_strike() -> SkillDefinition {
     )
 }
 
-/// All Hunter base skills (DDGC template + Opening Strike).
+/// All Hunter base skills (DDGC template + Opening Strike + Retribution Strike).
 pub fn skill_pack() -> Vec<SkillDefinition> {
     vec![
         mark_skill(),
@@ -226,5 +226,6 @@ pub fn skill_pack() -> Vec<SkillDefinition> {
         bleed_skill(),
         buff_skill(),
         opening_strike(),
+        retribution_strike(),
     ]
 }

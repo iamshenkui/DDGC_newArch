@@ -71,10 +71,10 @@ fn all_base_hero_variants_have_skill_packs() {
     for variant in &variants {
         let skills = variant.skill_pack();
 
-        // Each base variant has 7-8 skills (DDGC hero template + optional DDGC condition skills)
-        // Hunter has 8 skills (includes opening_strike and desperate_strike for DDGC condition demos)
+        // Each base variant has 7-9 skills (DDGC hero template + optional DDGC condition skills)
+        // Hunter has 9 skills (includes opening_strike and retribution_strike for DDGC condition demos)
         let is_hunter = variant.class_id == "hunter";
-        let expected = if is_hunter { 8 } else { 7 };
+        let expected = if is_hunter { 9 } else { 7 };
         assert_eq!(
             skills.len(),
             expected,
