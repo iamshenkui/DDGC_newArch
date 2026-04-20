@@ -292,9 +292,11 @@ The following migrated skills use `EffectNode::with_game_condition("ddgc_...")` 
 |-------|------|--------------|-----------------|----------------|
 | `opening_strike` | `src/content/heroes/hunter.rs:154` | `ddgc_first_round` | Round-trigger | IMPLEMENTED |
 | `desperate_strike` | `src/content/heroes/hunter.rs:180` | `ddgc_deaths_door` | HP-threshold | IMPLEMENTED |
-| `retribution_strike` | `src/content/heroes/hunter.rs:197` | `ddgc_hp_above_0.5` | HP-threshold | IMPLEMENTED |
+| `retribution_strike` | `src/content/heroes/hunter.rs:205` | `ddgc_hp_above_0.5` | HP-threshold | IMPLEMENTED |
+| `xuanwu_strike` | `src/content/heroes/hunter.rs:225` | `ddgc_in_mode_xuanwu` | Dungeon-mode | IMPLEMENTED |
+| `executioner_strike` | `src/content/heroes/hunter.rs:246` | `ddgc_on_kill` | Kill-trigger | IMPLEMENTED |
 
-**Note:** `desperate_strike` is defined at line 180 but is NOT registered in `skill_pack()` (line 199), making it unreachable in current battle paths. See GAP-003 in `tasks/adapter_api_drift_inventory.md`.
+**Note:** `desperate_strike` and `xuanwu_strike` are defined but NOT registered in `skill_pack()` (line 260), making them unreachable in current battle paths. `opening_strike`, `retribution_strike`, and `executioner_strike` are registered and reachable. See GAP-003 in `tasks/adapter_api_drift_inventory.md`.
 
 ### Migrated Skills Using Framework EffectConditions
 
@@ -349,7 +351,7 @@ Phase 4a implementation anchors are migrated skills that serve as concrete proof
 - **Condition tag:** `ddgc_deaths_door`
 - **Condition variant:** `DdgcCondition::DeathsDoor` (actor HP < 50%)
 - **Implementation:** `ConditionContext::actor_at_deaths_door()` evaluates HP fraction
-- **Status:** IMPLEMENTED in adapter; `desperate_strike` NOT registered in `skill_pack()` (wiring gap)
+- **Status:** IMPLEMENTED in adapter; `desperate_strike` NOT registered in `skill_pack()`
 
 #### Anchor 2: Round-trigger Family (`FirstRound`)
 
@@ -383,6 +385,9 @@ Even though conditions are implemented in `ConditionAdapter`, the skills that us
 |-------|----------------|------------|-------|
 | `opening_strike` | YES | `encounters.rs:531` | `game_condition_evaluator` set via `create_game_condition_evaluator()` |
 | `desperate_strike` | YES (if reached) | `encounters.rs:531` | Same wiring path, but skill not in `skill_pack()` |
+| `retribution_strike` | YES | `encounters.rs:531` | Same wiring path; registered in `skill_pack()` |
+| `xuanwu_strike` | YES (if reached) | `encounters.rs:531` | Same wiring path, but skill not in `skill_pack()` |
+| `executioner_strike` | YES | `encounters.rs:531` | Same wiring path; registered in `skill_pack()` |
 
 ### Summary: Migrated Content Referencing Unimplemented Conditions
 
