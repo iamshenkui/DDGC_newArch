@@ -127,6 +127,29 @@ fn game_evaluator_wires_in_mode_correctly() {
     );
 }
 
+// ── Game condition evaluator wiring with mode override ───────────────────────
+
+#[test]
+fn game_evaluator_wires_in_mode_mode_override_correctly() {
+    let mut ctx = make_context(Dungeon::QingLong);
+    ctx = ctx.with_mode("black_tortoise_field");
+    set_condition_context(ctx);
+    let evaluator = create_game_condition_evaluator();
+
+    assert!(
+        evaluator("ddgc_in_mode_black_tortoise_field"),
+        "Evaluator should return true for matching mode override"
+    );
+    assert!(
+        evaluator("ddgc_in_mode_qinglong"),
+        "Evaluator should still return true for matching dungeon when mode override is set"
+    );
+    assert!(
+        !evaluator("ddgc_in_mode_xuanwu"),
+        "Evaluator should return false when neither mode override nor dungeon matches"
+    );
+}
+
 // ── Mode override passes independently of dungeon ────────────────────────────
 
 #[test]
