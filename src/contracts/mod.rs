@@ -255,6 +255,220 @@ impl ObstacleDefinition {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Town Building definitions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Type of town building.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum BuildingType {
+    Barracks,
+    Blacksmith,
+    Campfire,
+    Cathedral,
+    Confectionery,
+    DilapidatedShrine,
+    Doctor,
+    EmbroideryStation,
+    FortuneTeller,
+    Gate,
+    Graveyard,
+    Inn,
+    Jester,
+    Museum,
+    Provisioner,
+    Sanctuary,
+    Tavern,
+    Tower,
+    Trainee,
+    WanderingTrinkets,
+    WeaponRack,
+}
+
+/// An unlock condition for a town building.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct UnlockCondition {
+    /// Condition type (e.g., "completed_runs", "defeated_monsters").
+    pub condition_type: String,
+    /// Required count to unlock.
+    pub required_count: u32,
+}
+
+impl UnlockCondition {
+    pub fn new(condition_type: &str, required_count: u32) -> Self {
+        UnlockCondition {
+            condition_type: condition_type.to_string(),
+            required_count,
+        }
+    }
+}
+
+/// Effects provided by an upgrade level.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct UpgradeEffect {
+    /// Effect identifier (e.g., "recruit_discount", "item_discount").
+    pub effect_id: String,
+    /// Numerical value of the effect.
+    pub value: f64,
+}
+
+impl UpgradeEffect {
+    pub fn new(effect_id: &str, value: f64) -> Self {
+        UpgradeEffect {
+            effect_id: effect_id.to_string(),
+            value,
+        }
+    }
+}
+
+/// A single level in an upgrade tree.
+///
+/// The code field uses letters a-g to represent different upgrade tiers.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct UpgradeLevel {
+    /// Upgrade code (a-g).
+    pub code: char,
+    /// Cost in gold for this upgrade level.
+    pub cost: u32,
+    /// Effects provided by this upgrade level.
+    pub effects: Vec<UpgradeEffect>,
+}
+
+impl UpgradeLevel {
+    pub fn new(code: char, cost: u32, effects: Vec<UpgradeEffect>) -> Self {
+        UpgradeLevel { code, cost, effects }
+    }
+}
+
+/// An upgrade tree containing multiple levels.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct UpgradeTree {
+    /// Unique identifier for this upgrade tree.
+    pub tree_id: String,
+    /// All levels in this upgrade tree.
+    pub levels: Vec<UpgradeLevel>,
+}
+
+impl UpgradeTree {
+    pub fn new(tree_id: &str, levels: Vec<UpgradeLevel>) -> Self {
+        UpgradeTree {
+            tree_id: tree_id.to_string(),
+            levels,
+        }
+    }
+}
+
+/// Definition of a town building with upgrade trees.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TownBuilding {
+    /// Unique identifier for this building.
+    pub id: String,
+    /// Type of building.
+    pub building_type: BuildingType,
+    /// Conditions required to unlock this building.
+    pub unlock_conditions: Vec<UnlockCondition>,
+    /// Available upgrade trees for this building.
+    pub upgrade_trees: Vec<UpgradeTree>,
+}
+
+impl TownBuilding {
+    pub fn new(
+        id: &str,
+        building_type: BuildingType,
+        unlock_conditions: Vec<UnlockCondition>,
+        upgrade_trees: Vec<UpgradeTree>,
+    ) -> Self {
+        TownBuilding {
+            id: id.to_string(),
+            building_type,
+            unlock_conditions,
+            upgrade_trees,
+        }
+    }
+}
+
+/// Heirloom currency type for the town.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum HeirloomCurrency {
+    Bones,
+    Portraits,
+    Tapes,
+}
+
+/// Current state of a town building upgrade.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BuildingUpgradeState {
+    /// The building ID this state belongs to.
+    pub building_id: String,
+    /// Current upgrade level code (a-g), or None if not upgraded.
+    pub current_level: Option<char>,
+}
+
+impl BuildingUpgradeState {
+    pub fn new(building_id: &str, current_level: Option<char>) -> Self {
+        BuildingUpgradeState {
+            building_id: building_id.to_string(),
+            current_level,
+        }
+    }
+}
+
+/// State of the town including building upgrades and currencies.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TownState {
+    /// Current gold available in the town.
+    pub gold: u32,
+    /// Heirloom currencies available.
+    pub heirlooms: std::collections::HashMap<HeirloomCurrency, u32>,
+    /// Current upgrade state for each building.
+    pub building_states: std::collections::HashMap<String, BuildingUpgradeState>,
+}
+
+impl TownState {
+    /// Create a new town state with initial resources.
+    pub fn new(gold: u32) -> Self {
+        TownState {
+            gold,
+            heirlooms: std::collections::HashMap::new(),
+            building_states: std::collections::HashMap::new(),
+        }
+    }
+
+    /// Apply an upgrade to a building.
+    ///
+    /// Returns the cost of the upgrade, or None if the building or level doesn't exist.
+    pub fn apply_upgrade(
+        &mut self,
+        building_id: &str,
+        level_code: char,
+        building: &TownBuilding,
+    ) -> Option<u32> {
+        // Find the requested level in the upgrade trees
+        let cost = building.upgrade_trees.iter().flat_map(|t| &t.levels).find(|l| l.code == level_code).map(|l| l.cost)?;
+
+        // Check if we have enough gold
+        if self.gold < cost {
+            return None;
+        }
+
+        // Deduct the cost
+        self.gold -= cost;
+
+        // Update the building state
+        let state = self.building_states.entry(building_id.to_string()).or_insert_with(|| {
+            BuildingUpgradeState::new(building_id, None)
+        });
+        state.current_level = Some(level_code);
+
+        Some(cost)
+    }
+
+    /// Get the current upgrade level for a building.
+    pub fn get_upgrade_level(&self, building_id: &str) -> Option<char> {
+        self.building_states.get(building_id).and_then(|s| s.current_level)
+    }
+}
+
 /// Dungeon level constants for trap difficulty variations.
 pub mod dungeon_level {
     /// Level 3 dungeon (standard difficulty).
@@ -1829,5 +2043,225 @@ mod tests {
             let deserialized: CurioResultType = serde_json::from_str(&serialized).unwrap();
             assert_eq!(rt, deserialized);
         }
+    }
+
+    // ── US-006: town building data model tests ──────────────────────────────────
+
+    #[test]
+    fn unlock_condition_construction_is_deterministic() {
+        let condition = UnlockCondition::new("completed_runs", 5);
+        assert_eq!(condition.condition_type, "completed_runs");
+        assert_eq!(condition.required_count, 5);
+    }
+
+    #[test]
+    fn upgrade_effect_construction_is_deterministic() {
+        let effect = UpgradeEffect::new("recruit_discount", 0.15);
+        assert_eq!(effect.effect_id, "recruit_discount");
+        assert_eq!(effect.value, 0.15);
+    }
+
+    #[test]
+    fn upgrade_level_construction_is_deterministic() {
+        let effects = vec![
+            UpgradeEffect::new("recruit_discount", 0.1),
+            UpgradeEffect::new("experience_boost", 0.05),
+        ];
+        let level = UpgradeLevel::new('b', 500, effects.clone());
+        assert_eq!(level.code, 'b');
+        assert_eq!(level.cost, 500);
+        assert_eq!(level.effects, effects);
+    }
+
+    #[test]
+    fn upgrade_tree_construction_is_deterministic() {
+        let levels = vec![
+            UpgradeLevel::new('a', 0, vec![]),
+            UpgradeLevel::new('b', 500, vec![UpgradeEffect::new("discount", 0.1)]),
+            UpgradeLevel::new('c', 1000, vec![UpgradeEffect::new("discount", 0.2)]),
+        ];
+        let tree = UpgradeTree::new("barracks_upgrade", levels.clone());
+        assert_eq!(tree.tree_id, "barracks_upgrade");
+        assert_eq!(tree.levels.len(), 3);
+        assert_eq!(tree.levels[0].code, 'a');
+        assert_eq!(tree.levels[2].code, 'c');
+    }
+
+    #[test]
+    fn town_building_construction_is_deterministic() {
+        let unlock_conditions = vec![
+            UnlockCondition::new("completed_runs", 3),
+        ];
+        let upgrade_trees = vec![
+            UpgradeTree::new(
+                "barracks_recruit",
+                vec![
+                    UpgradeLevel::new('a', 0, vec![]),
+                    UpgradeLevel::new('b', 500, vec![UpgradeEffect::new("recruit_discount", 0.1)]),
+                ],
+            ),
+        ];
+        let building = TownBuilding::new(
+            "barracks",
+            BuildingType::Barracks,
+            unlock_conditions.clone(),
+            upgrade_trees.clone(),
+        );
+
+        assert_eq!(building.id, "barracks");
+        assert_eq!(building.building_type, BuildingType::Barracks);
+        assert_eq!(building.unlock_conditions, unlock_conditions);
+        assert_eq!(building.upgrade_trees.len(), 1);
+    }
+
+    #[test]
+    fn town_state_construction_is_deterministic() {
+        let state = TownState::new(1000);
+        assert_eq!(state.gold, 1000);
+        assert!(state.heirlooms.is_empty());
+        assert!(state.building_states.is_empty());
+    }
+
+    #[test]
+    fn town_state_upgrade_application_is_deterministic() {
+        // Build a building with upgrade levels
+        let upgrade_trees = vec![
+            UpgradeTree::new(
+                "inn_comfort",
+                vec![
+                    UpgradeLevel::new('a', 0, vec![]),
+                    UpgradeLevel::new('b', 200, vec![UpgradeEffect::new("healing_discount", 0.1)]),
+                    UpgradeLevel::new('c', 500, vec![UpgradeEffect::new("healing_discount", 0.25)]),
+                ],
+            ),
+        ];
+        let building = TownBuilding::new(
+            "inn",
+            BuildingType::Inn,
+            vec![],
+            upgrade_trees,
+        );
+
+        // Create town state with initial gold
+        let mut state = TownState::new(1000);
+
+        // Apply first paid upgrade (level b)
+        let cost = state.apply_upgrade("inn", 'b', &building);
+        assert_eq!(cost, Some(200));
+        assert_eq!(state.gold, 800);
+        assert_eq!(state.get_upgrade_level("inn"), Some('b'));
+
+        // Apply second upgrade (level c)
+        let cost = state.apply_upgrade("inn", 'c', &building);
+        assert_eq!(cost, Some(500));
+        assert_eq!(state.gold, 300);
+        assert_eq!(state.get_upgrade_level("inn"), Some('c'));
+
+        // Cannot apply same upgrade twice (state already has level c)
+        let cost = state.apply_upgrade("inn", 'c', &building);
+        assert_eq!(cost, None); // No cost returned - upgrade not applied
+
+        // Cannot afford upgrade
+        let cost = state.apply_upgrade("inn", 'c', &building);
+        assert_eq!(cost, None); // Not enough gold
+    }
+
+    #[test]
+    fn town_state_upgrade_unknown_level_returns_none() {
+        let upgrade_trees = vec![
+            UpgradeTree::new(
+                "barracks_upgrade",
+                vec![
+                    UpgradeLevel::new('a', 0, vec![]),
+                    UpgradeLevel::new('b', 500, vec![]),
+                ],
+            ),
+        ];
+        let building = TownBuilding::new("barracks", BuildingType::Barracks, vec![], upgrade_trees);
+        let mut state = TownState::new(1000);
+
+        // Try to apply a level that doesn't exist
+        let cost = state.apply_upgrade("barracks", 'z', &building);
+        assert_eq!(cost, None);
+        assert_eq!(state.gold, 1000); // Gold unchanged
+    }
+
+    #[test]
+    fn heirloom_currency_serde_roundtrip_is_deterministic() {
+        let currencies = vec![
+            HeirloomCurrency::Bones,
+            HeirloomCurrency::Portraits,
+            HeirloomCurrency::Tapes,
+        ];
+        for currency in currencies {
+            let serialized = serde_json::to_string(&currency).unwrap();
+            let deserialized: HeirloomCurrency = serde_json::from_str(&serialized).unwrap();
+            assert_eq!(currency, deserialized);
+        }
+    }
+
+    #[test]
+    fn building_type_serde_roundtrip_is_deterministic() {
+        let building_types = vec![
+            BuildingType::Barracks,
+            BuildingType::Blacksmith,
+            BuildingType::Inn,
+            BuildingType::Tavern,
+            BuildingType::Cathedral,
+        ];
+        for bt in building_types {
+            let serialized = serde_json::to_string(&bt).unwrap();
+            let deserialized: BuildingType = serde_json::from_str(&serialized).unwrap();
+            assert_eq!(bt, deserialized);
+        }
+    }
+
+    #[test]
+    fn upgrade_level_serde_roundtrip_is_deterministic() {
+        let level = UpgradeLevel::new('c', 1000, vec![
+            UpgradeEffect::new("recruit_discount", 0.2),
+        ]);
+        let serialized = serde_json::to_string(&level).unwrap();
+        let deserialized: UpgradeLevel = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(level, deserialized);
+    }
+
+    #[test]
+    fn upgrade_tree_serde_roundtrip_is_deterministic() {
+        let tree = UpgradeTree::new("blacksmith_repair", vec![
+            UpgradeLevel::new('a', 0, vec![]),
+            UpgradeLevel::new('b', 300, vec![UpgradeEffect::new("repair_discount", 0.1)]),
+        ]);
+        let serialized = serde_json::to_string(&tree).unwrap();
+        let deserialized: UpgradeTree = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(tree, deserialized);
+    }
+
+    #[test]
+    fn town_building_serde_roundtrip_is_deterministic() {
+        let building = TownBuilding::new(
+            "museum",
+            BuildingType::Museum,
+            vec![UnlockCondition::new("completed_runs", 10)],
+            vec![UpgradeTree::new("museum_collection", vec![
+                UpgradeLevel::new('a', 0, vec![]),
+            ])],
+        );
+        let serialized = serde_json::to_string(&building).unwrap();
+        let deserialized: TownBuilding = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(building, deserialized);
+    }
+
+    #[test]
+    fn town_state_serde_roundtrip_is_deterministic() {
+        let mut state = TownState::new(1500);
+        state.heirlooms.insert(HeirloomCurrency::Bones, 42);
+        state.heirlooms.insert(HeirloomCurrency::Portraits, 7);
+        state.building_states.insert("inn".to_string(), BuildingUpgradeState::new("inn", Some('b')));
+        state.building_states.insert("barracks".to_string(), BuildingUpgradeState::new("barracks", Some('a')));
+
+        let serialized = serde_json::to_string(&state).unwrap();
+        let deserialized: TownState = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(state, deserialized);
     }
 }
