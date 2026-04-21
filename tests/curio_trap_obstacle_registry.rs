@@ -12,7 +12,7 @@
 
 use game_ddgc_headless::contracts::{
     parse::{parse_curios_csv, parse_obstacles_json, parse_traps_json},
-    CurioRegistry, DungeonType, ObstacleRegistry, TrapRegistry,
+    CurioRegistry, CurioResultType, DungeonType, ObstacleRegistry, TrapRegistry,
 };
 
 fn data_path(filename: &str) -> std::path::PathBuf {
@@ -290,4 +290,139 @@ fn at_least_12_curios_parsed() {
         "At least 12 curios should be parsed (3 per dungeon), got {}",
         curios.len()
     );
+}
+
+// ── US-003: Curio interaction resolution ────────────────────────────────────────
+
+/// Focused test: bare interaction follows weighted probabilities.
+#[test]
+fn curio_bare_interaction_follows_weighted_probabilities() {
+    let (curios, _, _) = parse_all();
+
+    // ancient_vase: weights 5 (Nothing), 10 (Loot), 5 (Quirk) = total 20
+
+    let mut nothing_count = 0u32;
+    let mut loot_count = 0u32;
+    let mut quirk_count = 0u32;
+    let iterations = 10_000u32;
+
+    for seed in 0..iterations {
+        let outcome = curios
+            .resolve_curio_interaction("ancient_vase", false, "", seed as u64)
+            .unwrap();
+        match outcome.result_type {
+            CurioResultType::Nothing => nothing_count += 1,
+            CurioResultType::Loot => loot_count += 1,
+            CurioResultType::Quirk => quirk_count += 1,
+            _ => panic!("unexpected result type"),
+        }
+    }
+
+    // With weights 5/20, 10/20, 5/20, we expect roughly 25%, 50%, 25%
+    // Allow 5% tolerance for statistical variance
+    let nothing_ratio = nothing_count as f64 / iterations as f64;
+    let loot_ratio = loot_count as f64 / iterations as f64;
+    let quirk_ratio = quirk_count as f64 / iterations as f64;
+
+    assert!(
+        (nothing_ratio - 0.25).abs() < 0.05,
+        "Nothing ratio {} should be ~0.25",
+        nothing_ratio
+    );
+    assert!(
+        (loot_ratio - 0.50).abs() < 0.05,
+        "Loot ratio {} should be ~0.50",
+        loot_ratio
+    );
+    assert!(
+        (quirk_ratio - 0.25).abs() < 0.05,
+        "Quirk ratio {} should be ~0.25",
+        quirk_ratio
+    );
+}
+
+/// Focused test: item interaction produces override result.
+#[test]
+fn curio_item_interaction_produces_override_result() {
+    let (curios, _, _) = parse_all();
+
+    // ancient_vase has item interaction: shovel -> treasure_found
+    let outcome = curios
+        .resolve_curio_interaction("ancient_vase", true, "shovel", 0)
+        .expect("ancient_vase should exist");
+
+    // The override should produce "treasure_found" as the result_id
+    // Since this result_id is not in the base results table, it should use Effect type
+    assert_eq!(outcome.result_id, "treasure_found");
+    assert_eq!(outcome.result_type, CurioResultType::Effect);
+}
+
+/// Focused test: results are deterministic for a given seed.
+#[test]
+fn curio_interaction_resolve_is_deterministic() {
+    let (curios, _, _) = parse_all();
+
+    let seed = 42u64;
+
+    // Same seed should always produce same result (without item)
+    let outcome1 = curios.resolve_curio_interaction("ancient_vase", false, "", seed);
+    let outcome2 = curios.resolve_curio_interaction("ancient_vase", false, "", seed);
+    assert_eq!(outcome1, outcome2, "Same seed should produce same result without item");
+
+    // Same seed should always produce same result (with item)
+    let outcome3 = curios.resolve_curio_interaction("ancient_vase", true, "shovel", seed);
+    let outcome4 = curios.resolve_curio_interaction("ancient_vase", true, "shovel", seed);
+    assert_eq!(outcome3, outcome4, "Same seed should produce same result with item");
+
+    // Different seeds may produce different results (weighted selection)
+    let outcome5 = curios.resolve_curio_interaction("ancient_vase", false, "", 0);
+    let outcome6 = curios.resolve_curio_interaction("ancient_vase", false, "", 1);
+    // We don't assert inequality since seeds could collide by chance
+    // But we verify both are valid outcomes
+    assert!(outcome5.is_some());
+    assert!(outcome6.is_some());
+}
+
+/// Test: unknown curio returns None.
+#[test]
+fn resolve_unknown_curio_returns_none() {
+    let (curios, _, _) = parse_all();
+
+    let outcome = curios.resolve_curio_interaction("nonexistent_curio", false, "", 0);
+    assert!(outcome.is_none(), "Unknown curio should return None");
+}
+
+/// Test: item without override falls back to weighted table.
+#[test]
+fn item_without_override_falls_back_to_weighted_table() {
+    let (curios, _, _) = parse_all();
+
+    // ancient_vase has shovel interaction, but not shovel2
+    // Using an unknown item should fall back to weighted selection
+    let outcome = curios
+        .resolve_curio_interaction("ancient_vase", true, "shovel2", 0)
+        .expect("ancient_vase should exist");
+
+    // Should be a valid result from the weighted table (Nothing, Loot, or Quirk)
+    match outcome.result_type {
+        CurioResultType::Nothing | CurioResultType::Loot | CurioResultType::Quirk => {}
+        _ => panic!("Expected Nothing, Loot, or Quirk"),
+    }
+}
+
+/// Test: mossy_stone with item interaction (empty) falls back to weighted table.
+#[test]
+fn mossy_stone_curio_interaction() {
+    let (curios, _, _) = parse_all();
+
+    // mossy_stone has no item interactions (empty list)
+    let outcome = curios
+        .resolve_curio_interaction("mossy_stone", false, "", 0)
+        .expect("mossy_stone should exist");
+
+    // mossy_stone: weights 6 (Nothing), 8 (Quirk), 2 (Disease) = total 16
+    match outcome.result_type {
+        CurioResultType::Nothing | CurioResultType::Quirk | CurioResultType::Disease => {}
+        _ => panic!("Expected Nothing, Quirk, or Disease"),
+    }
 }

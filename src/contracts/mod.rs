@@ -138,6 +138,17 @@ impl CurioDefinition {
     }
 }
 
+/// Outcome of a curio interaction, describing the result and any effects applied.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CurioInteractionOutcome {
+    /// The type of result from the interaction.
+    pub result_type: CurioResultType,
+    /// The specific result identifier (e.g., loot ID, quirk ID, effect ID).
+    pub result_id: String,
+    /// Effects applied as a result of this interaction.
+    pub applied_effects: Vec<String>,
+}
+
 /// A difficulty variation for a trap, keyed by level.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TrapVariation {
@@ -265,6 +276,82 @@ impl CurioRegistry {
     /// Returns true if the registry is empty.
     pub fn is_empty(&self) -> bool {
         self.curios.is_empty()
+    }
+
+    /// Resolve a curio interaction using weighted random selection.
+    ///
+    /// If `has_item` is true and the curio has an item interaction for `item_id`,
+    /// the override result is used. Otherwise, selects from the weighted result table.
+    ///
+    /// Returns `None` if the curio does not exist.
+    pub fn resolve_curio_interaction(
+        &self,
+        curio_id: &str,
+        has_item: bool,
+        item_id: &str,
+        seed: u64,
+    ) -> Option<CurioInteractionOutcome> {
+        let curio = self.curios.get(curio_id)?;
+
+        // If item is used, check for override
+        if has_item {
+            if let Some(interaction) = curio.item_interactions.iter().find(|i| i.item_id == item_id) {
+                // Find the result that matches the override result_id
+                if let Some(result) = curio.results.iter().find(|r| r.result_id == interaction.overrides_result_id) {
+                    return Some(CurioInteractionOutcome {
+                        result_type: result.result_type,
+                        result_id: result.result_id.clone(),
+                        applied_effects: vec![],
+                    });
+                }
+                // Override result_id might not be in results table (e.g., "treasure_found")
+                // In that case, create outcome with the override id and Effect type
+                return Some(CurioInteractionOutcome {
+                    result_type: CurioResultType::Effect,
+                    result_id: interaction.overrides_result_id.clone(),
+                    applied_effects: vec![],
+                });
+            }
+        }
+
+        // Fall back to weighted random selection
+        if curio.results.is_empty() {
+            return Some(CurioInteractionOutcome {
+                result_type: CurioResultType::Nothing,
+                result_id: String::new(),
+                applied_effects: vec![],
+            });
+        }
+
+        let total: u32 = curio.results.iter().map(|r| r.weight).sum();
+        if total == 0 {
+            return Some(CurioInteractionOutcome {
+                result_type: curio.results[0].result_type,
+                result_id: curio.results[0].result_id.clone(),
+                applied_effects: vec![],
+            });
+        }
+
+        let selector = (seed % total as u64) as u32;
+        let mut accum = 0u32;
+        for result in &curio.results {
+            accum += result.weight;
+            if selector < accum {
+                return Some(CurioInteractionOutcome {
+                    result_type: result.result_type,
+                    result_id: result.result_id.clone(),
+                    applied_effects: vec![],
+                });
+            }
+        }
+
+        // Fallback to last result
+        let last = curio.results.last().unwrap();
+        Some(CurioInteractionOutcome {
+            result_type: last.result_type,
+            result_id: last.result_id.clone(),
+            applied_effects: vec![],
+        })
     }
 }
 
