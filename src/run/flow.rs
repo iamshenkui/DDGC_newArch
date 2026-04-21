@@ -5,6 +5,12 @@
 //! boss rooms resolve through the DDGC encounter pack registry.
 //! Post-battle rewards are applied after clearing combat rooms.
 //!
+//! Event rooms can carry a curio_id reference that produces a curio
+//! interaction outcome when the room is entered.
+//!
+//! Corridor rooms can carry optional trap_id and curio_id references
+//! that produce trap and curio interaction outcomes when traversed.
+//!
 //! This is the Batch 5 migration: the new stack proves it can handle
 //! gameplay progression rather than a single isolated encounter.
 
@@ -14,7 +20,11 @@ use framework_progression::generation::{DefaultRoomGenerator, FloorConfig, RoomG
 use framework_progression::rooms::{RoomId, RoomKind};
 use framework_progression::run::{Run, RunId, RunResult};
 
-use crate::contracts::{get_dungeon_config, DungeonMapConfig, DungeonType, MapSize, GridSize};
+use crate::contracts::{
+    get_dungeon_config, CurioRegistry, CurioResultType,
+    DungeonMapConfig, DungeonType, GridSize, MapSize, ObstacleRegistry,
+    TrapOutcome, TrapRegistry,
+};
 use crate::encounters::Dungeon;
 use crate::monsters::families::FamilyId;
 use crate::run::encounters::EncounterResolver;
@@ -24,11 +34,13 @@ use crate::run::rewards::{self, PostBattleUpdate};
 ///
 /// Combat-heavy distribution matching DDGC dungeon style:
 /// - Combat rooms dominate (weight 5)
+/// - Corridor rooms carry traps and curios (weight 3)
 /// - Event rooms are secondary (weight 2)
 /// - Boss rooms cap the floor (weight 1)
 const DDGC_ROOM_WEIGHTS: &[(RoomKind, f64)] = &[
     (RoomKind::Combat, 5.0),
-    (RoomKind::Event, 2.0),
+    (RoomKind::corridor(), 3.0),
+    (RoomKind::event(), 2.0),
     (RoomKind::Boss, 1.0),
 ];
 
@@ -95,6 +107,8 @@ pub struct DdgcRunResult {
     pub metadata: RunMetadata,
     /// Per-room encounter details including pack ID and monster family composition.
     pub room_encounters: Vec<RoomEncounterRecord>,
+    /// Interaction events (curio, trap, obstacle) that occurred during the run.
+    pub interaction_records: Vec<InteractionRecord>,
 }
 
 /// Dungeon and map metadata captured at the start of a run slice.
@@ -159,15 +173,234 @@ impl RoomEncounterRecord {
         }
     }
 
-    /// Create an event room record (no encounter).
-    fn event(room_id: RoomId) -> Self {
+    /// Create a non-combat room record (no encounter).
+    fn non_combat(room_id: RoomId, room_kind: RoomKind) -> Self {
         RoomEncounterRecord {
             room_id,
-            room_kind: RoomKind::Event,
+            room_kind,
             pack_id: String::new(),
             family_ids: Vec::new(),
         }
     }
+}
+
+/// A record of an interaction event (curio, trap, obstacle) in a run slice.
+///
+/// This captures the outcome of interacting with a curio in an Event room,
+/// or a trap/curio in a Corridor room.
+#[derive(Debug, Clone, PartialEq)]
+pub struct InteractionRecord {
+    /// The room ID where the interaction occurred.
+    pub room_id: RoomId,
+    /// The kind of room where the interaction occurred.
+    pub room_kind: RoomKind,
+    /// The type of interaction (Curio, Trap, Obstacle).
+    pub interaction_type: InteractionType,
+    /// The ID of the curio, trap, or obstacle interacted with.
+    pub entity_id: String,
+    /// The outcome of the interaction.
+    pub outcome: InteractionOutcome,
+}
+
+/// The type of interaction that occurred.
+#[derive(Debug, Clone, PartialEq)]
+pub enum InteractionType {
+    Curio,
+    Trap,
+    Obstacle,
+}
+
+/// The outcome of an interaction.
+#[derive(Debug, Clone, PartialEq)]
+pub enum InteractionOutcome {
+    /// Curio interaction outcome.
+    Curio {
+        result_type: CurioResultType,
+        result_id: String,
+    },
+    /// Trap interaction outcome (success or fail).
+    Trap {
+        avoided: bool,
+        effects: Vec<String>,
+        health_fraction: f64,
+    },
+    /// Obstacle interaction outcome.
+    Obstacle {
+        effects: Vec<String>,
+        health_fraction: f64,
+        torchlight_penalty: f64,
+    },
+}
+
+/// Deterministic LCG PRNG for generating interaction assignments.
+struct AssignmentRng(u64);
+
+impl AssignmentRng {
+    fn new(seed: u64) -> Self {
+        AssignmentRng(seed.wrapping_add(1))
+    }
+
+    fn next(&mut self) -> u64 {
+        self.0 = self.0.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        self.0
+    }
+
+    fn next_f64(&mut self) -> f64 {
+        (self.next() >> 11) as f64 / (1u64 << 53) as f64
+    }
+}
+
+/// Assign curio and trap IDs directly to room kinds on the floor.
+///
+/// Mutates each Event and Corridor room's `kind` to include the assigned
+/// IDs, deterministically derived from the floor seed and dungeon density.
+fn assign_interactions_to_rooms(
+    floor: &mut Floor,
+    config: &DdgcRunConfig,
+    dungeon_type: DungeonType,
+    map_config: &DungeonMapConfig,
+    curio_registry: &CurioRegistry,
+    trap_registry: &TrapRegistry,
+) {
+    let mut rng = AssignmentRng::new(config.seed ^ 0xdeadbeef);
+
+    // Get available curio IDs for this dungeon
+    let available_curios: Vec<&str> = curio_registry
+        .by_dungeon(dungeon_type)
+        .iter()
+        .map(|c| c.id.as_str())
+        .collect();
+
+    // Get available trap IDs
+    let available_traps: Vec<&str> = trap_registry.all_ids();
+
+    for room_id in &floor.rooms {
+        let room = floor.rooms_map.get_mut(room_id).unwrap();
+
+        match &mut room.kind {
+            RoomKind::Event { curio_id } => {
+                let curio_chance = if map_config.room_curio.min > 0 {
+                    (map_config.room_curio.min as f64 + map_config.room_curio.max as f64) / 2.0
+                        / (map_config.room_curio.max.max(1) as f64)
+                } else {
+                    0.3 // default fallback
+                };
+
+                if !available_curios.is_empty() && rng.next_f64() < curio_chance {
+                    let idx = (rng.next() as usize) % available_curios.len();
+                    if let Some(id) = available_curios.get(idx) {
+                        *curio_id = Some(id.to_string());
+                    }
+                }
+            }
+            RoomKind::Corridor { trap_id, curio_id } => {
+                // Trap assignment
+                let trap_chance = if map_config.hallway_trap.min > 0 {
+                    (map_config.hallway_trap.min as f64 + map_config.hallway_trap.max as f64) / 2.0
+                        / (map_config.hallway_trap.max.max(1) as f64)
+                } else {
+                    0.2 // default fallback
+                };
+
+                if !available_traps.is_empty() && rng.next_f64() < trap_chance {
+                    let idx = (rng.next() as usize) % available_traps.len();
+                    if let Some(id) = available_traps.get(idx) {
+                        *trap_id = Some(id.to_string());
+                    }
+                }
+
+                // Curio assignment
+                let curio_chance = if map_config.hallway_curio.min > 0 {
+                    (map_config.hallway_curio.min as f64 + map_config.hallway_curio.max as f64) / 2.0
+                        / (map_config.hallway_curio.max.max(1) as f64)
+                } else {
+                    0.15 // default fallback
+                };
+
+                if !available_curios.is_empty() && rng.next_f64() < curio_chance {
+                    let idx = (rng.next() as usize) % available_curios.len();
+                    if let Some(id) = available_curios.get(idx) {
+                        *curio_id = Some(id.to_string());
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Resolve curio interaction for a room.
+fn resolve_curio_for_room(
+    room_id: RoomId,
+    room_kind: &RoomKind,
+    curio_registry: &CurioRegistry,
+    seed: u64,
+) -> Option<InteractionRecord> {
+    let curio_id = match room_kind {
+        RoomKind::Event { curio_id } => curio_id.as_ref()?,
+        RoomKind::Corridor { curio_id, .. } => curio_id.as_ref()?,
+        _ => return None,
+    };
+
+    let outcome = curio_registry.resolve_curio_interaction(
+        curio_id,
+        false, // no item used
+        "",
+        seed,
+    )?;
+
+    Some(InteractionRecord {
+        room_id,
+        room_kind: room_kind.clone(),
+        interaction_type: InteractionType::Curio,
+        entity_id: curio_id.clone(),
+        outcome: InteractionOutcome::Curio {
+            result_type: outcome.result_type,
+            result_id: outcome.result_id,
+        },
+    })
+}
+
+/// Resolve trap interaction for a corridor room.
+fn resolve_trap_for_room(
+    room_id: RoomId,
+    room_kind: &RoomKind,
+    trap_registry: &TrapRegistry,
+    seed: u64,
+) -> Option<InteractionRecord> {
+    let trap_id = match room_kind {
+        RoomKind::Corridor { trap_id, .. } => trap_id.as_ref()?,
+        _ => return None,
+    };
+
+    // Use level 3 as default trap level
+    let trap_level = 3u32;
+    // Use 0.5 as default resist chance
+    let resist_chance = 0.5;
+
+    let outcome = trap_registry.resolve_trap_interaction(
+        trap_id,
+        trap_level,
+        resist_chance,
+        seed,
+    )?;
+
+    let (avoided, effects, health_fraction) = match outcome {
+        TrapOutcome::Success { effects } => (true, effects, 0.0),
+        TrapOutcome::Fail { effects, health_fraction } => (false, effects, health_fraction),
+    };
+
+    Some(InteractionRecord {
+        room_id,
+        room_kind: room_kind.clone(),
+        interaction_type: InteractionType::Trap,
+        entity_id: trap_id.clone(),
+        outcome: InteractionOutcome::Trap {
+            avoided,
+            effects,
+            health_fraction,
+        },
+    })
 }
 
 /// Run a minimal DDGC run slice.
@@ -176,6 +409,10 @@ impl RoomEncounterRecord {
 /// through each room in sequence. Combat rooms resolve through the encounter
 /// pack registry; Boss rooms resolve through the boss encounter registry.
 /// Post-battle rewards are applied after each combat room is cleared.
+///
+/// Event rooms can carry a curio_id that produces a curio interaction outcome.
+/// Corridor rooms can carry trap_id and curio_id that produce trap and curio
+/// interaction outcomes.
 ///
 /// All four core DDGC dungeons (QingLong, BaiHu, ZhuQue, XuanWu) have migrated
 /// encounter packs — this function will panic if a pack is missing, indicating
@@ -202,10 +439,46 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
 
     let mut floor = gen.generate_floor(FloorId(0), config.seed, &floor_config);
 
+    // Parse curio, trap, and obstacle registries from data files
+    let curio_registry = crate::contracts::parse::parse_curios_csv(
+        &std::path::PathBuf::from("data").join("Curios.csv"),
+    )
+    .unwrap_or_else(|_| {
+        // Fallback: create empty registry if parsing fails
+        CurioRegistry::new()
+    });
+
+    let trap_registry = crate::contracts::parse::parse_traps_json(
+        &std::path::PathBuf::from("data").join("Traps.json"),
+    )
+    .unwrap_or_else(|_| {
+        // Fallback: create empty registry if parsing fails
+        TrapRegistry::new()
+    });
+
+    let _obstacle_registry = crate::contracts::parse::parse_obstacles_json(
+        &std::path::PathBuf::from("data").join("Obstacles.json"),
+    )
+    .unwrap_or_else(|_| {
+        // Fallback: create empty registry if parsing fails
+        ObstacleRegistry::new()
+    });
+
+    // Assign curio/trap IDs directly to room kinds on the floor
+    assign_interactions_to_rooms(
+        &mut floor,
+        config,
+        dungeon_type,
+        map_config,
+        &curio_registry,
+        &trap_registry,
+    );
+
     let mut run = Run::new(RunId(1), vec![FloorId(0)], config.seed);
     let mut state = DdgcRunState::new();
     let mut battle_pack_ids = Vec::new();
     let mut room_encounters = Vec::new();
+    let mut interaction_records = Vec::new();
 
     // Build the encounter resolver once — reuse for all combat rooms
     let resolver = EncounterResolver::new();
@@ -285,9 +558,54 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
                 let update = rewards::compute_post_battle_update(&room_kind);
                 apply_reward(&mut state, &update);
             }
+            RoomKind::Event { .. } => {
+                // Event rooms may have curio interactions
+                room_encounters.push(RoomEncounterRecord::non_combat(*room_id, room_kind.clone()));
+
+                // Resolve curio interaction if present
+                let interaction_seed = config.seed.wrapping_add(room_idx as u64 * 17);
+                if let Some(record) = resolve_curio_for_room(
+                    *room_id,
+                    &room_kind,
+                    &curio_registry,
+                    interaction_seed,
+                ) {
+                    interaction_records.push(record);
+                }
+
+                run.clear_room(&mut floor).unwrap();
+            }
+            RoomKind::Corridor { .. } => {
+                // Corridor rooms may have trap and curio interactions
+                room_encounters.push(RoomEncounterRecord::non_combat(*room_id, room_kind.clone()));
+
+                // Resolve trap interaction if present
+                let trap_seed = config.seed.wrapping_add(room_idx as u64 * 31);
+                if let Some(record) = resolve_trap_for_room(
+                    *room_id,
+                    &room_kind,
+                    &trap_registry,
+                    trap_seed,
+                ) {
+                    interaction_records.push(record);
+                }
+
+                // Resolve curio interaction if present
+                let curio_seed = config.seed.wrapping_add(room_idx as u64 * 47);
+                if let Some(record) = resolve_curio_for_room(
+                    *room_id,
+                    &room_kind,
+                    &curio_registry,
+                    curio_seed,
+                ) {
+                    interaction_records.push(record);
+                }
+
+                run.clear_room(&mut floor).unwrap();
+            }
             _ => {
-                // Event and other rooms: auto-clear (no combat)
-                room_encounters.push(RoomEncounterRecord::event(*room_id));
+                // Other rooms: auto-clear (no combat)
+                room_encounters.push(RoomEncounterRecord::non_combat(*room_id, room_kind.clone()));
                 run.clear_room(&mut floor).unwrap();
             }
         }
@@ -313,6 +631,7 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
         battle_pack_ids,
         metadata,
         room_encounters,
+        interaction_records,
     }
 }
 
@@ -747,7 +1066,7 @@ mod tests {
                         "Battle room should not use fallback_transitional"
                     );
                 }
-                RoomKind::Event => {
+                RoomKind::Event { .. } => {
                     // Event rooms have empty pack_id and family_ids
                     assert!(
                         record.pack_id.is_empty(),
@@ -816,6 +1135,155 @@ mod tests {
         assert_eq!(
             result.state.battles_lost, 0,
             "No battles should be lost"
+        );
+    }
+
+    // ── US-005: Curio/trap/obstacle interaction wiring tests ───────────────────
+
+    #[test]
+    fn run_slice_produces_curio_and_trap_interactions() {
+        // US-005 acceptance test: proves that Event rooms produce curio
+        // interactions and Corridor rooms produce trap interactions in the
+        // run trace. Uses a seed known to generate both room kinds.
+        let config = DdgcRunConfig {
+            seed: 1,
+            dungeon: Dungeon::QingLong,
+            map_size: MapSize::Short,
+        };
+        let result = run_ddgc_slice(&config);
+
+        // Count curio interactions
+        let curio_count = result
+            .interaction_records
+            .iter()
+            .filter(|r| matches!(r.interaction_type, InteractionType::Curio))
+            .count();
+
+        // Count trap interactions
+        let trap_count = result
+            .interaction_records
+            .iter()
+            .filter(|r| matches!(r.interaction_type, InteractionType::Trap))
+            .count();
+
+        // QingLong short has hallway_curio = 9/9 (guaranteed curio in corridors)
+        // and room_curio = 0/0 (30% fallback for event rooms). With combat-heavy
+        // weights there should be at least one corridor, guaranteeing a curio.
+        assert!(
+            curio_count > 0,
+            "Expected at least one curio interaction in the run trace, got {}",
+            curio_count
+        );
+
+        // hallway_trap = 0/0 gives 20% fallback chance per corridor.
+        // With multiple corridors possible across the floor, traps should appear.
+        assert!(
+            trap_count > 0,
+            "Expected at least one trap interaction in the run trace, got {}",
+            trap_count
+        );
+
+        // Every interaction record should have a non-empty entity ID
+        for record in &result.interaction_records {
+            assert!(
+                !record.entity_id.is_empty(),
+                "Interaction record should have a non-empty entity_id"
+            );
+        }
+    }
+
+    #[test]
+    fn interaction_records_match_room_kinds() {
+        // Verifies that curio interactions only come from Event/Corridor rooms
+        // and trap interactions only come from Corridor rooms.
+        let config = DdgcRunConfig::default();
+        let result = run_ddgc_slice(&config);
+
+        for record in &result.interaction_records {
+            match record.interaction_type {
+                InteractionType::Curio => {
+                    assert!(
+                        matches!(record.room_kind, RoomKind::Event { .. } | RoomKind::Corridor { .. }),
+                        "Curio interaction should only occur in Event or Corridor rooms"
+                    );
+                }
+                InteractionType::Trap => {
+                    assert!(
+                        matches!(record.room_kind, RoomKind::Corridor { .. }),
+                        "Trap interaction should only occur in Corridor rooms"
+                    );
+                }
+                InteractionType::Obstacle => {
+                    // Obstacles are not yet wired into room generation
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn event_rooms_carry_curio_id_on_kind() {
+        // Verifies that RoomKind::Event carries an optional curio_id after
+        // interaction assignment. Uses seed 1 which is known to produce curios.
+        let config = DdgcRunConfig {
+            seed: 1,
+            dungeon: Dungeon::QingLong,
+            map_size: MapSize::Short,
+        };
+        let result = run_ddgc_slice(&config);
+
+        let event_rooms: Vec<_> = result
+            .floor
+            .rooms
+            .iter()
+            .filter(|rid| matches!(result.floor.rooms_map[rid].kind, RoomKind::Event { .. }))
+            .collect();
+
+        // There should be at least one event room
+        assert!(!event_rooms.is_empty(), "Expected at least one Event room");
+
+        // At least one event room should have a curio_id assigned
+        let event_with_curio = event_rooms.iter().any(|rid| {
+            if let RoomKind::Event { curio_id } = &result.floor.rooms_map[rid].kind {
+                curio_id.is_some()
+            } else {
+                false
+            }
+        });
+        assert!(event_with_curio, "Expected at least one Event room with a curio_id");
+    }
+
+    #[test]
+    fn corridor_rooms_carry_trap_and_curio_ids_on_kind() {
+        // Verifies that RoomKind::Corridor carries optional trap_id and curio_id
+        // after interaction assignment. Uses seed 1 which is known to produce interactions.
+        let config = DdgcRunConfig {
+            seed: 1,
+            dungeon: Dungeon::QingLong,
+            map_size: MapSize::Short,
+        };
+        let result = run_ddgc_slice(&config);
+
+        let corridor_rooms: Vec<_> = result
+            .floor
+            .rooms
+            .iter()
+            .filter(|rid| matches!(result.floor.rooms_map[rid].kind, RoomKind::Corridor { .. }))
+            .collect();
+
+        // There should be at least one corridor room
+        assert!(!corridor_rooms.is_empty(), "Expected at least one Corridor room");
+
+        // At least one corridor should have a curio_id (hallway_curio density is high)
+        let corridor_with_curio = corridor_rooms.iter().any(|rid| {
+            if let RoomKind::Corridor { curio_id, .. } = &result.floor.rooms_map[rid].kind {
+                curio_id.is_some()
+            } else {
+                false
+            }
+        });
+        assert!(
+            corridor_with_curio,
+            "Expected at least one Corridor room with a curio_id"
         );
     }
 

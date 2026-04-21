@@ -65,7 +65,7 @@ mod tests {
 
     #[test]
     fn event_room_gives_no_combat_rewards() {
-        let update = compute_post_battle_update(&RoomKind::Event);
+        let update = compute_post_battle_update(&RoomKind::event());
         assert_eq!(update.gold_earned, 0);
         assert_eq!(update.hp_recovered, 0.0);
         assert_eq!(update.stress_change, 0.0);
