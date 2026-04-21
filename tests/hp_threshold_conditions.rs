@@ -8,6 +8,7 @@ use game_ddgc_headless::run::conditions::{
     ConditionAdapter, ConditionContext, ConditionResult, DdgcCondition,
     create_game_condition_evaluator, set_condition_context,
 };
+use framework_combat::effects::EffectCondition;
 use framework_combat::encounter::CombatSide;
 use framework_rules::actor::{ActorAggregate, ActorId};
 use framework_rules::attributes::{AttributeKey, AttributeValue, ATTR_HEALTH};
@@ -236,9 +237,20 @@ fn retribution_strike_skill_uses_hp_above_condition() {
     let skill = pack.iter().find(|s| s.id.0.as_str() == "retribution_strike");
     assert!(skill.is_some(), "retribution_strike should be in Hunter skill_pack");
 
+    let skill = skill.unwrap();
+
     // Verify the condition tag is parseable by the adapter
     assert!(
         ConditionAdapter::parse_condition_tag("ddgc_hp_above_0.5").is_some(),
         "ddgc_hp_above_0.5 should parse as a valid HP-threshold condition"
+    );
+
+    // Verify the skill's effect nodes actually wire the GameCondition through the adapter
+    let has_hp_condition = skill.effects.iter().any(|e| {
+        e.conditions.iter().any(|c| matches!(c, EffectCondition::GameCondition(tag) if tag == "ddgc_hp_above_0.5"))
+    });
+    assert!(
+        has_hp_condition,
+        "retribution_strike should have an effect node with GameCondition(\"ddgc_hp_above_0.5\")"
     );
 }
