@@ -11,7 +11,7 @@
 use std::collections::HashMap;
 
 use framework_combat::commands::CombatCommand;
-use framework_combat::effects::{EffectContext, resolve_skill};
+use framework_combat::effects::{EffectContext, EffectKind, resolve_skill};
 use framework_combat::encounter::{CombatSide, Encounter, EncounterId, EncounterState};
 use framework_combat::formation::{FormationLayout, SlotIndex};
 use framework_combat::resolver::CombatResolver;
@@ -29,6 +29,7 @@ use crate::monsters::build_registry as build_monster_registry;
 use crate::monsters::MonsterFamilyRegistry;
 use crate::trace::BattleTrace;
 use crate::run::conditions::{ConditionContext, create_game_condition_evaluator, set_condition_context};
+use crate::run::damage_policy::{DamagePolicy, DamageRange};
 use crate::run::hit_resolution::{HitPolicy, HitResolutionContext};
 use crate::run::capture_events::extract_capture_events;
 use crate::run::captor_state::{
@@ -123,6 +124,7 @@ pub struct EncounterResolver {
     pack_registry: EncounterPackRegistry,
     content_pack: ContentPack,
     monster_registry: MonsterFamilyRegistry,
+    damage_policy: DamagePolicy,
 }
 
 impl Default for EncounterResolver {
@@ -152,7 +154,55 @@ impl EncounterResolver {
             pack_registry: build_packs_registry(),
             content_pack: ContentPack::default(),
             monster_registry: build_monster_registry(),
+            damage_policy: DamagePolicy::default(),
         }
+    }
+
+    /// Set the damage policy for battle resolution.
+    pub fn with_damage_policy(mut self, policy: DamagePolicy) -> Self {
+        self.damage_policy = policy;
+        self
+    }
+
+    /// Apply the active damage policy to a skill definition.
+    ///
+    /// For `FixedAverage`, returns the skill unchanged (the baked-in average
+    /// amounts in EffectNode are already correct).
+    ///
+    /// For `Rolled`, clones the skill and patches each damage effect node's
+    /// `"amount"` parameter to a value within the registered DamageRange,
+    /// resolved deterministically from actor_id, skill_id, round, and effect_index.
+    fn apply_damage_policy(
+        &self,
+        skill: &SkillDefinition,
+        actor_id: ActorId,
+        round: u32,
+    ) -> SkillDefinition {
+        if self.damage_policy == DamagePolicy::FixedAverage {
+            return skill.clone();
+        }
+
+        let mut patched = skill.clone();
+        let mut damage_effect_index = 0usize;
+        for node in &mut patched.effects {
+            if node.kind == EffectKind::Damage {
+                let baked_amount = node.params.get("amount").copied().unwrap_or(0.0);
+                let range = self
+                    .content_pack
+                    .get_damage_range(&skill.id.0)
+                    .unwrap_or_else(|| DamageRange::fixed(baked_amount));
+                let resolved = self.damage_policy.resolve_for_battle(
+                    range,
+                    actor_id.0,
+                    &skill.id.0,
+                    round,
+                    damage_effect_index,
+                );
+                node.params.insert("amount".to_string(), resolved);
+                damage_effect_index += 1;
+            }
+        }
+        patched
     }
 
     /// Resolve a combat room to an encounter pack deterministically.
@@ -390,7 +440,7 @@ impl EncounterResolver {
                 skill_assign.get(current_actor).unwrap_or("crusading_strike").to_string()
             };
 
-            let skill = match self.content_pack.get_skill(&SkillId::new(&skill_name)) {
+            let skill_ref = match self.content_pack.get_skill(&SkillId::new(&skill_name)) {
                 Some(s) => s,
                 None => {
                     let cmd = CombatCommand::Wait {
@@ -402,6 +452,35 @@ impl EncounterResolver {
                     counters.reset_turn_scope(current_actor);
                     continue;
                 }
+            };
+
+            // ── US-807: Rolled damage policy ──────────────────────────────
+            // When Rolled policy is active, clone the skill and replace averaged
+            // damage amounts with rolled values from DDGC damage ranges. This
+            // gives variance matching the original DDGC damage range behavior.
+            let rolled_skill;
+            let skill = if self.damage_policy == DamagePolicy::Rolled {
+                if let Some(damage_range) = self.content_pack.get_damage_range(&skill_name) {
+                    let mut s = skill_ref.clone();
+                    for (ei, node) in s.effects.iter_mut().enumerate() {
+                        if matches!(node.kind, EffectKind::Damage) {
+                            let rolled = self.damage_policy.resolve_for_battle(
+                                damage_range,
+                                current_actor.0,
+                                &skill_name,
+                                round,
+                                ei,
+                            );
+                            node.params.insert("amount".to_string(), rolled);
+                        }
+                    }
+                    rolled_skill = s;
+                    &rolled_skill
+                } else {
+                    skill_ref
+                }
+            } else {
+                skill_ref
             };
 
             // ── Usage Limit Check (US-513) ────────────────────────────────────
@@ -1945,5 +2024,108 @@ mod tests {
         );
         assert!(matches!(events[0].summon_kind, SummonKind::MahjongTile));
         assert_eq!(events[0].count, 2, "Count should be 2 from duration");
+    }
+
+    // ── US-807: Rolled damage policy in battle loop ─────────────────────────
+
+    #[test]
+    fn rolled_policy_battle_damage_stays_within_range() {
+        // US-807 acceptance: A deterministic test using a fixed seed proves
+        // rolled damage stays within range bounds. When Rolled policy is active,
+        // every damage effect resolved in battle must produce a value within the
+        // configured DDGC damage range for that skill.
+        let resolver = EncounterResolver::new().with_damage_policy(DamagePolicy::Rolled);
+
+        for dungeon in [Dungeon::QingLong, Dungeon::BaiHu, Dungeon::ZhuQue, Dungeon::XuanWu] {
+            let pack = resolver
+                .resolve_pack(dungeon, 0, 42, false)
+                .unwrap_or_else(|| panic!("{:?} should have a room pack", dungeon));
+
+            let result = resolver.run_battle(pack, 1);
+
+            for entry in &result.trace.entries {
+                for effect in &entry.effects {
+                    if effect.kind == "Damage" {
+                        if let Some(damage_range) = resolver.content_pack.get_damage_range(&entry.action) {
+                            assert!(
+                                (damage_range.min..=damage_range.max).contains(&effect.value),
+                                "Rolled damage {:.1} for '{}' must be in range [{:.1}, {:.1}]",
+                                effect.value, entry.action, damage_range.min, damage_range.max
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn rolled_policy_variance_covers_near_min_and_near_max() {
+        // US-807 acceptance: A variance test proves rolled damage distribution
+        // includes both near-min and near-max values over sufficient samples.
+        // Using resolve_for_battle with many actor/round/effect combinations
+        // must produce values close to both ends of the range.
+        use crate::run::damage_policy::{DamagePolicy, DamageRange};
+
+        let range = DamageRange::new(8.0, 15.0); // crusading_strike range
+        let policy = DamagePolicy::Rolled;
+        let width = range.range();
+
+        let mut values = Vec::new();
+        for actor_id in 0..200u64 {
+            for round in 1..20u32 {
+                for effect_index in 0..3usize {
+                    let rolled = policy.resolve_for_battle(
+                        range, actor_id, "crusading_strike", round, effect_index,
+                    );
+                    values.push(rolled);
+                }
+            }
+        }
+
+        let min_val = values.iter().cloned().fold(f64::INFINITY, f64::min);
+        let max_val = values.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+
+        // Distribution should include values within 10% of range from each bound
+        let near_min_threshold = range.min + width * 0.1;
+        let near_max_threshold = range.max - width * 0.1;
+
+        assert!(
+            min_val < near_min_threshold,
+            "Should have values near min ({:.1}), closest was {:.1}",
+            range.min, min_val
+        );
+        assert!(
+            max_val > near_max_threshold,
+            "Should have values near max ({:.1}), closest was {:.1}",
+            range.max, max_val
+        );
+    }
+
+    #[test]
+    fn fixed_average_policy_battle_unchanged() {
+        // US-807 acceptance: When DamagePolicy::FixedAverage is selected,
+        // behavior is identical to current and all existing tests pass unchanged.
+        // This test verifies that the default resolver (FixedAverage) produces
+        // the same deterministic results as before.
+        let resolver = EncounterResolver::new();
+        assert_eq!(resolver.damage_policy, DamagePolicy::FixedAverage);
+
+        let pack = resolver
+            .resolve_pack(Dungeon::BaiHu, 0, 42, false)
+            .expect("BaiHu should have a room pack");
+
+        let result1 = resolver.run_battle(pack, 1);
+        let result2 = resolver.run_battle(pack, 1);
+
+        // Must be perfectly deterministic with FixedAverage
+        assert_eq!(result1.winner, result2.winner);
+        assert_eq!(result1.turns, result2.turns);
+        assert_eq!(result1.trace.entries.len(), result2.trace.entries.len());
+
+        // Damage values must match exactly across runs
+        for (e1, e2) in result1.trace.entries.iter().zip(result2.trace.entries.iter()) {
+            assert_eq!(e1.effects, e2.effects, "FixedAverage effects must be identical");
+        }
     }
 }

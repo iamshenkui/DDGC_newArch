@@ -138,6 +138,36 @@ impl DamagePolicy {
         }
     }
 
+    /// Resolve damage for battle use with round and effect-index seeds.
+    ///
+    /// This variant includes the round number and effect index in the hash seed
+    /// so that the same actor using the same skill on different turns (or across
+    /// multi-hit effects) produces different rolled values.
+    pub fn resolve_for_battle(
+        self,
+        range: DamageRange,
+        actor_id: u64,
+        skill_id: &str,
+        round: u32,
+        effect_index: usize,
+    ) -> f64 {
+        match self {
+            DamagePolicy::FixedAverage => range.average,
+            DamagePolicy::Rolled => {
+                let mut hasher = DefaultHasher::new();
+                actor_id.hash(&mut hasher);
+                skill_id.hash(&mut hasher);
+                round.hash(&mut hasher);
+                (effect_index as u64).hash(&mut hasher);
+                let hash = hasher.finish();
+
+                let normalized = (hash as f64) / (u64::MAX as f64);
+                let width = range.range();
+                range.min + (normalized * width)
+            }
+        }
+    }
+
     /// Resolve damage using the default policy (FixedAverage).
     pub fn resolve_default(self, range: DamageRange) -> f64 {
         match self {
