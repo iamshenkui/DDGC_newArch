@@ -1558,6 +1558,236 @@ pub fn build_encounter_registry() -> DungeonEncounterRegistry {
 
 pub mod parse;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Trinket and Equipment definitions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// A modifier that applies a numeric change to an attribute.
+///
+/// Used by equipment to alter hero stats such as damage, defense, speed, etc.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AttributeModifier {
+    /// The attribute key this modifier affects (e.g., "attack", "defense", "speed").
+    pub attribute_key: String,
+    /// The numeric value of the modifier.
+    pub value: f64,
+}
+
+impl AttributeModifier {
+    pub fn new(attribute_key: &str, value: f64) -> Self {
+        AttributeModifier {
+            attribute_key: attribute_key.to_string(),
+            value,
+        }
+    }
+}
+
+/// Rarity tier for trinkets.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum TrinketRarity {
+    Common,
+    Uncommon,
+    Rare,
+    Epic,
+    Legendary,
+}
+
+impl TrinketRarity {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            TrinketRarity::Common => "common",
+            TrinketRarity::Uncommon => "uncommon",
+            TrinketRarity::Rare => "rare",
+            TrinketRarity::Epic => "epic",
+            TrinketRarity::Legendary => "legendary",
+        }
+    }
+}
+
+/// Equipment slot type.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum EquipmentSlot {
+    Weapon,
+    Armor,
+}
+
+impl EquipmentSlot {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            EquipmentSlot::Weapon => "weapon",
+            EquipmentSlot::Armor => "armor",
+        }
+    }
+}
+
+/// Definition of a trinket that can be equipped on heroes.
+///
+/// Trinkets provide passive buffs and may have class restrictions,
+/// rarity tiers, purchase limits, and dungeon-of-origin tracking.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TrinketDefinition {
+    /// Unique identifier for this trinket.
+    pub id: String,
+    /// Buff effect IDs provided by this trinket.
+    pub buffs: Vec<String>,
+    /// Hero class IDs that can equip this trinket (empty = all classes).
+    pub hero_class_requirements: Vec<String>,
+    /// Rarity tier of this trinket.
+    pub rarity: TrinketRarity,
+    /// Purchase price in gold.
+    pub price: u32,
+    /// Maximum number that can be owned per run.
+    pub limit: u32,
+    /// Dungeon type this trinket originates from.
+    pub origin_dungeon: DungeonType,
+}
+
+impl TrinketDefinition {
+    pub fn new(
+        id: &str,
+        buffs: Vec<String>,
+        hero_class_requirements: Vec<String>,
+        rarity: TrinketRarity,
+        price: u32,
+        limit: u32,
+        origin_dungeon: DungeonType,
+    ) -> Self {
+        TrinketDefinition {
+            id: id.to_string(),
+            buffs,
+            hero_class_requirements,
+            rarity,
+            price,
+            limit,
+            origin_dungeon,
+        }
+    }
+}
+
+/// Definition of an equipment upgrade for heroes.
+///
+/// Equipment occupies a slot (weapon/armor) and provides stat modifiers
+/// based on upgrade level.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct EquipmentDefinition {
+    /// Unique identifier for this equipment.
+    pub id: String,
+    /// Hero class ID this equipment is for.
+    pub hero_class_id: String,
+    /// The equipment slot this occupies.
+    pub slot: EquipmentSlot,
+    /// Upgrade level (0 = base, increases with upgrades).
+    pub upgrade_level: u32,
+    /// Stat modifiers provided by this equipment.
+    pub stat_modifiers: Vec<AttributeModifier>,
+}
+
+impl EquipmentDefinition {
+    pub fn new(
+        id: &str,
+        hero_class_id: &str,
+        slot: EquipmentSlot,
+        upgrade_level: u32,
+        stat_modifiers: Vec<AttributeModifier>,
+    ) -> Self {
+        EquipmentDefinition {
+            id: id.to_string(),
+            hero_class_id: hero_class_id.to_string(),
+            slot,
+            upgrade_level,
+            stat_modifiers,
+        }
+    }
+}
+
+/// Registry holding all trinket definitions.
+///
+/// Provides lookup by trinket ID.
+#[derive(Debug, Clone, Default)]
+pub struct TrinketRegistry {
+    trinkets: std::collections::HashMap<String, TrinketDefinition>,
+}
+
+impl TrinketRegistry {
+    /// Create a new empty registry.
+    pub fn new() -> Self {
+        TrinketRegistry { trinkets: std::collections::HashMap::new() }
+    }
+
+    /// Register a trinket definition.
+    pub fn register(&mut self, trinket: TrinketDefinition) {
+        self.trinkets.insert(trinket.id.clone(), trinket);
+    }
+
+    /// Get a trinket by its ID.
+    pub fn get(&self, id: &str) -> Option<&TrinketDefinition> {
+        self.trinkets.get(id)
+    }
+
+    /// Get all registered trinket IDs.
+    pub fn all_ids(&self) -> Vec<&str> {
+        self.trinkets.keys().map(|s| s.as_str()).collect()
+    }
+
+    /// Get the total number of registered trinkets.
+    pub fn len(&self) -> usize {
+        self.trinkets.len()
+    }
+
+    /// Returns true if the registry is empty.
+    pub fn is_empty(&self) -> bool {
+        self.trinkets.is_empty()
+    }
+}
+
+/// Registry holding all equipment definitions.
+///
+/// Provides lookup by equipment ID.
+#[derive(Debug, Clone, Default)]
+pub struct EquipmentRegistry {
+    equipment: std::collections::HashMap<String, EquipmentDefinition>,
+}
+
+impl EquipmentRegistry {
+    /// Create a new empty registry.
+    pub fn new() -> Self {
+        EquipmentRegistry { equipment: std::collections::HashMap::new() }
+    }
+
+    /// Register an equipment definition.
+    pub fn register(&mut self, equipment: EquipmentDefinition) {
+        self.equipment.insert(equipment.id.clone(), equipment);
+    }
+
+    /// Get an equipment by its ID.
+    pub fn get(&self, id: &str) -> Option<&EquipmentDefinition> {
+        self.equipment.get(id)
+    }
+
+    /// Get all registered equipment IDs.
+    pub fn all_ids(&self) -> Vec<&str> {
+        self.equipment.keys().map(|s| s.as_str()).collect()
+    }
+
+    /// Get equipment by hero class and slot.
+    pub fn by_class_and_slot(&self, hero_class_id: &str, slot: EquipmentSlot) -> Vec<&EquipmentDefinition> {
+        self.equipment
+            .values()
+            .filter(|e| e.hero_class_id == hero_class_id && e.slot == slot)
+            .collect()
+    }
+
+    /// Get the total number of registered equipment.
+    pub fn len(&self) -> usize {
+        self.equipment.len()
+    }
+
+    /// Returns true if the registry is empty.
+    pub fn is_empty(&self) -> bool {
+        self.equipment.is_empty()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2374,5 +2604,206 @@ mod tests {
         let serialized = serde_json::to_string(&state).unwrap();
         let deserialized: TownState = serde_json::from_str(&serialized).unwrap();
         assert_eq!(state, deserialized);
+    }
+
+    // ── US-011: trinket and equipment data model tests ─────────────────────────
+
+    #[test]
+    fn attribute_modifier_construction_is_deterministic() {
+        let modifier = AttributeModifier::new("attack", 15.0);
+        assert_eq!(modifier.attribute_key, "attack");
+        assert_eq!(modifier.value, 15.0);
+    }
+
+    #[test]
+    fn trinket_definition_construction_is_deterministic() {
+        let buffs = vec!["buff_damage".to_string(), "buff_speed".to_string()];
+        let class_reqs = vec!["alchemist".to_string(), "shaman".to_string()];
+        let trinket = TrinketDefinition::new(
+            "ancient_medallion",
+            buffs.clone(),
+            class_reqs.clone(),
+            TrinketRarity::Rare,
+            500,
+            2,
+            DungeonType::QingLong,
+        );
+
+        assert_eq!(trinket.id, "ancient_medallion");
+        assert_eq!(trinket.buffs, buffs);
+        assert_eq!(trinket.hero_class_requirements, class_reqs);
+        assert_eq!(trinket.rarity, TrinketRarity::Rare);
+        assert_eq!(trinket.price, 500);
+        assert_eq!(trinket.limit, 2);
+        assert_eq!(trinket.origin_dungeon, DungeonType::QingLong);
+    }
+
+    #[test]
+    fn equipment_definition_construction_is_deterministic() {
+        let stat_modifiers = vec![
+            AttributeModifier::new("attack", 10.0),
+            AttributeModifier::new("defense", 5.0),
+        ];
+        let equipment = EquipmentDefinition::new(
+            "alchemist_weapon_1",
+            "alchemist",
+            EquipmentSlot::Weapon,
+            1,
+            stat_modifiers.clone(),
+        );
+
+        assert_eq!(equipment.id, "alchemist_weapon_1");
+        assert_eq!(equipment.hero_class_id, "alchemist");
+        assert_eq!(equipment.slot, EquipmentSlot::Weapon);
+        assert_eq!(equipment.upgrade_level, 1);
+        assert_eq!(equipment.stat_modifiers, stat_modifiers);
+    }
+
+    #[test]
+    fn trinket_registry_lookup_is_deterministic() {
+        let mut registry = TrinketRegistry::new();
+        registry.register(TrinketDefinition::new(
+            "lucky_charm",
+            vec!["buff_luck".to_string()],
+            vec![],
+            TrinketRarity::Common,
+            100,
+            3,
+            DungeonType::BaiHu,
+        ));
+
+        let trinket = registry.get("lucky_charm");
+        assert!(trinket.is_some());
+        assert_eq!(trinket.unwrap().id, "lucky_charm");
+        assert_eq!(trinket.unwrap().rarity, TrinketRarity::Common);
+
+        // Lookup of non-existent trinket returns None
+        assert!(registry.get("nonexistent").is_none());
+    }
+
+    #[test]
+    fn equipment_registry_lookup_is_deterministic() {
+        let mut registry = EquipmentRegistry::new();
+        registry.register(EquipmentDefinition::new(
+            "tank_armor_0",
+            "tank",
+            EquipmentSlot::Armor,
+            0,
+            vec![AttributeModifier::new("defense", 20.0)],
+        ));
+
+        let equipment = registry.get("tank_armor_0");
+        assert!(equipment.is_some());
+        assert_eq!(equipment.unwrap().hero_class_id, "tank");
+        assert_eq!(equipment.unwrap().slot, EquipmentSlot::Armor);
+
+        // Lookup by class and slot
+        let tank_armor = registry.by_class_and_slot("tank", EquipmentSlot::Armor);
+        assert_eq!(tank_armor.len(), 1);
+        assert_eq!(tank_armor[0].id, "tank_armor_0");
+
+        // No equipment for wrong class
+        let alchemist_armor = registry.by_class_and_slot("alchemist", EquipmentSlot::Armor);
+        assert!(alchemist_armor.is_empty());
+    }
+
+    #[test]
+    fn trinket_rarity_as_str_is_deterministic() {
+        assert_eq!(TrinketRarity::Common.as_str(), "common");
+        assert_eq!(TrinketRarity::Uncommon.as_str(), "uncommon");
+        assert_eq!(TrinketRarity::Rare.as_str(), "rare");
+        assert_eq!(TrinketRarity::Epic.as_str(), "epic");
+        assert_eq!(TrinketRarity::Legendary.as_str(), "legendary");
+    }
+
+    #[test]
+    fn equipment_slot_as_str_is_deterministic() {
+        assert_eq!(EquipmentSlot::Weapon.as_str(), "weapon");
+        assert_eq!(EquipmentSlot::Armor.as_str(), "armor");
+    }
+
+    #[test]
+    fn attribute_modifier_serde_roundtrip_is_deterministic() {
+        let modifier = AttributeModifier::new("speed", 12.5);
+        let serialized = serde_json::to_string(&modifier).unwrap();
+        let deserialized: AttributeModifier = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(modifier, deserialized);
+    }
+
+    #[test]
+    fn trinket_definition_serde_roundtrip_is_deterministic() {
+        let trinket = TrinketDefinition::new(
+            "sage_stone",
+            vec!["buff_wisdom".to_string()],
+            vec!["diviner".to_string()],
+            TrinketRarity::Epic,
+            750,
+            1,
+            DungeonType::ZhuQue,
+        );
+        let serialized = serde_json::to_string(&trinket).unwrap();
+        let deserialized: TrinketDefinition = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(trinket, deserialized);
+    }
+
+    #[test]
+    fn equipment_definition_serde_roundtrip_is_deterministic() {
+        let equipment = EquipmentDefinition::new(
+            "shaman_weapon_2",
+            "shaman",
+            EquipmentSlot::Weapon,
+            2,
+            vec![
+                AttributeModifier::new("attack", 25.0),
+                AttributeModifier::new("magic", 10.0),
+            ],
+        );
+        let serialized = serde_json::to_string(&equipment).unwrap();
+        let deserialized: EquipmentDefinition = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(equipment, deserialized);
+    }
+
+    #[test]
+    fn trinket_registry_all_ids_is_deterministic() {
+        let mut registry = TrinketRegistry::new();
+        registry.register(TrinketDefinition::new(
+            "charm_one",
+            vec![],
+            vec![],
+            TrinketRarity::Common,
+            50,
+            1,
+            DungeonType::QingLong,
+        ));
+        registry.register(TrinketDefinition::new(
+            "charm_two",
+            vec![],
+            vec![],
+            TrinketRarity::Uncommon,
+            100,
+            1,
+            DungeonType::BaiHu,
+        ));
+
+        let mut ids = registry.all_ids();
+        ids.sort();
+        assert_eq!(ids, vec!["charm_one", "charm_two"]);
+    }
+
+    #[test]
+    fn equipment_registry_len_and_is_empty_are_deterministic() {
+        let mut registry = EquipmentRegistry::new();
+        assert!(registry.is_empty());
+        assert_eq!(registry.len(), 0);
+
+        registry.register(EquipmentDefinition::new(
+            "hunter_weapon_0",
+            "hunter",
+            EquipmentSlot::Weapon,
+            0,
+            vec![],
+        ));
+        assert!(!registry.is_empty());
+        assert_eq!(registry.len(), 1);
     }
 }
