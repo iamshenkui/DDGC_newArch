@@ -11,6 +11,7 @@ pub mod monsters;
 pub mod parity;
 pub mod run;
 pub mod scenarios;
+pub mod town;
 pub mod trace;
 
 /// Verifies that the framework crates expose no DDGC-specific API surface.

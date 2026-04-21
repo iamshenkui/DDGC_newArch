@@ -476,7 +476,7 @@ impl TownState {
 /// Registry holding all town building definitions parsed from DDGC Buildings.json.
 ///
 /// Provides lookup by building ID, building type, and upgrade tree traversal.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct BuildingRegistry {
     buildings: std::collections::HashMap<String, TownBuilding>,
 }
