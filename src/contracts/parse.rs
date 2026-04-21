@@ -6,7 +6,8 @@ use serde::Deserialize;
 use crate::contracts::{
     BuildingRegistry, BuildingType, CurioDefinition, CurioRegistry, CurioResult,
     CurioResultType, DungeonType, ItemInteraction, ObstacleDefinition, ObstacleRegistry,
-    TownBuilding, TrapDefinition, TrapRegistry, TrapVariation, UnlockCondition,
+    TownBuilding, TrapDefinition, TrapRegistry, TrapVariation, TrinketDefinition,
+    TrinketRarity, TrinketRegistry, UnlockCondition,
     UpgradeEffect, UpgradeLevel, UpgradeTree,
 };
 
@@ -320,6 +321,65 @@ pub fn parse_buildings_json(path: &Path) -> Result<BuildingRegistry, String> {
     Ok(registry)
 }
 
+/// Parse JsonTrinkets.json into a TrinketRegistry.
+pub fn parse_trinkets_json(path: &Path) -> Result<TrinketRegistry, String> {
+    let content = std::fs::read_to_string(path)
+        .map_err(|e| format!("failed to read JsonTrinkets.json: {}", e))?;
+
+    #[derive(Deserialize)]
+    struct RawTrinket {
+        id: String,
+        buffs: Vec<String>,
+        hero_class_requirements: Vec<String>,
+        rarity: String,
+        price: u32,
+        limit: u32,
+        origin_dungeon: String,
+    }
+
+    #[derive(Deserialize)]
+    struct RawTrinketsRoot {
+        trinkets: Vec<RawTrinket>,
+    }
+
+    let root: RawTrinketsRoot = serde_json::from_str(&content)
+        .map_err(|e| format!("failed to parse JsonTrinkets.json: {}", e))?;
+
+    let mut registry = TrinketRegistry::new();
+
+    for raw in root.trinkets {
+        let rarity = match raw.rarity.as_str() {
+            "common" => TrinketRarity::Common,
+            "uncommon" => TrinketRarity::Uncommon,
+            "rare" => TrinketRarity::Rare,
+            "epic" => TrinketRarity::Epic,
+            "legendary" => TrinketRarity::Legendary,
+            _ => return Err(format!("unknown TrinketRarity: {}", raw.rarity)),
+        };
+
+        let origin_dungeon = match raw.origin_dungeon.as_str() {
+            "QingLong" => DungeonType::QingLong,
+            "BaiHu" => DungeonType::BaiHu,
+            "ZhuQue" => DungeonType::ZhuQue,
+            "XuanWu" => DungeonType::XuanWu,
+            _ => return Err(format!("unknown DungeonType: {}", raw.origin_dungeon)),
+        };
+
+        let trinket = TrinketDefinition::new(
+            &raw.id,
+            raw.buffs,
+            raw.hero_class_requirements,
+            rarity,
+            raw.price,
+            raw.limit,
+            origin_dungeon,
+        );
+        registry.register(trinket);
+    }
+
+    Ok(registry)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -411,5 +471,173 @@ test_curio,"[""QingLong""]","[{""weight"":5,""chance"":0.5,""result_type"":""Not
         assert!(registry.get("test_obstacle").is_some());
 
         std::fs::remove_file(json_path).ok();
+    }
+
+    #[test]
+    fn full_trinket_registry_from_test_data() {
+        let temp_dir = std::env::temp_dir();
+        let json_path = temp_dir.join("test_trinkets.json");
+
+        std::fs::write(
+            &json_path,
+            r#"{"trinkets":[
+                {"id":"test_trinket_1","buffs":["ATK+10"],"hero_class_requirements":[],"rarity":"common","price":100,"limit":3,"origin_dungeon":"QingLong"},
+                {"id":"test_trinket_2","buffs":["DEF+5"],"hero_class_requirements":["hunter"],"rarity":"rare","price":500,"limit":1,"origin_dungeon":"BaiHu"}
+            ]}"#,
+        )
+        .unwrap();
+
+        let registry = parse_trinkets_json(&json_path).unwrap();
+        assert_eq!(registry.len(), 2);
+
+        let t1 = registry.get("test_trinket_1").unwrap();
+        assert_eq!(t1.rarity, crate::contracts::TrinketRarity::Common);
+        assert!(t1.hero_class_requirements.is_empty());
+
+        let t2 = registry.get("test_trinket_2").unwrap();
+        assert_eq!(t2.rarity, crate::contracts::TrinketRarity::Rare);
+        assert_eq!(t2.hero_class_requirements, vec!["hunter"]);
+
+        std::fs::remove_file(json_path).ok();
+    }
+
+    #[test]
+    fn trinket_registry_class_filtering() {
+        use crate::contracts::{DungeonType, TrinketRarity};
+
+        let mut registry = crate::contracts::TrinketRegistry::new();
+        registry.register(crate::contracts::TrinketDefinition::new(
+            "all_class_trinket",
+            vec!["ATK+10".to_string()],
+            vec![],
+            TrinketRarity::Common,
+            100,
+            3,
+            DungeonType::QingLong,
+        ));
+        registry.register(crate::contracts::TrinketDefinition::new(
+            "hunter_only",
+            vec!["ATK+15".to_string()],
+            vec!["hunter".to_string()],
+            TrinketRarity::Rare,
+            300,
+            1,
+            DungeonType::BaiHu,
+        ));
+        registry.register(crate::contracts::TrinketDefinition::new(
+            "shaman_or_hunter",
+            vec!["MAGIC+20".to_string()],
+            vec!["shaman".to_string(), "hunter".to_string()],
+            TrinketRarity::Epic,
+            600,
+            1,
+            DungeonType::ZhuQue,
+        ));
+
+        // Hunter should see all 3 trinkets
+        let hunter_trinkets = registry.trinkets_for_class("hunter");
+        assert_eq!(hunter_trinkets.len(), 3);
+
+        // Shaman should see 2 trinkets (all_class + shaman_or_hunter)
+        let shaman_trinkets = registry.trinkets_for_class("shaman");
+        assert_eq!(shaman_trinkets.len(), 2);
+
+        // Tank should only see 1 trinket (all_class_trinket)
+        let tank_trinkets = registry.trinkets_for_class("tank");
+        assert_eq!(tank_trinkets.len(), 1);
+    }
+
+    #[test]
+    fn trinket_registry_rarity_filtering() {
+        use crate::contracts::{DungeonType, TrinketRarity};
+
+        let mut registry = crate::contracts::TrinketRegistry::new();
+        registry.register(crate::contracts::TrinketDefinition::new(
+            "common_1",
+            vec![],
+            vec![],
+            TrinketRarity::Common,
+            100,
+            3,
+            DungeonType::QingLong,
+        ));
+        registry.register(crate::contracts::TrinketDefinition::new(
+            "rare_1",
+            vec![],
+            vec![],
+            TrinketRarity::Rare,
+            400,
+            1,
+            DungeonType::BaiHu,
+        ));
+        registry.register(crate::contracts::TrinketDefinition::new(
+            "epic_1",
+            vec![],
+            vec![],
+            TrinketRarity::Epic,
+            800,
+            1,
+            DungeonType::ZhuQue,
+        ));
+
+        let common = registry.by_rarity(TrinketRarity::Common);
+        assert_eq!(common.len(), 1);
+        assert_eq!(common[0].id, "common_1");
+
+        let rare = registry.by_rarity(TrinketRarity::Rare);
+        assert_eq!(rare.len(), 1);
+        assert_eq!(rare[0].id, "rare_1");
+
+        let epic = registry.by_rarity(TrinketRarity::Epic);
+        assert_eq!(epic.len(), 1);
+        assert_eq!(epic[0].id, "epic_1");
+
+        let legendary = registry.by_rarity(TrinketRarity::Legendary);
+        assert!(legendary.is_empty());
+    }
+
+    #[test]
+    fn trinket_registry_dungeon_filtering() {
+        use crate::contracts::{DungeonType, TrinketRarity};
+
+        let mut registry = crate::contracts::TrinketRegistry::new();
+        registry.register(crate::contracts::TrinketDefinition::new(
+            "qinglong_trinket",
+            vec![],
+            vec![],
+            TrinketRarity::Common,
+            100,
+            3,
+            DungeonType::QingLong,
+        ));
+        registry.register(crate::contracts::TrinketDefinition::new(
+            "baihu_trinket",
+            vec![],
+            vec![],
+            TrinketRarity::Rare,
+            400,
+            1,
+            DungeonType::BaiHu,
+        ));
+        registry.register(crate::contracts::TrinketDefinition::new(
+            "zhuque_trinket",
+            vec![],
+            vec![],
+            TrinketRarity::Epic,
+            800,
+            1,
+            DungeonType::ZhuQue,
+        ));
+
+        let qinglong = registry.by_dungeon(DungeonType::QingLong);
+        assert_eq!(qinglong.len(), 1);
+        assert_eq!(qinglong[0].id, "qinglong_trinket");
+
+        let baihu = registry.by_dungeon(DungeonType::BaiHu);
+        assert_eq!(baihu.len(), 1);
+        assert_eq!(baihu[0].id, "baihu_trinket");
+
+        let all_dungeons = registry.by_dungeon(DungeonType::XuanWu);
+        assert!(all_dungeons.is_empty());
     }
 }

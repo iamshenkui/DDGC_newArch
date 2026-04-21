@@ -1738,6 +1738,36 @@ impl TrinketRegistry {
     pub fn is_empty(&self) -> bool {
         self.trinkets.is_empty()
     }
+
+    /// Get all trinkets usable by a specific hero class.
+    ///
+    /// Returns trinkets where `hero_class_requirements` is empty (all classes)
+    /// or where the given class_id is in the requirements list.
+    pub fn trinkets_for_class(&self, class_id: &str) -> Vec<&TrinketDefinition> {
+        self.trinkets
+            .values()
+            .filter(|t| {
+                t.hero_class_requirements.is_empty()
+                    || t.hero_class_requirements.iter().any(|r| r == class_id)
+            })
+            .collect()
+    }
+
+    /// Get all trinkets of a specific rarity.
+    pub fn by_rarity(&self, rarity: TrinketRarity) -> Vec<&TrinketDefinition> {
+        self.trinkets
+            .values()
+            .filter(|t| t.rarity == rarity)
+            .collect()
+    }
+
+    /// Get all trinkets originating from a specific dungeon.
+    pub fn by_dungeon(&self, dungeon: DungeonType) -> Vec<&TrinketDefinition> {
+        self.trinkets
+            .values()
+            .filter(|t| t.origin_dungeon == dungeon)
+            .collect()
+    }
 }
 
 /// Registry holding all equipment definitions.

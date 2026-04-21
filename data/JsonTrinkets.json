@@ -1,0 +1,139 @@
+{
+  "trinkets": [
+    {
+      "id": "ancesthetic_charm",
+      "buffs": ["ACC-5", "SPD-3"],
+      "hero_class_requirements": [],
+      "rarity": "common",
+      "price": 100,
+      "limit": 3,
+      "origin_dungeon": "QingLong"
+    },
+    {
+      "id": "hunter_badge",
+      "buffs": ["ATK+10", "DMGL+5"],
+      "hero_class_requirements": ["hunter"],
+      "rarity": "common",
+      "price": 150,
+      "limit": 2,
+      "origin_dungeon": "QingLong"
+    },
+    {
+      "id": "diviners_focus",
+      "buffs": ["MAXMP+20", "MAGIC+8"],
+      "hero_class_requirements": ["diviner"],
+      "rarity": "uncommon",
+      "price": 250,
+      "limit": 2,
+      "origin_dungeon": "BaiHu"
+    },
+    {
+      "id": "alchemist_catalyst",
+      "buffs": ["POTION_HEAL+15", "POTION_DMG+10"],
+      "hero_class_requirements": ["alchemist"],
+      "rarity": "uncommon",
+      "price": 275,
+      "limit": 2,
+      "origin_dungeon": "ZhuQue"
+    },
+    {
+      "id": "battle_horn",
+      "buffs": ["ATK+15", "CRIT+5", "STRESSDMG+10"],
+      "hero_class_requirements": [],
+      "rarity": "rare",
+      "price": 450,
+      "limit": 1,
+      "origin_dungeon": "XuanWu"
+    },
+    {
+      "id": "shaman_totem",
+      "buffs": ["MAXHP+25", "DEF+10", "HEAL+10"],
+      "hero_class_requirements": ["shaman"],
+      "rarity": "rare",
+      "price": 500,
+      "limit": 1,
+      "origin_dungeon": "BaiHu"
+    },
+    {
+      "id": "shadowstep_cloak",
+      "buffs": ["DODGE+12", "SPD+8", "ATK+5"],
+      "hero_class_requirements": ["hunter", "diviner"],
+      "rarity": "epic",
+      "price": 750,
+      "limit": 1,
+      "origin_dungeon": "ZhuQue"
+    },
+    {
+      "id": "ironwill_tome",
+      "buffs": ["MAXHP+40", "RESIST_STUN+20", "RESIST_BLIND+20"],
+      "hero_class_requirements": ["tank"],
+      "rarity": "epic",
+      "price": 800,
+      "limit": 1,
+      "origin_dungeon": "XuanWu"
+    },
+    {
+      "id": "dragon_slayer_medallion",
+      "buffs": ["ATK+30", "DMGL+15", "DMGH+15", "CRIT+10", "BOSS_DMG+20"],
+      "hero_class_requirements": ["hunter", "shaman"],
+      "rarity": "legendary",
+      "price": 1500,
+      "limit": 1,
+      "origin_dungeon": "QingLong"
+    },
+    {
+      "id": "phoenix_feather",
+      "buffs": ["REVIVE_25", "MAXHP+50", "HEAL+25", "STRESSHEAL+15"],
+      "hero_class_requirements": [],
+      "rarity": "legendary",
+      "price": 2000,
+      "limit": 1,
+      "origin_dungeon": "ZhuQue"
+    },
+    {
+      "id": "tank_insignia",
+      "buffs": ["DEF+20", "BLOCK+15", "MAXHP+30"],
+      "hero_class_requirements": ["tank"],
+      "rarity": "common",
+      "price": 175,
+      "limit": 2,
+      "origin_dungeon": "BaiHu"
+    },
+    {
+      "id": "poison_vial",
+      "buffs": ["POISON_DMG+20", "POISON_CHANCE+15"],
+      "hero_class_requirements": ["alchemist"],
+      "rarity": "uncommon",
+      "price": 300,
+      "limit": 2,
+      "origin_dungeon": "XuanWu"
+    },
+    {
+      "id": "spirit_link_amulet",
+      "buffs": ["HEAL+20", "HEALRECVD+15", "MAXHP+15"],
+      "hero_class_requirements": ["shaman", "diviner"],
+      "rarity": "rare",
+      "price": 550,
+      "limit": 1,
+      "origin_dungeon": "ZhuQue"
+    },
+    {
+      "id": "warrior_stance_token",
+      "buffs": ["ATK+25", "DMGL+10", "DMGH+10", "STRESSDMG-5"],
+      "hero_class_requirements": ["tank", "hunter"],
+      "rarity": "epic",
+      "price": 850,
+      "limit": 1,
+      "origin_dungeon": "QingLong"
+    },
+    {
+      "id": "void_crystal",
+      "buffs": ["MAGIC+30", "MAXMP+40", "DMGL+20", "DMGH+20", "MANA_REGEN+10"],
+      "hero_class_requirements": ["diviner", "alchemist"],
+      "rarity": "legendary",
+      "price": 2500,
+      "limit": 1,
+      "origin_dungeon": "XuanWu"
+    }
+  ]
+}
