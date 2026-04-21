@@ -1818,6 +1818,239 @@ impl EquipmentRegistry {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Buff Resolution
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Indicates whether a modifier is flat or percentage-based.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ModifierKind {
+    Flat,
+    Percent,
+}
+
+/// Result of parsing a buff ID into an attribute modifier.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ParsedBuff {
+    pub attribute_key: String,
+    pub value: f64,
+    pub kind: ModifierKind,
+    pub sign: f64, // +1.0 or -1.0
+}
+
+impl ParsedBuff {
+    /// Convert to an AttributeModifier with the appropriate value.
+    ///
+    /// For percentage-based modifiers, the value is stored as a fraction
+    /// (e.g., 10% → 0.10), while flat modifiers use the raw value.
+    pub fn to_modifier(&self) -> AttributeModifier {
+        let value = match self.kind {
+            ModifierKind::Flat => self.value * self.sign,
+            ModifierKind::Percent => (self.value / 100.0) * self.sign,
+        };
+        AttributeModifier::new(&self.attribute_key, value)
+    }
+}
+
+/// Parses a buff ID following DDGC naming conventions.
+///
+/// Supported formats:
+/// - `STAT+value` or `STAT-value` — flat modifier (e.g., `ATK+10`, `MAXHP-15`)
+/// - `STAT%+value` or `STAT%-value` — percentage modifier (e.g., `ATK%+10`)
+/// - `STAT_value` — flat modifier with implicit positive sign (e.g., `REVIVE_25`)
+/// - `TRINKET_STAT_B0` — tier-suffixed format (e.g., `TRINKET_STRESSDMG_B0`)
+///   where the tier suffix is ignored and STAT is returned with value 0.0
+///
+/// Returns `None` if the buff ID cannot be parsed.
+pub fn parse_buff_id(buff_id: &str) -> Option<ParsedBuff> {
+    let s = buff_id.trim();
+
+    // Handle tier-suffixed format like TRINKET_STRESSDMG_B0
+    // Extract the stat and value portion
+    let (working, had_tier_suffix) = if s.starts_with("TRINKET_") {
+        // Remove TRINKET_ prefix and tier suffix (_B0, _A1, etc.)
+        let inner = &s[8..]; // Remove "TRINKET_"
+        // Find the last underscore and check if it's a tier suffix
+        if let Some(underscore_pos) = inner.rfind('_') {
+            let potential_tier = &inner[underscore_pos + 1..];
+            // Tier suffix is typically 1-2 chars like B0, A1, C2
+            if potential_tier.len() <= 2
+                && potential_tier.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+            {
+                (inner[..underscore_pos].to_string(), true)
+            } else {
+                (inner.to_string(), false)
+            }
+        } else {
+            (inner.to_string(), false)
+        }
+    } else {
+        (s.to_string(), false)
+    };
+
+    // Check for percentage modifier: STAT%+value or STAT%-value
+    if let Some(percent_pos) = working.find("%+") {
+        let attribute_key = &working[..percent_pos];
+        let value_str = &working[percent_pos + 2..];
+        let value: f64 = value_str.parse().ok()?;
+        return Some(ParsedBuff {
+            attribute_key: attribute_key.to_uppercase(),
+            value,
+            kind: ModifierKind::Percent,
+            sign: 1.0,
+        });
+    }
+    if let Some(percent_pos) = working.find("%-") {
+        let attribute_key = &working[..percent_pos];
+        let value_str = &working[percent_pos + 2..];
+        let value: f64 = value_str.parse().ok()?;
+        return Some(ParsedBuff {
+            attribute_key: attribute_key.to_uppercase(),
+            value,
+            kind: ModifierKind::Percent,
+            sign: -1.0,
+        });
+    }
+
+    // Check for underscore-based value (implicit positive, e.g., REVIVE_25)
+    if let Some(underscore_pos) = working.rfind('_') {
+        let prefix = &working[..underscore_pos];
+        let value_str = &working[underscore_pos + 1..];
+        // Only treat as underscore-value if prefix looks like a stat name and value is numeric
+        if !value_str.is_empty() && value_str.chars().all(|c| c.is_ascii_digit()) {
+            if let Ok(value) = value_str.parse::<f64>() {
+                return Some(ParsedBuff {
+                    attribute_key: prefix.to_uppercase(),
+                    value,
+                    kind: ModifierKind::Flat,
+                    sign: 1.0,
+                });
+            }
+        }
+    }
+
+    // Check for signed format: STAT+value or STAT-value
+    if let Some(plus_pos) = working.rfind('+') {
+        let attribute_key = &working[..plus_pos];
+        let value_str = &working[plus_pos + 1..];
+        if !value_str.is_empty() && value_str.chars().all(|c| c.is_ascii_digit()) {
+            if let Ok(value) = value_str.parse::<f64>() {
+                return Some(ParsedBuff {
+                    attribute_key: attribute_key.to_uppercase(),
+                    value,
+                    kind: ModifierKind::Flat,
+                    sign: 1.0,
+                });
+            }
+        }
+    }
+    if let Some(minus_pos) = working.rfind('-') {
+        // Make sure minus is not at the start (which would be weird)
+        if minus_pos > 0 {
+            let attribute_key = &working[..minus_pos];
+            let value_str = &working[minus_pos + 1..];
+            if !value_str.is_empty() && value_str.chars().all(|c| c.is_ascii_digit()) {
+                if let Ok(value) = value_str.parse::<f64>() {
+                    return Some(ParsedBuff {
+                        attribute_key: attribute_key.to_uppercase(),
+                        value,
+                        kind: ModifierKind::Flat,
+                        sign: -1.0,
+                    });
+                }
+            }
+        }
+    }
+
+    // Handle tier-suffix-only case: TRINKET_STAT_B0 where no numeric value follows
+    // If we had a tier suffix and the remaining looks like a stat name (all uppercase letters),
+    // return a flat modifier with value 0.0
+    if had_tier_suffix
+        && !working.is_empty()
+        && working.chars().all(|c| c.is_ascii_uppercase() || c == '_')
+    {
+        return Some(ParsedBuff {
+            attribute_key: working.to_uppercase(),
+            value: 0.0,
+            kind: ModifierKind::Flat,
+            sign: 1.0,
+        });
+    }
+
+    None
+}
+
+/// Registry mapping buff IDs to their attribute modifiers.
+///
+/// The registry handles DDGC buff ID parsing and resolution, converting
+/// string buff IDs (e.g., "ATK+10", "MAXHP-15", "TRINKET_STRESSDMG_B0")
+/// into concrete `AttributeModifier` entries that can be applied to hero stats.
+#[derive(Debug, Clone, Default)]
+pub struct BuffRegistry {
+    // Optional static overrides for specific buff IDs that need exact mapping
+    overrides: std::collections::HashMap<String, Vec<AttributeModifier>>,
+}
+
+impl BuffRegistry {
+    /// Create a new empty buff registry.
+    pub fn new() -> Self {
+        BuffRegistry {
+            overrides: std::collections::HashMap::new(),
+        }
+    }
+
+    /// Register a static buff override for a specific buff ID.
+    ///
+    /// Use this for buff IDs that don't follow the standard naming convention
+    /// or need special handling.
+    pub fn register_override(&mut self, buff_id: &str, modifiers: Vec<AttributeModifier>) {
+        self.overrides.insert(buff_id.to_string(), modifiers);
+    }
+
+    /// Resolve a single buff ID to a list of attribute modifiers.
+    ///
+    /// First checks for static overrides, then falls back to parsing the buff ID
+    /// using DDGC naming conventions.
+    pub fn resolve_buff(&self, buff_id: &str) -> Vec<AttributeModifier> {
+        // Check for static overrides first
+        if let Some(modifiers) = self.overrides.get(buff_id) {
+            return modifiers.clone();
+        }
+
+        // Parse the buff ID using DDGC naming conventions
+        parse_buff_id(buff_id)
+            .map(|parsed| vec![parsed.to_modifier()])
+            .unwrap_or_default()
+    }
+
+    /// Resolve all buffs for a trinket into aggregated attribute modifiers.
+    ///
+    /// Returns all `AttributeModifier` entries from the trinket's buff list,
+    /// with duplicates merged (same `attribute_key` values are combined by summing).
+    pub fn resolve_buffs(&self, trinket: &TrinketDefinition) -> Vec<AttributeModifier> {
+        let mut aggregated: std::collections::HashMap<String, f64> = std::collections::HashMap::new();
+
+        for buff_id in &trinket.buffs {
+            for modifier in self.resolve_buff(buff_id) {
+                *aggregated.entry(modifier.attribute_key.clone()).or_insert(0.0) += modifier.value;
+            }
+        }
+
+        aggregated
+            .into_iter()
+            .map(|(attribute_key, value)| AttributeModifier { attribute_key, value })
+            .collect()
+    }
+
+    /// Check if a buff ID is registered (has an override or can be parsed).
+    pub fn is_registered(&self, buff_id: &str) -> bool {
+        if self.overrides.contains_key(buff_id) {
+            return true;
+        }
+        parse_buff_id(buff_id).is_some()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2835,5 +3068,380 @@ mod tests {
         ));
         assert!(!registry.is_empty());
         assert_eq!(registry.len(), 1);
+    }
+
+    // ── US-013: buff resolution tests ─────────────────────────────────────────
+
+    #[test]
+    fn parse_buff_id_positive_flat() {
+        let parsed = parse_buff_id("ATK+10").unwrap();
+        assert_eq!(parsed.attribute_key, "ATK");
+        assert_eq!(parsed.value, 10.0);
+        assert_eq!(parsed.kind, ModifierKind::Flat);
+        assert_eq!(parsed.sign, 1.0);
+    }
+
+    #[test]
+    fn parse_buff_id_negative_flat() {
+        let parsed = parse_buff_id("DEF-5").unwrap();
+        assert_eq!(parsed.attribute_key, "DEF");
+        assert_eq!(parsed.value, 5.0);
+        assert_eq!(parsed.kind, ModifierKind::Flat);
+        assert_eq!(parsed.sign, -1.0);
+    }
+
+    #[test]
+    fn parse_buff_id_underscore_value() {
+        // REVIVE_25 has implicit positive sign
+        let parsed = parse_buff_id("REVIVE_25").unwrap();
+        assert_eq!(parsed.attribute_key, "REVIVE");
+        assert_eq!(parsed.value, 25.0);
+        assert_eq!(parsed.kind, ModifierKind::Flat);
+        assert_eq!(parsed.sign, 1.0);
+    }
+
+    #[test]
+    fn parse_buff_id_percentage_positive() {
+        let parsed = parse_buff_id("ATK%+10").unwrap();
+        assert_eq!(parsed.attribute_key, "ATK");
+        assert_eq!(parsed.value, 10.0);
+        assert_eq!(parsed.kind, ModifierKind::Percent);
+        assert_eq!(parsed.sign, 1.0);
+    }
+
+    #[test]
+    fn parse_buff_id_percentage_negative() {
+        let parsed = parse_buff_id("MAXHP%-15").unwrap();
+        assert_eq!(parsed.attribute_key, "MAXHP");
+        assert_eq!(parsed.value, 15.0);
+        assert_eq!(parsed.kind, ModifierKind::Percent);
+        assert_eq!(parsed.sign, -1.0);
+    }
+
+    #[test]
+    fn parse_buff_id_tier_suffix_format() {
+        // TRINKET_STRESSDMG_B0 should parse as STRESSDMG with +0 value (tier suffix ignored)
+        let parsed = parse_buff_id("TRINKET_STRESSDMG_B0").unwrap();
+        assert_eq!(parsed.attribute_key, "STRESSDMG");
+        assert_eq!(parsed.value, 0.0);
+        assert_eq!(parsed.kind, ModifierKind::Flat);
+        assert_eq!(parsed.sign, 1.0);
+    }
+
+    #[test]
+    fn parse_buff_id_with_value_after_tier_suffix() {
+        // This tests TRINKET_STAT_V0 where V0 is the tier and we want to parse the stat
+        let parsed = parse_buff_id("TRINKET_DMGL_B0").unwrap();
+        assert_eq!(parsed.attribute_key, "DMGL");
+        assert_eq!(parsed.value, 0.0);
+    }
+
+    #[test]
+    fn parse_buff_id_case_insensitive() {
+        // Buff IDs should be case-insensitive in parsing
+        let parsed = parse_buff_id("atk+10").unwrap();
+        assert_eq!(parsed.attribute_key, "ATK");
+        assert_eq!(parsed.value, 10.0);
+    }
+
+    #[test]
+    fn parse_buff_id_complex_stat_names() {
+        // DMGL (damage low), DMGH (damage high), STRESSDMG
+        let parsed = parse_buff_id("DMGL+5").unwrap();
+        assert_eq!(parsed.attribute_key, "DMGL");
+
+        let parsed = parse_buff_id("DMGH+15").unwrap();
+        assert_eq!(parsed.attribute_key, "DMGH");
+
+        let parsed = parse_buff_id("STRESSDMG-5").unwrap();
+        assert_eq!(parsed.attribute_key, "STRESSDMG");
+    }
+
+    #[test]
+    fn parsed_buff_to_modifier_flat_positive() {
+        let parsed = ParsedBuff {
+            attribute_key: "ATK".to_string(),
+            value: 10.0,
+            kind: ModifierKind::Flat,
+            sign: 1.0,
+        };
+        let modifier = parsed.to_modifier();
+        assert_eq!(modifier.attribute_key, "ATK");
+        assert_eq!(modifier.value, 10.0);
+    }
+
+    #[test]
+    fn parsed_buff_to_modifier_flat_negative() {
+        let parsed = ParsedBuff {
+            attribute_key: "DEF".to_string(),
+            value: 5.0,
+            kind: ModifierKind::Flat,
+            sign: -1.0,
+        };
+        let modifier = parsed.to_modifier();
+        assert_eq!(modifier.attribute_key, "DEF");
+        assert_eq!(modifier.value, -5.0);
+    }
+
+    #[test]
+    fn parsed_buff_to_modifier_percent_positive() {
+        // 10% should become 0.10
+        let parsed = ParsedBuff {
+            attribute_key: "ATK".to_string(),
+            value: 10.0,
+            kind: ModifierKind::Percent,
+            sign: 1.0,
+        };
+        let modifier = parsed.to_modifier();
+        assert_eq!(modifier.attribute_key, "ATK");
+        assert!((modifier.value - 0.10).abs() < 0.001);
+    }
+
+    #[test]
+    fn parsed_buff_to_modifier_percent_negative() {
+        // -15% should become -0.15
+        let parsed = ParsedBuff {
+            attribute_key: "MAXHP".to_string(),
+            value: 15.0,
+            kind: ModifierKind::Percent,
+            sign: -1.0,
+        };
+        let modifier = parsed.to_modifier();
+        assert_eq!(modifier.attribute_key, "MAXHP");
+        assert!((modifier.value - (-0.15)).abs() < 0.001);
+    }
+
+    #[test]
+    fn buff_registry_resolve_single_buff() {
+        let registry = BuffRegistry::new();
+        let modifiers = registry.resolve_buff("ATK+10");
+        assert_eq!(modifiers.len(), 1);
+        assert_eq!(modifiers[0].attribute_key, "ATK");
+        assert_eq!(modifiers[0].value, 10.0);
+    }
+
+    #[test]
+    fn buff_registry_resolve_unknown_buff_returns_empty() {
+        let registry = BuffRegistry::new();
+        let modifiers = registry.resolve_buff("UNKNOWN_BUFF_XYZ");
+        assert!(modifiers.is_empty());
+    }
+
+    #[test]
+    fn buff_registry_resolve_with_override() {
+        let mut registry = BuffRegistry::new();
+        registry.register_override("CUSTOM_BUFF", vec![
+            AttributeModifier::new("CUSTOM_STAT", 42.0),
+        ]);
+        let modifiers = registry.resolve_buff("CUSTOM_BUFF");
+        assert_eq!(modifiers.len(), 1);
+        assert_eq!(modifiers[0].attribute_key, "CUSTOM_STAT");
+        assert_eq!(modifiers[0].value, 42.0);
+    }
+
+    #[test]
+    fn buff_registry_resolve_buffs_positive_and_negative() {
+        let registry = BuffRegistry::new();
+        let trinket = TrinketDefinition::new(
+            "test_trinket",
+            vec!["ATK+10".to_string(), "DEF-5".to_string()],
+            vec![],
+            TrinketRarity::Common,
+            100,
+            1,
+            DungeonType::QingLong,
+        );
+        let modifiers = registry.resolve_buffs(&trinket);
+        assert_eq!(modifiers.len(), 2);
+        let atk = modifiers.iter().find(|m| m.attribute_key == "ATK").unwrap();
+        let def = modifiers.iter().find(|m| m.attribute_key == "DEF").unwrap();
+        assert_eq!(atk.value, 10.0);
+        assert_eq!(def.value, -5.0);
+    }
+
+    #[test]
+    fn buff_registry_resolve_buffs_multi_aggregates() {
+        let registry = BuffRegistry::new();
+        let trinket = TrinketDefinition::new(
+            "multi_trinket",
+            vec!["ATK+10".to_string(), "ATK+5".to_string(), "DEF-3".to_string()],
+            vec![],
+            TrinketRarity::Rare,
+            300,
+            1,
+            DungeonType::BaiHu,
+        );
+        let modifiers = registry.resolve_buffs(&trinket);
+        // ATK should be aggregated to 15, DEF should be -3
+        assert_eq!(modifiers.len(), 2);
+        let atk = modifiers.iter().find(|m| m.attribute_key == "ATK").unwrap();
+        let def = modifiers.iter().find(|m| m.attribute_key == "DEF").unwrap();
+        assert_eq!(atk.value, 15.0);
+        assert_eq!(def.value, -3.0);
+    }
+
+    #[test]
+    fn buff_registry_resolve_buffs_from_real_trinket_data() {
+        // Test with actual buff IDs from JsonTrinkets.json
+        let registry = BuffRegistry::new();
+        let trinket = TrinketDefinition::new(
+            "battle_horn",
+            vec![
+                "ATK+15".to_string(),
+                "CRIT+5".to_string(),
+                "STRESSDMG+10".to_string(),
+            ],
+            vec![],
+            TrinketRarity::Rare,
+            450,
+            1,
+            DungeonType::XuanWu,
+        );
+        let modifiers = registry.resolve_buffs(&trinket);
+        assert_eq!(modifiers.len(), 3);
+
+        let atk = modifiers.iter().find(|m| m.attribute_key == "ATK").unwrap();
+        let crit = modifiers.iter().find(|m| m.attribute_key == "CRIT").unwrap();
+        let stressdmg = modifiers.iter().find(|m| m.attribute_key == "STRESSDMG").unwrap();
+
+        assert_eq!(atk.value, 15.0);
+        assert_eq!(crit.value, 5.0);
+        assert_eq!(stressdmg.value, 10.0);
+    }
+
+    #[test]
+    fn buff_registry_resolve_buffs_epic_trinket() {
+        // Test shadowstep_cloak: DODGE+12, SPD+8, ATK+5
+        let registry = BuffRegistry::new();
+        let trinket = TrinketDefinition::new(
+            "shadowstep_cloak",
+            vec!["DODGE+12".to_string(), "SPD+8".to_string(), "ATK+5".to_string()],
+            vec!["hunter".to_string(), "diviner".to_string()],
+            TrinketRarity::Epic,
+            750,
+            1,
+            DungeonType::ZhuQue,
+        );
+        let modifiers = registry.resolve_buffs(&trinket);
+        assert_eq!(modifiers.len(), 3);
+
+        let dodge = modifiers.iter().find(|m| m.attribute_key == "DODGE").unwrap();
+        let spd = modifiers.iter().find(|m| m.attribute_key == "SPD").unwrap();
+        let atk = modifiers.iter().find(|m| m.attribute_key == "ATK").unwrap();
+
+        assert_eq!(dodge.value, 12.0);
+        assert_eq!(spd.value, 8.0);
+        assert_eq!(atk.value, 5.0);
+    }
+
+    #[test]
+    fn buff_registry_resolve_buffs_legendary_trinket() {
+        // Test dragon_slayer_medallion: ATK+30, DMGL+15, DMGH+15, CRIT+10, BOSS_DMG+20
+        let registry = BuffRegistry::new();
+        let trinket = TrinketDefinition::new(
+            "dragon_slayer_medallion",
+            vec![
+                "ATK+30".to_string(),
+                "DMGL+15".to_string(),
+                "DMGH+15".to_string(),
+                "CRIT+10".to_string(),
+                "BOSS_DMG+20".to_string(),
+            ],
+            vec!["hunter".to_string(), "shaman".to_string()],
+            TrinketRarity::Legendary,
+            1500,
+            1,
+            DungeonType::QingLong,
+        );
+        let modifiers = registry.resolve_buffs(&trinket);
+        assert_eq!(modifiers.len(), 5);
+
+        let atk = modifiers.iter().find(|m| m.attribute_key == "ATK").unwrap();
+        let dmgl = modifiers.iter().find(|m| m.attribute_key == "DMGL").unwrap();
+        let dmgh = modifiers.iter().find(|m| m.attribute_key == "DMGH").unwrap();
+        let crit = modifiers.iter().find(|m| m.attribute_key == "CRIT").unwrap();
+        let boss_dmg = modifiers.iter().find(|m| m.attribute_key == "BOSS_DMG").unwrap();
+
+        assert_eq!(atk.value, 30.0);
+        assert_eq!(dmgl.value, 15.0);
+        assert_eq!(dmgh.value, 15.0);
+        assert_eq!(crit.value, 10.0);
+        assert_eq!(boss_dmg.value, 20.0);
+    }
+
+    #[test]
+    fn buff_registry_resolve_buffs_warrior_stance_token_has_negative() {
+        // warrior_stance_token has STRESSDMG-5 (negative)
+        let registry = BuffRegistry::new();
+        let trinket = TrinketDefinition::new(
+            "warrior_stance_token",
+            vec![
+                "ATK+25".to_string(),
+                "DMGL+10".to_string(),
+                "DMGH+10".to_string(),
+                "STRESSDMG-5".to_string(),
+            ],
+            vec!["tank".to_string(), "hunter".to_string()],
+            TrinketRarity::Epic,
+            850,
+            1,
+            DungeonType::QingLong,
+        );
+        let modifiers = registry.resolve_buffs(&trinket);
+
+        let stressdmg = modifiers.iter().find(|m| m.attribute_key == "STRESSDMG").unwrap();
+        assert_eq!(stressdmg.value, -5.0);
+    }
+
+    #[test]
+    fn buff_registry_is_registered_true() {
+        let registry = BuffRegistry::new();
+        assert!(registry.is_registered("ATK+10"));
+        assert!(registry.is_registered("DEF-5"));
+        assert!(registry.is_registered("REVIVE_25"));
+    }
+
+    #[test]
+    fn buff_registry_is_registered_false() {
+        let registry = BuffRegistry::new();
+        assert!(!registry.is_registered("UNKNOWN_BUFF"));
+    }
+
+    #[test]
+    fn buff_registry_aggregates_same_stat_from_multiple_buffs() {
+        // If a trinket has two ATK buffs, they should sum
+        let registry = BuffRegistry::new();
+        let trinket = TrinketDefinition::new(
+            "stack_trinket",
+            vec!["ATK+10".to_string(), "ATK+5".to_string()],
+            vec![],
+            TrinketRarity::Common,
+            100,
+            1,
+            DungeonType::QingLong,
+        );
+        let modifiers = registry.resolve_buffs(&trinket);
+        assert_eq!(modifiers.len(), 1);
+        assert_eq!(modifiers[0].attribute_key, "ATK");
+        assert_eq!(modifiers[0].value, 15.0);
+    }
+
+    #[test]
+    fn buff_registry_five_buff_ids_resolved() {
+        // US-013 acceptance criterion: at least 5 buff IDs are resolved
+        let registry = BuffRegistry::new();
+        let test_buffs = vec![
+            ("ATK+10", "ATK", 10.0),
+            ("DEF-5", "DEF", -5.0),
+            ("MAXHP+25", "MAXHP", 25.0),
+            ("CRIT+5", "CRIT", 5.0),
+            ("SPD-3", "SPD", -3.0),
+        ];
+        for (buff_id, expected_key, expected_value) in test_buffs {
+            let modifiers = registry.resolve_buff(buff_id);
+            assert_eq!(modifiers.len(), 1, "Buff {} should resolve to 1 modifier", buff_id);
+            assert_eq!(modifiers[0].attribute_key, expected_key);
+            assert_eq!(modifiers[0].value, expected_value);
+        }
     }
 }
