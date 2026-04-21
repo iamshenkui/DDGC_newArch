@@ -469,6 +469,117 @@ impl TownState {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Building Registry
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Registry holding all town building definitions parsed from DDGC Buildings.json.
+///
+/// Provides lookup by building ID, building type, and upgrade tree traversal.
+#[derive(Debug, Clone, Default)]
+pub struct BuildingRegistry {
+    buildings: std::collections::HashMap<String, TownBuilding>,
+}
+
+impl BuildingRegistry {
+    /// Create a new empty registry.
+    pub fn new() -> Self {
+        BuildingRegistry { buildings: std::collections::HashMap::new() }
+    }
+
+    /// Register a building definition.
+    pub fn register(&mut self, building: TownBuilding) {
+        self.buildings.insert(building.id.clone(), building);
+    }
+
+    /// Get a building by its ID.
+    pub fn get(&self, id: &str) -> Option<&TownBuilding> {
+        self.buildings.get(id)
+    }
+
+    /// Get all registered building IDs.
+    pub fn all_ids(&self) -> Vec<&str> {
+        self.buildings.keys().map(|s| s.as_str()).collect()
+    }
+
+    /// Get all buildings of a specific type.
+    pub fn by_type(&self, building_type: BuildingType) -> Vec<&TownBuilding> {
+        self.buildings
+            .values()
+            .filter(|b| b.building_type == building_type)
+            .collect()
+    }
+
+    /// Get the total number of registered buildings.
+    pub fn len(&self) -> usize {
+        self.buildings.len()
+    }
+
+    /// Returns true if the registry is empty.
+    pub fn is_empty(&self) -> bool {
+        self.buildings.is_empty()
+    }
+
+    /// Get the effect value for a specific effect_id at a given upgrade level.
+    ///
+    /// Searches through the building's upgrade trees for the specified level code
+    /// and returns the effect value if found.
+    ///
+    /// Returns `None` if the building doesn't exist, the level doesn't exist,
+    /// or the effect_id is not found at that level.
+    pub fn get_effect_at_level(
+        &self,
+        building_id: &str,
+        level_code: char,
+        effect_id: &str,
+    ) -> Option<f64> {
+        let building = self.buildings.get(building_id)?;
+
+        for tree in &building.upgrade_trees {
+            if let Some(level) = tree.levels.iter().find(|l| l.code == level_code) {
+                return level
+                    .effects
+                    .iter()
+                    .find(|e| e.effect_id == effect_id)
+                    .map(|e| e.value);
+            }
+        }
+
+        None
+    }
+
+    /// Get the cost for a specific upgrade level.
+    ///
+    /// Returns `None` if the building doesn't exist or the level doesn't exist.
+    pub fn get_upgrade_cost(&self, building_id: &str, level_code: char) -> Option<u32> {
+        let building = self.buildings.get(building_id)?;
+
+        for tree in &building.upgrade_trees {
+            if let Some(level) = tree.levels.iter().find(|l| l.code == level_code) {
+                return Some(level.cost);
+            }
+        }
+
+        None
+    }
+
+    /// Get all upgrade levels for a building.
+    ///
+    /// Returns all levels across all upgrade trees, sorted by code.
+    pub fn get_upgrade_levels(&self, building_id: &str) -> Option<Vec<&UpgradeLevel>> {
+        let building = self.buildings.get(building_id)?;
+
+        let mut all_levels: Vec<&UpgradeLevel> = building
+            .upgrade_trees
+            .iter()
+            .flat_map(|t| t.levels.iter())
+            .collect();
+
+        all_levels.sort_by_key(|l| l.code);
+        Some(all_levels)
+    }
+}
+
 /// Dungeon level constants for trap difficulty variations.
 pub mod dungeon_level {
     /// Level 3 dungeon (standard difficulty).

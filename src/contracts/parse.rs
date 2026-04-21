@@ -1,12 +1,13 @@
-//! Parsing utilities for DDGC data files (Curios.csv, Traps.json, Obstacles.json).
+//! Parsing utilities for DDGC data files (Curios.csv, Traps.json, Obstacles.json, Buildings.json).
 
 use std::path::Path;
 
 use serde::Deserialize;
 use crate::contracts::{
-    CurioDefinition, CurioRegistry, CurioResult, CurioResultType, DungeonType,
-    ItemInteraction, ObstacleDefinition, ObstacleRegistry, TrapDefinition, TrapRegistry,
-    TrapVariation,
+    BuildingRegistry, BuildingType, CurioDefinition, CurioRegistry, CurioResult,
+    CurioResultType, DungeonType, ItemInteraction, ObstacleDefinition, ObstacleRegistry,
+    TownBuilding, TrapDefinition, TrapRegistry, TrapVariation, UnlockCondition,
+    UpgradeEffect, UpgradeLevel, UpgradeTree,
 };
 
 /// Parse a JSON-encoded dungeon scope string into a Vec<DungeonType>.
@@ -207,6 +208,113 @@ pub fn parse_obstacles_json(path: &Path) -> Result<ObstacleRegistry, String> {
             raw.torchlight_penalty,
         );
         registry.register(obstacle);
+    }
+
+    Ok(registry)
+}
+
+/// Parse Buildings.json into a BuildingRegistry.
+pub fn parse_buildings_json(path: &Path) -> Result<BuildingRegistry, String> {
+    let content = std::fs::read_to_string(path)
+        .map_err(|e| format!("failed to read Buildings.json: {}", e))?;
+
+    #[derive(Deserialize)]
+    struct RawUnlockCondition {
+        condition_type: String,
+        required_count: u32,
+    }
+
+    #[derive(Deserialize)]
+    struct RawUpgradeEffect {
+        effect_id: String,
+        value: f64,
+    }
+
+    #[derive(Deserialize)]
+    struct RawUpgradeLevel {
+        code: char,
+        cost: u32,
+        effects: Vec<RawUpgradeEffect>,
+    }
+
+    #[derive(Deserialize)]
+    struct RawUpgradeTree {
+        tree_id: String,
+        levels: Vec<RawUpgradeLevel>,
+    }
+
+    #[derive(Deserialize)]
+    struct RawTownBuilding {
+        id: String,
+        building_type: String,
+        unlock_conditions: Vec<RawUnlockCondition>,
+        upgrade_trees: Vec<RawUpgradeTree>,
+    }
+
+    #[derive(Deserialize)]
+    struct RawBuildingsRoot {
+        buildings: Vec<RawTownBuilding>,
+    }
+
+    let root: RawBuildingsRoot = serde_json::from_str(&content)
+        .map_err(|e| format!("failed to parse Buildings.json: {}", e))?;
+
+    let mut registry = BuildingRegistry::new();
+
+    for raw in root.buildings {
+        let building_type = match raw.building_type.as_str() {
+            "Barracks" => BuildingType::Barracks,
+            "Blacksmith" => BuildingType::Blacksmith,
+            "Campfire" => BuildingType::Campfire,
+            "Cathedral" => BuildingType::Cathedral,
+            "Confectionery" => BuildingType::Confectionery,
+            "DilapidatedShrine" => BuildingType::DilapidatedShrine,
+            "Doctor" => BuildingType::Doctor,
+            "EmbroideryStation" => BuildingType::EmbroideryStation,
+            "FortuneTeller" => BuildingType::FortuneTeller,
+            "Gate" => BuildingType::Gate,
+            "Graveyard" => BuildingType::Graveyard,
+            "Inn" => BuildingType::Inn,
+            "Jester" => BuildingType::Jester,
+            "Museum" => BuildingType::Museum,
+            "Provisioner" => BuildingType::Provisioner,
+            "Sanctuary" => BuildingType::Sanctuary,
+            "Tavern" => BuildingType::Tavern,
+            "Tower" => BuildingType::Tower,
+            "Trainee" => BuildingType::Trainee,
+            "WanderingTrinkets" => BuildingType::WanderingTrinkets,
+            "WeaponRack" => BuildingType::WeaponRack,
+            _ => return Err(format!("unknown BuildingType: {}", raw.building_type)),
+        };
+
+        let unlock_conditions: Vec<UnlockCondition> = raw
+            .unlock_conditions
+            .into_iter()
+            .map(|uc| UnlockCondition::new(&uc.condition_type, uc.required_count))
+            .collect();
+
+        let upgrade_trees: Vec<UpgradeTree> = raw
+            .upgrade_trees
+            .into_iter()
+            .map(|tree| {
+                let levels: Vec<UpgradeLevel> = tree
+                    .levels
+                    .into_iter()
+                    .map(|l| {
+                        let effects: Vec<UpgradeEffect> = l
+                            .effects
+                            .into_iter()
+                            .map(|e| UpgradeEffect::new(&e.effect_id, e.value))
+                            .collect();
+                        UpgradeLevel::new(l.code, l.cost, effects)
+                    })
+                    .collect();
+                UpgradeTree::new(&tree.tree_id, levels)
+            })
+            .collect();
+
+        let building = TownBuilding::new(&raw.id, building_type, unlock_conditions, upgrade_trees);
+        registry.register(building);
     }
 
     Ok(registry)

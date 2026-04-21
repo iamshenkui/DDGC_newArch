@@ -1,0 +1,242 @@
+{
+  "buildings": [
+    {
+      "id": "stagecoach",
+      "building_type": "Barracks",
+      "unlock_conditions": [],
+      "upgrade_trees": [
+        {
+          "tree_id": "stagecoach_recruit",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 250, "effects": [{ "effect_id": "recruit_discount", "value": 0.1 }] },
+            { "code": "c", "cost": 500, "effects": [{ "effect_id": "recruit_discount", "value": 0.2 }] },
+            { "code": "d", "cost": 1000, "effects": [{ "effect_id": "recruit_discount", "value": 0.3 }] }
+          ]
+        },
+        {
+          "tree_id": "stagecoach_heroes",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 300, "effects": [{ "effect_id": "max_heroes", "value": 1 }] },
+            { "code": "c", "cost": 800, "effects": [{ "effect_id": "max_heroes", "value": 2 }] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "abbey",
+      "building_type": "Cathedral",
+      "unlock_conditions": [{ "condition_type": "completed_runs", "required_count": 1 }],
+      "upgrade_trees": [
+        {
+          "tree_id": "abbey_prayer",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 200, "effects": [{ "effect_id": "stress_heal", "value": 1 }] },
+            { "code": "c", "cost": 400, "effects": [{ "effect_id": "stress_heal", "value": 2 }] },
+            { "code": "d", "cost": 800, "effects": [{ "effect_id": "stress_heal", "value": 3 }] }
+          ]
+        },
+        {
+          "tree_id": "abbey_blessing",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 350, "effects": [{ "effect_id": "stress_reduction", "value": 0.15 }] },
+            { "code": "c", "cost": 700, "effects": [{ "effect_id": "stress_reduction", "value": 0.25 }] },
+            { "code": "d", "cost": 1400, "effects": [{ "effect_id": "stress_reduction", "value": 0.35 }] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guild",
+      "building_type": "Tower",
+      "unlock_conditions": [{ "condition_type": "completed_runs", "required_count": 2 }],
+      "upgrade_trees": [
+        {
+          "tree_id": "guild_training",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 300, "effects": [{ "effect_id": "experience_boost", "value": 0.1 }] },
+            { "code": "c", "cost": 600, "effects": [{ "effect_id": "experience_boost", "value": 0.2 }] },
+            { "code": "d", "cost": 1200, "effects": [{ "effect_id": "experience_boost", "value": 0.3 }] }
+          ]
+        },
+        {
+          "tree_id": "guild_skills",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 500, "effects": [{ "effect_id": "skill_upgrade_chance", "value": 0.05 }] },
+            { "code": "c", "cost": 1000, "effects": [{ "effect_id": "skill_upgrade_chance", "value": 0.1 }] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blacksmith",
+      "building_type": "Blacksmith",
+      "unlock_conditions": [],
+      "upgrade_trees": [
+        {
+          "tree_id": "blacksmith_repair",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 150, "effects": [{ "effect_id": "repair_discount", "value": 0.1 }] },
+            { "code": "c", "cost": 300, "effects": [{ "effect_id": "repair_discount", "value": 0.2 }] },
+            { "code": "d", "cost": 600, "effects": [{ "effect_id": "repair_discount", "value": 0.3 }] }
+          ]
+        },
+        {
+          "tree_id": "blacksmith_upgrade",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 400, "effects": [{ "effect_id": "weapon_upgrade_cost", "value": 0.15 }] },
+            { "code": "c", "cost": 800, "effects": [{ "effect_id": "weapon_upgrade_cost", "value": 0.25 }] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inn",
+      "building_type": "Inn",
+      "unlock_conditions": [],
+      "upgrade_trees": [
+        {
+          "tree_id": "inn_rest",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 100, "effects": [{ "effect_id": "rest_stress_reduction", "value": 0.1 }] },
+            { "code": "c", "cost": 250, "effects": [{ "effect_id": "rest_stress_reduction", "value": 0.2 }] },
+            { "code": "d", "cost": 500, "effects": [{ "effect_id": "rest_stress_reduction", "value": 0.3 }] }
+          ]
+        },
+        {
+          "tree_id": "inn_food",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 175, "effects": [{ "effect_id": "food_discount", "value": 0.1 }] },
+            { "code": "c", "cost": 350, "effects": [{ "effect_id": "food_discount", "value": 0.2 }] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tavern",
+      "building_type": "Tavern",
+      "unlock_conditions": [{ "condition_type": "completed_runs", "required_count": 1 }],
+      "upgrade_trees": [
+        {
+          "tree_id": "tavern_morale",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 200, "effects": [{ "effect_id": "morale_boost", "value": 0.1 }] },
+            { "code": "c", "cost": 400, "effects": [{ "effect_id": "morale_boost", "value": 0.2 }] },
+            { "code": "d", "cost": 800, "effects": [{ "effect_id": "morale_boost", "value": 0.3 }] }
+          ]
+        },
+        {
+          "tree_id": "tavern_gossip",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 250, "effects": [{ "effect_id": "intel_discount", "value": 0.15 }] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "graveyard",
+      "building_type": "Graveyard",
+      "unlock_conditions": [{ "condition_type": "defeated_monsters", "required_count": 50 }],
+      "upgrade_trees": [
+        {
+          "tree_id": "graveyard_resurrect",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 500, "effects": [{ "effect_id": "resurrect_chance", "value": 0.1 }] },
+            { "code": "c", "cost": 1000, "effects": [{ "effect_id": "resurrect_chance", "value": 0.2 }] },
+            { "code": "d", "cost": 2000, "effects": [{ "effect_id": "resurrect_chance", "value": 0.3 }] }
+          ]
+        },
+        {
+          "tree_id": "graveyard_blessing",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 400, "effects": [{ "effect_id": "death_door_resistance", "value": 0.15 }] },
+            { "code": "c", "cost": 800, "effects": [{ "effect_id": "death_door_resistance", "value": 0.25 }] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "museum",
+      "building_type": "Museum",
+      "unlock_conditions": [{ "condition_type": "completed_runs", "required_count": 3 }],
+      "upgrade_trees": [
+        {
+          "tree_id": "museum_collection",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 300, "effects": [{ "effect_id": "trinket_slots", "value": 1 }] },
+            { "code": "c", "cost": 600, "effects": [{ "effect_id": "trinket_slots", "value": 2 }] }
+          ]
+        },
+        {
+          "tree_id": "museum_donation",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 400, "effects": [{ "effect_id": "heirloom_bonus", "value": 0.1 }] },
+            { "code": "c", "cost": 800, "effects": [{ "effect_id": "heirloom_bonus", "value": 0.2 }] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "provisioner",
+      "building_type": "Provisioner",
+      "unlock_conditions": [],
+      "upgrade_trees": [
+        {
+          "tree_id": "provisioner_supplies",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 200, "effects": [{ "effect_id": "supply_discount", "value": 0.1 }] },
+            { "code": "c", "cost": 400, "effects": [{ "effect_id": "supply_discount", "value": 0.2 }] },
+            { "code": "d", "cost": 800, "effects": [{ "effect_id": "supply_discount", "value": 0.3 }] }
+          ]
+        },
+        {
+          "tree_id": "provisioner_bonus",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 350, "effects": [{ "effect_id": "starting_provisions", "value": 2 }] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sanctuary",
+      "building_type": "Sanctuary",
+      "unlock_conditions": [{ "condition_type": "completed_runs", "required_count": 2 }],
+      "upgrade_trees": [
+        {
+          "tree_id": "sanctuary_protection",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 250, "effects": [{ "effect_id": "dungeon_stress_cap", "value": 5 }] },
+            { "code": "c", "cost": 500, "effects": [{ "effect_id": "dungeon_stress_cap", "value": 10 }] },
+            { "code": "d", "cost": 1000, "effects": [{ "effect_id": "dungeon_stress_cap", "value": 15 }] }
+          ]
+        },
+        {
+          "tree_id": "sanctuary_meditation",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [] },
+            { "code": "b", "cost": 300, "effects": [{ "effect_id": "meditation_stress_recovery", "value": 0.15 }] },
+            { "code": "c", "cost": 600, "effects": [{ "effect_id": "meditation_stress_recovery", "value": 0.25 }] }
+          ]
+        }
+      ]
+    }
+  ]
+}
