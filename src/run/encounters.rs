@@ -16,7 +16,7 @@ use framework_combat::encounter::{CombatSide, Encounter, EncounterId, EncounterS
 use framework_combat::formation::{FormationLayout, SlotIndex};
 use framework_combat::resolver::CombatResolver;
 use framework_combat::results::{EffectResult, EffectResultKind};
-use framework_combat::skills::SkillId;
+use framework_combat::skills::{SkillDefinition, SkillId};
 use framework_rules::actor::{ActorAggregate, ActorId};
 use framework_rules::attributes::{AttributeKey, ATTR_HEALTH};
 
