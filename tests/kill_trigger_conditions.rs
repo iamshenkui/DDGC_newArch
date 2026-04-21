@@ -8,6 +8,7 @@ use game_ddgc_headless::run::conditions::{
     ConditionAdapter, ConditionContext, ConditionResult, DdgcCondition,
     create_game_condition_evaluator, set_condition_context,
 };
+use framework_combat::effects::EffectCondition;
 use framework_combat::encounter::CombatSide;
 use framework_rules::actor::{ActorAggregate, ActorId};
 use game_ddgc_headless::encounters::Dungeon;
@@ -128,14 +129,25 @@ fn game_evaluator_returns_false_when_no_kill() {
 #[test]
 fn executioner_strike_skill_uses_on_kill_condition() {
     // Verify that the executioner_strike fixture skill registers through
-    // the skill pack and uses the ddgc_on_kill condition tag.
+    // the skill pack and contains a ddgc_on_kill condition tag.
     let pack = game_ddgc_headless::content::heroes::hunter::skill_pack();
     let skill = pack.iter().find(|s| s.id.0.as_str() == "executioner_strike");
     assert!(skill.is_some(), "executioner_strike should be in Hunter skill_pack");
+
+    let skill = skill.unwrap();
 
     // Verify the condition tag is parseable by the adapter
     assert!(
         ConditionAdapter::parse_condition_tag("ddgc_on_kill").is_some(),
         "ddgc_on_kill should parse as a valid OnKill condition"
+    );
+
+    // Verify the skill's effect nodes actually wire the GameCondition
+    let has_on_kill_condition = skill.effects.iter().any(|e| {
+        e.conditions.iter().any(|c| matches!(c, EffectCondition::GameCondition(tag) if tag == "ddgc_on_kill"))
+    });
+    assert!(
+        has_on_kill_condition,
+        "executioner_strike should have an effect node with GameCondition(\"ddgc_on_kill\")"
     );
 }
