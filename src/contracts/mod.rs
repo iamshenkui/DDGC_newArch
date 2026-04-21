@@ -79,6 +79,18 @@ impl DungeonType {
     }
 }
 
+/// Returns the canonical snake_case mode name for a game-layer `Dungeon`.
+///
+/// This is the contract-layer source of truth for `InMode` condition tag
+/// resolution. Mode strings match `DungeonType::as_str()` for the four
+/// primary dungeons and fall back to `"cross"` for cross-dungeon encounters.
+pub fn dungeon_mode_name(dungeon: crate::monsters::families::Dungeon) -> &'static str {
+    match DungeonType::from_dungeon(dungeon) {
+        Some(dt) => dt.as_str(),
+        None => "cross",
+    }
+}
+
 /// Size variant for dungeon maps.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum MapSize {
@@ -1128,5 +1140,34 @@ mod tests {
             "mantis_spiny_flower (chance=3) should appear ~75%, got {:.1}% ({}/1000)",
             ratio_b * 100.0, count_b
         );
+    }
+
+    // ── US-803-a: dungeon_mode_name contract tests ───────────────────────────────
+
+    #[test]
+    fn dungeon_mode_name_matches_dungeon_type_as_str() {
+        use crate::monsters::families::Dungeon;
+        // Primary dungeons map through DungeonType::as_str()
+        assert_eq!(dungeon_mode_name(Dungeon::QingLong), "qinglong");
+        assert_eq!(dungeon_mode_name(Dungeon::BaiHu), "baihu");
+        assert_eq!(dungeon_mode_name(Dungeon::ZhuQue), "zhuque");
+        assert_eq!(dungeon_mode_name(Dungeon::XuanWu), "xuanwu");
+    }
+
+    #[test]
+    fn dungeon_mode_name_fallback_for_cross() {
+        use crate::monsters::families::Dungeon;
+        // Cross has no DungeonType, so it falls back to "cross"
+        assert_eq!(dungeon_mode_name(Dungeon::Cross), "cross");
+    }
+
+    #[test]
+    fn dungeon_mode_name_is_contract_for_in_mode_resolution() {
+        use crate::monsters::families::Dungeon;
+        // The mode names returned by dungeon_mode_name are the exact strings
+        // used by InMode condition tags (ddgc_in_mode_<mode>).
+        let mode = dungeon_mode_name(Dungeon::XuanWu);
+        assert_eq!(mode, "xuanwu");
+        assert_eq!(format!("ddgc_in_mode_{}", mode), "ddgc_in_mode_xuanwu");
     }
 }

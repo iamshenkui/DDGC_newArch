@@ -267,7 +267,9 @@ pub fn skill_pack() -> Vec<SkillDefinition> {
         bleed_skill(),
         buff_skill(),
         opening_strike(),
+        desperate_strike(),
         retribution_strike(),
+        xuanwu_strike(),
         executioner_strike(),
     ]
 }

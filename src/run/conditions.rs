@@ -49,6 +49,7 @@ use framework_rules::attributes::ATTR_HEALTH;
 
 use crate::content::actors::ATTR_STRESS;
 use crate::encounters::Dungeon;
+use crate::contracts::dungeon_mode_name as contracts_dungeon_mode_name;
 
 // ── Thread-Local Condition Context ────────────────────────────────────────────
 
@@ -379,8 +380,12 @@ impl ConditionContext {
     /// DDGC reference: `InMode(mode)` — checks if the current dungeon matches
     /// the given mode string. Mode strings use snake_case dungeon names:
     /// `qinglong`, `baihu`, `zhuque`, `xuanwu`, `cross`.
+    ///
+    /// Mode name resolution is delegated to the contracts layer
+    /// (`crate::contracts::dungeon_mode_name`) so the naming contract lives
+    /// in one place.
     pub fn is_in_mode(&self, mode: &str) -> bool {
-        dungeon_mode_name(self.dungeon) == mode
+        contracts_dungeon_mode_name(self.dungeon) == mode
     }
 
     /// Returns whether the actor killed an enemy on the previous turn.
@@ -389,19 +394,6 @@ impl ConditionContext {
     /// from their previous turn. This is used to evaluate `ddgc_on_kill` conditions.
     pub fn actor_killed_enemy(&self) -> bool {
         !self.kills_this_turn.is_empty()
-    }
-}
-
-/// Returns the snake_case mode name for a Dungeon variant.
-///
-/// Used by `InMode` condition to match tag strings against the current dungeon.
-fn dungeon_mode_name(dungeon: Dungeon) -> &'static str {
-    match dungeon {
-        Dungeon::QingLong => "qinglong",
-        Dungeon::BaiHu => "baihu",
-        Dungeon::ZhuQue => "zhuque",
-        Dungeon::XuanWu => "xuanwu",
-        Dungeon::Cross => "cross",
     }
 }
 

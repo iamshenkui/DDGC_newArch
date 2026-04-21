@@ -31,8 +31,9 @@ fn family_skill_packs_are_variant_aware() {
             .resolve_skill_pack(family.base_id, ChaosMode::Black)
             .unwrap_or_else(|| panic!("{} black skills missing", family.base_id));
 
-        // All variants have 7-10 skills (Hunter base has 10 skills with opening_strike/retribution_strike/executioner_strike)
-        let base_expected = if family.base_id == "hunter" { 10 } else { 7 };
+        // All variants have 7-12 skills (Hunter base has 12 skills with opening_strike, desperate_strike,
+        // retribution_strike, xuanwu_strike, and executioner_strike)
+        let base_expected = if family.base_id == "hunter" { 12 } else { 7 };
         assert_eq!(base_skills.len(), base_expected, "{} base should have {} skills", family.base_id, base_expected);
         assert_eq!(white_skills.len(), 7, "{} white should have 7 skills", family.base_id);
         assert_eq!(black_skills.len(), 7, "{} black should have 7 skills", family.base_id);
