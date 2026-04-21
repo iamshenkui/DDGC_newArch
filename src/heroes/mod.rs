@@ -8,10 +8,12 @@
 //! The `black` submodule contains black (+2) variant definitions.
 //! The `skills` submodule provides variant-aware skill pack resolution.
 //! The `statuses` submodule provides variant-aware status semantics.
+//! The `progress` submodule provides hero XP and leveling progression.
 
 pub mod base;
 pub mod black;
 pub mod families;
+pub mod progress;
 pub mod recruitment;
 pub mod skills;
 pub mod statuses;
@@ -20,6 +22,7 @@ pub mod white;
 pub use base::*;
 pub use black::*;
 pub use families::*;
+pub use progress::{HeroProgress, LEVEL_THRESHOLD_TABLE, RESOLVE_THRESHOLD_TABLE};
 pub use recruitment::{
     hero_class_identity, hero_matches_any_class_requirement, hero_matches_class_requirement,
     is_base_recruit_class, normalize_recruit_class_id, HeroClassIdentity, RecruitPool,
