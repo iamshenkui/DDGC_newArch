@@ -682,7 +682,7 @@
     "title": "P4a-1: Implement HP-threshold conditions (docs)",
     "description": "As a developer, I need HpAbove, TargetHpAbove, and TargetHpBelow DDGC conditions implemented so HP-threshold skill gating works correctly instead of being always-on or always-off.\n\nFocus: implement the docs-layer changes.",
     "priority": 25,
-    "status": "ready",
+    "status": "verified_done",
     "acceptance_criteria": [
       "ConditionAdapter evaluates ddgc_hp_above_<threshold>, ddgc_target_hp_above_<threshold>, and ddgc_target_hp_below_<threshold> condition tags.",
       "HP-threshold evaluation reads ATTR_HEALTH and ATTR_MAX_HEALTH from the appropriate actor or target and compares against the fractional threshold.",
