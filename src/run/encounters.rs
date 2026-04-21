@@ -16,7 +16,7 @@ use framework_combat::encounter::{CombatSide, Encounter, EncounterId, EncounterS
 use framework_combat::formation::{FormationLayout, SlotIndex};
 use framework_combat::resolver::CombatResolver;
 use framework_combat::results::{EffectResult, EffectResultKind};
-use framework_combat::skills::{SkillDefinition, SkillId};
+use framework_combat::skills::SkillId;
 use framework_rules::actor::{ActorAggregate, ActorId};
 use framework_rules::attributes::{AttributeKey, ATTR_HEALTH};
 
@@ -29,7 +29,7 @@ use crate::monsters::build_registry as build_monster_registry;
 use crate::monsters::MonsterFamilyRegistry;
 use crate::trace::BattleTrace;
 use crate::run::conditions::{ConditionContext, create_game_condition_evaluator, set_condition_context};
-use crate::run::damage_policy::{DamagePolicy, DamageRange};
+use crate::run::damage_policy::DamagePolicy;
 use crate::run::hit_resolution::{HitPolicy, HitResolutionContext};
 use crate::run::capture_events::extract_capture_events;
 use crate::run::captor_state::{
@@ -162,47 +162,6 @@ impl EncounterResolver {
     pub fn with_damage_policy(mut self, policy: DamagePolicy) -> Self {
         self.damage_policy = policy;
         self
-    }
-
-    /// Apply the active damage policy to a skill definition.
-    ///
-    /// For `FixedAverage`, returns the skill unchanged (the baked-in average
-    /// amounts in EffectNode are already correct).
-    ///
-    /// For `Rolled`, clones the skill and patches each damage effect node's
-    /// `"amount"` parameter to a value within the registered DamageRange,
-    /// resolved deterministically from actor_id, skill_id, round, and effect_index.
-    fn apply_damage_policy(
-        &self,
-        skill: &SkillDefinition,
-        actor_id: ActorId,
-        round: u32,
-    ) -> SkillDefinition {
-        if self.damage_policy == DamagePolicy::FixedAverage {
-            return skill.clone();
-        }
-
-        let mut patched = skill.clone();
-        let mut damage_effect_index = 0usize;
-        for node in &mut patched.effects {
-            if node.kind == EffectKind::Damage {
-                let baked_amount = node.params.get("amount").copied().unwrap_or(0.0);
-                let range = self
-                    .content_pack
-                    .get_damage_range(&skill.id.0)
-                    .unwrap_or_else(|| DamageRange::fixed(baked_amount));
-                let resolved = self.damage_policy.resolve_for_battle(
-                    range,
-                    actor_id.0,
-                    &skill.id.0,
-                    round,
-                    damage_effect_index,
-                );
-                node.params.insert("amount".to_string(), resolved);
-                damage_effect_index += 1;
-            }
-        }
-        patched
     }
 
     /// Resolve a combat room to an encounter pack deterministically.
