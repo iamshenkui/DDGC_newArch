@@ -980,7 +980,7 @@
     "title": "P4a-2: Implement dungeon-mode condition (docs)",
     "description": "As a developer, I need the InMode DDGC condition implemented so skills that behave differently in specific dungeon modes can diverge correctly.\n\nFocus: implement the docs-layer changes.",
     "priority": 35,
-    "status": "ready",
+    "status": "verified_done",
     "acceptance_criteria": [
       "ConditionAdapter evaluates ddgc_in_mode_<mode> condition tags.",
       "Mode resolution reads from ConditionContext::dungeon and any game-layer mode state.",
