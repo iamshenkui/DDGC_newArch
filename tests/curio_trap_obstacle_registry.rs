@@ -426,3 +426,193 @@ fn mossy_stone_curio_interaction() {
         _ => panic!("Expected Nothing, Quirk, or Disease"),
     }
 }
+
+// ── US-004: Trap interaction resolution ────────────────────────────────────────
+
+use game_ddgc_headless::contracts::dungeon_level;
+use game_ddgc_headless::contracts::TrapOutcome;
+
+/// Focused test: trap succeeds when resist chance is high enough.
+#[test]
+fn trap_succeeds_with_high_resist_chance() {
+    let (_, traps, _) = parse_all();
+
+    // Using seed=0 and resist_chance=1.0 should always succeed
+    let outcome = traps
+        .resolve_trap_interaction("poison_gas", dungeon_level::LEVEL_3, 1.0, 0)
+        .expect("poison_gas should exist");
+
+    match outcome {
+        TrapOutcome::Success { effects } => {
+            assert!(
+                effects.contains(&"detect_gas".to_string()),
+                "Success should contain detect_gas effect"
+            );
+            assert!(
+                effects.contains(&"avoid".to_string()),
+                "Success should contain avoid effect"
+            );
+        }
+        TrapOutcome::Fail { .. } => panic!("Expected Success with resist_chance=1.0"),
+    }
+}
+
+/// Focused test: trap fails with correct difficulty-scaled effects at level 3.
+#[test]
+fn trap_fails_with_correct_difficulty_scaled_effects_level_3() {
+    let (_, traps, _) = parse_all();
+
+    // Using seed=999 (produces normalized value > 0.5) and resist_chance=0.0 ensures failure
+    let outcome = traps
+        .resolve_trap_interaction("poison_gas", dungeon_level::LEVEL_3, 0.0, 999)
+        .expect("poison_gas should exist");
+
+    match outcome {
+        TrapOutcome::Success { .. } => panic!("Expected Fail with resist_chance=0.0"),
+        TrapOutcome::Fail { effects, health_fraction } => {
+            // Level 3 variation for poison_gas: ["poison", "gas_inhalation", "daze"], health_fraction=0.2
+            assert!(
+                effects.contains(&"poison".to_string()),
+                "Level 3 fail effects should contain poison"
+            );
+            assert!(
+                effects.contains(&"gas_inhalation".to_string()),
+                "Level 3 fail effects should contain gas_inhalation"
+            );
+            assert!(
+                effects.contains(&"daze".to_string()),
+                "Level 3 fail effects should contain daze"
+            );
+            assert_eq!(health_fraction, 0.2, "Level 3 health_fraction should be 0.2");
+        }
+    }
+}
+
+/// Focused test: trap fails with correct difficulty-scaled effects at level 5.
+#[test]
+fn trap_fails_with_correct_difficulty_scaled_effects_level_5() {
+    let (_, traps, _) = parse_all();
+
+    // Using seed=999 and resist_chance=0.0 ensures failure
+    let outcome = traps
+        .resolve_trap_interaction("floor_spikes", dungeon_level::LEVEL_5, 0.0, 999)
+        .expect("floor_spikes should exist");
+
+    match outcome {
+        TrapOutcome::Success { .. } => panic!("Expected Fail with resist_chance=0.0"),
+        TrapOutcome::Fail { effects, health_fraction } => {
+            // Level 5 variation for floor_spikes: ["bleed", "pierce", "slow", "immobilize"], health_fraction=0.35
+            assert!(
+                effects.contains(&"bleed".to_string()),
+                "Level 5 fail effects should contain bleed"
+            );
+            assert!(
+                effects.contains(&"pierce".to_string()),
+                "Level 5 fail effects should contain pierce"
+            );
+            assert!(
+                effects.contains(&"slow".to_string()),
+                "Level 5 fail effects should contain slow"
+            );
+            assert!(
+                effects.contains(&"immobilize".to_string()),
+                "Level 5 fail effects should contain immobilize"
+            );
+            assert_eq!(health_fraction, 0.35, "Level 5 health_fraction should be 0.35");
+        }
+    }
+}
+
+/// Focused test: trap resolution is deterministic for same seed.
+#[test]
+fn trap_resolution_is_deterministic() {
+    let (_, traps, _) = parse_all();
+
+    let seed = 42u64;
+    let outcome1 = traps.resolve_trap_interaction("tripwire", dungeon_level::LEVEL_3, 0.5, seed);
+    let outcome2 = traps.resolve_trap_interaction("tripwire", dungeon_level::LEVEL_3, 0.5, seed);
+
+    assert_eq!(outcome1, outcome2, "Same seed should produce same trap outcome");
+}
+
+/// Focused test: unknown trap returns None.
+#[test]
+fn resolve_unknown_trap_returns_none() {
+    let (_, traps, _) = parse_all();
+
+    let outcome = traps.resolve_trap_interaction("nonexistent_trap", dungeon_level::LEVEL_3, 0.5, 0);
+    assert!(outcome.is_none(), "Unknown trap should return None");
+}
+
+// ── US-004: Obstacle interaction resolution ───────────────────────────────────
+
+/// Focused test: obstacles apply uniform penalty pattern.
+#[test]
+fn obstacle_applies_uniform_penalty_pattern() {
+    let (_, _, obstacles) = parse_all();
+
+    // Test all obstacles return the expected penalty pattern
+    let obstacle_ids = ["thorny_thicket", "boulder", "deep_pit", "locked_door", "magical_barrier"];
+
+    for id in &obstacle_ids {
+        let outcome = obstacles
+            .resolve_obstacle_interaction(id)
+            .expect(&format!("{} should exist", id));
+
+        // All obstacles should have fail effects, health_fraction, and torchlight_penalty
+        assert!(
+            !outcome.fail_effects.is_empty(),
+            "{} should have fail effects",
+            id
+        );
+        assert!(
+            outcome.health_fraction > 0.0,
+            "{} should have positive health_fraction",
+            id
+        );
+        // torchlight_penalty can be positive or negative (range -1.0 to 1.0)
+        assert!(
+            outcome.torchlight_penalty >= -1.0 && outcome.torchlight_penalty <= 1.0,
+            "{} torchlight_penalty should be in [-1.0, 1.0], got {}",
+            id,
+            outcome.torchlight_penalty
+        );
+    }
+}
+
+/// Focused test: deep_pit has expected penalty values.
+#[test]
+fn deep_pit_has_expected_penalty_values() {
+    let (_, _, obstacles) = parse_all();
+
+    let outcome = obstacles
+        .resolve_obstacle_interaction("deep_pit")
+        .expect("deep_pit should exist");
+
+    assert_eq!(outcome.fail_effects, vec!["fall_damage", "immobilize"]);
+    assert_eq!(outcome.health_fraction, 0.25);
+    assert_eq!(outcome.torchlight_penalty, 0.2);
+}
+
+/// Focused test: locked_door has expected penalty values (negative torchlight penalty).
+#[test]
+fn locked_door_has_expected_penalty_values() {
+    let (_, _, obstacles) = parse_all();
+
+    let outcome = obstacles
+        .resolve_obstacle_interaction("locked_door")
+        .expect("locked_door should exist");
+
+    assert_eq!(outcome.fail_effects, vec!["bump", "noise_alert"]);
+    assert_eq!(outcome.health_fraction, 0.05);
+    assert_eq!(outcome.torchlight_penalty, -0.2);
+}
+
+/// Focused test: unknown obstacle returns None.
+#[test]
+fn resolve_unknown_obstacle_returns_none() {
+    let (_, _, obstacles) = parse_all();
+
+    let outcome = obstacles.resolve_obstacle_interaction("nonexistent_obstacle");
+    assert!(outcome.is_none(), "Unknown obstacle should return None");
+}

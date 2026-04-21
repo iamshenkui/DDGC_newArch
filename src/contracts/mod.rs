@@ -149,6 +149,34 @@ pub struct CurioInteractionOutcome {
     pub applied_effects: Vec<String>,
 }
 
+/// Outcome of a trap interaction.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum TrapOutcome {
+    /// The trap was successfully avoided.
+    Success {
+        /// Effects applied from successful avoidance.
+        effects: Vec<String>,
+    },
+    /// The trap was triggered and had effects applied.
+    Fail {
+        /// Effects applied from triggering the trap.
+        effects: Vec<String>,
+        /// Fraction of max HP lost from this trap.
+        health_fraction: f64,
+    },
+}
+
+/// Outcome of an obstacle interaction.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ObstacleOutcome {
+    /// Effects applied from failing to overcome the obstacle.
+    pub fail_effects: Vec<String>,
+    /// Fraction of max HP lost from this obstacle.
+    pub health_fraction: f64,
+    /// Torchlight penalty modifier (-1.0 to 1.0).
+    pub torchlight_penalty: f64,
+}
+
 /// A difficulty variation for a trap, keyed by level.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TrapVariation {
@@ -225,6 +253,14 @@ impl ObstacleDefinition {
             torchlight_penalty,
         }
     }
+}
+
+/// Dungeon level constants for trap difficulty variations.
+pub mod dungeon_level {
+    /// Level 3 dungeon (standard difficulty).
+    pub const LEVEL_3: u32 = 3;
+    /// Level 5 dungeon (hard difficulty).
+    pub const LEVEL_5: u32 = 5;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -393,6 +429,53 @@ impl TrapRegistry {
     pub fn is_empty(&self) -> bool {
         self.traps.is_empty()
     }
+
+    /// Resolve a trap interaction using resist chance and seed-based randomization.
+    ///
+    /// The trap can be avoided if a random value derived from the seed is less than
+    /// `resist_chance`. If avoided, returns `TrapOutcome::Success` with the trap's
+    /// success effects. If triggered, returns `TrapOutcome::Fail` with effects and
+    /// health fraction from the appropriate difficulty variation for `trap_level`,
+    /// or the base values if no variation exists for that level.
+    ///
+    /// Returns `None` if the trap does not exist.
+    pub fn resolve_trap_interaction(
+        &self,
+        trap_id: &str,
+        trap_level: u32,
+        resist_chance: f64,
+        seed: u64,
+    ) -> Option<TrapOutcome> {
+        let trap = self.traps.get(trap_id)?;
+
+        // Determine if the trap is avoided using seed-derived random value
+        // The seed produces a deterministic float in [0.0, 1.0)
+        let threshold = ((seed % 1000) as f64 / 1000.0) + (seed / 1000) as f64 * 0.001;
+        let normalized_seed = threshold.fract().abs();
+
+        if normalized_seed < resist_chance {
+            // Trap avoided successfully
+            return Some(TrapOutcome::Success {
+                effects: trap.success_effects.clone(),
+            });
+        }
+
+        // Trap triggered - find appropriate difficulty variation
+        let variation = trap.difficulty_variations.iter().find(|v| v.level == trap_level);
+
+        if let Some(v) = variation {
+            Some(TrapOutcome::Fail {
+                effects: v.fail_effects.clone(),
+                health_fraction: v.health_fraction,
+            })
+        } else {
+            // Fall back to base trap values
+            Some(TrapOutcome::Fail {
+                effects: trap.fail_effects.clone(),
+                health_fraction: trap.health_fraction,
+            })
+        }
+    }
 }
 
 /// Registry holding all obstacle definitions parsed from DDGC Obstacles.json.
@@ -432,6 +515,26 @@ impl ObstacleRegistry {
     /// Returns true if the registry is empty.
     pub fn is_empty(&self) -> bool {
         self.obstacles.is_empty()
+    }
+
+    /// Resolve an obstacle interaction.
+    ///
+    /// Obstacles always have a failure outcome when attempted - they represent
+    /// physical barriers that must be overcome rather than resisted. Returns
+    /// the obstacle's fail effects, health fraction, and torchlight penalty.
+    ///
+    /// Returns `None` if the obstacle does not exist.
+    pub fn resolve_obstacle_interaction(
+        &self,
+        obstacle_id: &str,
+    ) -> Option<ObstacleOutcome> {
+        let obstacle = self.obstacles.get(obstacle_id)?;
+
+        Some(ObstacleOutcome {
+            fail_effects: obstacle.fail_effects.clone(),
+            health_fraction: obstacle.health_fraction,
+            torchlight_penalty: obstacle.torchlight_penalty,
+        })
     }
 }
 
