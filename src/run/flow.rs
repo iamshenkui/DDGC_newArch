@@ -14,8 +14,9 @@ use framework_progression::generation::{DefaultRoomGenerator, FloorConfig, RoomG
 use framework_progression::rooms::{RoomId, RoomKind};
 use framework_progression::run::{Run, RunId, RunResult};
 
-use crate::contracts::{get_dungeon_config, DungeonType, MapSize};
+use crate::contracts::{get_dungeon_config, DungeonMapConfig, DungeonType, MapSize, GridSize};
 use crate::encounters::Dungeon;
+use crate::monsters::families::FamilyId;
 use crate::run::encounters::EncounterResolver;
 use crate::run::rewards::{self, PostBattleUpdate};
 
@@ -90,6 +91,83 @@ pub struct DdgcRunResult {
     pub floor: Floor,
     /// Pack IDs for battles in this run slice — used to verify no fallback content.
     pub battle_pack_ids: Vec<String>,
+    /// Dungeon and map metadata for this run slice.
+    pub metadata: RunMetadata,
+    /// Per-room encounter details including pack ID and monster family composition.
+    pub room_encounters: Vec<RoomEncounterRecord>,
+}
+
+/// Dungeon and map metadata captured at the start of a run slice.
+///
+/// This records the dungeon type, map size, and key map generation parameters
+/// so the run trace can be analyzed for fidelity verification.
+#[derive(Debug, Clone, PartialEq)]
+pub struct RunMetadata {
+    /// The dungeon type (QingLong, BaiHu, ZhuQue, XuanWu).
+    pub dungeon_type: DungeonType,
+    /// The map size variant (Short, Medium).
+    pub map_size: MapSize,
+    /// Base number of rooms in the map.
+    pub base_room_number: u32,
+    /// Base number of corridors in the map.
+    pub base_corridor_number: u32,
+    /// Grid dimensions for room placement.
+    pub gridsize: GridSize,
+    /// Connectivity parameter (0.0 to 1.0).
+    pub connectivity: f64,
+}
+
+impl RunMetadata {
+    /// Create run metadata from a dungeon config.
+    fn from_config(dungeon_type: DungeonType, map_size: MapSize, config: &DungeonMapConfig) -> Self {
+        RunMetadata {
+            dungeon_type,
+            map_size,
+            base_room_number: config.base_room_number,
+            base_corridor_number: config.base_corridor_number,
+            gridsize: config.gridsize,
+            connectivity: config.connectivity,
+        }
+    }
+}
+
+/// A record of the encounter composition for a single room in a run slice.
+///
+/// This captures the pack ID and monster family composition for each combat
+/// or boss room, enabling verification that the correct encounter types and
+/// monster families appear per room.
+#[derive(Debug, Clone, PartialEq)]
+pub struct RoomEncounterRecord {
+    /// The room ID.
+    pub room_id: RoomId,
+    /// The kind of room (Combat, Boss, Event).
+    pub room_kind: RoomKind,
+    /// The encounter pack ID used for this room (empty for non-combat rooms).
+    pub pack_id: String,
+    /// Monster family IDs in this encounter pack (empty for non-combat rooms).
+    pub family_ids: Vec<FamilyId>,
+}
+
+impl RoomEncounterRecord {
+    /// Create a combat/boss room record from a pack.
+    fn combat(room_id: RoomId, room_kind: RoomKind, pack_id: String, family_ids: Vec<FamilyId>) -> Self {
+        RoomEncounterRecord {
+            room_id,
+            room_kind,
+            pack_id,
+            family_ids,
+        }
+    }
+
+    /// Create an event room record (no encounter).
+    fn event(room_id: RoomId) -> Self {
+        RoomEncounterRecord {
+            room_id,
+            room_kind: RoomKind::Event,
+            pack_id: String::new(),
+            family_ids: Vec::new(),
+        }
+    }
 }
 
 /// Run a minimal DDGC run slice.
@@ -127,6 +205,7 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
     let mut run = Run::new(RunId(1), vec![FloorId(0)], config.seed);
     let mut state = DdgcRunState::new();
     let mut battle_pack_ids = Vec::new();
+    let mut room_encounters = Vec::new();
 
     // Build the encounter resolver once — reuse for all combat rooms
     let resolver = EncounterResolver::new();
@@ -152,6 +231,15 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
                 let battle_result = resolver.run_battle(pack, room_idx as u64 + 1);
                 battle_pack_ids.push(battle_result.pack_id.clone());
 
+                // Record room encounter with family composition
+                let family_ids: Vec<FamilyId> = pack.family_ids().iter().map(|f| (*f).clone()).collect();
+                room_encounters.push(RoomEncounterRecord::combat(
+                    *room_id,
+                    room_kind.clone(),
+                    battle_result.pack_id.clone(),
+                    family_ids,
+                ));
+
                 if battle_result.winner == Some(CombatSide::Ally) {
                     state.battles_won += 1;
                 } else {
@@ -175,6 +263,15 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
                 let battle_result = resolver.run_battle(pack, room_idx as u64 + 1);
                 battle_pack_ids.push(battle_result.pack_id.clone());
 
+                // Record room encounter with family composition
+                let family_ids: Vec<FamilyId> = pack.family_ids().iter().map(|f| (*f).clone()).collect();
+                room_encounters.push(RoomEncounterRecord::combat(
+                    *room_id,
+                    room_kind.clone(),
+                    battle_result.pack_id.clone(),
+                    family_ids,
+                ));
+
                 if battle_result.winner == Some(CombatSide::Ally) {
                     state.battles_won += 1;
                 } else {
@@ -190,6 +287,7 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
             }
             _ => {
                 // Event and other rooms: auto-clear (no combat)
+                room_encounters.push(RoomEncounterRecord::event(*room_id));
                 run.clear_room(&mut floor).unwrap();
             }
         }
@@ -205,11 +303,16 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
     };
     run.finish(run_result);
 
+    // Build run metadata from the dungeon config
+    let metadata = RunMetadata::from_config(dungeon_type, config.map_size, map_config);
+
     DdgcRunResult {
         run,
         state,
         floor,
         battle_pack_ids,
+        metadata,
+        room_encounters,
     }
 }
 
@@ -549,6 +652,171 @@ mod tests {
                 medium_result.floor.rooms.len()
             );
         }
+    }
+
+    // ── US-812: Dungeon fidelity end-to-end validation ──────────────────────────
+
+    #[test]
+    fn dungeon_fidelity_test_qinglong_short() {
+        // US-812: End-to-end validation of dungeon fidelity.
+        // Verifies that a QingLong short run slice completes with correct room
+        // count, correct encounter types, and correct monster families per room.
+        // The run trace records dungeon type, map parameters, and encounter composition.
+        use framework_progression::rooms::RoomState;
+        use crate::contracts::{DungeonType, MapSize, QINGLONG_SHORT_EXPLORE};
+
+        let config = DdgcRunConfig {
+            seed: 42,
+            dungeon: Dungeon::QingLong,
+            map_size: MapSize::Short,
+        };
+        let result = run_ddgc_slice(&config);
+
+        // ── 1. Room count verification ─────────────────────────────────────────
+        assert_eq!(
+            result.floor.rooms.len() as u32,
+            QINGLONG_SHORT_EXPLORE.base_room_number,
+            "QingLong short should have {} rooms",
+            QINGLONG_SHORT_EXPLORE.base_room_number
+        );
+
+        // ── 2. Dungeon metadata verification ────────────────────────────────────
+        assert_eq!(
+            result.metadata.dungeon_type,
+            DungeonType::QingLong,
+            "Dungeon type should be QingLong"
+        );
+        assert_eq!(
+            result.metadata.map_size,
+            MapSize::Short,
+            "Map size should be Short"
+        );
+        assert_eq!(
+            result.metadata.base_room_number,
+            QINGLONG_SHORT_EXPLORE.base_room_number,
+            "Metadata base_room_number should match config"
+        );
+        assert_eq!(
+            result.metadata.connectivity,
+            QINGLONG_SHORT_EXPLORE.connectivity,
+            "Metadata connectivity should match config"
+        );
+        assert_eq!(
+            result.metadata.gridsize, QINGLONG_SHORT_EXPLORE.gridsize,
+            "Metadata gridsize should match config"
+        );
+
+        // ── 3. Room encounters verification ────────────────────────────────────
+        assert_eq!(
+            result.room_encounters.len(),
+            result.floor.rooms.len(),
+            "room_encounters should have one entry per room"
+        );
+
+        // Count combat and boss rooms
+        let battle_room_count = result
+            .room_encounters
+            .iter()
+            .filter(|r| matches!(r.room_kind, RoomKind::Combat | RoomKind::Boss))
+            .count();
+
+        assert!(
+            battle_room_count > 0,
+            "Should have at least one battle room"
+        );
+
+        // Verify all battle rooms have valid pack IDs and family compositions
+        for record in &result.room_encounters {
+            match record.room_kind {
+                RoomKind::Combat | RoomKind::Boss => {
+                    // Pack ID should not be empty for battle rooms
+                    assert!(
+                        !record.pack_id.is_empty(),
+                        "Battle room {:?} should have a pack_id",
+                        record.room_id
+                    );
+                    // Family IDs should not be empty for battle rooms
+                    assert!(
+                        !record.family_ids.is_empty(),
+                        "Battle room {:?} ({}) should have family_ids",
+                        record.room_id, record.pack_id
+                    );
+                    // Pack ID should be a valid DDGC pack (not fallback)
+                    assert_ne!(
+                        record.pack_id, "fallback_transitional",
+                        "Battle room should not use fallback_transitional"
+                    );
+                }
+                RoomKind::Event => {
+                    // Event rooms have empty pack_id and family_ids
+                    assert!(
+                        record.pack_id.is_empty(),
+                        "Event room {:?} should have empty pack_id",
+                        record.room_id
+                    );
+                    assert!(
+                        record.family_ids.is_empty(),
+                        "Event room {:?} should have empty family_ids",
+                        record.room_id
+                    );
+                }
+                _ => {
+                    // Shop, Treasure, Corridor, Custom: no encounter, no battle
+                    assert!(
+                        record.pack_id.is_empty(),
+                        "Non-combat room {:?} should have empty pack_id",
+                        record.room_id
+                    );
+                    assert!(
+                        record.family_ids.is_empty(),
+                        "Non-combat room {:?} should have empty family_ids",
+                        record.room_id
+                    );
+                }
+            }
+        }
+
+        // ── 4. Battle pack IDs verification ────────────────────────────────────
+        assert_eq!(
+            result.battle_pack_ids.len(),
+            battle_room_count,
+            "battle_pack_ids count should match battle room count"
+        );
+
+        // Verify battle_pack_ids matches room_encounters for battle rooms
+        let battle_encounters: Vec<_> = result
+            .room_encounters
+            .iter()
+            .filter(|r| matches!(r.room_kind, RoomKind::Combat | RoomKind::Boss))
+            .collect();
+        for (i, encounter) in battle_encounters.iter().enumerate() {
+            assert_eq!(
+                result.battle_pack_ids[i], encounter.pack_id,
+                "battle_pack_ids[{}] should match room_encounters pack_id",
+                i
+            );
+        }
+
+        // ── 5. Room state verification ─────────────────────────────────────────
+        for room_id in &result.floor.rooms {
+            assert_eq!(
+                result.floor.rooms_map[room_id].state,
+                RoomState::Cleared,
+                "Room {:?} should be Cleared",
+                room_id
+            );
+        }
+
+        // ── 6. Victory outcome verification ────────────────────────────────────
+        assert_eq!(
+            result.state.battles_won, battle_room_count as u32,
+            "All {} battle rooms should be won",
+            battle_room_count
+        );
+        assert_eq!(
+            result.state.battles_lost, 0,
+            "No battles should be lost"
+        );
     }
 
     /// Compute the average number of connections per room in a floor.
