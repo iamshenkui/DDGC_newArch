@@ -127,6 +127,31 @@ fn game_evaluator_wires_in_mode_correctly() {
     );
 }
 
+// ── Mode override passes independently of dungeon ────────────────────────────
+
+#[test]
+fn in_mode_passes_with_mode_override_when_dungeon_differs() {
+    let mut ctx = make_context(Dungeon::QingLong);
+    ctx = ctx.with_mode("black_tortoise_field");
+    let adapter = ConditionAdapter::new(ctx);
+
+    assert_eq!(
+        adapter.evaluate_by_tag("ddgc_in_mode_black_tortoise_field"),
+        ConditionResult::Pass,
+        "InMode should pass from mode override even when dungeon differs"
+    );
+    assert_eq!(
+        adapter.evaluate_by_tag("ddgc_in_mode_qinglong"),
+        ConditionResult::Pass,
+        "InMode should still pass from dungeon match when mode override is set"
+    );
+    assert_eq!(
+        adapter.evaluate_by_tag("ddgc_in_mode_xuanwu"),
+        ConditionResult::Fail,
+        "InMode should fail when neither dungeon nor mode override matches"
+    );
+}
+
 // ── Fixture skill uses InMode condition ──────────────────────────────────────
 
 #[test]

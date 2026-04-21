@@ -129,6 +129,12 @@ pub struct ConditionContext {
     side_lookup: HashMap<ActorId, CombatSide>,
     /// The dungeon this encounter is taking place in.
     dungeon: Dungeon,
+    /// Optional game-layer mode override.
+    ///
+    /// Set when an encounter has a dungeon-specific battle modifier (e.g. boss
+    /// room affliction field). When `Some`, `is_in_mode` checks this value in
+    /// addition to the canonical dungeon name.
+    mode: Option<String>,
     /// Actor IDs killed by the actor on the previous turn.
     /// Used to evaluate `OnKill` / `ddgc_on_kill` conditions.
     kills_this_turn: Vec<ActorId>,
@@ -180,8 +186,20 @@ impl ConditionContext {
             actors,
             side_lookup,
             dungeon,
+            mode: None,
             kills_this_turn,
         }
+    }
+
+    /// Set the optional game-layer mode override.
+    ///
+    /// Returns `self` so this can be chained with the constructor:
+    /// ```ignore
+    /// let ctx = ConditionContext::new(...).with_mode("black_tortoise_field");
+    /// ```
+    pub fn with_mode(mut self, mode: impl Into<String>) -> Self {
+        self.mode = Some(mode.into());
+        self
     }
 
     /// Returns the actor ID.
@@ -378,14 +396,18 @@ impl ConditionContext {
     /// Returns whether the current encounter is in the specified mode.
     ///
     /// DDGC reference: `InMode(mode)` — checks if the current dungeon matches
-    /// the given mode string. Mode strings use snake_case dungeon names:
+    /// the given mode string, or if an optional game-layer mode override has
+    /// been set. Mode strings use snake_case dungeon names:
     /// `qinglong`, `baihu`, `zhuque`, `xuanwu`, `cross`.
     ///
     /// Mode name resolution is delegated to the contracts layer
     /// (`crate::contracts::dungeon_mode_name`) so the naming contract lives
-    /// in one place.
+    /// in one place. The optional `mode` field allows encounters to declare
+    /// additional mode state (e.g. boss room battle modifiers) independently
+    /// of the dungeon type.
     pub fn is_in_mode(&self, mode: &str) -> bool {
         contracts_dungeon_mode_name(self.dungeon) == mode
+            || self.mode.as_deref() == Some(mode)
     }
 
     /// Returns whether the actor killed an enemy on the previous turn.
@@ -2697,6 +2719,68 @@ mod adapter_tests {
             "Evaluator should return true for ddgc_in_mode_zhuque in ZhuQue dungeon");
         assert!(!evaluator("ddgc_in_mode_qinglong"),
             "Evaluator should return false for ddgc_in_mode_qinglong in ZhuQue dungeon");
+    }
+
+    #[test]
+    fn in_mode_passes_with_mode_override_when_dungeon_differs() {
+        let (actors, side_lookup) = build_adapter_actors();
+        let ctx = ConditionContext::new(
+            ActorId(1),
+            vec![ActorId(2)],
+            0,
+            actors,
+            side_lookup,
+            Dungeon::QingLong,
+        )
+        .with_mode("black_tortoise_field");
+
+        let adapter = ConditionAdapter::new(ctx);
+        assert_eq!(
+            adapter.evaluate_ddgc(&DdgcCondition::InMode("black_tortoise_field".to_string())),
+            ConditionResult::Pass,
+            "InMode should pass when mode override matches even if dungeon differs"
+        );
+        assert_eq!(
+            adapter.evaluate_ddgc(&DdgcCondition::InMode("qinglong".to_string())),
+            ConditionResult::Pass,
+            "InMode should still pass from dungeon match when mode override is set"
+        );
+        assert_eq!(
+            adapter.evaluate_ddgc(&DdgcCondition::InMode("xuanwu".to_string())),
+            ConditionResult::Fail,
+            "InMode should fail when neither dungeon nor mode override matches"
+        );
+    }
+
+    #[test]
+    fn in_mode_with_mode_override_via_tag() {
+        let (actors, side_lookup) = build_adapter_actors();
+        let ctx = ConditionContext::new(
+            ActorId(1),
+            vec![ActorId(2)],
+            0,
+            actors,
+            side_lookup,
+            Dungeon::BaiHu,
+        )
+        .with_mode("boss_affliction");
+
+        let adapter = ConditionAdapter::new(ctx);
+        assert_eq!(
+            adapter.evaluate_by_tag("ddgc_in_mode_boss_affliction"),
+            ConditionResult::Pass,
+            "Tag should pass when mode override matches"
+        );
+        assert_eq!(
+            adapter.evaluate_by_tag("ddgc_in_mode_baihu"),
+            ConditionResult::Pass,
+            "Tag should still pass from dungeon match"
+        );
+        assert_eq!(
+            adapter.evaluate_by_tag("ddgc_in_mode_qinglong"),
+            ConditionResult::Fail,
+            "Tag should fail when neither matches"
+        );
     }
 
     /// Shared actor setup for US-803 InMode tests.
