@@ -16,6 +16,10 @@
 //!
 //! Each dungeon supports multiple size variants. This module provides `short`
 //! and `medium` variants as specified in the acceptance criteria.
+//!
+//! This module also provides data models for dungeon interactions including
+//! curios, traps, and obstacles that represent room and corridor interactions
+//! beyond combat.
 
 use serde::{Deserialize, Serialize};
 
@@ -42,6 +46,173 @@ pub struct GridSize {
 impl GridSize {
     pub const fn new(x: u32, y: u32) -> Self {
         GridSize { x, y }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Curio, Trap, and Obstacle definitions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Result type for curio interactions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum CurioResultType {
+    Nothing,
+    Loot,
+    Quirk,
+    Effect,
+    Purge,
+    Scouting,
+    Teleport,
+    Disease,
+}
+
+/// A single possible outcome from interacting with a curio.
+///
+/// Each result has a weight (for cumulative weighted selection) and a chance
+/// (probability of this outcome being selected).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CurioResult {
+    /// Selection weight for weighted random selection.
+    pub weight: u32,
+    /// Probability of this outcome being selected.
+    pub chance: f64,
+    /// The type of result this produces.
+    pub result_type: CurioResultType,
+    /// Identifier of the specific result (e.g., loot ID, quirk ID, effect ID).
+    pub result_id: String,
+}
+
+impl CurioResult {
+    pub fn new(weight: u32, chance: f64, result_type: CurioResultType, result_id: &str) -> Self {
+        CurioResult {
+            weight,
+            chance,
+            result_type,
+            result_id: result_id.to_string(),
+        }
+    }
+}
+
+/// An item that can override a curio's default result when used.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ItemInteraction {
+    /// The item ID that triggers this interaction.
+    pub item_id: String,
+    /// The result ID to use when this item is applied.
+    pub overrides_result_id: String,
+}
+
+impl ItemInteraction {
+    pub fn new(item_id: &str, overrides_result_id: &str) -> Self {
+        ItemInteraction {
+            item_id: item_id.to_string(),
+            overrides_result_id: overrides_result_id.to_string(),
+        }
+    }
+}
+
+/// Definition of a curio that can be encountered in dungeons.
+///
+/// Curios are interactive objects found in rooms or corridors that produce
+/// various outcomes when investigated.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CurioDefinition {
+    /// Unique identifier for this curio.
+    pub id: String,
+    /// Which dungeons this curio can appear in.
+    pub dungeon_scope: Vec<DungeonType>,
+    /// Possible outcomes from interacting with this curio.
+    pub results: Vec<CurioResult>,
+    /// Item interactions that can override default results.
+    pub item_interactions: Vec<ItemInteraction>,
+}
+
+impl CurioDefinition {
+    pub fn new(id: &str, dungeon_scope: Vec<DungeonType>, results: Vec<CurioResult>, item_interactions: Vec<ItemInteraction>) -> Self {
+        CurioDefinition {
+            id: id.to_string(),
+            dungeon_scope,
+            results,
+            item_interactions,
+        }
+    }
+}
+
+/// A difficulty variation for a trap, keyed by level.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TrapVariation {
+    /// The dungeon level this variation applies to.
+    pub level: u32,
+    /// Effects applied when the trap is triggered and fails.
+    pub fail_effects: Vec<String>,
+    /// Health fraction lost when this trap fails (e.g., 0.1 = 10% HP).
+    pub health_fraction: f64,
+}
+
+impl TrapVariation {
+    pub const fn new(level: u32, fail_effects: Vec<String>, health_fraction: f64) -> Self {
+        TrapVariation {
+            level,
+            fail_effects,
+            health_fraction,
+        }
+    }
+}
+
+/// Definition of a trap that can be encountered in corridors.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TrapDefinition {
+    /// Unique identifier for this trap.
+    pub id: String,
+    /// Effects applied when the trap is successfully avoided.
+    pub success_effects: Vec<String>,
+    /// Default effects applied when the trap is triggered and fails (base level).
+    pub fail_effects: Vec<String>,
+    /// Default health fraction lost when this trap fails (base level).
+    pub health_fraction: f64,
+    /// Difficulty variations for different dungeon levels.
+    pub difficulty_variations: Vec<TrapVariation>,
+}
+
+impl TrapDefinition {
+    pub fn new(
+        id: &str,
+        success_effects: Vec<String>,
+        fail_effects: Vec<String>,
+        health_fraction: f64,
+        difficulty_variations: Vec<TrapVariation>,
+    ) -> Self {
+        TrapDefinition {
+            id: id.to_string(),
+            success_effects,
+            fail_effects,
+            health_fraction,
+            difficulty_variations,
+        }
+    }
+}
+
+/// Definition of an obstacle that blocks passage until resolved.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ObstacleDefinition {
+    /// Unique identifier for this obstacle.
+    pub id: String,
+    /// Effects applied when attempting to pass this obstacle.
+    pub fail_effects: Vec<String>,
+    /// Health fraction lost when failing to pass this obstacle.
+    pub health_fraction: f64,
+    /// Torchlight penalty for attempting this obstacle (-1.0 to 1.0).
+    pub torchlight_penalty: f64,
+}
+
+impl ObstacleDefinition {
+    pub fn new(id: &str, fail_effects: Vec<String>, health_fraction: f64, torchlight_penalty: f64) -> Self {
+        ObstacleDefinition {
+            id: id.to_string(),
+            fail_effects,
+            health_fraction,
+            torchlight_penalty,
+        }
     }
 }
 
@@ -1169,5 +1340,170 @@ mod tests {
         let mode = dungeon_mode_name(Dungeon::XuanWu);
         assert_eq!(mode, "xuanwu");
         assert_eq!(format!("ddgc_in_mode_{}", mode), "ddgc_in_mode_xuanwu");
+    }
+
+    // ── US-001: curio/trap/obstacle data model tests ──────────────────────────────
+
+    #[test]
+    fn curio_result_construction_is_deterministic() {
+        let result = CurioResult::new(10, 0.5, CurioResultType::Loot, "ancient_coin");
+        assert_eq!(result.weight, 10);
+        assert_eq!(result.chance, 0.5);
+        assert_eq!(result.result_type, CurioResultType::Loot);
+        assert_eq!(result.result_id, "ancient_coin");
+    }
+
+    #[test]
+    fn item_interaction_construction_is_deterministic() {
+        let interaction = ItemInteraction::new("shovel", "treasure_found");
+        assert_eq!(interaction.item_id, "shovel");
+        assert_eq!(interaction.overrides_result_id, "treasure_found");
+    }
+
+    #[test]
+    fn curio_definition_construction_is_deterministic() {
+        let results = vec![
+            CurioResult::new(5, 0.3, CurioResultType::Nothing, ""),
+            CurioResult::new(10, 0.5, CurioResultType::Loot, "gold_chalice"),
+            CurioResult::new(5, 0.2, CurioResultType::Quirk, "clumsy"),
+        ];
+        let item_interactions = vec![
+            ItemInteraction::new("shovel", "treasure_found"),
+        ];
+        let dungeon_scope = vec![DungeonType::QingLong, DungeonType::BaiHu];
+        let curio = CurioDefinition::new("ancient_vase", dungeon_scope.clone(), results, item_interactions);
+
+        assert_eq!(curio.id, "ancient_vase");
+        assert_eq!(curio.dungeon_scope, dungeon_scope);
+        assert_eq!(curio.results.len(), 3);
+        assert_eq!(curio.item_interactions.len(), 1);
+    }
+
+    #[test]
+    fn trap_variation_construction_is_deterministic() {
+        let variation = TrapVariation::new(3, vec!["bleed".to_string(), "poison".to_string()], 0.15);
+        assert_eq!(variation.level, 3);
+        assert_eq!(variation.fail_effects, vec!["bleed", "poison"]);
+        assert_eq!(variation.health_fraction, 0.15);
+    }
+
+    #[test]
+    fn trap_definition_construction_is_deterministic() {
+        let variations = vec![
+            TrapVariation::new(3, vec!["bleed".to_string()], 0.15),
+            TrapVariation::new(5, vec!["bleed".to_string(), "poison".to_string()], 0.25),
+        ];
+        let trap = TrapDefinition::new(
+            "poison_cloud",
+            vec!["detect".to_string()],
+            vec!["damage".to_string(), "poison".to_string()],
+            0.1,
+            variations,
+        );
+
+        assert_eq!(trap.id, "poison_cloud");
+        assert_eq!(trap.success_effects, vec!["detect"]);
+        assert_eq!(trap.fail_effects, vec!["damage", "poison"]);
+        assert_eq!(trap.health_fraction, 0.1);
+        assert_eq!(trap.difficulty_variations.len(), 2);
+    }
+
+    #[test]
+    fn obstacle_definition_construction_is_deterministic() {
+        let obstacle = ObstacleDefinition::new(
+            "thorny_thicket",
+            vec!["bleed".to_string()],
+            0.2,
+            0.1,
+        );
+
+        assert_eq!(obstacle.id, "thorny_thicket");
+        assert_eq!(obstacle.fail_effects, vec!["bleed"]);
+        assert_eq!(obstacle.health_fraction, 0.2);
+        assert_eq!(obstacle.torchlight_penalty, 0.1);
+    }
+
+    #[test]
+    fn curio_result_serde_roundtrip_is_deterministic() {
+        let result = CurioResult::new(10, 0.5, CurioResultType::Loot, "ancient_coin");
+        let serialized = serde_json::to_string(&result).unwrap();
+        let deserialized: CurioResult = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(result, deserialized);
+    }
+
+    #[test]
+    fn item_interaction_serde_roundtrip_is_deterministic() {
+        let interaction = ItemInteraction::new("shovel", "treasure_found");
+        let serialized = serde_json::to_string(&interaction).unwrap();
+        let deserialized: ItemInteraction = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(interaction, deserialized);
+    }
+
+    #[test]
+    fn curio_definition_serde_roundtrip_is_deterministic() {
+        let results = vec![
+            CurioResult::new(5, 0.3, CurioResultType::Nothing, ""),
+            CurioResult::new(10, 0.5, CurioResultType::Loot, "gold_chalice"),
+        ];
+        let item_interactions = vec![
+            ItemInteraction::new("shovel", "treasure_found"),
+        ];
+        let dungeon_scope = vec![DungeonType::QingLong];
+        let curio = CurioDefinition::new("ancient_vase", dungeon_scope, results, item_interactions);
+
+        let serialized = serde_json::to_string(&curio).unwrap();
+        let deserialized: CurioDefinition = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(curio, deserialized);
+    }
+
+    #[test]
+    fn trap_definition_serde_roundtrip_is_deterministic() {
+        let variations = vec![
+            TrapVariation::new(3, vec!["bleed".to_string()], 0.15),
+        ];
+        let trap = TrapDefinition::new(
+            "poison_cloud",
+            vec!["detect".to_string()],
+            vec!["damage".to_string()],
+            0.1,
+            variations,
+        );
+
+        let serialized = serde_json::to_string(&trap).unwrap();
+        let deserialized: TrapDefinition = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(trap, deserialized);
+    }
+
+    #[test]
+    fn obstacle_definition_serde_roundtrip_is_deterministic() {
+        let obstacle = ObstacleDefinition::new(
+            "thorny_thicket",
+            vec!["bleed".to_string()],
+            0.2,
+            0.1,
+        );
+
+        let serialized = serde_json::to_string(&obstacle).unwrap();
+        let deserialized: ObstacleDefinition = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(obstacle, deserialized);
+    }
+
+    #[test]
+    fn curio_result_type_serde_roundtrip_is_deterministic() {
+        let result_types = vec![
+            CurioResultType::Nothing,
+            CurioResultType::Loot,
+            CurioResultType::Quirk,
+            CurioResultType::Effect,
+            CurioResultType::Purge,
+            CurioResultType::Scouting,
+            CurioResultType::Teleport,
+            CurioResultType::Disease,
+        ];
+        for rt in result_types {
+            let serialized = serde_json::to_string(&rt).unwrap();
+            let deserialized: CurioResultType = serde_json::from_str(&serialized).unwrap();
+            assert_eq!(rt, deserialized);
+        }
     }
 }
