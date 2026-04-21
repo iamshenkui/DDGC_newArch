@@ -20,3 +20,4 @@ framework_viewmodels = { path = "../glowing-fishstick-framwork/framework_turn_ba
 framework_ai = { path = "../glowing-fishstick-framwork/framework_turn_based_roguelike/crates/framework_ai" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+csv = "1"

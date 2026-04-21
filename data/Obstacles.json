@@ -1,0 +1,34 @@
+{
+  "obstacles": [
+    {
+      "id": "thorny_thicket",
+      "fail_effects": ["bleed", "thorn_puncture"],
+      "health_fraction": 0.2,
+      "torchlight_penalty": 0.1
+    },
+    {
+      "id": "boulder",
+      "fail_effects": ["crush", "stun"],
+      "health_fraction": 0.3,
+      "torchlight_penalty": -0.1
+    },
+    {
+      "id": "deep_pit",
+      "fail_effects": ["fall_damage", "immobilize"],
+      "health_fraction": 0.25,
+      "torchlight_penalty": 0.2
+    },
+    {
+      "id": "locked_door",
+      "fail_effects": ["bump", "noise_alert"],
+      "health_fraction": 0.05,
+      "torchlight_penalty": -0.2
+    },
+    {
+      "id": "magical_barrier",
+      "fail_effects": ["arcane_reflection", "mana_burn"],
+      "health_fraction": 0.15,
+      "torchlight_penalty": 0.3
+    }
+  ]
+}

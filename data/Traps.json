@@ -1,0 +1,73 @@
+{
+  "traps": [
+    {
+      "id": "poison_gas",
+      "success_effects": ["detect_gas", "avoid"],
+      "fail_effects": ["poison", "gas_inhalation"],
+      "health_fraction": 0.15,
+      "difficulty_variations": [
+        {
+          "level": 1,
+          "fail_effects": ["poison"],
+          "health_fraction": 0.1
+        },
+        {
+          "level": 3,
+          "fail_effects": ["poison", "gas_inhalation", "daze"],
+          "health_fraction": 0.2
+        },
+        {
+          "level": 5,
+          "fail_effects": ["poison", "gas_inhalation", "daze", "weakness"],
+          "health_fraction": 0.3
+        }
+      ]
+    },
+    {
+      "id": "floor_spikes",
+      "success_effects": ["careful_step", "avoid"],
+      "fail_effects": ["bleed", "pierce"],
+      "health_fraction": 0.2,
+      "difficulty_variations": [
+        {
+          "level": 1,
+          "fail_effects": ["bleed"],
+          "health_fraction": 0.15
+        },
+        {
+          "level": 3,
+          "fail_effects": ["bleed", "pierce", "slow"],
+          "health_fraction": 0.25
+        },
+        {
+          "level": 5,
+          "fail_effects": ["bleed", "pierce", "slow", "immobilize"],
+          "health_fraction": 0.35
+        }
+      ]
+    },
+    {
+      "id": "tripwire",
+      "success_effects": ["dodge", "avoid"],
+      "fail_effects": ["surprise_attack", "stun"],
+      "health_fraction": 0.1,
+      "difficulty_variations": [
+        {
+          "level": 1,
+          "fail_effects": ["surprise_attack"],
+          "health_fraction": 0.05
+        },
+        {
+          "level": 3,
+          "fail_effects": ["surprise_attack", "stun", "vulnerable"],
+          "health_fraction": 0.15
+        },
+        {
+          "level": 5,
+          "fail_effects": ["surprise_attack", "stun", "vulnerable", "exposed"],
+          "health_fraction": 0.25
+        }
+      ]
+    }
+  ]
+}

@@ -216,6 +216,138 @@ impl ObstacleDefinition {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Curio, Trap, and Obstacle Registries
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Registry holding all curio definitions parsed from DDGC Curios.csv.
+///
+/// Provides lookup by curio ID and filtering by dungeon scope.
+#[derive(Debug, Clone, Default)]
+pub struct CurioRegistry {
+    curios: std::collections::HashMap<String, CurioDefinition>,
+}
+
+impl CurioRegistry {
+    /// Create a new empty registry.
+    pub fn new() -> Self {
+        CurioRegistry { curios: std::collections::HashMap::new() }
+    }
+
+    /// Register a curio definition.
+    pub fn register(&mut self, curio: CurioDefinition) {
+        self.curios.insert(curio.id.clone(), curio);
+    }
+
+    /// Get a curio by its ID.
+    pub fn get(&self, id: &str) -> Option<&CurioDefinition> {
+        self.curios.get(id)
+    }
+
+    /// Get all curios that can appear in a given dungeon.
+    pub fn by_dungeon(&self, dungeon: DungeonType) -> Vec<&CurioDefinition> {
+        self.curios
+            .values()
+            .filter(|c| c.dungeon_scope.contains(&dungeon))
+            .collect()
+    }
+
+    /// Get all registered curio IDs.
+    pub fn all_ids(&self) -> Vec<&str> {
+        self.curios.keys().map(|s| s.as_str()).collect()
+    }
+
+    /// Get the total number of registered curios.
+    pub fn len(&self) -> usize {
+        self.curios.len()
+    }
+
+    /// Returns true if the registry is empty.
+    pub fn is_empty(&self) -> bool {
+        self.curios.is_empty()
+    }
+}
+
+/// Registry holding all trap definitions parsed from DDGC Traps.json.
+///
+/// Provides lookup by trap ID.
+#[derive(Debug, Clone, Default)]
+pub struct TrapRegistry {
+    traps: std::collections::HashMap<String, TrapDefinition>,
+}
+
+impl TrapRegistry {
+    /// Create a new empty registry.
+    pub fn new() -> Self {
+        TrapRegistry { traps: std::collections::HashMap::new() }
+    }
+
+    /// Register a trap definition.
+    pub fn register(&mut self, trap: TrapDefinition) {
+        self.traps.insert(trap.id.clone(), trap);
+    }
+
+    /// Get a trap by its ID.
+    pub fn get(&self, id: &str) -> Option<&TrapDefinition> {
+        self.traps.get(id)
+    }
+
+    /// Get all registered trap IDs.
+    pub fn all_ids(&self) -> Vec<&str> {
+        self.traps.keys().map(|s| s.as_str()).collect()
+    }
+
+    /// Get the total number of registered traps.
+    pub fn len(&self) -> usize {
+        self.traps.len()
+    }
+
+    /// Returns true if the registry is empty.
+    pub fn is_empty(&self) -> bool {
+        self.traps.is_empty()
+    }
+}
+
+/// Registry holding all obstacle definitions parsed from DDGC Obstacles.json.
+///
+/// Provides lookup by obstacle ID.
+#[derive(Debug, Clone, Default)]
+pub struct ObstacleRegistry {
+    obstacles: std::collections::HashMap<String, ObstacleDefinition>,
+}
+
+impl ObstacleRegistry {
+    /// Create a new empty registry.
+    pub fn new() -> Self {
+        ObstacleRegistry { obstacles: std::collections::HashMap::new() }
+    }
+
+    /// Register an obstacle definition.
+    pub fn register(&mut self, obstacle: ObstacleDefinition) {
+        self.obstacles.insert(obstacle.id.clone(), obstacle);
+    }
+
+    /// Get an obstacle by its ID.
+    pub fn get(&self, id: &str) -> Option<&ObstacleDefinition> {
+        self.obstacles.get(id)
+    }
+
+    /// Get all registered obstacle IDs.
+    pub fn all_ids(&self) -> Vec<&str> {
+        self.obstacles.keys().map(|s| s.as_str()).collect()
+    }
+
+    /// Get the total number of registered obstacles.
+    pub fn len(&self) -> usize {
+        self.obstacles.len()
+    }
+
+    /// Returns true if the registry is empty.
+    pub fn is_empty(&self) -> bool {
+        self.obstacles.is_empty()
+    }
+}
+
 /// Dungeon type identifier.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum DungeonType {
@@ -908,6 +1040,8 @@ pub fn build_encounter_registry() -> DungeonEncounterRegistry {
     registry.register(build_qinglong_encounter_config());
     registry
 }
+
+pub mod parse;
 
 #[cfg(test)]
 mod tests {
