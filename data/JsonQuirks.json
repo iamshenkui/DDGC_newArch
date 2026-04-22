@@ -1,0 +1,112 @@
+{
+  "quirks": [
+    {
+      "id": "quick_reflexes",
+      "is_positive": true,
+      "is_disease": false,
+      "classification": "talent",
+      "buffs": ["SPD+5", "DODGE+8"],
+      "incompatible_quirks": ["clumsy"],
+      "curio_tag": "mirror"
+    },
+    {
+      "id": "iron_will",
+      "is_positive": true,
+      "is_disease": false,
+      "classification": "belief",
+      "buffs": ["RESIST_STUN+15", "RESIST_BLIND+15", "STRESSRES+10"],
+      "incompatible_quirks": ["weak_will"],
+      "curio_tag": "信念"
+    },
+    {
+      "id": "natural_leader",
+      "is_positive": true,
+      "is_disease": false,
+      "classification": "social",
+      "buffs": ["ATK+5", "DEF+5", "HEAL+5"],
+      "incompatible_quirks": ["loner"],
+      "curio_tag": "演讲"
+    },
+    {
+      "id": "light_sleeper",
+      "is_positive": true,
+      "is_disease": false,
+      "classification": "habit",
+      "buffs": ["DODGE+6", "ACC+3"],
+      "incompatible_quirks": ["insomnia"],
+      "curio_tag": "床铺"
+    },
+    {
+      "id": "clumsy",
+      "is_positive": false,
+      "is_disease": false,
+      "classification": "physical",
+      "buffs": ["SPD-3", "DODGE-5"],
+      "incompatible_quirks": ["quick_reflexes"],
+      "curio_tag": "摔倒"
+    },
+    {
+      "id": "weak_will",
+      "is_positive": false,
+      "is_disease": false,
+      "classification": "personality",
+      "buffs": ["RESIST_STUN-10", "RESIST_BLIND-10", "STRESS+5"],
+      "incompatible_quirks": ["iron_will"],
+      "curio_tag": "精神"
+    },
+    {
+      "id": "loner",
+      "is_positive": false,
+      "is_disease": false,
+      "classification": "social",
+      "buffs": ["ATK-5", "DEF-3"],
+      "incompatible_quirks": ["natural_leader"],
+      "curio_tag": "独处"
+    },
+    {
+      "id": "night_owl",
+      "is_positive": false,
+      "is_disease": false,
+      "classification": "habit",
+      "buffs": ["SPD-2", "ACC-3"],
+      "incompatible_quirks": ["early_bird"],
+      "curio_tag": "熬夜"
+    },
+    {
+      "id": "consumptive",
+      "is_positive": false,
+      "is_disease": true,
+      "classification": "disease",
+      "buffs": ["MAXHP-20", "DEF-5", "SPD-3"],
+      "incompatible_quirks": ["robust"],
+      "curio_tag": "咳嗽"
+    },
+    {
+      "id": "bloated",
+      "is_positive": false,
+      "is_disease": true,
+      "classification": "disease",
+      "buffs": ["MAXHP-15", "SPD-4", "DODGE-6"],
+      "incompatible_quirks": [],
+      "curio_tag": "食物"
+    },
+    {
+      "id": "panacea",
+      "is_positive": true,
+      "is_disease": false,
+      "classification": "talent",
+      "buffs": ["HEAL+15", "MAXHP+10"],
+      "incompatible_quirks": [],
+      "curio_tag": "治疗"
+    },
+    {
+      "id": "rampage",
+      "is_positive": false,
+      "is_disease": false,
+      "classification": "personality",
+      "buffs": ["ATK+8", "DEF-8", "ACC-10"],
+      "incompatible_quirks": [],
+      "curio_tag": "愤怒"
+    }
+  ]
+}

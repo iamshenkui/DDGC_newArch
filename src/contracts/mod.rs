@@ -1819,6 +1819,178 @@ impl EquipmentRegistry {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Quirk and Disease definitions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Classification of a quirk - the broad category it belongs to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum QuirkClassification {
+    /// A personality quirk or habit.
+    Personality,
+    /// A physical trait or physical quirk.
+    Physical,
+    /// A disease or illness.
+    Disease,
+    /// A preference or inclination.
+    Preference,
+    /// A belief or conviction.
+    Belief,
+    /// A talent or natural ability.
+    Talent,
+    /// A habit or routine.
+    Habit,
+    /// A social quirk or behavior in groups.
+    Social,
+}
+
+impl QuirkClassification {
+    /// Returns the snake_case string representation for serialization.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            QuirkClassification::Personality => "personality",
+            QuirkClassification::Physical => "physical",
+            QuirkClassification::Disease => "disease",
+            QuirkClassification::Preference => "preference",
+            QuirkClassification::Belief => "belief",
+            QuirkClassification::Talent => "talent",
+            QuirkClassification::Habit => "habit",
+            QuirkClassification::Social => "social",
+        }
+    }
+}
+
+/// Definition of a quirk or disease that can affect a hero.
+///
+/// Quirks provide buffs (positive modifiers) or debuffs (negative modifiers)
+/// and may be incompatible with other quirks.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct QuirkDefinition {
+    /// Unique identifier for this quirk.
+    pub id: String,
+    /// Whether this is a positive quirk (true) or negative quirk (false).
+    pub is_positive: bool,
+    /// Whether this is a disease (true) or a regular quirk (false).
+    pub is_disease: bool,
+    /// Classification category of this quirk.
+    pub classification: QuirkClassification,
+    /// Buff effect IDs provided by this quirk.
+    pub buffs: Vec<String>,
+    /// IDs of quirks that cannot coexist with this one.
+    pub incompatible_quirks: Vec<String>,
+    /// Tag indicating which curio type this quirk is associated with.
+    pub curio_tag: String,
+}
+
+impl QuirkDefinition {
+    pub fn new(
+        id: &str,
+        is_positive: bool,
+        is_disease: bool,
+        classification: QuirkClassification,
+        buffs: Vec<String>,
+        incompatible_quirks: Vec<String>,
+        curio_tag: &str,
+    ) -> Self {
+        QuirkDefinition {
+            id: id.to_string(),
+            is_positive,
+            is_disease,
+            classification,
+            buffs,
+            incompatible_quirks,
+            curio_tag: curio_tag.to_string(),
+        }
+    }
+}
+
+/// Registry holding all quirk definitions.
+///
+/// Provides lookup by quirk ID and filtering by quirk type.
+#[derive(Debug, Clone, Default)]
+pub struct QuirkRegistry {
+    quirks: std::collections::HashMap<String, QuirkDefinition>,
+}
+
+impl QuirkRegistry {
+    /// Create a new empty registry.
+    pub fn new() -> Self {
+        QuirkRegistry { quirks: std::collections::HashMap::new() }
+    }
+
+    /// Register a quirk definition.
+    pub fn register(&mut self, quirk: QuirkDefinition) {
+        self.quirks.insert(quirk.id.clone(), quirk);
+    }
+
+    /// Get a quirk by its ID.
+    pub fn get(&self, id: &str) -> Option<&QuirkDefinition> {
+        self.quirks.get(id)
+    }
+
+    /// Get all registered quirk IDs.
+    pub fn all_ids(&self) -> Vec<&str> {
+        self.quirks.keys().map(|s| s.as_str()).collect()
+    }
+
+    /// Get the total number of registered quirks.
+    pub fn len(&self) -> usize {
+        self.quirks.len()
+    }
+
+    /// Returns true if the registry is empty.
+    pub fn is_empty(&self) -> bool {
+        self.quirks.is_empty()
+    }
+
+    /// Get all positive quirks.
+    pub fn positive_quirks(&self) -> Vec<&QuirkDefinition> {
+        self.quirks.values().filter(|q| q.is_positive).collect()
+    }
+
+    /// Get all negative quirks (non-positive).
+    pub fn negative_quirks(&self) -> Vec<&QuirkDefinition> {
+        self.quirks.values().filter(|q| !q.is_positive).collect()
+    }
+
+    /// Get all diseases.
+    pub fn diseases(&self) -> Vec<&QuirkDefinition> {
+        self.quirks.values().filter(|q| q.is_disease).collect()
+    }
+
+    /// Get all quirks of a specific classification.
+    pub fn by_classification(&self, classification: QuirkClassification) -> Vec<&QuirkDefinition> {
+        self.quirks
+            .values()
+            .filter(|q| q.classification == classification)
+            .collect()
+    }
+
+    /// Resolve all buffs for a quirk into attribute modifiers via BuffRegistry.
+    ///
+    /// Returns all `AttributeModifier` entries from the quirk's buff list,
+    /// with duplicates merged (same `attribute_key` values are combined by summing).
+    pub fn resolve_quirk_buffs(&self, quirk_id: &str, buff_registry: &BuffRegistry) -> Vec<AttributeModifier> {
+        let quirk = match self.quirks.get(quirk_id) {
+            Some(q) => q,
+            None => return vec![],
+        };
+
+        let mut aggregated: std::collections::HashMap<String, f64> = std::collections::HashMap::new();
+
+        for buff_id in &quirk.buffs {
+            for modifier in buff_registry.resolve_buff(buff_id) {
+                *aggregated.entry(modifier.attribute_key.clone()).or_insert(0.0) += modifier.value;
+            }
+        }
+
+        aggregated
+            .into_iter()
+            .map(|(attribute_key, value)| AttributeModifier { attribute_key, value })
+            .collect()
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Buff Resolution
 // ─────────────────────────────────────────────────────────────────────────────
 

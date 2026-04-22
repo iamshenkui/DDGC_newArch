@@ -6,9 +6,9 @@ use serde::Deserialize;
 use crate::contracts::{
     BuildingRegistry, BuildingType, CurioDefinition, CurioRegistry, CurioResult,
     CurioResultType, DungeonType, ItemInteraction, ObstacleDefinition, ObstacleRegistry,
-    TownBuilding, TrapDefinition, TrapRegistry, TrapVariation, TrinketDefinition,
-    TrinketRarity, TrinketRegistry, UnlockCondition,
-    UpgradeEffect, UpgradeLevel, UpgradeTree,
+    QuirkClassification, QuirkDefinition, QuirkRegistry, TownBuilding, TrapDefinition,
+    TrapRegistry, TrapVariation, TrinketDefinition, TrinketRarity, TrinketRegistry,
+    UnlockCondition, UpgradeEffect, UpgradeLevel, UpgradeTree,
 };
 
 /// Parse a JSON-encoded dungeon scope string into a Vec<DungeonType>.
@@ -375,6 +375,60 @@ pub fn parse_trinkets_json(path: &Path) -> Result<TrinketRegistry, String> {
             origin_dungeon,
         );
         registry.register(trinket);
+    }
+
+    Ok(registry)
+}
+
+/// Parse JsonQuirks.json into a QuirkRegistry.
+pub fn parse_quirks_json(path: &Path) -> Result<QuirkRegistry, String> {
+    let content = std::fs::read_to_string(path)
+        .map_err(|e| format!("failed to read JsonQuirks.json: {}", e))?;
+
+    #[derive(Deserialize)]
+    struct RawQuirk {
+        id: String,
+        is_positive: bool,
+        is_disease: bool,
+        classification: String,
+        buffs: Vec<String>,
+        incompatible_quirks: Vec<String>,
+        curio_tag: String,
+    }
+
+    #[derive(Deserialize)]
+    struct RawQuirksRoot {
+        quirks: Vec<RawQuirk>,
+    }
+
+    let root: RawQuirksRoot = serde_json::from_str(&content)
+        .map_err(|e| format!("failed to parse JsonQuirks.json: {}", e))?;
+
+    let mut registry = QuirkRegistry::new();
+
+    for raw in root.quirks {
+        let classification = match raw.classification.as_str() {
+            "personality" => QuirkClassification::Personality,
+            "physical" => QuirkClassification::Physical,
+            "disease" => QuirkClassification::Disease,
+            "preference" => QuirkClassification::Preference,
+            "belief" => QuirkClassification::Belief,
+            "talent" => QuirkClassification::Talent,
+            "habit" => QuirkClassification::Habit,
+            "social" => QuirkClassification::Social,
+            _ => return Err(format!("unknown QuirkClassification: {}", raw.classification)),
+        };
+
+        let quirk = QuirkDefinition::new(
+            &raw.id,
+            raw.is_positive,
+            raw.is_disease,
+            classification,
+            raw.buffs,
+            raw.incompatible_quirks,
+            &raw.curio_tag,
+        );
+        registry.register(quirk);
     }
 
     Ok(registry)
