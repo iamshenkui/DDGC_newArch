@@ -9,8 +9,9 @@ use framework_combat::encounter::CombatSide;
 
 use crate::content::actors::{Archetype, ArchetypeName};
 use crate::contracts::{
-    BuffRegistry, EquipmentSlot, TrinketDefinition,
+    BuffRegistry, EquipmentSlot, QuirkRegistry, TrinketDefinition,
 };
+use crate::run::flow::HeroQuirkState;
 
 /// DDGC buff attribute key to Archetype field mapping.
 const ATTR_MAPPING: &[(&str, &str)] = &[
@@ -124,6 +125,42 @@ pub fn compute_hero_stats(
     armor_level: u32,
     trinkets: &[&TrinketDefinition],
 ) -> Archetype {
+    _compute_hero_stats_impl(hero_class, weapon_level, armor_level, trinkets, None, None)
+}
+
+/// Compute hero stats from base stats + equipment + trinkets + quirks.
+///
+/// # Parameters
+/// - `hero_class`: Hero class ID (e.g., "alchemist", "tank")
+/// - `weapon_level`: Weapon upgrade level (0 = base)
+/// - `armor_level`: Armor upgrade level (0 = base)
+/// - `trinkets`: Slice of equipped trinket definitions
+/// - `quirk_state`: Hero's active quirk state
+/// - `quirk_registry`: Registry containing quirk definitions
+///
+/// # Returns
+/// An `Archetype` with all stats computed from base + equipment + trinkets + quirks.
+pub fn compute_hero_stats_with_quirks(
+    hero_class: &str,
+    weapon_level: u32,
+    armor_level: u32,
+    trinkets: &[&TrinketDefinition],
+    quirk_state: &HeroQuirkState,
+    quirk_registry: &QuirkRegistry,
+) -> Archetype {
+    _compute_hero_stats_impl(hero_class, weapon_level, armor_level, trinkets, Some(quirk_state), Some(quirk_registry))
+}
+///
+/// This is the internal implementation that accepts optional quirk state and registry.
+/// Use `compute_hero_stats` for the backward-compatible version without quirk support.
+fn _compute_hero_stats_impl(
+    hero_class: &str,
+    weapon_level: u32,
+    armor_level: u32,
+    trinkets: &[&TrinketDefinition],
+    quirk_state: Option<&HeroQuirkState>,
+    quirk_registry: Option<&QuirkRegistry>,
+) -> Archetype {
     // Start with base stats for the class
     let base = BASE_STATS
         .iter()
@@ -150,6 +187,11 @@ pub fn compute_hero_stats(
 
     // Apply trinket modifiers
     apply_trinket_modifiers(trinkets, &mut modifiers);
+
+    // Apply quirk modifiers if both quirk state and registry are provided
+    if let (Some(quirks), Some(registry)) = (quirk_state, quirk_registry) {
+        apply_quirk_modifiers(quirks, registry, &mut modifiers);
+    }
 
     // Compute final stats
     let max_health = apply_modifier("max_health", base.max_health, &modifiers);
@@ -280,6 +322,37 @@ fn apply_trinket_modifiers(
     }
 }
 
+/// Apply quirk stat modifiers to the accumulated modifiers map.
+///
+/// Uses the provided QuirkRegistry to resolve quirk buffs.
+fn apply_quirk_modifiers(
+    quirk_state: &HeroQuirkState,
+    quirk_registry: &QuirkRegistry,
+    modifiers: &mut HashMap<String, f64>,
+) {
+    let buff_registry = BuffRegistry::new();
+
+    // Collect modifiers from all quirk categories
+    for quirk_id in quirk_state.positive.iter() {
+        for modifier in quirk_registry.resolve_quirk_buffs(quirk_id, &buff_registry) {
+            let mapped = map_attribute(&modifier.attribute_key);
+            *modifiers.entry(mapped.to_string()).or_insert(0.0) += modifier.value;
+        }
+    }
+    for quirk_id in quirk_state.negative.iter() {
+        for modifier in quirk_registry.resolve_quirk_buffs(quirk_id, &buff_registry) {
+            let mapped = map_attribute(&modifier.attribute_key);
+            *modifiers.entry(mapped.to_string()).or_insert(0.0) += modifier.value;
+        }
+    }
+    for quirk_id in quirk_state.diseases.iter() {
+        for modifier in quirk_registry.resolve_quirk_buffs(quirk_id, &buff_registry) {
+            let mapped = map_attribute(&modifier.attribute_key);
+            *modifiers.entry(mapped.to_string()).or_insert(0.0) += modifier.value;
+        }
+    }
+}
+
 /// Map a DDGC buff attribute key to the internal archetype field name.
 fn map_attribute(attr: &str) -> &str {
     for (ddgc_key, field_name) in ATTR_MAPPING {
@@ -301,6 +374,10 @@ fn apply_modifier(field: &str, base: f64, modifiers: &HashMap<String, f64>) -> f
 mod tests {
     use super::*;
     use crate::contracts::{DungeonType, TrinketRarity};
+    use crate::contracts::parse::parse_quirks_json;
+    use crate::heroes::quirks::apply_quirk;
+    use crate::run::flow::HeroQuirkState;
+    use std::path::PathBuf;
 
     #[test]
     fn level_0_equipment_matches_hardcoded_stats() {
@@ -495,6 +572,147 @@ mod tests {
             stats.attack >= 0.0,
             "ATK should not go below 0, got {}",
             stats.attack
+        );
+    }
+
+    #[test]
+    fn quirk_modifies_hero_attributes() {
+        // Test that quirks modify hero stats via compute_hero_stats_with_quirks.
+        let quirks = parse_quirks_json(&PathBuf::from("data").join("JsonQuirks.json")
+        ).expect("failed to parse JsonQuirks.json");
+        let buff_registry = BuffRegistry::new();
+
+        // Base alchemist stats with no quirks
+        let stats_no_quirks = compute_hero_stats("alchemist", 0, 0, &[]);
+
+        // Apply quick_reflexes (SPD+5, DODGE+8)
+        let quirk_state = HeroQuirkState::new();
+        let quirk_state = crate::heroes::quirks::apply_quirk(quirk_state, "quick_reflexes", &quirks);
+        let stats_with_quirk = compute_hero_stats_with_quirks(
+            "alchemist", 0, 0, &[], &quirk_state, &quirks
+        );
+
+        // Speed should increase by 5
+        assert_eq!(
+            stats_with_quirk.speed,
+            stats_no_quirks.speed + 5.0,
+            "quick_reflexes should add 5 SPD"
+        );
+        // Dodge should increase by 8
+        assert_eq!(
+            stats_with_quirk.dodge,
+            stats_no_quirks.dodge + 8.0,
+            "quick_reflexes should add 8 DODGE"
+        );
+        // Health should stay the same
+        assert_eq!(
+            stats_with_quirk.max_health,
+            stats_no_quirks.max_health,
+            "quick_reflexes should not affect MAXHP"
+        );
+    }
+
+    #[test]
+    fn quirk_modifiers_combine_with_equipment_modifiers() {
+        // Test that quirk modifiers stack with equipment modifiers.
+        let quirks = parse_quirks_json(
+            &PathBuf::from("data").join("JsonQuirks.json")
+        ).expect("failed to parse JsonQuirks.json");
+
+        // Alchemist with weapon level 2 (+12 ATK) and no quirks
+        let stats_equip_only = compute_hero_stats_with_quirks(
+            "alchemist", 2, 0, &[], &HeroQuirkState::new(), &quirks
+        );
+
+        // Apply natural_leader (ATK+5, DEF+5)
+        let quirk_state = HeroQuirkState::new();
+        let quirk_state = crate::heroes::quirks::apply_quirk(quirk_state, "natural_leader", &quirks);
+        let stats_equip_and_quirk = compute_hero_stats_with_quirks(
+            "alchemist", 2, 0, &[], &quirk_state, &quirks
+        );
+
+        // ATK should be base 26 + weapon 12 + quirk 5 = 43
+        assert_eq!(
+            stats_equip_and_quirk.attack,
+            stats_equip_only.attack + 5.0,
+            "natural_leader should add 5 ATK on top of equipment"
+        );
+        // DEF should be base 0 + quirk 5 = 5
+        assert_eq!(
+            stats_equip_and_quirk.defense,
+            stats_equip_only.defense + 5.0,
+            "natural_leader should add 5 DEF on top of equipment"
+        );
+    }
+
+    #[test]
+    fn negative_quirk_reduces_hero_attributes() {
+        // Test that negative quirks reduce hero stats.
+        let quirks = parse_quirks_json(
+            &PathBuf::from("data").join("JsonQuirks.json")
+        ).expect("failed to parse JsonQuirks.json");
+
+        let stats_no_quirks = compute_hero_stats("alchemist", 0, 0, &[]);
+
+        // Apply clumsy (SPD-3, DODGE-5)
+        let quirk_state = HeroQuirkState::new();
+        let quirk_state = crate::heroes::quirks::apply_quirk(quirk_state, "clumsy", &quirks);
+        let stats_with_quirk = compute_hero_stats_with_quirks(
+            "alchemist", 0, 0, &[], &quirk_state, &quirks
+        );
+
+        // Speed should decrease by 3 (base 5.0 -> 2.0)
+        assert_eq!(
+            stats_with_quirk.speed,
+            stats_no_quirks.speed - 3.0,
+            "clumsy should reduce SPD by 3"
+        );
+        // Dodge should decrease by 5, but base is 0.0 so it clamps to 0.0
+        assert_eq!(
+            stats_with_quirk.dodge,
+            0.0,
+            "clumsy should reduce DODGE, clamped at 0"
+        );
+    }
+
+    #[test]
+    fn disease_quirk_tracked_separately_and_modifies_stats() {
+        // Test that disease quirks are tracked separately and modify stats.
+        let quirks = parse_quirks_json(
+            &PathBuf::from("data").join("JsonQuirks.json")
+        ).expect("failed to parse JsonQuirks.json");
+
+        let stats_no_quirks = compute_hero_stats("alchemist", 0, 0, &[]);
+
+        // Apply consumptive (MAXHP-20, DEF-5, SPD-3)
+        let quirk_state = HeroQuirkState::new();
+        let quirk_state = crate::heroes::quirks::apply_quirk(quirk_state, "consumptive", &quirks);
+
+        // Verify disease is tracked separately
+        assert!(quirk_state.diseases.contains(&"consumptive".to_string()));
+        assert!(quirk_state.negative.is_empty());
+
+        let stats_with_quirk = compute_hero_stats_with_quirks(
+            "alchemist", 0, 0, &[], &quirk_state, &quirks
+        );
+
+        // MAXHP should decrease by 20 (base 139.0 -> 119.0)
+        assert_eq!(
+            stats_with_quirk.max_health,
+            stats_no_quirks.max_health - 20.0,
+            "consumptive should reduce MAXHP by 20"
+        );
+        // DEF should decrease by 5, but base is 0.0 so it clamps to 0.0
+        assert_eq!(
+            stats_with_quirk.defense,
+            0.0,
+            "consumptive should reduce DEF, clamped at 0"
+        );
+        // SPD should decrease by 3 (base 5.0 -> 2.0)
+        assert_eq!(
+            stats_with_quirk.speed,
+            stats_no_quirks.speed - 3.0,
+            "consumptive should reduce SPD by 3"
         );
     }
 }

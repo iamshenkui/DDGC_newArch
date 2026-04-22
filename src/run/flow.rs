@@ -292,6 +292,46 @@ impl HeroState {
     }
 }
 
+/// DDGC limits on quirk slots per category.
+///
+/// Heroes can have at most this many quirks in each category.
+/// Diseases count toward the negative quirk limit.
+pub const MAX_POSITIVE_QUIRKS: usize = 5;
+pub const MAX_NEGATIVE_QUIRKS: usize = 5;
+
+/// Tracks a hero's active quirks across the full run loop.
+///
+/// Quirks modify hero attributes and may be incompatible with each other.
+/// Diseases are tracked separately but count toward the negative quirk limit.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct HeroQuirkState {
+    /// Active positive quirk IDs.
+    pub positive: Vec<String>,
+    /// Active negative quirk IDs (non-disease).
+    pub negative: Vec<String>,
+    /// Active disease quirk IDs (count toward negative limit).
+    pub diseases: Vec<String>,
+}
+
+impl HeroQuirkState {
+    /// Create a new empty quirk state.
+    pub fn new() -> Self {
+        HeroQuirkState::default()
+    }
+
+    /// Returns the total count of negative quirks including diseases.
+    pub fn negative_count(&self) -> usize {
+        self.negative.len() + self.diseases.len()
+    }
+
+    /// Check if a quirk ID is already present in any category.
+    pub fn contains(&self, quirk_id: &str) -> bool {
+        self.positive.contains(&quirk_id.to_string())
+            || self.negative.contains(&quirk_id.to_string())
+            || self.diseases.contains(&quirk_id.to_string())
+    }
+}
+
 /// Configuration for a DDGC full run loop (town → dungeon → town).
 pub struct DdgcFullRunConfig {
     /// Seed for dungeon room generation.

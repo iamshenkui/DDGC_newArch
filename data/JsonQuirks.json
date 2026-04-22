@@ -107,6 +107,24 @@
       "buffs": ["ATK+8", "DEF-8", "ACC-10"],
       "incompatible_quirks": [],
       "curio_tag": "愤怒"
+    },
+    {
+      "id": "robust",
+      "is_positive": true,
+      "is_disease": false,
+      "classification": "talent",
+      "buffs": ["MAXHP+15", "DEF+5"],
+      "incompatible_quirks": ["consumptive"],
+      "curio_tag": "健壮"
+    },
+    {
+      "id": "fearful",
+      "is_positive": false,
+      "is_disease": false,
+      "classification": "personality",
+      "buffs": ["SPD-2", "DODGE-3"],
+      "incompatible_quirks": [],
+      "curio_tag": "恐惧"
     }
   ]
 }
