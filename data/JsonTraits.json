@@ -1,0 +1,49 @@
+{
+  "traits": [
+    {
+      "id": "fearful",
+      "overstress_type": "affliction",
+      "buff_ids": ["SPD-2", "DODGE-3", "ACC-5"],
+      "combat_start_turn_act_outs": [
+        {"action": "nothing", "weight": 40},
+        {"action": "bark_stress", "weight": 30},
+        {"action": "change_pos", "weight": 20},
+        {"action": "ignore_command", "weight": 10}
+      ],
+      "reaction_act_outs": [
+        {"trigger": "ally_hit", "probability": 0.3, "effect": "flee"},
+        {"trigger": "ally_killed", "probability": 0.6, "effect": "panic"}
+      ]
+    },
+    {
+      "id": "hopeless",
+      "overstress_type": "affliction",
+      "buff_ids": ["ATK-5", "DEF-5", "STRESS+10"],
+      "combat_start_turn_act_outs": [
+        {"action": "nothing", "weight": 50},
+        {"action": "bark_stress", "weight": 35},
+        {"action": "change_pos", "weight": 10},
+        {"action": "ignore_command", "weight": 5}
+      ],
+      "reaction_act_outs": [
+        {"trigger": "ally_hit", "probability": 0.5, "effect": "despair"},
+        {"trigger": "enemy_killed", "probability": 0.2, "effect": "motivate"}
+      ]
+    },
+    {
+      "id": "courageous",
+      "overstress_type": "virtue",
+      "buff_ids": ["ATK+5", "DEF+3", "STRESSRES+15"],
+      "combat_start_turn_act_outs": [
+        {"action": "nothing", "weight": 20},
+        {"action": "bark_stress", "weight": 60},
+        {"action": "change_pos", "weight": 15},
+        {"action": "ignore_command", "weight": 5}
+      ],
+      "reaction_act_outs": [
+        {"trigger": "ally_hit", "probability": 0.7, "effect": "rally"},
+        {"trigger": "ally_stressed", "probability": 0.4, "effect": "calm"}
+      ]
+    }
+  ]
+}

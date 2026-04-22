@@ -1991,6 +1991,239 @@ impl QuirkRegistry {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Trait / Affliction / Virtue definitions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Whether a trait is an affliction (negative) or virtue (positive).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum OverstressType {
+    Affliction,
+    Virtue,
+}
+
+/// Action that can be taken during combat start-of-turn act-outs.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum ActOutAction {
+    Nothing,
+    BarkStress,
+    ChangePos,
+    IgnoreCommand,
+    /// Attack a random enemy
+    AttackRandom,
+    /// Defend (increase DEF)
+    Defend,
+    /// Use a skill if available
+    UseSkill,
+}
+
+impl ActOutAction {
+    /// Parse from string representation used in JSON.
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "nothing" => Some(ActOutAction::Nothing),
+            "bark_stress" => Some(ActOutAction::BarkStress),
+            "change_pos" => Some(ActOutAction::ChangePos),
+            "ignore_command" => Some(ActOutAction::IgnoreCommand),
+            "attack_random" => Some(ActOutAction::AttackRandom),
+            "defend" => Some(ActOutAction::Defend),
+            "use_skill" => Some(ActOutAction::UseSkill),
+            _ => None,
+        }
+    }
+}
+
+/// A single act-out entry with its selection weight.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ActOutEntry {
+    /// The action to perform.
+    pub action: ActOutAction,
+    /// Selection weight for weighted random selection.
+    pub weight: u32,
+}
+
+impl ActOutEntry {
+    pub fn new(action: ActOutAction, weight: u32) -> Self {
+        ActOutEntry { action, weight }
+    }
+}
+
+/// Trigger for a reaction act-out.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum ReactionTrigger {
+    /// Triggered when an ally is hit
+    AllyHit,
+    /// Triggered when an ally is killed
+    AllyKilled,
+    /// Triggered when an enemy is killed
+    EnemyKilled,
+    /// Triggered when an ally is stressed
+    AllyStressed,
+    /// Triggered when self is stressed
+    SelfStressed,
+    /// Triggered at start of combat
+    CombatStart,
+}
+
+impl ReactionTrigger {
+    /// Parse from string representation used in JSON.
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "ally_hit" => Some(ReactionTrigger::AllyHit),
+            "ally_killed" => Some(ReactionTrigger::AllyKilled),
+            "enemy_killed" => Some(ReactionTrigger::EnemyKilled),
+            "ally_stressed" => Some(ReactionTrigger::AllyStressed),
+            "self_stressed" => Some(ReactionTrigger::SelfStressed),
+            "combat_start" => Some(ReactionTrigger::CombatStart),
+            _ => None,
+        }
+    }
+}
+
+/// Effect of a reaction.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum ReactionEffect {
+    /// Flee from combat
+    Flee,
+    /// Panic (lose control)
+    Panic,
+    /// Despair (negative emotional state)
+    Despair,
+    /// Motivate allies
+    Motivate,
+    /// Rally allies
+    Rally,
+    /// Calm stressed ally
+    Calm,
+    /// No effect
+    None,
+}
+
+impl ReactionEffect {
+    /// Parse from string representation used in JSON.
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "flee" => Some(ReactionEffect::Flee),
+            "panic" => Some(ReactionEffect::Panic),
+            "despair" => Some(ReactionEffect::Despair),
+            "motivate" => Some(ReactionEffect::Motivate),
+            "rally" => Some(ReactionEffect::Rally),
+            "calm" => Some(ReactionEffect::Calm),
+            "none" => Some(ReactionEffect::None),
+            _ => None,
+        }
+    }
+}
+
+/// A reaction entry defining a triggered response.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ReactionEntry {
+    /// The trigger condition for this reaction.
+    pub trigger: ReactionTrigger,
+    /// Probability of this reaction firing (0.0 to 1.0).
+    pub probability: f64,
+    /// The effect this reaction produces.
+    pub effect: ReactionEffect,
+}
+
+impl ReactionEntry {
+    pub fn new(trigger: ReactionTrigger, probability: f64, effect: ReactionEffect) -> Self {
+        ReactionEntry { trigger, probability, effect }
+    }
+}
+
+/// Definition of a trait (affliction or virtue) that affects hero behavior in combat.
+///
+/// Traits represent overstress states that can be acquired and affect hero
+/// combat performance and behavior through act-outs and reactions.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TraitDefinition {
+    /// Unique identifier for this trait.
+    pub id: String,
+    /// Whether this is an affliction or virtue.
+    pub overstress_type: OverstressType,
+    /// Buff effect IDs provided by this trait.
+    pub buff_ids: Vec<String>,
+    /// Act-outs that may occur at the start of combat turns.
+    pub combat_start_turn_act_outs: Vec<ActOutEntry>,
+    /// Reaction act-outs triggered by combat events.
+    pub reaction_act_outs: Vec<ReactionEntry>,
+}
+
+impl TraitDefinition {
+    pub fn new(
+        id: &str,
+        overstress_type: OverstressType,
+        buff_ids: Vec<String>,
+        combat_start_turn_act_outs: Vec<ActOutEntry>,
+        reaction_act_outs: Vec<ReactionEntry>,
+    ) -> Self {
+        TraitDefinition {
+            id: id.to_string(),
+            overstress_type,
+            buff_ids,
+            combat_start_turn_act_outs,
+            reaction_act_outs,
+        }
+    }
+}
+
+/// Registry holding all trait definitions.
+///
+/// Provides lookup by trait ID and filtering by trait type.
+#[derive(Debug, Clone, Default)]
+pub struct TraitRegistry {
+    traits: std::collections::HashMap<String, TraitDefinition>,
+}
+
+impl TraitRegistry {
+    /// Create a new empty registry.
+    pub fn new() -> Self {
+        TraitRegistry { traits: std::collections::HashMap::new() }
+    }
+
+    /// Register a trait definition.
+    pub fn register(&mut self, trait_def: TraitDefinition) {
+        self.traits.insert(trait_def.id.clone(), trait_def);
+    }
+
+    /// Get a trait by its ID.
+    pub fn get(&self, id: &str) -> Option<&TraitDefinition> {
+        self.traits.get(id)
+    }
+
+    /// Get all registered trait IDs.
+    pub fn all_ids(&self) -> Vec<&str> {
+        self.traits.keys().map(|s| s.as_str()).collect()
+    }
+
+    /// Get the total number of registered traits.
+    pub fn len(&self) -> usize {
+        self.traits.len()
+    }
+
+    /// Returns true if the registry is empty.
+    pub fn is_empty(&self) -> bool {
+        self.traits.is_empty()
+    }
+
+    /// Get all afflictions.
+    pub fn afflictions(&self) -> Vec<&TraitDefinition> {
+        self.traits
+            .values()
+            .filter(|t| t.overstress_type == OverstressType::Affliction)
+            .collect()
+    }
+
+    /// Get all virtues.
+    pub fn virtues(&self) -> Vec<&TraitDefinition> {
+        self.traits
+            .values()
+            .filter(|t| t.overstress_type == OverstressType::Virtue)
+            .collect()
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Buff Resolution
 // ─────────────────────────────────────────────────────────────────────────────
 

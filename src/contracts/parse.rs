@@ -4,11 +4,12 @@ use std::path::Path;
 
 use serde::Deserialize;
 use crate::contracts::{
-    BuildingRegistry, BuildingType, CurioDefinition, CurioRegistry, CurioResult,
-    CurioResultType, DungeonType, ItemInteraction, ObstacleDefinition, ObstacleRegistry,
-    QuirkClassification, QuirkDefinition, QuirkRegistry, TownBuilding, TrapDefinition,
-    TrapRegistry, TrapVariation, TrinketDefinition, TrinketRarity, TrinketRegistry,
-    UnlockCondition, UpgradeEffect, UpgradeLevel, UpgradeTree,
+    ActOutAction, ActOutEntry, BuildingRegistry, BuildingType, CurioDefinition,
+    CurioRegistry, CurioResult, CurioResultType, DungeonType, ItemInteraction,
+    ObstacleDefinition, ObstacleRegistry, OverstressType, QuirkClassification, QuirkDefinition,
+    QuirkRegistry, ReactionEffect, ReactionEntry, ReactionTrigger, TownBuilding, TrapDefinition,
+    TrapRegistry, TrapVariation, TraitDefinition, TraitRegistry, TrinketDefinition,
+    TrinketRarity, TrinketRegistry, UnlockCondition, UpgradeEffect, UpgradeLevel, UpgradeTree,
 };
 
 /// Parse a JSON-encoded dungeon scope string into a Vec<DungeonType>.
@@ -429,6 +430,85 @@ pub fn parse_quirks_json(path: &Path) -> Result<QuirkRegistry, String> {
             &raw.curio_tag,
         );
         registry.register(quirk);
+    }
+
+    Ok(registry)
+}
+
+/// Parse JsonTraits.json into a TraitRegistry.
+pub fn parse_traits_json(path: &Path) -> Result<TraitRegistry, String> {
+    let content = std::fs::read_to_string(path)
+        .map_err(|e| format!("failed to read JsonTraits.json: {}", e))?;
+
+    #[derive(Deserialize)]
+    struct RawActOutEntry {
+        action: String,
+        weight: u32,
+    }
+
+    #[derive(Deserialize)]
+    struct RawReactionEntry {
+        trigger: String,
+        probability: f64,
+        effect: String,
+    }
+
+    #[derive(Deserialize)]
+    struct RawTrait {
+        id: String,
+        overstress_type: String,
+        buff_ids: Vec<String>,
+        combat_start_turn_act_outs: Vec<RawActOutEntry>,
+        reaction_act_outs: Vec<RawReactionEntry>,
+    }
+
+    #[derive(Deserialize)]
+    struct RawTraitsRoot {
+        traits: Vec<RawTrait>,
+    }
+
+    let root: RawTraitsRoot = serde_json::from_str(&content)
+        .map_err(|e| format!("failed to parse JsonTraits.json: {}", e))?;
+
+    let mut registry = TraitRegistry::new();
+
+    for raw in root.traits {
+        let overstress_type = match raw.overstress_type.as_str() {
+            "affliction" => OverstressType::Affliction,
+            "virtue" => OverstressType::Virtue,
+            _ => return Err(format!("unknown OverstressType: {}", raw.overstress_type)),
+        };
+
+        let combat_start_turn_act_outs: Vec<ActOutEntry> = raw
+            .combat_start_turn_act_outs
+            .into_iter()
+            .map(|entry| {
+                let action = ActOutAction::from_str(&entry.action)
+                    .ok_or_else(|| format!("unknown ActOutAction: {}", entry.action))?;
+                Ok::<ActOutEntry, String>(ActOutEntry::new(action, entry.weight))
+            })
+            .collect::<Result<Vec<ActOutEntry>, String>>()?;
+
+        let reaction_act_outs: Vec<ReactionEntry> = raw
+            .reaction_act_outs
+            .into_iter()
+            .map(|entry| {
+                let trigger = ReactionTrigger::from_str(&entry.trigger)
+                    .ok_or_else(|| format!("unknown ReactionTrigger: {}", entry.trigger))?;
+                let effect = ReactionEffect::from_str(&entry.effect)
+                    .ok_or_else(|| format!("unknown ReactionEffect: {}", entry.effect))?;
+                Ok::<ReactionEntry, String>(ReactionEntry::new(trigger, entry.probability, effect))
+            })
+            .collect::<Result<Vec<ReactionEntry>, String>>()?;
+
+        let trait_def = TraitDefinition::new(
+            &raw.id,
+            overstress_type,
+            raw.buff_ids,
+            combat_start_turn_act_outs,
+            reaction_act_outs,
+        );
+        registry.register(trait_def);
     }
 
     Ok(registry)
