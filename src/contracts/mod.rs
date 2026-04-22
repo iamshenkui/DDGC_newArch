@@ -2010,6 +2010,10 @@ pub enum ActOutAction {
     IgnoreCommand,
     /// Attack a random enemy
     AttackRandom,
+    /// Attack a friendly target (ally)
+    AttackFriendly,
+    /// Mark self (apply a status to self)
+    MarkSelf,
     /// Defend (increase DEF)
     Defend,
     /// Use a skill if available
@@ -2025,9 +2029,26 @@ impl ActOutAction {
             "change_pos" => Some(ActOutAction::ChangePos),
             "ignore_command" => Some(ActOutAction::IgnoreCommand),
             "attack_random" => Some(ActOutAction::AttackRandom),
+            "attack_friendly" => Some(ActOutAction::AttackFriendly),
+            "mark_self" => Some(ActOutAction::MarkSelf),
             "defend" => Some(ActOutAction::Defend),
             "use_skill" => Some(ActOutAction::UseSkill),
             _ => None,
+        }
+    }
+
+    /// Convert to string representation for trace recording.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ActOutAction::Nothing => "nothing",
+            ActOutAction::BarkStress => "bark_stress",
+            ActOutAction::ChangePos => "change_pos",
+            ActOutAction::IgnoreCommand => "ignore_command",
+            ActOutAction::AttackRandom => "attack_random",
+            ActOutAction::AttackFriendly => "attack_friendly",
+            ActOutAction::MarkSelf => "mark_self",
+            ActOutAction::Defend => "defend",
+            ActOutAction::UseSkill => "use_skill",
         }
     }
 }

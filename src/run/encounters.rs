@@ -20,10 +20,11 @@ use framework_combat::skills::SkillId;
 use framework_rules::actor::{ActorAggregate, ActorId};
 use framework_rules::attributes::{AttributeKey, AttributeValue, ATTR_HEALTH};
 
-use crate::contracts::{BuffRegistry, QuirkRegistry};
+use crate::contracts::{BuffRegistry, QuirkRegistry, TraitRegistry};
 use crate::heroes::quirks::resolve_quirk_modifiers;
+use crate::heroes::traits::resolve_act_out;
 use crate::run::disease_events::{DiseaseEvent, extract_disease_events};
-use crate::run::flow::HeroQuirkState;
+use crate::run::flow::{HeroQuirkState, HeroTraitState};
 
 use crate::content::ContentPack;
 use crate::encounters::{build_packs_registry, Dungeon, EncounterPack, EncounterPackRegistry, PackType};
@@ -231,7 +232,7 @@ impl EncounterResolver {
     /// Creates a 4-hero ally party and enemies from the pack's family slots.
     /// Each actor uses their primary skill in a deterministic script.
     pub fn run_battle(&self, pack: &EncounterPack, encounter_id: u64) -> EncounterBattleResult {
-        self.run_battle_with_quirks(pack, encounter_id, None, None, None, &[], &[])
+        self.run_battle_with_quirks(pack, encounter_id, None, None, None, &[], &[], None, None)
     }
 
     /// Run a battle with optional quirk state and disease tracking.
@@ -239,6 +240,8 @@ impl EncounterResolver {
     /// When `quirk_state` is provided, quirk modifiers are applied to ally hero stats.
     /// When `known_diseases` is non-empty, disease status applications are extracted
     /// from skill effects and returned in the battle result.
+    /// When `trait_state` and `trait_registry` are provided, affliction act-outs
+    /// are resolved at the start of each afflicted ally hero's turn.
     pub fn run_battle_with_quirks(
         &self,
         pack: &EncounterPack,
@@ -248,6 +251,8 @@ impl EncounterResolver {
         buff_registry: Option<&BuffRegistry>,
         known_diseases: &[&str],
         disease_pool: &[&str],
+        trait_state: Option<&HeroTraitState>,
+        trait_registry: Option<&TraitRegistry>,
     ) -> EncounterBattleResult {
         let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
         let mut ally_ids = Vec::new();
@@ -409,6 +414,43 @@ impl EncounterResolver {
             let hp = actors[&current_actor].effective_attribute(&AttributeKey::new(ATTR_HEALTH));
             if hp.0 <= 0.0 {
                 remove_defeated(&mut encounter, &mut actors, &mut captor_tracker, current_actor, round, &mut trace);
+                resolver.end_turn(&mut encounter, &mut actors);
+                counters.reset_turn_scope(current_actor);
+                continue;
+            }
+
+            // ── US-021: Act-out resolution for afflicted allies ──────────────
+            // At the start of each ally hero's turn, if they have afflictions,
+            // resolve act-outs using weighted random selection and record in trace.
+            let is_ally = side_lookup.get(&current_actor) == Some(&CombatSide::Ally);
+            let mut act_out_occurred = false;
+            if is_ally {
+                if let (Some(ts), Some(tr)) = (trait_state, trait_registry) {
+                    // Check each affliction the hero has
+                    for affliction_id in &ts.afflictions {
+                        // Create a seed from encounter_id, turn and actor for deterministic resolution
+                        let act_out_seed = encounter_id
+                            .wrapping_mul(1000)
+                            .wrapping_add(round as u64)
+                            .wrapping_mul(17)
+                            .wrapping_add(current_actor.0);
+                        if let Some(act_out_entry) = resolve_act_out(affliction_id, act_out_seed, tr) {
+                            // Record act-out in trace
+                            trace.record_act_out(round, current_actor, act_out_entry.action.as_str(), &actors);
+                            // If act-out is not Nothing, hero acts out (skip normal action)
+                            if act_out_entry.action != crate::contracts::ActOutAction::Nothing {
+                                act_out_occurred = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // If an act-out occurred, hero skips their normal action
+            if act_out_occurred {
+                let cmd = CombatCommand::Wait { actor: current_actor };
+                resolver.submit_command(&mut encounter, &mut actors, cmd);
+                trace.record_wait(round, current_actor, &actors);
                 resolver.end_turn(&mut encounter, &mut actors);
                 counters.reset_turn_scope(current_actor);
                 continue;
@@ -2246,6 +2288,8 @@ mod tests {
             Some(&buff_registry),
             &[],
             &[],
+            None,
+            None,
         );
 
         // SPD changes alter turn order, which changes the sequence of actions

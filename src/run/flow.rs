@@ -880,6 +880,8 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
                     Some(&buff_registry),
                     &known_diseases,
                     &disease_pool,
+                    None,
+                    None,
                 );
                 battle_pack_ids.push(battle_result.pack_id.clone());
 
@@ -929,6 +931,8 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
                     Some(&buff_registry),
                     &known_diseases,
                     &disease_pool,
+                    None,
+                    None,
                 );
                 battle_pack_ids.push(battle_result.pack_id.clone());
 

@@ -395,6 +395,35 @@ impl BattleTrace {
         });
     }
 
+    /// Record an act-out event (afflicted hero acting out at start of turn).
+    ///
+    /// The `act_out` parameter is the string representation of the act-out action
+    /// (e.g., "nothing", "bark_stress", "ignore_command", etc.).
+    pub fn record_act_out(
+        &mut self,
+        turn: u32,
+        actor: ActorId,
+        act_out: &str,
+        actors: &HashMap<ActorId, framework_rules::actor::ActorAggregate>,
+    ) {
+        // Snapshot: HP of every actor (BTreeMap for deterministic ordering)
+        let mut snapshot = BTreeMap::new();
+        for (&id, act) in actors {
+            let hp = act.effective_attribute(&AttributeKey::new(ATTR_HEALTH));
+            snapshot.insert(id.0, hp.0);
+        }
+
+        self.entries.push(TraceEntry {
+            turn,
+            actor: actor.0,
+            action: format!("act_out_{}", act_out),
+            targets: vec![],
+            effects: vec![],
+            snapshot,
+            triggered_by: None,
+        });
+    }
+
     /// Finalize the trace with the battle outcome.
     pub fn finalize(&mut self, winner: Option<CombatSide>, turns: u32) {
         self.winner = winner.map(|s| format!("{:?}", s));

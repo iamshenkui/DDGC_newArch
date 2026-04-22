@@ -3,7 +3,7 @@
 //! Handles applying traits to hero trait state when overstress occurs,
 //! and resolving attribute modifiers from active traits.
 
-use crate::contracts::{AttributeModifier, BuffRegistry, OverstressType, TraitRegistry};
+use crate::contracts::{ActOutEntry, AttributeModifier, BuffRegistry, OverstressType, TraitRegistry};
 use crate::run::flow::HeroTraitState;
 
 /// Virtue probability range (5-10%, we use 7.5% as default).
@@ -144,6 +144,50 @@ fn select_random_virtue(seed: u64, trait_registry: &TraitRegistry) -> Option<Str
 
     let index = (seed % virtues.len() as u64) as usize;
     virtues.get(index).map(|t| t.id.clone())
+}
+
+/// Resolve an act-out for an afflicted hero at the start of their turn.
+///
+/// Uses weighted random selection based on the affliction's act-out table.
+/// The seed ensures deterministic resolution for the same affliction_id + seed pair.
+///
+/// Returns the selected act-out entry (including the action and weight).
+pub fn resolve_act_out(
+    affliction_id: &str,
+    seed: u64,
+    trait_registry: &TraitRegistry,
+) -> Option<ActOutEntry> {
+    let trait_def = trait_registry.get(affliction_id)?;
+
+    if trait_def.combat_start_turn_act_outs.is_empty() {
+        return None;
+    }
+
+    // Calculate total weight
+    let total_weight: u32 = trait_def
+        .combat_start_turn_act_outs
+        .iter()
+        .map(|entry| entry.weight)
+        .sum();
+
+    if total_weight == 0 {
+        // Fallback: return first entry
+        return trait_def.combat_start_turn_act_outs.first().cloned();
+    }
+
+    // Weighted random selection using seed
+    let selector = (seed % total_weight as u64) as u32;
+    let mut accum = 0u32;
+
+    for entry in &trait_def.combat_start_turn_act_outs {
+        accum += entry.weight;
+        if selector < accum {
+            return Some(entry.clone());
+        }
+    }
+
+    // Fallback to last entry
+    trait_def.combat_start_turn_act_outs.last().cloned()
 }
 
 #[cfg(test)]
@@ -396,5 +440,125 @@ mod tests {
 
         let result = resolve_overstress(&state, 42, &traits);
         assert!(result.is_none());
+    }
+
+    // ── Act-out resolution tests (US-021) ─────────────────────────────────────
+
+    #[test]
+    fn resolve_act_out_nothing_is_most_common() {
+        // For 'fearful' affliction: nothing(40), bark_stress(30), change_pos(20), ignore_command(10)
+        // Nothing should be the most common outcome across many seeds.
+        let traits = parse_traits();
+        let mut outcome_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+        let iterations = 1000;
+
+        for seed in 0..iterations {
+            if let Some(entry) = resolve_act_out("fearful", seed, &traits) {
+                *outcome_counts.entry(entry.action.as_str().to_string()).or_insert(0) += 1;
+            }
+        }
+
+        // Nothing should appear most frequently (weight 40 vs next highest 30)
+        let nothing_count = outcome_counts.get("nothing").copied().unwrap_or(0);
+        let bark_count = outcome_counts.get("bark_stress").copied().unwrap_or(0);
+        let change_count = outcome_counts.get("change_pos").copied().unwrap_or(0);
+        let ignore_count = outcome_counts.get("ignore_command").copied().unwrap_or(0);
+
+        assert!(
+            nothing_count > bark_count,
+            "Nothing ({}) should be more common than bark_stress ({})",
+            nothing_count, bark_count
+        );
+        assert!(
+            nothing_count > change_count,
+            "Nothing ({}) should be more common than change_pos ({})",
+            nothing_count, change_count
+        );
+        assert!(
+            nothing_count > ignore_count,
+            "Nothing ({}) should be more common than ignore_command ({})",
+            nothing_count, ignore_count
+        );
+    }
+
+    #[test]
+    fn resolve_act_out_other_outcomes_are_possible() {
+        // Prove that all act-out outcomes can occur given the right seed.
+        let traits = parse_traits();
+        let mut observed_outcomes: std::collections::HashSet<String> = std::collections::HashSet::new();
+
+        // Search many seeds to find all possible outcomes
+        for seed in 0..5000u64 {
+            if let Some(entry) = resolve_act_out("fearful", seed, &traits) {
+                observed_outcomes.insert(entry.action.as_str().to_string());
+            }
+        }
+
+        // All four outcomes should be observed
+        assert!(
+            observed_outcomes.contains("nothing"),
+            "nothing outcome should be possible"
+        );
+        assert!(
+            observed_outcomes.contains("bark_stress"),
+            "bark_stress outcome should be possible"
+        );
+        assert!(
+            observed_outcomes.contains("change_pos"),
+            "change_pos outcome should be possible"
+        );
+        assert!(
+            observed_outcomes.contains("ignore_command"),
+            "ignore_command outcome should be possible"
+        );
+    }
+
+    #[test]
+    fn resolve_act_out_deterministic_for_same_seed() {
+        // Same affliction_id + same seed must always produce the same result.
+        let traits = parse_traits();
+
+        for seed in [0u64, 42, 100, 9999] {
+            let result1 = resolve_act_out("fearful", seed, &traits);
+            let result2 = resolve_act_out("fearful", seed, &traits);
+            assert_eq!(
+                result1, result2,
+                "Same seed ({}) should produce same act-out result",
+                seed
+            );
+        }
+    }
+
+    #[test]
+    fn resolve_act_out_returns_none_for_unknown_affliction() {
+        let traits = parse_traits();
+
+        let result = resolve_act_out("nonexistent_affliction", 42, &traits);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn resolve_act_out_hopeless_has_different_distribution() {
+        // 'hopeless' has: nothing(50), bark_stress(35), change_pos(10), ignore_command(5)
+        // nothing should be even more dominant here (50% vs 40% for fearful).
+        let traits = parse_traits();
+        let mut outcome_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+        let iterations = 1000;
+
+        for seed in 0..iterations {
+            if let Some(entry) = resolve_act_out("hopeless", seed, &traits) {
+                *outcome_counts.entry(entry.action.as_str().to_string()).or_insert(0) += 1;
+            }
+        }
+
+        let nothing_count = outcome_counts.get("nothing").copied().unwrap_or(0);
+        let nothing_ratio = nothing_count as f64 / iterations as f64;
+
+        // Nothing should be > 40% (it's 50% for hopeless)
+        assert!(
+            nothing_ratio > 0.40,
+            "hopeless nothing ratio ({:.1}%) should be > 40%",
+            nothing_ratio * 100.0
+        );
     }
 }
