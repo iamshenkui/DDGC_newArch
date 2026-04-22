@@ -10,7 +10,9 @@
 
 use crate::content::actors::Archetype;
 use crate::content::heroes;
+use crate::contracts::TrinketDefinition;
 use crate::heroes::families::HeroFamilyRegistry;
+use crate::heroes::stats::compute_hero_stats;
 use framework_combat::skills::SkillDefinition;
 
 /// A base hero variant: the recruitable form of a hero class family.
@@ -26,7 +28,10 @@ pub struct BaseHeroVariant {
 }
 
 impl BaseHeroVariant {
-    /// Get the archetype for this base hero variant.
+    /// Get the archetype for this base hero variant (level-0, no equipment).
+    ///
+    /// This is the original backward-compatible method that returns hardcoded
+    /// level-0 stats with no equipment bonuses.
     pub fn archetype(&self) -> Archetype {
         match self.class_id {
             "alchemist" => heroes::alchemist::archetype(),
@@ -36,6 +41,29 @@ impl BaseHeroVariant {
             "tank" => heroes::tank::archetype(),
             _ => unreachable!("Unknown base hero class: {}", self.class_id),
         }
+    }
+
+    /// Get the archetype for this base hero variant with equipment bonuses.
+    ///
+    /// # Parameters
+    /// - `weapon_level`: Weapon upgrade level (0 = base, no bonus)
+    /// - `armor_level`: Armor upgrade level (0 = base, no bonus)
+    /// - `trinkets`: Slice of equipped trinket definitions (empty if none)
+    ///
+    /// When all parameters are 0/empty, this produces identical results to `archetype()`.
+    pub fn archetype_with_equipment(
+        &self,
+        weapon_level: u32,
+        armor_level: u32,
+        trinkets: &[&TrinketDefinition],
+    ) -> Archetype {
+        // If no equipment upgrades, use the original hardcoded archetype
+        if weapon_level == 0 && armor_level == 0 && trinkets.is_empty() {
+            return self.archetype();
+        }
+
+        // Otherwise, compute stats from equipment + trinkets
+        compute_hero_stats(self.class_id, weapon_level, armor_level, trinkets)
     }
 
     /// Get the skill pack for this base hero variant.
