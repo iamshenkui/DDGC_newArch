@@ -424,6 +424,39 @@ impl BattleTrace {
         });
     }
 
+    /// Record an overstress event when a hero's stress exceeds max_stress.
+    ///
+    /// The `trait_id` parameter is the ID of the affliction or virtue that was
+    /// acquired due to overstress (e.g., "fearful", "courageous").
+    pub fn record_overstress(
+        &mut self,
+        turn: u32,
+        actor: ActorId,
+        trait_id: &str,
+        actors: &HashMap<ActorId, ActorAggregate>,
+    ) {
+        // Snapshot: HP of every actor (BTreeMap for deterministic ordering)
+        let mut snapshot = BTreeMap::new();
+        for (&id, act) in actors {
+            let hp = act.effective_attribute(&AttributeKey::new(ATTR_HEALTH));
+            snapshot.insert(id.0, hp.0);
+        }
+
+        self.entries.push(TraceEntry {
+            turn,
+            actor: actor.0,
+            action: format!("overstress_{}", trait_id),
+            targets: vec![],
+            effects: vec![TraceEffect {
+                kind: "trait_acquired".to_string(),
+                target: actor.0,
+                value: 0.0, // trait_id is stored in action string
+            }],
+            snapshot,
+            triggered_by: None,
+        });
+    }
+
     /// Finalize the trace with the battle outcome.
     pub fn finalize(&mut self, winner: Option<CombatSide>, turns: u32) {
         self.winner = winner.map(|s| format!("{:?}", s));

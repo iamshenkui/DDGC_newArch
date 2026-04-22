@@ -23,7 +23,7 @@ use framework_progression::run::{Run, RunId, RunResult};
 use crate::contracts::{
     get_dungeon_config, CurioRegistry, CurioResultType, QuirkRegistry,
     DungeonMapConfig, DungeonType, GridSize, MapSize, ObstacleRegistry,
-    TrapOutcome, TrapRegistry,
+    TraitRegistry, TrapOutcome, TrapRegistry,
 };
 use crate::heroes::quirks::apply_quirk;
 use crate::encounters::Dungeon;
@@ -827,6 +827,15 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
         QuirkRegistry::new()
     });
 
+    // Parse trait registry for trait acquisition during run
+    let trait_registry = crate::contracts::parse::parse_traits_json(
+        &std::path::PathBuf::from("data").join("JsonTraits.json"),
+    )
+    .unwrap_or_else(|_| {
+        // Fallback: create empty registry if parsing fails
+        TraitRegistry::new()
+    });
+
     // Buff registry for resolving quirk modifiers
     let buff_registry = crate::contracts::BuffRegistry::new();
 
@@ -880,8 +889,8 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
                     Some(&buff_registry),
                     &known_diseases,
                     &disease_pool,
-                    None,
-                    None,
+                    Some(state.trait_state.clone()),
+                    Some(&trait_registry),
                 );
                 battle_pack_ids.push(battle_result.pack_id.clone());
 
@@ -892,6 +901,11 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
                         &event.disease_id,
                         &quirk_registry,
                     );
+                }
+
+                // Apply any traits acquired during combat (overstress resolution)
+                if let Some(trait_state) = battle_result.trait_state {
+                    state.trait_state = trait_state;
                 }
 
                 // Record room encounter with family composition
@@ -931,8 +945,8 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
                     Some(&buff_registry),
                     &known_diseases,
                     &disease_pool,
-                    None,
-                    None,
+                    Some(state.trait_state.clone()),
+                    Some(&trait_registry),
                 );
                 battle_pack_ids.push(battle_result.pack_id.clone());
 
@@ -943,6 +957,11 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
                         &event.disease_id,
                         &quirk_registry,
                     );
+                }
+
+                // Apply any traits acquired during combat (overstress resolution)
+                if let Some(trait_state) = battle_result.trait_state {
+                    state.trait_state = trait_state;
                 }
 
                 // Record room encounter with family composition

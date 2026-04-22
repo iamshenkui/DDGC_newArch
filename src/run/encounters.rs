@@ -8,7 +8,7 @@
 //! Corridor rooms resolve to hall packs (lighter encounters).
 //! Boss rooms resolve to boss packs (boss + boss parts).
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use framework_combat::commands::CombatCommand;
 use framework_combat::effects::{EffectContext, EffectKind, resolve_skill};
@@ -22,10 +22,11 @@ use framework_rules::attributes::{AttributeKey, AttributeValue, ATTR_HEALTH};
 
 use crate::contracts::{BuffRegistry, QuirkRegistry, TraitRegistry};
 use crate::heroes::quirks::resolve_quirk_modifiers;
-use crate::heroes::traits::resolve_act_out;
+use crate::heroes::traits::{resolve_act_out, resolve_overstress, apply_trait, resolve_trait_modifiers};
 use crate::run::disease_events::{DiseaseEvent, extract_disease_events};
 use crate::run::flow::{HeroQuirkState, HeroTraitState};
 
+use crate::content::actors::{ATTR_STRESS, ATTR_MAX_STRESS};
 use crate::content::ContentPack;
 use crate::encounters::{build_packs_registry, Dungeon, EncounterPack, EncounterPackRegistry, PackType};
 use crate::encounters::ddgc_targeting_rules::{
@@ -122,6 +123,8 @@ pub struct EncounterBattleResult {
     pub pack_id: String,
     /// Disease events extracted during the battle.
     pub disease_events: Vec<DiseaseEvent>,
+    /// Modified trait state after the battle (afflictions/virtues acquired via overstress).
+    pub trait_state: Option<HeroTraitState>,
 }
 
 /// Resolves combat rooms to encounter packs and runs battles.
@@ -241,7 +244,8 @@ impl EncounterResolver {
     /// When `known_diseases` is non-empty, disease status applications are extracted
     /// from skill effects and returned in the battle result.
     /// When `trait_state` and `trait_registry` are provided, affliction act-outs
-    /// are resolved at the start of each afflicted ally hero's turn.
+    /// are resolved at the start of each afflicted ally hero's turn, and overstress
+    /// events trigger trait acquisition.
     pub fn run_battle_with_quirks(
         &self,
         pack: &EncounterPack,
@@ -251,7 +255,7 @@ impl EncounterResolver {
         buff_registry: Option<&BuffRegistry>,
         known_diseases: &[&str],
         disease_pool: &[&str],
-        trait_state: Option<&HeroTraitState>,
+        mut trait_state: Option<HeroTraitState>,
         trait_registry: Option<&TraitRegistry>,
     ) -> EncounterBattleResult {
         let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
@@ -259,6 +263,8 @@ impl EncounterResolver {
         let mut enemy_ids = Vec::new();
         let mut skill_assign = SkillAssignment::new();
         let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
+        // Track which actors have already resolved overstress this battle (to avoid duplicate)
+        let mut overstress_resolved: HashSet<ActorId> = HashSet::new();
 
         // Pre-compute quirk modifiers once if all registries are available
         let quirk_modifiers: Vec<crate::contracts::AttributeModifier> =
@@ -425,7 +431,7 @@ impl EncounterResolver {
             let is_ally = side_lookup.get(&current_actor) == Some(&CombatSide::Ally);
             let mut act_out_occurred = false;
             if is_ally {
-                if let (Some(ts), Some(tr)) = (trait_state, trait_registry) {
+                if let (Some(ts), Some(tr)) = (trait_state.as_ref(), trait_registry) {
                     // Check each affliction the hero has
                     for affliction_id in &ts.afflictions {
                         // Create a seed from encounter_id, turn and actor for deterministic resolution
@@ -936,6 +942,45 @@ impl EncounterResolver {
                         &actors,
                     );
 
+                    // ── Overstress resolution ─────────────────────────────────────
+                    // After skill resolution, check if any ally hero's stress exceeded max_stress.
+                    // If so, resolve overstress to acquire a new trait (affliction or virtue).
+                    if let (Some(ts), Some(tr), Some(br)) = (trait_state.as_mut(), trait_registry, buff_registry) {
+                        for ally_id in &ally_ids {
+                            // Skip if already resolved for overstress this battle
+                            if overstress_resolved.contains(ally_id) {
+                                continue;
+                            }
+                            let stress = actors[ally_id].effective_attribute(&AttributeKey::new(ATTR_STRESS));
+                            let max_stress = actors[ally_id].effective_attribute(&AttributeKey::new(ATTR_MAX_STRESS));
+                            if stress.0 > max_stress.0 {
+                                // Create deterministic seed for overstress resolution
+                                let overstress_seed = encounter_id
+                                    .wrapping_mul(1000)
+                                    .wrapping_add(round as u64)
+                                    .wrapping_mul(17)
+                                    .wrapping_add(ally_id.0)
+                                    .wrapping_mul(31);
+                                if let Some(trait_id) = resolve_overstress(ts, overstress_seed, tr) {
+                                    // Apply the trait to get modified trait state
+                                    let ts_after = apply_trait(ts.clone(), &trait_id, tr);
+                                    *ts = ts_after;
+                                    // Mark this actor as resolved for overstress
+                                    overstress_resolved.insert(*ally_id);
+                                    // Resolve trait modifiers and apply to actor
+                                    let modifiers = resolve_trait_modifiers(ts, tr, br);
+                                    for modifier in modifiers {
+                                        let key = AttributeKey::new(&modifier.attribute_key);
+                                        let current = actors[ally_id].effective_attribute(&key).0;
+                                        actors.get_mut(ally_id).unwrap().set_base(key, AttributeValue(current + modifier.value));
+                                    }
+                                    // Record overstress in trace
+                                    trace.record_overstress(round, *ally_id, &trait_id, &actors);
+                                }
+                            }
+                        }
+                    }
+
                     // Remove defeated actors and track kills
                     let all_ids: Vec<ActorId> = encounter
                         .allies()
@@ -1018,6 +1063,7 @@ impl EncounterResolver {
             trace,
             pack_id: pack.id.0.clone(),
             disease_events: battle_disease_events,
+            trait_state,
         }
     }
 }
