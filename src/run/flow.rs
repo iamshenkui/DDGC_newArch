@@ -79,6 +79,8 @@ pub struct DdgcRunState {
     pub visited_rooms: Vec<RoomId>,
     /// Quirks acquired during this run.
     pub quirk_state: HeroQuirkState,
+    /// Traits (afflictions/virtues) acquired during this run.
+    pub trait_state: HeroTraitState,
 }
 
 impl DdgcRunState {
@@ -92,6 +94,7 @@ impl DdgcRunState {
             stress_change: 0.0,
             visited_rooms: Vec::new(),
             quirk_state: HeroQuirkState::new(),
+            trait_state: HeroTraitState::new(),
         }
     }
 }
@@ -333,6 +336,45 @@ impl HeroQuirkState {
         self.positive.contains(&quirk_id.to_string())
             || self.negative.contains(&quirk_id.to_string())
             || self.diseases.contains(&quirk_id.to_string())
+    }
+}
+
+/// Tracks a hero's active traits (afflictions and virtues) across the full run loop.
+///
+/// Traits are acquired when a hero exceeds max stress (overstress).
+/// Unlike quirks, traits do not have categories or slot limits - a hero can have
+/// multiple afflictions and virtues simultaneously.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct HeroTraitState {
+    /// Active affliction trait IDs.
+    pub afflictions: Vec<String>,
+    /// Active virtue trait IDs.
+    pub virtues: Vec<String>,
+}
+
+impl HeroTraitState {
+    /// Create a new empty trait state.
+    pub fn new() -> Self {
+        HeroTraitState::default()
+    }
+
+    /// Check if a trait ID is already present in any category.
+    pub fn contains(&self, trait_id: &str) -> bool {
+        self.afflictions.contains(&trait_id.to_string())
+            || self.virtues.contains(&trait_id.to_string())
+    }
+
+    /// Add a trait to the appropriate category based on its overstress type.
+    pub fn add_trait(&mut self, trait_id: &str, is_virtue: bool) {
+        if is_virtue {
+            if !self.virtues.contains(&trait_id.to_string()) {
+                self.virtues.push(trait_id.to_string());
+            }
+        } else {
+            if !self.afflictions.contains(&trait_id.to_string()) {
+                self.afflictions.push(trait_id.to_string());
+            }
+        }
     }
 }
 

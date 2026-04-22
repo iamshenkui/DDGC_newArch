@@ -2221,6 +2221,30 @@ impl TraitRegistry {
             .filter(|t| t.overstress_type == OverstressType::Virtue)
             .collect()
     }
+
+    /// Resolve all buffs for a trait into attribute modifiers via BuffRegistry.
+    ///
+    /// Returns all `AttributeModifier` entries from the trait's buff list,
+    /// with duplicates merged (same `attribute_key` values are combined by summing).
+    pub fn resolve_trait_buffs(&self, trait_id: &str, buff_registry: &BuffRegistry) -> Vec<AttributeModifier> {
+        let trait_def = match self.traits.get(trait_id) {
+            Some(t) => t,
+            None => return vec![],
+        };
+
+        let mut aggregated: std::collections::HashMap<String, f64> = std::collections::HashMap::new();
+
+        for buff_id in &trait_def.buff_ids {
+            for modifier in buff_registry.resolve_buff(buff_id) {
+                *aggregated.entry(modifier.attribute_key).or_insert(0.0) += modifier.value;
+            }
+        }
+
+        aggregated
+            .into_iter()
+            .map(|(attribute_key, value)| AttributeModifier { attribute_key, value })
+            .collect()
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -19,6 +19,7 @@ pub mod recruitment;
 pub mod skills;
 pub mod stats;
 pub mod statuses;
+pub mod traits;
 pub mod white;
 
 pub use base::*;
@@ -33,4 +34,5 @@ pub use skills::FamilySkillResolver;
 pub use stats::{compute_hero_stats, BASE_STATS};
 pub use statuses::{FamilyStatusRegistry, FamilyStatusSemantics, VariantStatusProfile};
 pub use quirks::{apply_quirk, resolve_quirk_modifiers};
+pub use traits::{apply_trait, resolve_overstress, resolve_trait_modifiers};
 pub use white::*;
