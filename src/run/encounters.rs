@@ -2210,7 +2210,6 @@ mod tests {
         // Proves that quirk modifiers are resolved and applied to hero stats
         // before combat, producing measurably different combat behavior.
         use crate::heroes::quirks::resolve_quirk_modifiers;
-        use framework_rules::attributes::{AttributeKey, ATTR_SPEED};
 
         let resolver = EncounterResolver::new();
         let pack = resolver

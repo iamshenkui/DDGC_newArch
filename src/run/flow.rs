@@ -1765,10 +1765,8 @@ mod tests {
 
         // Pre-dungeon town trace should exist (may be empty if no stress)
         // Post-dungeon town trace should exist
-        assert!(
-            result.post_town_trace.activities.len() >= 0,
-            "Post-dungeon town trace should be accessible"
-        );
+        // Post-dungeon town trace should be accessible
+        let _ = result.post_town_trace.activities.len();
     }
 
     #[test]

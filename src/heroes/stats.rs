@@ -375,7 +375,6 @@ mod tests {
     use super::*;
     use crate::contracts::{DungeonType, TrinketRarity};
     use crate::contracts::parse::parse_quirks_json;
-    use crate::heroes::quirks::apply_quirk;
     use crate::run::flow::HeroQuirkState;
     use std::path::PathBuf;
 
@@ -580,7 +579,7 @@ mod tests {
         // Test that quirks modify hero stats via compute_hero_stats_with_quirks.
         let quirks = parse_quirks_json(&PathBuf::from("data").join("JsonQuirks.json")
         ).expect("failed to parse JsonQuirks.json");
-        let buff_registry = BuffRegistry::new();
+        let _buff_registry = BuffRegistry::new();
 
         // Base alchemist stats with no quirks
         let stats_no_quirks = compute_hero_stats("alchemist", 0, 0, &[]);
