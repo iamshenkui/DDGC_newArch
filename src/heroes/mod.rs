@@ -16,6 +16,7 @@ pub mod families;
 pub mod progress;
 pub mod recruitment;
 pub mod skills;
+pub mod stats;
 pub mod statuses;
 pub mod white;
 
@@ -28,5 +29,6 @@ pub use recruitment::{
     is_base_recruit_class, normalize_recruit_class_id, HeroClassIdentity, RecruitPool,
 };
 pub use skills::FamilySkillResolver;
+pub use stats::{compute_hero_stats, BASE_STATS};
 pub use statuses::{FamilyStatusRegistry, FamilyStatusSemantics, VariantStatusProfile};
 pub use white::*;
