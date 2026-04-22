@@ -21,10 +21,11 @@ use framework_progression::rooms::{RoomId, RoomKind};
 use framework_progression::run::{Run, RunId, RunResult};
 
 use crate::contracts::{
-    get_dungeon_config, CurioRegistry, CurioResultType,
+    get_dungeon_config, CurioRegistry, CurioResultType, QuirkRegistry,
     DungeonMapConfig, DungeonType, GridSize, MapSize, ObstacleRegistry,
     TrapOutcome, TrapRegistry,
 };
+use crate::heroes::quirks::apply_quirk;
 use crate::encounters::Dungeon;
 use crate::monsters::families::FamilyId;
 use crate::contracts::parse::parse_buildings_json;
@@ -76,6 +77,8 @@ pub struct DdgcRunState {
     pub stress_change: f64,
     /// Ordered record of room IDs visited (for progression verification).
     pub visited_rooms: Vec<RoomId>,
+    /// Quirks acquired during this run.
+    pub quirk_state: HeroQuirkState,
 }
 
 impl DdgcRunState {
@@ -88,6 +91,7 @@ impl DdgcRunState {
             hp_recovered: 0.0,
             stress_change: 0.0,
             visited_rooms: Vec::new(),
+            quirk_state: HeroQuirkState::new(),
         }
     }
 }
@@ -651,6 +655,24 @@ fn resolve_curio_for_room(
     })
 }
 
+/// Apply a quirk from a curio interaction outcome.
+///
+/// When a curio interaction yields a Quirk or Disease result, this function
+/// applies the quirk to the hero's quirk state.
+fn apply_curio_quirk(
+    quirk_state: &mut HeroQuirkState,
+    result_type: CurioResultType,
+    result_id: &str,
+    quirk_registry: &QuirkRegistry,
+) {
+    match result_type {
+        CurioResultType::Quirk | CurioResultType::Disease => {
+            *quirk_state = apply_quirk(quirk_state.clone(), result_id, quirk_registry);
+        }
+        _ => {}
+    }
+}
+
 /// Resolve trap interaction for a corridor room.
 fn resolve_trap_for_room(
     room_id: RoomId,
@@ -754,6 +776,23 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
         ObstacleRegistry::new()
     });
 
+    // Parse quirk registry for quirk acquisition during run
+    let quirk_registry = crate::contracts::parse::parse_quirks_json(
+        &std::path::PathBuf::from("data").join("JsonQuirks.json"),
+    )
+    .unwrap_or_else(|_| {
+        // Fallback: create empty registry if parsing fails
+        QuirkRegistry::new()
+    });
+
+    // Buff registry for resolving quirk modifiers
+    let buff_registry = crate::contracts::BuffRegistry::new();
+
+    // Extract disease IDs from quirk registry for combat disease tracking
+    let disease_ids: Vec<String> = quirk_registry.diseases().iter().map(|d| d.id.clone()).collect();
+    let known_diseases: Vec<&str> = disease_ids.iter().map(|s| s.as_str()).collect();
+    let disease_pool: Vec<&str> = disease_ids.iter().map(|s| s.as_str()).collect();
+
     // Assign curio/trap IDs directly to room kinds on the floor
     assign_interactions_to_rooms(
         &mut floor,
@@ -791,8 +830,25 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
                 let pack = resolver
                     .resolve_pack(config.dungeon, room_idx as u32, config.seed, false)
                     .expect("Combat room: migrated DDGC dungeon must have encounter packs");
-                let battle_result = resolver.run_battle(pack, room_idx as u64 + 1);
+                let battle_result = resolver.run_battle_with_quirks(
+                    pack,
+                    room_idx as u64 + 1,
+                    Some(&state.quirk_state),
+                    Some(&quirk_registry),
+                    Some(&buff_registry),
+                    &known_diseases,
+                    &disease_pool,
+                );
                 battle_pack_ids.push(battle_result.pack_id.clone());
+
+                // Apply any diseases acquired during combat
+                for event in &battle_result.disease_events {
+                    state.quirk_state = apply_quirk(
+                        state.quirk_state.clone(),
+                        &event.disease_id,
+                        &quirk_registry,
+                    );
+                }
 
                 // Record room encounter with family composition
                 let family_ids: Vec<FamilyId> = pack.family_ids().iter().map(|f| (*f).clone()).collect();
@@ -823,8 +879,25 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
                 let pack = resolver
                     .resolve_boss_pack(config.dungeon, room_idx as u32, config.seed)
                     .expect("Boss room: migrated DDGC dungeon must have boss encounter packs");
-                let battle_result = resolver.run_battle(pack, room_idx as u64 + 1);
+                let battle_result = resolver.run_battle_with_quirks(
+                    pack,
+                    room_idx as u64 + 1,
+                    Some(&state.quirk_state),
+                    Some(&quirk_registry),
+                    Some(&buff_registry),
+                    &known_diseases,
+                    &disease_pool,
+                );
                 battle_pack_ids.push(battle_result.pack_id.clone());
+
+                // Apply any diseases acquired during combat
+                for event in &battle_result.disease_events {
+                    state.quirk_state = apply_quirk(
+                        state.quirk_state.clone(),
+                        &event.disease_id,
+                        &quirk_registry,
+                    );
+                }
 
                 // Record room encounter with family composition
                 let family_ids: Vec<FamilyId> = pack.family_ids().iter().map(|f| (*f).clone()).collect();
@@ -860,6 +933,10 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
                     &curio_registry,
                     interaction_seed,
                 ) {
+                    // Apply quirk if the curio grants one
+                    if let InteractionOutcome::Curio { result_type, result_id } = &record.outcome {
+                        apply_curio_quirk(&mut state.quirk_state, *result_type, result_id, &quirk_registry);
+                    }
                     interaction_records.push(record);
                 }
 
@@ -888,6 +965,10 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
                     &curio_registry,
                     curio_seed,
                 ) {
+                    // Apply quirk if the curio grants one
+                    if let InteractionOutcome::Curio { result_type, result_id } = &record.outcome {
+                        apply_curio_quirk(&mut state.quirk_state, *result_type, result_id, &quirk_registry);
+                    }
                     interaction_records.push(record);
                 }
 
@@ -1753,5 +1834,92 @@ mod tests {
                 "Stress should be reduced after town visit"
             );
         }
+    }
+
+    // ── US-018: Quirk acquisition end-to-end tests ────────────────────────────
+
+    #[test]
+    fn curio_quirk_acquired_end_to_end() {
+        // Proves that a curio interaction with Quirk result type triggers
+        // apply_quirk and the quirk appears in the hero's quirk state.
+        let curio_registry = crate::contracts::parse::parse_curios_csv(
+            &std::path::PathBuf::from("data").join("Curios.csv"),
+        )
+        .unwrap();
+        let quirk_registry = crate::contracts::parse::parse_quirks_json(
+            &std::path::PathBuf::from("data").join("JsonQuirks.json"),
+        )
+        .unwrap();
+        let mut quirk_state = HeroQuirkState::new();
+
+        // ancient_vase: Nothing(5), Loot(10), Quirk(5) -> total=20
+        // Quirk when seed % 20 >= 15
+        let outcome = curio_registry
+            .resolve_curio_interaction("ancient_vase", false, "", 15)
+            .unwrap();
+        assert_eq!(outcome.result_type, CurioResultType::Quirk);
+        assert_eq!(outcome.result_id, "clumsy");
+
+        apply_curio_quirk(&mut quirk_state, outcome.result_type, &outcome.result_id, &quirk_registry);
+        assert!(quirk_state.negative.contains(&"clumsy".to_string()));
+    }
+
+    #[test]
+    fn curio_disease_acquired_end_to_end() {
+        // Proves that a curio interaction with Disease result type triggers
+        // apply_quirk and the disease appears in the hero's quirk state.
+        let curio_registry = crate::contracts::parse::parse_curios_csv(
+            &std::path::PathBuf::from("data").join("Curios.csv"),
+        )
+        .unwrap();
+        let quirk_registry = crate::contracts::parse::parse_quirks_json(
+            &std::path::PathBuf::from("data").join("JsonQuirks.json"),
+        )
+        .unwrap();
+        let mut quirk_state = HeroQuirkState::new();
+
+        // mossy_stone: Nothing(6), Quirk(8), Disease(2) -> total=16
+        // Disease when seed % 16 >= 14
+        let outcome = curio_registry
+            .resolve_curio_interaction("mossy_stone", false, "", 15)
+            .unwrap();
+        assert_eq!(outcome.result_type, CurioResultType::Disease);
+        assert_eq!(outcome.result_id, "consumptive");
+
+        apply_curio_quirk(&mut quirk_state, outcome.result_type, &outcome.result_id, &quirk_registry);
+        assert!(quirk_state.diseases.contains(&"consumptive".to_string()));
+    }
+
+    #[test]
+    fn run_slice_acquires_quirk_from_curio_interaction() {
+        // End-to-end: searches for a seed where a curio interaction in a run
+        // produces a Quirk or Disease, then verifies the quirk state.
+        for seed in 0..200u64 {
+            let config = DdgcRunConfig {
+                seed,
+                dungeon: Dungeon::QingLong,
+                map_size: MapSize::Short,
+            };
+            let result = run_ddgc_slice(&config);
+
+            for record in &result.interaction_records {
+                if let InteractionOutcome::Curio {
+                    result_type,
+                    result_id,
+                } = &record.outcome
+                {
+                    if *result_type == CurioResultType::Quirk || *result_type == CurioResultType::Disease
+                    {
+                        assert!(
+                            result.state.quirk_state.contains(result_id),
+                            "Curio interaction should have applied {} to quirk state",
+                            result_id
+                        );
+                        return;
+                    }
+                }
+            }
+        }
+        panic!("No seed in 0..200 produced a curio quirk/disease outcome");
     }
 }

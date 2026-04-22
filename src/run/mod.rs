@@ -6,6 +6,7 @@
 
 pub mod conditions;
 pub mod damage_policy;
+pub mod disease_events;
 pub mod capture_events;
 pub mod captor_state;
 pub mod encounters;

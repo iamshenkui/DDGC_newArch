@@ -18,7 +18,12 @@ use framework_combat::resolver::CombatResolver;
 use framework_combat::results::{EffectResult, EffectResultKind};
 use framework_combat::skills::SkillId;
 use framework_rules::actor::{ActorAggregate, ActorId};
-use framework_rules::attributes::{AttributeKey, ATTR_HEALTH};
+use framework_rules::attributes::{AttributeKey, AttributeValue, ATTR_HEALTH};
+
+use crate::contracts::{BuffRegistry, QuirkRegistry};
+use crate::heroes::quirks::resolve_quirk_modifiers;
+use crate::run::disease_events::{DiseaseEvent, extract_disease_events};
+use crate::run::flow::HeroQuirkState;
 
 use crate::content::ContentPack;
 use crate::encounters::{build_packs_registry, Dungeon, EncounterPack, EncounterPackRegistry, PackType};
@@ -114,6 +119,8 @@ pub struct EncounterBattleResult {
     pub turns: u32,
     pub trace: BattleTrace,
     pub pack_id: String,
+    /// Disease events extracted during the battle.
+    pub disease_events: Vec<DiseaseEvent>,
 }
 
 /// Resolves combat rooms to encounter packs and runs battles.
@@ -224,17 +231,52 @@ impl EncounterResolver {
     /// Creates a 4-hero ally party and enemies from the pack's family slots.
     /// Each actor uses their primary skill in a deterministic script.
     pub fn run_battle(&self, pack: &EncounterPack, encounter_id: u64) -> EncounterBattleResult {
+        self.run_battle_with_quirks(pack, encounter_id, None, None, None, &[], &[])
+    }
+
+    /// Run a battle with optional quirk state and disease tracking.
+    ///
+    /// When `quirk_state` is provided, quirk modifiers are applied to ally hero stats.
+    /// When `known_diseases` is non-empty, disease status applications are extracted
+    /// from skill effects and returned in the battle result.
+    pub fn run_battle_with_quirks(
+        &self,
+        pack: &EncounterPack,
+        encounter_id: u64,
+        quirk_state: Option<&HeroQuirkState>,
+        quirk_registry: Option<&QuirkRegistry>,
+        buff_registry: Option<&BuffRegistry>,
+        known_diseases: &[&str],
+        disease_pool: &[&str],
+    ) -> EncounterBattleResult {
         let mut actors: HashMap<ActorId, ActorAggregate> = HashMap::new();
         let mut ally_ids = Vec::new();
         let mut enemy_ids = Vec::new();
         let mut skill_assign = SkillAssignment::new();
         let mut side_lookup: HashMap<ActorId, CombatSide> = HashMap::new();
 
+        // Pre-compute quirk modifiers once if all registries are available
+        let quirk_modifiers: Vec<crate::contracts::AttributeModifier> =
+            match (quirk_state, quirk_registry, buff_registry) {
+                (Some(qs), Some(qr), Some(br)) => resolve_quirk_modifiers(qs, qr, br),
+                _ => Vec::new(),
+            };
+
         // ── Ally actors (4-hero party) ─────────────────────────────────────
         for (i, (archetype_name, skill_name)) in DEFAULT_PARTY.iter().enumerate() {
             let actor_id = ActorId(i as u64 + 1);
             if let Some(archetype) = self.content_pack.get_archetype(archetype_name) {
-                actors.insert(actor_id, archetype.create_actor(actor_id));
+                let mut actor = archetype.create_actor(actor_id);
+
+                // Apply quirk modifiers to hero stats
+                for modifier in &quirk_modifiers {
+                    let mapped_key = map_quirk_attribute_key(&modifier.attribute_key);
+                    let key = AttributeKey::new(&mapped_key);
+                    let current = actor.effective_attribute(&key).0;
+                    actor.set_base(key, AttributeValue(current + modifier.value));
+                }
+
+                actors.insert(actor_id, actor);
                 ally_ids.push(actor_id);
                 skill_assign.assign_skill(actor_id, *skill_name);
                 side_lookup.insert(actor_id, CombatSide::Ally);
@@ -351,6 +393,7 @@ impl EncounterResolver {
         let mut round: u32 = 0;
         let mut dot_applied_this_round = false;
         let mut kill_tracker: HashMap<ActorId, Vec<ActorId>> = HashMap::new();
+        let mut battle_disease_events: Vec<DiseaseEvent> = Vec::new();
         let max_rounds = 100;
 
         while encounter.state == EncounterState::Active && round < max_rounds {
@@ -584,6 +627,10 @@ impl EncounterResolver {
                     // for downstream processing (summon extraction, capture, reactive events).
                     let all_results = result;
 
+                    // ── US-018: Extract disease events from skill effects ─────────
+                    let new_disease_events = extract_disease_events(&all_results, known_diseases, disease_pool);
+                    battle_disease_events.extend(new_disease_events);
+
                     // ── US-707: Summon event seam (non-mutating) ─────────────────────────
                     // Extract summon events from resolved skill effects without mutating
                     // encounter state. The events are stored for US-708 materialization.
@@ -733,6 +780,12 @@ impl EncounterResolver {
                                     &mut formation,
                                     &side_lookup,
                                 ) {
+                                    // ── US-018: Extract disease events from riposte ─────
+                                    let riposte_disease_events = extract_disease_events(
+                                        &reactive_results, known_diseases, disease_pool,
+                                    );
+                                    battle_disease_events.extend(riposte_disease_events);
+
                                     let trigger = crate::trace::ReactiveTrigger {
                                         attacker: event.attacker.0,
                                         skill: skill_name.to_string(),
@@ -922,7 +975,27 @@ impl EncounterResolver {
             turns: round,
             trace,
             pack_id: pack.id.0.clone(),
+            disease_events: battle_disease_events,
         }
+    }
+}
+
+/// Map a DDGC quirk attribute key to the framework's base attribute key.
+///
+/// DDGC buff IDs use uppercase keys (SPD, ATK, DEF) while the framework
+/// uses lowercase snake_case keys (speed, attack, defense).
+fn map_quirk_attribute_key(key: &str) -> String {
+    match key {
+        "SPD" => "speed".to_string(),
+        "ATK" => "attack".to_string(),
+        "DEF" => "defense".to_string(),
+        "MAXHP" => "max_health".to_string(),
+        "DODGE" => "dodge".to_string(),
+        "ACC" => "accuracy".to_string(),
+        "STRESS" => "stress".to_string(),
+        "CRIT" => "crit_chance".to_string(),
+        "HEAL" => "heal".to_string(),
+        _ => key.to_lowercase(),
     }
 }
 
@@ -2086,5 +2159,101 @@ mod tests {
         for (e1, e2) in result1.trace.entries.iter().zip(result2.trace.entries.iter()) {
             assert_eq!(e1.effects, e2.effects, "FixedAverage effects must be identical");
         }
+    }
+
+    // ── US-018: Combat disease and quirk modifier tests ───────────────────────
+
+    #[test]
+    fn combat_disease_applied_end_to_end() {
+        // Proves that disease events extracted from combat skill effects
+        // trigger apply_quirk and update the hero's quirk state.
+        use crate::run::disease_events::extract_disease_events;
+        use crate::heroes::quirks::apply_quirk;
+        use crate::contracts::parse::parse_quirks_json;
+        use framework_combat::results::{EffectResult, EffectResultKind};
+        use framework_rules::statuses::{StackRule, StatusEffect, StatusKind};
+        use framework_rules::actor::ActorId;
+        use std::path::PathBuf;
+
+        // Simulate a monster skill applying a disease status to a hero
+        let status = StatusEffect::new(
+            StatusKind::new("consumptive"),
+            Some(3),
+            vec![],
+            StackRule::Refresh,
+        );
+        let effect = EffectResult::new(
+            EffectResultKind::ApplyStatus,
+            ActorId(1),
+            vec![ActorId(1)],
+        )
+        .with_status(status);
+
+        let effects = vec![effect];
+        let known_diseases = vec!["consumptive", "bloated"];
+        let disease_pool = vec!["consumptive", "bloated"];
+
+        // Extract disease events from resolved effects
+        let events = extract_disease_events(&effects, &known_diseases, &disease_pool);
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].disease_id, "consumptive");
+
+        // Apply the disease to hero quirk state (same code path as run_ddgc_slice)
+        let quirks = parse_quirks_json(&PathBuf::from("data").join("JsonQuirks.json")).unwrap();
+        let state = crate::run::flow::HeroQuirkState::new();
+        let state = apply_quirk(state, &events[0].disease_id, &quirks);
+        assert!(state.diseases.contains(&"consumptive".to_string()));
+    }
+
+    #[test]
+    fn quirk_modifiers_affect_combat_stats() {
+        // Proves that quirk modifiers are resolved and applied to hero stats
+        // before combat, producing measurably different combat behavior.
+        use crate::heroes::quirks::resolve_quirk_modifiers;
+        use framework_rules::attributes::{AttributeKey, ATTR_SPEED};
+
+        let resolver = EncounterResolver::new();
+        let pack = resolver
+            .resolve_pack(Dungeon::QingLong, 0, 42, false)
+            .expect("QingLong should have a room pack");
+
+        // Battle without quirks
+        let result_no_quirks = resolver.run_battle(pack, 1);
+
+        // Battle with quick_reflexes (SPD+5, DODGE+8)
+        let quirks = crate::contracts::parse::parse_quirks_json(
+            &std::path::PathBuf::from("data").join("JsonQuirks.json"),
+        )
+        .unwrap();
+        let buff_registry = crate::contracts::BuffRegistry::new();
+        let mut quirk_state = crate::run::flow::HeroQuirkState::new();
+        quirk_state.positive.push("quick_reflexes".to_string());
+
+        // Verify modifiers are resolved before running battle
+        let modifiers = resolve_quirk_modifiers(&quirk_state, &quirks, &buff_registry);
+        assert!(
+            !modifiers.is_empty(),
+            "quick_reflexes should produce attribute modifiers"
+        );
+        let spd_modifier = modifiers.iter().find(|m| m.attribute_key == "SPD");
+        assert!(spd_modifier.is_some(), "quick_reflexes should modify SPD");
+        assert_eq!(spd_modifier.unwrap().value, 5.0);
+
+        let result_with_quirks = resolver.run_battle_with_quirks(
+            pack,
+            1,
+            Some(&quirk_state),
+            Some(&quirks),
+            Some(&buff_registry),
+            &[],
+            &[],
+        );
+
+        // SPD changes alter turn order, which changes the sequence of actions
+        // in the battle trace. The traces must differ.
+        assert_ne!(
+            result_no_quirks.trace.entries, result_with_quirks.trace.entries,
+            "Quirk modifiers (SPD+5) should affect combat turn order and trace"
+        );
     }
 }
