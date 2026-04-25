@@ -12,6 +12,7 @@ pub mod parity;
 pub mod planner;
 pub mod run;
 pub mod scenarios;
+pub mod state;
 pub mod town;
 pub mod trace;
 
