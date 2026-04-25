@@ -4,7 +4,8 @@ use std::path::Path;
 
 use serde::Deserialize;
 use crate::contracts::{
-    ActOutAction, ActOutEntry, BuildingRegistry, BuildingType, CurioDefinition,
+    ActOutAction, ActOutEntry, BuildingRegistry, BuildingType, CampEffect, CampEffectType,
+    CampTargetSelection, CampingSkill, CampingSkillRegistry, CurioDefinition,
     CurioRegistry, CurioResult, CurioResultType, DungeonType, ItemInteraction,
     ObstacleDefinition, ObstacleRegistry, OverstressType, QuirkClassification, QuirkDefinition,
     QuirkRegistry, ReactionEffect, ReactionEntry, ReactionTrigger, TownBuilding, TrapDefinition,
@@ -524,6 +525,117 @@ pub fn parse_traits_json(path: &Path) -> Result<TraitRegistry, String> {
     Ok(registry)
 }
 
+/// Parse JsonCamping.json into a CampingSkillRegistry.
+pub fn parse_camping_json(path: &Path) -> Result<CampingSkillRegistry, String> {
+    let content = std::fs::read_to_string(path)
+        .map_err(|e| format!("failed to read JsonCamping.json: {}", e))?;
+
+    #[derive(Deserialize)]
+    struct RawChance {
+        code: String,
+        amount: f64,
+    }
+
+    #[derive(Deserialize)]
+    struct RawCampEffect {
+        selection: String,
+        requirements: Vec<String>,
+        chance: RawChance,
+        #[serde(rename = "type")]
+        effect_type: String,
+        sub_type: String,
+        amount: f64,
+    }
+
+    #[derive(Deserialize)]
+    struct RawUpgradeRequirement {
+        code: String,
+        currency_cost: Vec<RawCurrencyCost>,
+        prerequisite_requirements: Vec<String>,
+    }
+
+    #[derive(Deserialize)]
+    struct RawCurrencyCost {
+        #[serde(rename = "type")]
+        currency_type: String,
+        amount: f64,
+    }
+
+    #[derive(Deserialize)]
+    struct RawCampingSkill {
+        id: String,
+        level: u32,
+        cost: u32,
+        use_limit: u32,
+        effects: Vec<RawCampEffect>,
+        hero_classes: Vec<String>,
+        upgrade_requirements: Vec<RawUpgradeRequirement>,
+    }
+
+    #[derive(Deserialize)]
+    struct RawConfig {
+        class_specific_number_of_classes_threshold: u32,
+    }
+
+    #[derive(Deserialize)]
+    struct RawCampingRoot {
+        configuration: RawConfig,
+        skills: Vec<RawCampingSkill>,
+    }
+
+    let root: RawCampingRoot = serde_json::from_str(&content)
+        .map_err(|e| format!("failed to parse JsonCamping.json: {}", e))?;
+
+    let mut registry = CampingSkillRegistry::new();
+
+    for raw in root.skills {
+        // Parse effects
+        let effects: Vec<CampEffect> = raw
+            .effects
+            .into_iter()
+            .map(|e| {
+                let selection = CampTargetSelection::from_str(&e.selection)
+                    .unwrap_or(CampTargetSelection::None);
+                let effect_type = CampEffectType::from_str(&e.effect_type)
+                    .unwrap_or(CampEffectType::None);
+                CampEffect::new(
+                    selection,
+                    e.requirements,
+                    e.chance.amount,
+                    effect_type,
+                    &e.sub_type,
+                    e.amount,
+                )
+            })
+            .collect();
+
+        // Compute has_individual_target from effects
+        let has_individual_target = effects.iter().any(|e| e.selection == CampTargetSelection::Individual);
+
+        // Get upgrade cost from first upgrade requirement (level 0)
+        let upgrade_cost = raw
+            .upgrade_requirements
+            .first()
+            .and_then(|ur| ur.currency_cost.first())
+            .map(|c| c.amount as u32)
+            .unwrap_or(0);
+
+        let skill = CampingSkill::new(
+            &raw.id,
+            raw.cost,
+            raw.use_limit,
+            has_individual_target,
+            raw.hero_classes,
+            effects,
+            upgrade_cost,
+        );
+
+        registry.register(skill);
+    }
+
+    Ok(registry)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -783,5 +895,139 @@ test_curio,"[""QingLong""]","[{""weight"":5,""chance"":0.5,""result_type"":""Not
 
         let all_dungeons = registry.by_dungeon(DungeonType::XuanWu);
         assert!(all_dungeons.is_empty());
+    }
+
+    #[test]
+    fn camping_skill_registry_parses_87_skills() {
+        let temp_dir = std::env::temp_dir();
+        let json_path = temp_dir.join("test_camping.json");
+
+        // Read the real JsonCamping.json
+        let real_path = std::path::Path::new("/mnt/d/GameDesign/游戏迁移/DDGC_newArch/data/JsonCamping.json");
+        if real_path.exists() {
+            std::fs::copy(real_path, &json_path).ok();
+        } else {
+            return;
+        }
+
+        let registry = parse_camping_json(&json_path).unwrap();
+        assert_eq!(registry.len(), 87, "JsonCamping.json should contain 87 skills");
+
+        std::fs::remove_file(json_path).ok();
+    }
+
+    #[test]
+    fn camping_skill_shared_skill_hobby() {
+        let temp_dir = std::env::temp_dir();
+        let json_path = temp_dir.join("test_camping.json");
+
+        // Read the real JsonCamping.json
+        let real_path = std::path::Path::new("/mnt/d/GameDesign/游戏迁移/DDGC_newArch/data/JsonCamping.json");
+        if real_path.exists() {
+            std::fs::copy(real_path, &json_path).ok();
+        } else {
+            return;
+        }
+
+        let registry = parse_camping_json(&json_path).unwrap();
+
+        // Test shared skill: "hobby" - truly generic (hero_classes is empty list)
+        let skill = registry.get("hobby").expect("hobby skill should exist");
+        assert_eq!(skill.time_cost, 2, "hobby should have time cost 2");
+        assert_eq!(skill.use_limit, 1, "hobby should have use limit 1");
+        assert!(!skill.has_individual_target, "hobby should be self-target only");
+        assert!(skill.is_generic(), "hobby should be a generic skill");
+        assert!(skill.classes.is_empty(), "hobby should have empty classes list");
+        assert_eq!(skill.upgrade_cost, 1750, "hobby should have upgrade cost 1750");
+
+        // Check effects - hobby heals stress to self
+        assert_eq!(skill.effects.len(), 1, "hobby should have 1 effect");
+        let effect = &skill.effects[0];
+        assert_eq!(effect.effect_type, crate::contracts::CampEffectType::StressHealAmount);
+        assert_eq!(effect.selection, crate::contracts::CampTargetSelection::SelfTarget);
+        assert_eq!(effect.amount, 12.0, "hobby should heal 12 stress");
+        assert_eq!(effect.chance, 1.0, "hobby effect should be guaranteed");
+
+        std::fs::remove_file(json_path).ok();
+    }
+
+    #[test]
+    fn camping_skill_class_specific_field_dressing() {
+        let temp_dir = std::env::temp_dir();
+        let json_path = temp_dir.join("test_camping.json");
+
+        // Read the real JsonCamping.json
+        let real_path = std::path::Path::new("/mnt/d/GameDesign/游戏迁移/DDGC_newArch/data/JsonCamping.json");
+        if real_path.exists() {
+            std::fs::copy(real_path, &json_path).ok();
+        } else {
+            return;
+        }
+
+        let registry = parse_camping_json(&json_path).unwrap();
+
+        // Test class-specific skill: "field_dressing" - arbalest/musketeer only
+        let skill = registry.get("field_dressing").expect("field_dressing skill should exist");
+        assert_eq!(skill.time_cost, 3, "field_dressing should have time cost 3");
+        assert_eq!(skill.use_limit, 1, "field_dressing should have use limit 1");
+        assert!(skill.has_individual_target, "field_dressing should require individual target");
+        assert!(!skill.is_generic(), "field_dressing should be class-specific");
+        assert_eq!(skill.classes, vec!["arbalest", "musketeer"], "field_dressing should be arbalest/musketeer only");
+        assert_eq!(skill.upgrade_cost, 1750, "field_dressing should have upgrade cost 1750");
+
+        // Check effects - should have 3 effects (two health heals + remove bleed)
+        assert_eq!(skill.effects.len(), 3, "field_dressing should have 3 effects");
+
+        // First effect: health heal max health percent (75% chance)
+        let effect0 = &skill.effects[0];
+        assert_eq!(effect0.effect_type, crate::contracts::CampEffectType::HealthHealMaxHealthPercent);
+        assert_eq!(effect0.selection, crate::contracts::CampTargetSelection::Individual);
+        assert!((effect0.amount - 0.35).abs() < f64::EPSILON, "first heal should be 35%");
+        assert!((effect0.chance - 0.75).abs() < f64::EPSILON, "first heal chance should be 75%");
+
+        // Second effect: health heal max health percent (25% chance)
+        let effect1 = &skill.effects[1];
+        assert_eq!(effect1.effect_type, crate::contracts::CampEffectType::HealthHealMaxHealthPercent);
+        assert!((effect1.amount - 0.50).abs() < f64::EPSILON, "second heal should be 50%");
+        assert!((effect1.chance - 0.25).abs() < f64::EPSILON, "second heal chance should be 25%");
+
+        // Third effect: remove bleeding (100% chance)
+        let effect2 = &skill.effects[2];
+        assert_eq!(effect2.effect_type, crate::contracts::CampEffectType::RemoveBleed);
+        assert!((effect2.chance - 1.0).abs() < f64::EPSILON, "remove bleed should be guaranteed");
+
+        std::fs::remove_file(json_path).ok();
+    }
+
+    #[test]
+    fn camping_skill_class_filtering() {
+        let temp_dir = std::env::temp_dir();
+        let json_path = temp_dir.join("test_camping.json");
+
+        // Read the real JsonCamping.json
+        let real_path = std::path::Path::new("/mnt/d/GameDesign/游戏迁移/DDGC_newArch/data/JsonCamping.json");
+        if real_path.exists() {
+            std::fs::copy(real_path, &json_path).ok();
+        } else {
+            return;
+        }
+
+        let registry = parse_camping_json(&json_path).unwrap();
+
+        // Encourage is generic, so should appear for all classes
+        let arbalest_encourage = registry.for_class("arbalest");
+        assert!(arbalest_encourage.iter().any(|s| s.id == "encourage"), "arbalest should have encourage");
+
+        let crusader_encourage = registry.for_class("crusader");
+        assert!(crusader_encourage.iter().any(|s| s.id == "encourage"), "crusader should have encourage");
+
+        // Field dressing is arbalest/musketeer only
+        let arbalest_fd = registry.for_class("arbalest");
+        assert!(arbalest_fd.iter().any(|s| s.id == "field_dressing"), "arbalest should have field_dressing");
+
+        let crusader_fd = registry.for_class("crusader");
+        assert!(!crusader_fd.iter().any(|s| s.id == "field_dressing"), "crusader should NOT have field_dressing");
+
+        std::fs::remove_file(json_path).ok();
     }
 }

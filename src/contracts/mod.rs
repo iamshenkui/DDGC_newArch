@@ -1146,6 +1146,290 @@ impl ObstacleRegistry {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Camping Skill definitions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Target selection type for camping skill effects.
+///
+/// Mirrors DDGC `CampTargetType`: None, Individual, Self, PartyOther, Party.
+/// The `None` variant represents an uninitialized or invalid target state
+/// and should not occur in valid skill definitions from JsonCamping.json.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum CampTargetSelection {
+    None,
+    SelfTarget,
+    Individual,
+    PartyOther,
+    Party,
+}
+
+impl CampTargetSelection {
+    /// Parse from JSON string value.
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "self" => Some(CampTargetSelection::SelfTarget),
+            "individual" => Some(CampTargetSelection::Individual),
+            "party_other" => Some(CampTargetSelection::PartyOther),
+            "party" => Some(CampTargetSelection::Party),
+            _ => None,
+        }
+    }
+}
+
+/// Camp effect type — the kind of effect a camping skill produces.
+///
+/// This enum explicitly handles the original game's enum-surface ambiguity:
+/// - `None` variant: represents uninitialized or unknown effect types from JSON.
+///   It is **included** in the enum so that parsing failures are explicit rather
+///   than silent, but skills with `None` effects should be treated as malformed.
+/// - `ReduceTorch` variant: **included** for completeness but marked as deleted
+///   in the original game. Skills using this type should be treated as non-functional
+///   or skipped during registration. No skills in the current JsonCamping.json
+///   use ReduceTorch, but it is preserved for source accuracy.
+///
+/// The remaining variants correspond to DDGC `CampEffectType` entries as documented
+/// in `CampingSkillHelper.cs`.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum CampEffectType {
+    /// Uninitialized or unknown effect type.
+    None,
+    /// Flat stress heal (amount = points to heal).
+    StressHealAmount,
+    /// Heal percent of max HP (amount = fraction, e.g., 0.15 = 15%).
+    HealthHealMaxHealthPercent,
+    /// Remove bleed status.
+    RemoveBleed,
+    /// Remove poison status.
+    RemovePoison,
+    /// Apply a buff (sub_type = buff ID string).
+    Buff,
+    /// Remove death's door recovery debuffs.
+    RemoveDeathRecovery,
+    /// Reduce ambush chance.
+    ReduceAmbushChance,
+    /// Remove disease.
+    RemoveDisease,
+    /// Flat stress damage (amount = points to damage).
+    StressDamageAmount,
+    /// Generate loot (sub_type = loot type ID).
+    Loot,
+    /// **Deleted from original game.** No active skills use this variant.
+    /// Present for source completeness; treat as non-functional.
+    ReduceTorch,
+    /// Damage percent of max HP (amount = fraction).
+    HealthDamageMaxHealthPercent,
+    /// Remove burn status.
+    RemoveBurn,
+    /// Remove frozen status.
+    RemoveFrozen,
+    /// Stress heal percent of max stress (amount = fraction).
+    StressHealPercent,
+    /// Remove a single debuff.
+    RemoveDebuff,
+    /// Remove all debuffs.
+    RemoveAllDebuff,
+    /// Heal random range (amount = encoded range, e.g., "3.5" splits to 3-5).
+    HealthHealRange,
+    /// Flat heal (amount = HP points).
+    HealthHealAmount,
+    /// Reduce turbulence chance (dungeon navigation hazard).
+    ReduceTurbulenceChance,
+    /// Reduce riptide chance (dungeon navigation hazard).
+    ReduceRiptideChance,
+}
+
+impl CampEffectType {
+    /// Parse from JSON string value (snake_case).
+    ///
+    /// Returns `None` for unrecognized strings; callers should treat this as
+    /// `CampEffectType::None` to maintain explicit error semantics.
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "stress_heal_amount" => Some(CampEffectType::StressHealAmount),
+            "health_heal_max_health_percent" => Some(CampEffectType::HealthHealMaxHealthPercent),
+            "remove_bleeding" => Some(CampEffectType::RemoveBleed),
+            "remove_poison" => Some(CampEffectType::RemovePoison),
+            "buff" => Some(CampEffectType::Buff),
+            "remove_deaths_door_recovery_buffs" => Some(CampEffectType::RemoveDeathRecovery),
+            "reduce_ambush_chance" => Some(CampEffectType::ReduceAmbushChance),
+            "remove_disease" => Some(CampEffectType::RemoveDisease),
+            "stress_damage_amount" => Some(CampEffectType::StressDamageAmount),
+            "loot" => Some(CampEffectType::Loot),
+            "reduce_torch" => Some(CampEffectType::ReduceTorch),
+            "health_damage_max_health_percent" => Some(CampEffectType::HealthDamageMaxHealthPercent),
+            "remove_burn" => Some(CampEffectType::RemoveBurn),
+            "remove_frozen" => Some(CampEffectType::RemoveFrozen),
+            "stress_heal_percent" => Some(CampEffectType::StressHealPercent),
+            "remove_debuff" => Some(CampEffectType::RemoveDebuff),
+            "remove_all_debuff" => Some(CampEffectType::RemoveAllDebuff),
+            "health_heal_range" => Some(CampEffectType::HealthHealRange),
+            "health_heal_amount" => Some(CampEffectType::HealthHealAmount),
+            "reduce_turbulence_chance" => Some(CampEffectType::ReduceTurbulenceChance),
+            "reduce_riptide_chance" => Some(CampEffectType::ReduceRiptideChance),
+            _ => None,
+        }
+    }
+}
+
+/// A single effect within a camping skill.
+///
+/// Corresponds to DDGC `CampEffect` with fields for target selection,
+/// requirements, chance roll, effect type, and amount.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CampEffect {
+    /// Target selection mode for this effect.
+    pub selection: CampTargetSelection,
+    /// Prerequisites for this effect to apply (usually empty in JSON).
+    pub requirements: Vec<String>,
+    /// Probability that this effect triggers (1.0 = guaranteed).
+    pub chance: f64,
+    /// Type of effect to apply.
+    pub effect_type: CampEffectType,
+    /// Buff or loot type ID when effect_type is `Buff` or `Loot`.
+    pub sub_type: String,
+    /// Numeric parameter for the effect (heal amount, percent, etc.).
+    pub amount: f64,
+}
+
+impl CampEffect {
+    /// Create a new camp effect.
+    pub fn new(
+        selection: CampTargetSelection,
+        requirements: Vec<String>,
+        chance: f64,
+        effect_type: CampEffectType,
+        sub_type: &str,
+        amount: f64,
+    ) -> Self {
+        CampEffect {
+            selection,
+            requirements,
+            chance,
+            effect_type,
+            sub_type: sub_type.to_string(),
+            amount,
+        }
+    }
+}
+
+/// A camping skill definition.
+///
+/// Corresponds to DDGC `CampingSkill` with time cost, use limit,
+/// target type, class availability, effects, and upgrade cost.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CampingSkill {
+    /// Unique skill identifier (e.g., "encourage", "field_dressing").
+    pub id: String,
+    /// Time cost in camp points (default camp has 12 points).
+    pub time_cost: u32,
+    /// Maximum uses per camp session.
+    pub use_limit: u32,
+    /// Whether this skill requires individual hero selection.
+    pub has_individual_target: bool,
+    /// Hero class IDs that can use this skill. Empty list means available to all.
+    pub classes: Vec<String>,
+    /// Effects produced when this skill is used.
+    pub effects: Vec<CampEffect>,
+    /// Upgrade cost in gold (level 0 cost).
+    pub upgrade_cost: u32,
+}
+
+impl CampingSkill {
+    /// Create a new camping skill.
+    pub fn new(
+        id: &str,
+        time_cost: u32,
+        use_limit: u32,
+        has_individual_target: bool,
+        classes: Vec<String>,
+        effects: Vec<CampEffect>,
+        upgrade_cost: u32,
+    ) -> Self {
+        CampingSkill {
+            id: id.to_string(),
+            time_cost,
+            use_limit,
+            has_individual_target,
+            classes,
+            effects,
+            upgrade_cost,
+        }
+    }
+
+    /// Returns true if this skill is available to all hero classes.
+    pub fn is_generic(&self) -> bool {
+        self.classes.is_empty()
+    }
+
+    /// Returns true if this skill is available to the given hero class.
+    pub fn is_available_to(&self, class_id: &str) -> bool {
+        self.classes.is_empty() || self.classes.iter().any(|c| c == class_id)
+    }
+}
+
+/// Registry holding all camping skill definitions parsed from JsonCamping.json.
+///
+/// Provides lookup by skill ID and filtering by hero class.
+#[derive(Debug, Clone, Default)]
+pub struct CampingSkillRegistry {
+    skills: std::collections::HashMap<String, CampingSkill>,
+}
+
+impl CampingSkillRegistry {
+    /// Create a new empty registry.
+    pub fn new() -> Self {
+        CampingSkillRegistry {
+            skills: std::collections::HashMap::new(),
+        }
+    }
+
+    /// Register a camping skill definition.
+    pub fn register(&mut self, skill: CampingSkill) {
+        self.skills.insert(skill.id.clone(), skill);
+    }
+
+    /// Get a camping skill by its ID.
+    pub fn get(&self, id: &str) -> Option<&CampingSkill> {
+        self.skills.get(id)
+    }
+
+    /// Get all registered skill IDs.
+    pub fn all_ids(&self) -> Vec<&str> {
+        self.skills.keys().map(|s| s.as_str()).collect()
+    }
+
+    /// Get the total number of registered skills.
+    pub fn len(&self) -> usize {
+        self.skills.len()
+    }
+
+    /// Returns true if the registry is empty.
+    pub fn is_empty(&self) -> bool {
+        self.skills.is_empty()
+    }
+
+    /// Get all skills available to a specific hero class.
+    ///
+    /// Generic skills (classes list empty) are included.
+    pub fn for_class(&self, class_id: &str) -> Vec<&CampingSkill> {
+        self.skills
+            .values()
+            .filter(|s| s.is_available_to(class_id))
+            .collect()
+    }
+
+    /// Get all generic skills (available to all classes).
+    pub fn generic_skills(&self) -> Vec<&CampingSkill> {
+        self.skills.values().filter(|s| s.is_generic()).collect()
+    }
+
+    /// Get all class-specific skills (not available to all classes).
+    pub fn class_specific_skills(&self) -> Vec<&CampingSkill> {
+        self.skills.values().filter(|s| !s.is_generic()).collect()
+    }
+}
+
 /// Dungeon type identifier.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum DungeonType {
