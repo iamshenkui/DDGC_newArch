@@ -409,3 +409,165 @@ fn all_boss_family_skills_validate_for_encounter_use() {
         invalid_skills.join("\n")
     );
 }
+
+/// Verifies that all boss summon/buff skills use SelfOnly targeting.
+///
+/// Boss summon skills (azure_dragon swap_dragon_ball_summon, rotvine_wraith
+/// carrion_sowing, gambler summon_mahjong, frostvein_clam nacreous_homunculus,
+/// scorchthroat encore_embers) use @23 self-targeting in DDGC. Similarly,
+/// self-buff skills like voltic_baptism use SelfOnly. This is distinct from
+/// attack skills that target enemies. This test ensures summon/buff skills
+/// correctly use SelfOnly targeting per DDGC source data.
+#[test]
+fn boss_summon_skills_use_self_only_targeting() {
+    use game_ddgc_headless::monsters::MonsterTier;
+    use framework_combat::targeting::TargetSelector;
+
+    let pack = ContentPack::default();
+    let registry = build_registry();
+    let boss_families: Vec<_> = registry.by_tier(MonsterTier::Boss);
+
+    // Skill IDs that are summon/buff mechanics and should use SelfOnly
+    // These are actual summon skills (summon_mahjong, carrion_sowing, etc.)
+    // and self-buff skills (voltic_baptism, swap_dragon_ball, etc.)
+    // that DDGC targets at @23 (self/ally ranks) which we model as SelfOnly.
+    let summon_buff_skill_ids = [
+        "swap_dragon_ball_summon",
+        "swap_dragon_ball",
+        "voltic_baptism",
+        "summon_mahjong",
+        "carrion_sowing",
+        "nacreous_homunculus",
+        "encore_embers",
+    ];
+
+    let mut summon_with_wrong_targeting = Vec::new();
+
+    for family in boss_families {
+        for skill_id in &family.skill_ids {
+            // Only check summon/buff skills
+            if !summon_buff_skill_ids.contains(&skill_id.0.as_str()) {
+                continue;
+            }
+
+            if let Some(skill) = pack.get_skill(skill_id) {
+                if !matches!(skill.target_selector, TargetSelector::SelfOnly) {
+                    summon_with_wrong_targeting.push(format!(
+                        "{} summon/buff skill '{}' targets {:?}, expected SelfOnly",
+                        family.id.0, skill_id.0, skill.target_selector
+                    ));
+                }
+            }
+        }
+    }
+
+    assert!(
+        summon_with_wrong_targeting.is_empty(),
+        "Summon/buff skills with incorrect targeting:\n{}",
+        summon_with_wrong_targeting.join("\n")
+    );
+}
+
+/// Verifies that all boss monster skills have valid action costs.
+///
+/// DDGC skills have action_cost >= 1 (one action per turn for bosses).
+/// This test ensures the framework correctly captures DDGC action semantics
+/// for boss skills, complementing the common skill action cost validation.
+#[test]
+fn all_boss_skill_action_costs_are_valid() {
+    use game_ddgc_headless::monsters::MonsterTier;
+
+    let pack = ContentPack::default();
+    let registry = build_registry();
+    let boss_families: Vec<_> = registry.by_tier(MonsterTier::Boss);
+
+    let mut invalid_action_costs = Vec::new();
+
+    for family in boss_families {
+        for skill_id in &family.skill_ids {
+            if let Some(skill) = pack.get_skill(skill_id) {
+                if skill.action_cost < 1 {
+                    invalid_action_costs.push(format!(
+                        "{} boss skill '{}' has action_cost {} (must be >= 1)",
+                        family.id.0, skill_id.0, skill.action_cost
+                    ));
+                }
+            }
+        }
+    }
+
+    assert!(
+        invalid_action_costs.is_empty(),
+        "Boss skills with invalid action costs:\n{}",
+        invalid_action_costs.join("\n")
+    );
+}
+
+/// Verifies that boss skills from registered families appear in encounter traces.
+///
+/// This proves migrated boss skills are not just structurally valid but are
+/// actually selected and executed during encounter resolution. We run all boss
+/// encounters and verify that skill actions appear in the traces.
+#[test]
+fn representative_boss_skills_execute_in_encounter_traces() {
+    use game_ddgc_headless::monsters::MonsterTier;
+    use game_ddgc_headless::encounters::{build_packs_registry, PackType};
+    use game_ddgc_headless::run::encounters::EncounterResolver;
+
+    let registry = build_registry();
+    let boss_families: Vec<_> = registry.by_tier(MonsterTier::Boss);
+
+    // Collect all boss skill IDs into a single set
+    let mut all_boss_skill_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for family in &boss_families {
+        for skill_id in &family.skill_ids {
+            all_boss_skill_ids.insert(skill_id.0.clone());
+        }
+    }
+
+    // Get all boss encounters
+    let encounter_registry = build_packs_registry();
+    let boss_encounters: Vec<_> = encounter_registry.by_type(PackType::Boss);
+
+    let resolver = EncounterResolver::new();
+    let mut total_skill_executions = 0;
+    let mut encounters_with_skills = 0;
+
+    for encounter in &boss_encounters {
+        // Run a short battle to get a trace
+        let result = resolver.run_battle(encounter, 1);
+
+        // Collect skill IDs that appear in the trace and match boss skills
+        let mut boss_skills_in_trace = std::collections::HashSet::new();
+        for entry in &result.trace.entries {
+            if entry.action != "wait" && entry.action != "status_tick" {
+                if all_boss_skill_ids.contains(&entry.action) {
+                    boss_skills_in_trace.insert(entry.action.clone());
+                }
+            }
+        }
+
+        if !boss_skills_in_trace.is_empty() {
+            encounters_with_skills += 1;
+            total_skill_executions += boss_skills_in_trace.len();
+        }
+    }
+
+    // Verify that at least 80% of boss encounters have boss skills appearing in traces
+    // This accounts for multi-part encounters where the naming might not directly match
+    let coverage = (encounters_with_skills as f64) / (boss_encounters.len() as f64);
+    assert!(
+        coverage >= 0.8,
+        "Expected at least 80% of boss encounters to have skills in traces, got {}/{} ({:.1}%)",
+        encounters_with_skills,
+        boss_encounters.len(),
+        coverage * 100.0
+    );
+
+    // Also verify we actually found multiple skill executions
+    assert!(
+        total_skill_executions >= 5,
+        "Expected at least 5 boss skill executions in traces, got {}",
+        total_skill_executions
+    );
+}
