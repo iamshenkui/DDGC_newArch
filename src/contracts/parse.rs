@@ -531,6 +531,7 @@ pub fn parse_camping_json(path: &Path) -> Result<CampingSkillRegistry, String> {
         .map_err(|e| format!("failed to read JsonCamping.json: {}", e))?;
 
     #[derive(Deserialize)]
+    #[allow(dead_code)]
     struct RawChance {
         code: String,
         amount: f64,
@@ -548,6 +549,7 @@ pub fn parse_camping_json(path: &Path) -> Result<CampingSkillRegistry, String> {
     }
 
     #[derive(Deserialize)]
+    #[allow(dead_code)]
     struct RawUpgradeRequirement {
         code: String,
         currency_cost: Vec<RawCurrencyCost>,
@@ -555,6 +557,7 @@ pub fn parse_camping_json(path: &Path) -> Result<CampingSkillRegistry, String> {
     }
 
     #[derive(Deserialize)]
+    #[allow(dead_code)]
     struct RawCurrencyCost {
         #[serde(rename = "type")]
         currency_type: String,
@@ -562,6 +565,7 @@ pub fn parse_camping_json(path: &Path) -> Result<CampingSkillRegistry, String> {
     }
 
     #[derive(Deserialize)]
+    #[allow(dead_code)]
     struct RawCampingSkill {
         id: String,
         level: u32,
@@ -573,11 +577,13 @@ pub fn parse_camping_json(path: &Path) -> Result<CampingSkillRegistry, String> {
     }
 
     #[derive(Deserialize)]
+    #[allow(dead_code)]
     struct RawConfig {
         class_specific_number_of_classes_threshold: u32,
     }
 
     #[derive(Deserialize)]
+    #[allow(dead_code)]
     struct RawCampingRoot {
         configuration: RawConfig,
         skills: Vec<RawCampingSkill>,
