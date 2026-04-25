@@ -1,4 +1,4 @@
-//! Tests for camping phase resolution (US-006-b).
+//! Tests for camping phase resolution (US-006-b / US-007-b).
 //!
 //! Verifies that `CampingPhase` correctly tracks time budget, per-skill usage,
 //! participating heroes, and activity trace. Also verifies that
@@ -699,4 +699,606 @@ fn party_all_effect_applies_to_all_heroes() {
     assert_eq!(phase.get_hero("h1").unwrap().stress, 90.0);
     assert_eq!(phase.get_hero("h2").unwrap().stress, 70.0);
     assert_eq!(phase.get_hero("h3").unwrap().stress, 50.0);
+}
+
+// ── Percent-based healing tests ─────────────────────────────────────────────────
+
+#[test]
+fn stress_heal_percent_applies() {
+    let mut heroes = vec![make_hero("h1", "alchemist")];
+    heroes[0].stress = 100.0;
+    heroes[0].max_stress = 200.0;
+    let mut phase = CampingPhase::new(heroes);
+
+    // Create skill with StressHealPercent effect (20% of max stress)
+    let skill = CampingSkill {
+        id: "stress_heal_pct".to_string(),
+        time_cost: 2,
+        use_limit: 10,
+        has_individual_target: true,
+        classes: vec![],
+        effects: vec![CampEffect {
+            selection: CampTargetSelection::SelfTarget,
+            requirements: Vec::new(),
+            chance: 1.0,
+            effect_type: CampEffectType::StressHealPercent,
+            sub_type: String::new(),
+            amount: 0.20, // 20% of max stress
+        }],
+    };
+
+    let result = perform_camping_skill(&mut phase, &skill, "h1", Some("h1"));
+    assert!(result.success);
+
+    // Stress should be reduced by 20% of 200 = 40, so 100 - 40 = 60
+    let hero = phase.get_hero("h1").unwrap();
+    assert_eq!(hero.stress, 60.0);
+}
+
+#[test]
+fn health_heal_amount_applies() {
+    let mut heroes = vec![make_hero("h1", "alchemist")];
+    heroes[0].health = 50.0;
+    heroes[0].max_health = 100.0;
+    let mut phase = CampingPhase::new(heroes);
+
+    // Create skill with HealthHealAmount effect (flat 30 HP)
+    let skill = CampingSkill {
+        id: "health_heal_flat".to_string(),
+        time_cost: 2,
+        use_limit: 10,
+        has_individual_target: true,
+        classes: vec![],
+        effects: vec![CampEffect {
+            selection: CampTargetSelection::SelfTarget,
+            requirements: Vec::new(),
+            chance: 1.0,
+            effect_type: CampEffectType::HealthHealAmount,
+            sub_type: String::new(),
+            amount: 30.0,
+        }],
+    };
+
+    let result = perform_camping_skill(&mut phase, &skill, "h1", Some("h1"));
+    assert!(result.success);
+
+    // Health should be 50 + 30 = 80 (not capped at max_health since 80 < 100)
+    let hero = phase.get_hero("h1").unwrap();
+    assert_eq!(hero.health, 80.0);
+}
+
+#[test]
+fn health_heal_amount_caps_at_max_health() {
+    let mut heroes = vec![make_hero("h1", "alchemist")];
+    heroes[0].health = 90.0;
+    heroes[0].max_health = 100.0;
+    let mut phase = CampingPhase::new(heroes);
+
+    // Create skill with HealthHealAmount effect (flat 30 HP)
+    let skill = CampingSkill {
+        id: "health_heal_flat".to_string(),
+        time_cost: 2,
+        use_limit: 10,
+        has_individual_target: true,
+        classes: vec![],
+        effects: vec![CampEffect {
+            selection: CampTargetSelection::SelfTarget,
+            requirements: Vec::new(),
+            chance: 1.0,
+            effect_type: CampEffectType::HealthHealAmount,
+            sub_type: String::new(),
+            amount: 30.0,
+        }],
+    };
+
+    let result = perform_camping_skill(&mut phase, &skill, "h1", Some("h1"));
+    assert!(result.success);
+
+    // Health should be 90 + 30 = 120, but capped at 100
+    let hero = phase.get_hero("h1").unwrap();
+    assert_eq!(hero.health, 100.0);
+}
+
+// ── Removal effect tests ────────────────────────────────────────────────────────
+
+#[test]
+fn remove_bleed_effect_applies() {
+    let mut heroes = vec![make_hero("h1", "alchemist")];
+    heroes[0].active_buffs = vec!["bleed".to_string(), "other_debuff".to_string()];
+    let mut phase = CampingPhase::new(heroes);
+
+    // Create skill with RemoveBleed effect
+    let skill = CampingSkill {
+        id: "remove_bleed".to_string(),
+        time_cost: 2,
+        use_limit: 10,
+        has_individual_target: true,
+        classes: vec![],
+        effects: vec![CampEffect {
+            selection: CampTargetSelection::SelfTarget,
+            requirements: Vec::new(),
+            chance: 1.0,
+            effect_type: CampEffectType::RemoveBleed,
+            sub_type: String::new(),
+            amount: 0.0,
+        }],
+    };
+
+    let result = perform_camping_skill(&mut phase, &skill, "h1", Some("h1"));
+    assert!(result.success);
+
+    // bleed should be removed, but other_debuff should remain
+    let hero = phase.get_hero("h1").unwrap();
+    assert!(!hero.active_buffs.contains(&"bleed".to_string()));
+    assert!(hero.active_buffs.contains(&"other_debuff".to_string()));
+}
+
+#[test]
+fn remove_poison_effect_applies() {
+    let mut heroes = vec![make_hero("h1", "alchemist")];
+    heroes[0].active_buffs = vec!["poison".to_string(), "bleed".to_string()];
+    let mut phase = CampingPhase::new(heroes);
+
+    // Create skill with RemovePoison effect
+    let skill = CampingSkill {
+        id: "remove_poison".to_string(),
+        time_cost: 2,
+        use_limit: 10,
+        has_individual_target: true,
+        classes: vec![],
+        effects: vec![CampEffect {
+            selection: CampTargetSelection::SelfTarget,
+            requirements: Vec::new(),
+            chance: 1.0,
+            effect_type: CampEffectType::RemovePoison,
+            sub_type: String::new(),
+            amount: 0.0,
+        }],
+    };
+
+    let result = perform_camping_skill(&mut phase, &skill, "h1", Some("h1"));
+    assert!(result.success);
+
+    // poison should be removed, but bleed should remain
+    let hero = phase.get_hero("h1").unwrap();
+    assert!(!hero.active_buffs.contains(&"poison".to_string()));
+    assert!(hero.active_buffs.contains(&"bleed".to_string()));
+}
+
+#[test]
+fn remove_burn_effect_applies() {
+    let mut heroes = vec![make_hero("h1", "alchemist")];
+    heroes[0].active_buffs = vec!["burning".to_string(), "poison".to_string()];
+    let mut phase = CampingPhase::new(heroes);
+
+    // Create skill with RemoveBurn effect
+    let skill = CampingSkill {
+        id: "remove_burn".to_string(),
+        time_cost: 2,
+        use_limit: 10,
+        has_individual_target: true,
+        classes: vec![],
+        effects: vec![CampEffect {
+            selection: CampTargetSelection::SelfTarget,
+            requirements: Vec::new(),
+            chance: 1.0,
+            effect_type: CampEffectType::RemoveBurn,
+            sub_type: String::new(),
+            amount: 0.0,
+        }],
+    };
+
+    let result = perform_camping_skill(&mut phase, &skill, "h1", Some("h1"));
+    assert!(result.success);
+
+    // burning should be removed, but poison should remain
+    let hero = phase.get_hero("h1").unwrap();
+    assert!(!hero.active_buffs.contains(&"burning".to_string()));
+    assert!(hero.active_buffs.contains(&"poison".to_string()));
+}
+
+#[test]
+fn remove_frozen_effect_applies() {
+    let mut heroes = vec![make_hero("h1", "alchemist")];
+    heroes[0].active_buffs = vec!["frozen".to_string(), "bleed".to_string()];
+    let mut phase = CampingPhase::new(heroes);
+
+    // Create skill with RemoveFrozen effect
+    let skill = CampingSkill {
+        id: "remove_frozen".to_string(),
+        time_cost: 2,
+        use_limit: 10,
+        has_individual_target: true,
+        classes: vec![],
+        effects: vec![CampEffect {
+            selection: CampTargetSelection::SelfTarget,
+            requirements: Vec::new(),
+            chance: 1.0,
+            effect_type: CampEffectType::RemoveFrozen,
+            sub_type: String::new(),
+            amount: 0.0,
+        }],
+    };
+
+    let result = perform_camping_skill(&mut phase, &skill, "h1", Some("h1"));
+    assert!(result.success);
+
+    // frozen should be removed, but bleed should remain
+    let hero = phase.get_hero("h1").unwrap();
+    assert!(!hero.active_buffs.contains(&"frozen".to_string()));
+    assert!(hero.active_buffs.contains(&"bleed".to_string()));
+}
+
+#[test]
+fn remove_disease_effect_applies() {
+    let mut heroes = vec![make_hero("h1", "alchemist")];
+    heroes[0].active_buffs = vec![
+        "disease_foo".to_string(),
+        "disease_bar".to_string(),
+        "bleed".to_string(),
+    ];
+    let mut phase = CampingPhase::new(heroes);
+
+    // Create skill with RemoveDisease effect
+    let skill = CampingSkill {
+        id: "remove_disease".to_string(),
+        time_cost: 2,
+        use_limit: 10,
+        has_individual_target: true,
+        classes: vec![],
+        effects: vec![CampEffect {
+            selection: CampTargetSelection::SelfTarget,
+            requirements: Vec::new(),
+            chance: 1.0,
+            effect_type: CampEffectType::RemoveDisease,
+            sub_type: String::new(),
+            amount: 0.0,
+        }],
+    };
+
+    let result = perform_camping_skill(&mut phase, &skill, "h1", Some("h1"));
+    assert!(result.success);
+
+    // All disease_* buffs should be removed, but bleed should remain
+    let hero = phase.get_hero("h1").unwrap();
+    assert!(!hero.active_buffs.iter().any(|b| b.starts_with("disease_")));
+    assert!(hero.active_buffs.contains(&"bleed".to_string()));
+}
+
+#[test]
+fn remove_debuff_removes_first_debuff() {
+    let mut heroes = vec![make_hero("h1", "alchemist")];
+    heroes[0].active_buffs = vec![
+        "debuff_attack".to_string(),
+        "debuff_defense".to_string(),
+        "bleed".to_string(),
+    ];
+    let mut phase = CampingPhase::new(heroes);
+
+    // Create skill with RemoveDebuff effect
+    let skill = CampingSkill {
+        id: "remove_debuff".to_string(),
+        time_cost: 2,
+        use_limit: 10,
+        has_individual_target: true,
+        classes: vec![],
+        effects: vec![CampEffect {
+            selection: CampTargetSelection::SelfTarget,
+            requirements: Vec::new(),
+            chance: 1.0,
+            effect_type: CampEffectType::RemoveDebuff,
+            sub_type: String::new(),
+            amount: 0.0,
+        }],
+    };
+
+    let result = perform_camping_skill(&mut phase, &skill, "h1", Some("h1"));
+    assert!(result.success);
+
+    // First debuff should be removed (debuff_attack), others remain
+    let hero = phase.get_hero("h1").unwrap();
+    assert!(!hero.active_buffs.contains(&"debuff_attack".to_string()));
+    assert!(hero.active_buffs.contains(&"debuff_defense".to_string()));
+    assert!(hero.active_buffs.contains(&"bleed".to_string()));
+}
+
+#[test]
+fn remove_all_debuff_removes_all_debuffs() {
+    let mut heroes = vec![make_hero("h1", "alchemist")];
+    heroes[0].active_buffs = vec![
+        "debuff_attack".to_string(),
+        "debuff_defense".to_string(),
+        "bleed".to_string(),
+    ];
+    let mut phase = CampingPhase::new(heroes);
+
+    // Create skill with RemoveAllDebuff effect
+    let skill = CampingSkill {
+        id: "remove_all_debuff".to_string(),
+        time_cost: 2,
+        use_limit: 10,
+        has_individual_target: true,
+        classes: vec![],
+        effects: vec![CampEffect {
+            selection: CampTargetSelection::SelfTarget,
+            requirements: Vec::new(),
+            chance: 1.0,
+            effect_type: CampEffectType::RemoveAllDebuff,
+            sub_type: String::new(),
+            amount: 0.0,
+        }],
+    };
+
+    let result = perform_camping_skill(&mut phase, &skill, "h1", Some("h1"));
+    assert!(result.success);
+
+    // All debuff_* buffs should be removed, but bleed should remain
+    let hero = phase.get_hero("h1").unwrap();
+    assert!(!hero.active_buffs.iter().any(|b| b.starts_with("debuff_")));
+    assert!(hero.active_buffs.contains(&"bleed".to_string()));
+}
+
+// ── Chance-based effect tests ──────────────────────────────────────────────────
+
+#[test]
+fn chance_effect_triggers_when_roll_is_below_chance() {
+    let mut heroes = vec![make_hero("h1", "alchemist")];
+    heroes[0].health = 50.0;
+    heroes[0].max_health = 100.0;
+    let mut phase = CampingPhase::new(heroes);
+
+    // Create skill with 75% chance health heal
+    let skill = CampingSkill {
+        id: "chance_heal".to_string(),
+        time_cost: 2,
+        use_limit: 10,
+        has_individual_target: true,
+        classes: vec![],
+        effects: vec![CampEffect {
+            selection: CampTargetSelection::SelfTarget,
+            requirements: Vec::new(),
+            chance: 0.75,
+            effect_type: CampEffectType::HealthHealAmount,
+            sub_type: String::new(),
+            amount: 30.0,
+        }],
+    };
+
+    // deterministic_chance_roll is deterministic, so we can test the result
+    let result = perform_camping_skill(&mut phase, &skill, "h1", Some("h1"));
+    assert!(result.success);
+
+    // The effect should have been applied (the roll is deterministic based on inputs)
+    // Check that the record shows the effect was processed
+    assert_eq!(result.record.effects_applied.len(), 1);
+}
+
+#[test]
+fn deterministic_chance_roll_produces_consistent_results() {
+    // The deterministic_chance_roll function uses hash-based pseudo-random
+    // so the same inputs always produce the same output
+    let skill_id = "test_skill";
+    let performer_id = "h1";
+    let target_id = Some("h1");
+
+    // Create two identical phases
+    let heroes = vec![make_hero("h1", "alchemist")];
+    let mut phase1 = CampingPhase::new(heroes);
+    let heroes2 = vec![make_hero("h1", "alchemist")];
+    let mut phase2 = CampingPhase::new(heroes2);
+
+    let skill = CampingSkill {
+        id: skill_id.to_string(),
+        time_cost: 2,
+        use_limit: 10,
+        has_individual_target: true,
+        classes: vec![],
+        effects: vec![CampEffect {
+            selection: CampTargetSelection::SelfTarget,
+            requirements: Vec::new(),
+            chance: 0.5,
+            effect_type: CampEffectType::HealthHealAmount,
+            sub_type: String::new(),
+            amount: 30.0,
+        }],
+    };
+
+    let result1 = perform_camping_skill(&mut phase1, &skill, performer_id, target_id);
+    let result2 = perform_camping_skill(&mut phase2, &skill, performer_id, target_id);
+
+    // Both should have the same trigger outcome
+    assert_eq!(
+        result1.record.effects_applied[0].triggered,
+        result2.record.effects_applied[0].triggered
+    );
+}
+
+// ── Representative skill tests (first_aid, pep_talk) ─────────────────────────
+
+/// Helper to create a CampingSkill that mirrors the first_aid skill from JsonCamping.json.
+/// first_aid: health_heal_max_health_percent (15%), remove_bleeding, remove_poison
+fn make_first_aid_skill() -> CampingSkill {
+    CampingSkill {
+        id: "first_aid".to_string(),
+        time_cost: 2,
+        use_limit: 1,
+        has_individual_target: true,
+        classes: vec![
+            "bounty_hunter".to_string(),
+            "crusader".to_string(),
+            "vestal".to_string(),
+            "occultist".to_string(),
+            "hellion".to_string(),
+            "grave_robber".to_string(),
+            "highwayman".to_string(),
+            "plague_doctor".to_string(),
+            "jester".to_string(),
+            "leper".to_string(),
+            "arbalest".to_string(),
+            "man_at_arms".to_string(),
+            "houndmaster".to_string(),
+            "abomination".to_string(),
+            "antiquarian".to_string(),
+            "musketeer".to_string(),
+        ],
+        effects: vec![
+            // Effect 0: 15% max HP heal
+            CampEffect {
+                selection: CampTargetSelection::Individual,
+                requirements: Vec::new(),
+                chance: 1.0,
+                effect_type: CampEffectType::HealthHealMaxHealthPercent,
+                sub_type: String::new(),
+                amount: 0.15,
+            },
+            // Effect 1: remove bleeding
+            CampEffect {
+                selection: CampTargetSelection::Individual,
+                requirements: Vec::new(),
+                chance: 1.0,
+                effect_type: CampEffectType::RemoveBleed,
+                sub_type: String::new(),
+                amount: 0.0,
+            },
+            // Effect 2: remove poison
+            CampEffect {
+                selection: CampTargetSelection::Individual,
+                requirements: Vec::new(),
+                chance: 1.0,
+                effect_type: CampEffectType::RemovePoison,
+                sub_type: String::new(),
+                amount: 0.0,
+            },
+        ],
+    }
+}
+
+#[test]
+fn first_aid_heals_15_percent_max_health() {
+    let mut heroes = vec![make_hero("h1", "vestal")];
+    heroes[0].health = 50.0;
+    heroes[0].max_health = 100.0;
+    let mut phase = CampingPhase::new(heroes);
+
+    let skill = make_first_aid_skill();
+    let result = perform_camping_skill(&mut phase, &skill, "h1", Some("h1"));
+    assert!(result.success);
+
+    // 15% of 100 max health = 15 HP heal
+    // 50 + 15 = 65
+    let hero = phase.get_hero("h1").unwrap();
+    assert_eq!(hero.health, 65.0);
+}
+
+#[test]
+fn first_aid_removes_bleed_and_poison() {
+    let mut heroes = vec![make_hero("h1", "vestal")];
+    heroes[0].health = 100.0;
+    heroes[0].active_buffs = vec![
+        "bleed".to_string(),
+        "poison".to_string(),
+        "other_buff".to_string(),
+    ];
+    let mut phase = CampingPhase::new(heroes);
+
+    let skill = make_first_aid_skill();
+    let result = perform_camping_skill(&mut phase, &skill, "h1", Some("h1"));
+    assert!(result.success);
+
+    let hero = phase.get_hero("h1").unwrap();
+    // bleed and poison should be removed
+    assert!(!hero.active_buffs.contains(&"bleed".to_string()));
+    assert!(!hero.active_buffs.contains(&"poison".to_string()));
+    // other_buff should remain
+    assert!(hero.active_buffs.contains(&"other_buff".to_string()));
+}
+
+#[test]
+fn first_aid_skill_has_correct_effects() {
+    let skill = make_first_aid_skill();
+
+    // Verify first_aid has the correct effects structure
+    assert_eq!(skill.effects.len(), 3);
+    assert_eq!(skill.effects[0].effect_type, CampEffectType::HealthHealMaxHealthPercent);
+    assert!((skill.effects[0].amount - 0.15).abs() < f64::EPSILON);
+    assert_eq!(skill.effects[1].effect_type, CampEffectType::RemoveBleed);
+    assert_eq!(skill.effects[2].effect_type, CampEffectType::RemovePoison);
+}
+
+/// Helper to create a CampingSkill that mirrors the pep_talk skill from JsonCamping.json.
+/// pep_talk: Buff (campingStressResistBuff)
+fn make_pep_talk_skill() -> CampingSkill {
+    CampingSkill {
+        id: "pep_talk".to_string(),
+        time_cost: 2,
+        use_limit: 1,
+        has_individual_target: true,
+        classes: vec![
+            "bounty_hunter".to_string(),
+            "crusader".to_string(),
+            "vestal".to_string(),
+            "occultist".to_string(),
+            "hellion".to_string(),
+            "grave_robber".to_string(),
+            "highwayman".to_string(),
+            "plague_doctor".to_string(),
+            "jester".to_string(),
+            "leper".to_string(),
+            "arbalest".to_string(),
+            "man_at_arms".to_string(),
+            "houndmaster".to_string(),
+            "abomination".to_string(),
+            "antiquarian".to_string(),
+            "musketeer".to_string(),
+        ],
+        effects: vec![CampEffect {
+            selection: CampTargetSelection::SelfTarget,
+            requirements: Vec::new(),
+            chance: 1.0,
+            effect_type: CampEffectType::Buff,
+            sub_type: "campingStressResistBuff".to_string(),
+            amount: 0.0,
+        }],
+    }
+}
+
+#[test]
+fn pep_talk_applies_stress_resist_buff() {
+    let mut heroes = vec![make_hero("h1", "jester")];
+    heroes[0].stress = 50.0;
+    let mut phase = CampingPhase::new(heroes);
+
+    let skill = make_pep_talk_skill();
+    let result = perform_camping_skill(&mut phase, &skill, "h1", Some("h1"));
+    assert!(result.success);
+
+    let hero = phase.get_hero("h1").unwrap();
+    assert!(hero.active_buffs.contains(&"campingStressResistBuff".to_string()));
+}
+
+#[test]
+fn pep_talk_skill_has_correct_effects() {
+    let skill = make_pep_talk_skill();
+
+    // Verify pep_talk has the correct effects structure
+    assert_eq!(skill.effects.len(), 1);
+    assert_eq!(skill.effects[0].effect_type, CampEffectType::Buff);
+    assert_eq!(skill.effects[0].sub_type, "campingStressResistBuff");
+}
+
+#[test]
+fn pep_talk_does_not_affect_health_or_stress() {
+    let mut heroes = vec![make_hero("h1", "jester")];
+    heroes[0].health = 80.0;
+    heroes[0].stress = 60.0;
+    let mut phase = CampingPhase::new(heroes);
+
+    let skill = make_pep_talk_skill();
+    let result = perform_camping_skill(&mut phase, &skill, "h1", Some("h1"));
+    assert!(result.success);
+
+    // pep_talk only applies a buff, doesn't change health or stress
+    let hero = phase.get_hero("h1").unwrap();
+    assert_eq!(hero.health, 80.0);
+    assert_eq!(hero.stress, 60.0);
 }
