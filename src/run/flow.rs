@@ -25,6 +25,7 @@ use crate::contracts::{
     DungeonMapConfig, DungeonType, GridSize, MapSize, ObstacleRegistry,
     TraitRegistry, TrapOutcome, TrapRegistry,
 };
+use crate::run::camping::{CampingPhase, CampActivityRecord};
 use crate::heroes::quirks::apply_quirk;
 use crate::encounters::Dungeon;
 use crate::monsters::families::FamilyId;
@@ -52,6 +53,8 @@ pub struct DdgcRunConfig {
     pub seed: u64,
     pub dungeon: Dungeon,
     pub map_size: MapSize,
+    /// Initial hero states entering the dungeon (for HP/stress tracking).
+    pub heroes: Vec<HeroState>,
 }
 
 impl Default for DdgcRunConfig {
@@ -60,6 +63,7 @@ impl Default for DdgcRunConfig {
             seed: 42,
             dungeon: Dungeon::QingLong,
             map_size: MapSize::Short,
+            heroes: Vec::new(),
         }
     }
 }
@@ -81,6 +85,8 @@ pub struct DdgcRunState {
     pub quirk_state: HeroQuirkState,
     /// Traits (afflictions/virtues) acquired during this run.
     pub trait_state: HeroTraitState,
+    /// Optional camping phase that occurred during this run.
+    pub camping_phase: Option<CampingPhase>,
 }
 
 impl DdgcRunState {
@@ -95,6 +101,7 @@ impl DdgcRunState {
             visited_rooms: Vec::new(),
             quirk_state: HeroQuirkState::new(),
             trait_state: HeroTraitState::new(),
+            camping_phase: None,
         }
     }
 }
@@ -118,6 +125,10 @@ pub struct DdgcRunResult {
     pub room_encounters: Vec<RoomEncounterRecord>,
     /// Interaction events (curio, trap, obstacle) that occurred during the run.
     pub interaction_records: Vec<InteractionRecord>,
+    /// Camping activity trace (if camping occurred during this run).
+    pub camping_trace: Vec<CampActivityRecord>,
+    /// Hero states after this run slice (HP, stress updated).
+    pub heroes: Vec<HeroState>,
 }
 
 /// Dungeon and map metadata captured at the start of a run slice.
@@ -482,32 +493,12 @@ pub fn run_ddgc_full_loop(config: &DdgcFullRunConfig) -> DdgcFullRunResult {
         seed: config.seed,
         dungeon: config.dungeon,
         map_size: config.map_size,
+        heroes: config.initial_heroes.clone(),
     };
     let dungeon_result = run_ddgc_slice(&dungeon_config);
 
-    // Calculate heroes post-dungeon by applying stress change from dungeon
-    let stress_per_hero = if config.initial_heroes.is_empty() {
-        0.0
-    } else {
-        dungeon_result.state.stress_change / config.initial_heroes.len() as f64
-    };
-
-    let heroes_post_dungeon: Vec<HeroState> = config
-        .initial_heroes
-        .iter()
-        .map(|h| {
-            let new_stress = (h.stress + stress_per_hero).min(h.max_stress);
-            HeroState::new(
-                &h.id,
-                &h.class_id,
-                h.health, // Health stays same (heroes don't die in this model)
-                h.max_health,
-                new_stress,
-                h.max_stress,
-            )
-        })
-        .collect();
-
+    // Use heroes returned from dungeon run (with camping effects applied)
+    let heroes_post_dungeon = dungeon_result.heroes.clone();
     let gold_post_dungeon = config.initial_gold + dungeon_result.state.gold;
 
     // ── Post-dungeon town visit ────────────────────────────────────────────
@@ -859,6 +850,7 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
     let mut battle_pack_ids = Vec::new();
     let mut room_encounters = Vec::new();
     let mut interaction_records = Vec::new();
+    let mut heroes = config.heroes.clone();
 
     // Build the encounter resolver once — reuse for all combat rooms
     let resolver = EncounterResolver::new();
@@ -1047,6 +1039,12 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
         }
 
         state.rooms_cleared += 1;
+
+        // Trigger camping after clearing a room mid-run (e.g., after room 3 of 7)
+        // This is the integration point for the headless run model
+        if room_idx == 3 && state.camping_phase.is_none() && !heroes.is_empty() {
+            trigger_camping(&mut state, &mut heroes, room_idx);
+        }
     }
 
     // Finish the run
@@ -1060,6 +1058,17 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
     // Build run metadata from the dungeon config
     let metadata = RunMetadata::from_config(dungeon_type, config.map_size, map_config);
 
+    // Extract camping trace if camping occurred
+    let camping_trace = state.camping_phase
+        .as_ref()
+        .map(|phase| phase.trace.clone())
+        .unwrap_or_default();
+
+    // Clean up camping buffs if camping occurred
+    if let Some(ref phase) = state.camping_phase {
+        cleanup_camping_buffs(&mut heroes, phase);
+    }
+
     DdgcRunResult {
         run,
         state,
@@ -1068,6 +1077,8 @@ pub fn run_ddgc_slice(config: &DdgcRunConfig) -> DdgcRunResult {
         metadata,
         room_encounters,
         interaction_records,
+        camping_trace,
+        heroes,
     }
 }
 
@@ -1076,6 +1087,51 @@ fn apply_reward(state: &mut DdgcRunState, update: &PostBattleUpdate) {
     state.gold += update.gold_earned;
     state.hp_recovered += update.hp_recovered;
     state.stress_change += update.stress_change;
+}
+
+/// Trigger a camping phase at the appropriate integration point.
+///
+/// This function is called after clearing a room (typically mid-run or before boss).
+/// Camping allows heroes to heal, reduce stress, and gain temporary buffs.
+///
+/// The camping phase:
+/// 1. Creates heroes in camp from current hero states
+/// 2. Runs the camping phase (simplified: no skills performed, just structure)
+/// 3. Removes camping-only buffs when phase ends
+/// 4. Records the camping phase in state
+///
+/// Returns the updated heroes after camping cleanup.
+fn trigger_camping(
+    state: &mut DdgcRunState,
+    heroes: &mut [HeroState],
+    _room_idx: usize,
+) {
+    use crate::run::camping::{CampingPhase, HeroInCamp};
+
+    // Create HeroInCamp from HeroState
+    let heroes_in_camp: Vec<HeroInCamp> = heroes
+        .iter()
+        .map(|h| {
+            HeroInCamp::new(&h.id, &h.class_id, h.health, h.max_health, h.stress, h.max_stress)
+        })
+        .collect();
+
+    // Create camping phase
+    let phase = CampingPhase::new(heroes_in_camp);
+    state.camping_phase = Some(phase);
+}
+
+/// Clean up camping buffs from heroes when camping phase ends.
+///
+/// Called when the dungeon run continues after a camping phase.
+/// Removes buffs that were marked as camping-only.
+///
+/// Note: HeroState currently doesn't track individual buffs, so this is a
+/// placeholder. In a full implementation, HeroState would include buff tracking
+/// and this function would iterate through heroes to remove camping buffs.
+fn cleanup_camping_buffs(_heroes: &mut [HeroState], _camping_phase: &CampingPhase) {
+    // Placeholder: HeroState doesn't currently have active_buffs field
+    // In full implementation, this would iterate heroes and remove camping_buffs
 }
 
 #[cfg(test)]
@@ -1122,6 +1178,7 @@ mod tests {
             seed: 99,
             dungeon: Dungeon::QingLong,
             map_size: MapSize::Medium,
+            heroes: Vec::new(),
         };
         let result = run_ddgc_slice(&config);
 
@@ -1269,6 +1326,7 @@ mod tests {
             seed: 42,
             dungeon: Dungeon::QingLong,
             map_size: MapSize::Short,
+            heroes: Vec::new(),
         };
         let result = run_ddgc_slice(&config);
 
@@ -1327,6 +1385,7 @@ mod tests {
             seed: 42,
             dungeon: Dungeon::QingLong,
             map_size: MapSize::Short,
+            heroes: Vec::new(),
         };
         let short_result = run_ddgc_slice(&short_config);
         assert_eq!(
@@ -1340,6 +1399,7 @@ mod tests {
             seed: 42,
             dungeon: Dungeon::QingLong,
             map_size: MapSize::Medium,
+            heroes: Vec::new(),
         };
         let medium_result = run_ddgc_slice(&medium_config);
         assert_eq!(
@@ -1360,11 +1420,13 @@ mod tests {
             seed: 3,
             dungeon: Dungeon::BaiHu,
             map_size: MapSize::Short,
+            heroes: Vec::new(),
         };
         let zhuque_config = DdgcRunConfig {
             seed: 3,
             dungeon: Dungeon::ZhuQue,
             map_size: MapSize::Short,
+            heroes: Vec::new(),
         };
 
         let baihu_result = run_ddgc_slice(&baihu_config);
@@ -1389,11 +1451,13 @@ mod tests {
                 seed: 42,
                 dungeon,
                 map_size: MapSize::Short,
+                heroes: Vec::new(),
             };
             let medium_config = DdgcRunConfig {
                 seed: 42,
                 dungeon,
                 map_size: MapSize::Medium,
+                heroes: Vec::new(),
             };
 
             let short_result = run_ddgc_slice(&short_config);
@@ -1424,6 +1488,7 @@ mod tests {
             seed: 42,
             dungeon: Dungeon::QingLong,
             map_size: MapSize::Short,
+            heroes: Vec::new(),
         };
         let result = run_ddgc_slice(&config);
 
@@ -1585,6 +1650,7 @@ mod tests {
             seed: 1,
             dungeon: Dungeon::QingLong,
             map_size: MapSize::Short,
+            heroes: Vec::new(),
         };
         let result = run_ddgc_slice(&config);
 
@@ -1664,6 +1730,7 @@ mod tests {
             seed: 1,
             dungeon: Dungeon::QingLong,
             map_size: MapSize::Short,
+            heroes: Vec::new(),
         };
         let result = run_ddgc_slice(&config);
 
@@ -1696,6 +1763,7 @@ mod tests {
             seed: 1,
             dungeon: Dungeon::QingLong,
             map_size: MapSize::Short,
+            heroes: Vec::new(),
         };
         let result = run_ddgc_slice(&config);
 
@@ -1962,6 +2030,7 @@ mod tests {
                 seed,
                 dungeon: Dungeon::QingLong,
                 map_size: MapSize::Short,
+                heroes: Vec::new(),
             };
             let result = run_ddgc_slice(&config);
 

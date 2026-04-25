@@ -125,6 +125,8 @@ pub struct HeroInCamp {
     pub max_stress: f64,
     /// Active buff IDs.
     pub active_buffs: Vec<String>,
+    /// Buff IDs applied during this camping phase (removable at camp end).
+    pub camping_buffs: Vec<String>,
     /// Whether the hero can use camping skills (activity lock).
     pub can_use_skills: bool,
 }
@@ -147,8 +149,17 @@ impl HeroInCamp {
             stress,
             max_stress,
             active_buffs: Vec::new(),
+            camping_buffs: Vec::new(),
             can_use_skills: true,
         }
+    }
+
+    /// Remove all camping buffs from active_buffs.
+    ///
+    /// Called when the camping phase ends to clean up temporary buffs.
+    pub fn remove_camping_buffs(&mut self) {
+        self.active_buffs.retain(|b| !self.camping_buffs.contains(b));
+        self.camping_buffs.clear();
     }
 
     /// Check if this hero is the same as another.
@@ -587,6 +598,7 @@ fn apply_effect_to_hero(phase: &mut CampingPhase, hero_id: &str, effect: &CampEf
         Buff => {
             if !hero.active_buffs.contains(&effect.sub_type) {
                 hero.active_buffs.push(effect.sub_type.clone());
+                hero.camping_buffs.push(effect.sub_type.clone());
             }
         }
         RemoveDeathRecovery => {
