@@ -252,6 +252,15 @@
             { "code": "e", "cost": 400, "effects": [{ "effect_id": "skill_cost_discount", "value": 0.4 }] },
             { "code": "f", "cost": 400, "effects": [{ "effect_id": "skill_cost_discount", "value": 0.5 }] }
           ]
+        },
+        {
+          "tree_id": "guild_capacity",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [{ "effect_id": "guild_slots", "value": 1 }] },
+            { "code": "b", "cost": 200, "effects": [{ "effect_id": "guild_slots", "value": 2 }] },
+            { "code": "c", "cost": 400, "effects": [{ "effect_id": "guild_slots", "value": 2 }] },
+            { "code": "d", "cost": 600, "effects": [{ "effect_id": "guild_slots", "value": 3 }] }
+          ]
         }
       ]
     },
@@ -286,6 +295,15 @@
             { "code": "d", "cost": 400, "effects": [{ "effect_id": "equipment_cost_discount", "value": 0.3 }] },
             { "code": "e", "cost": 400, "effects": [{ "effect_id": "equipment_cost_discount", "value": 0.4 }] },
             { "code": "f", "cost": 400, "effects": [{ "effect_id": "equipment_cost_discount", "value": 0.5 }] }
+          ]
+        },
+        {
+          "tree_id": "blacksmith_capacity",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [{ "effect_id": "blacksmith_slots", "value": 1 }] },
+            { "code": "b", "cost": 200, "effects": [{ "effect_id": "blacksmith_slots", "value": 2 }] },
+            { "code": "c", "cost": 400, "effects": [{ "effect_id": "blacksmith_slots", "value": 2 }] },
+            { "code": "d", "cost": 600, "effects": [{ "effect_id": "blacksmith_slots", "value": 3 }] }
           ]
         }
       ]

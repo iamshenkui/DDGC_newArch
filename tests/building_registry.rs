@@ -481,7 +481,7 @@ fn blacksmith_has_repair_upgrade_and_discount_trees() {
 
     let blacksmith = registry.get("blacksmith").expect("blacksmith should exist");
     assert_eq!(blacksmith.building_type, BuildingType::Blacksmith);
-    assert_eq!(blacksmith.upgrade_trees.len(), 3);
+    assert_eq!(blacksmith.upgrade_trees.len(), 4);
 
     let has_repair = blacksmith
         .upgrade_trees
@@ -495,10 +495,15 @@ fn blacksmith_has_repair_upgrade_and_discount_trees() {
         .upgrade_trees
         .iter()
         .any(|t| t.tree_id == "blacksmith_equipment_discount");
+    let has_capacity = blacksmith
+        .upgrade_trees
+        .iter()
+        .any(|t| t.tree_id == "blacksmith_capacity");
 
     assert!(has_repair, "blacksmith should have repair tree");
     assert!(has_upgrade, "blacksmith should have upgrade tree");
     assert!(has_discount, "blacksmith should have equipment discount tree");
+    assert!(has_capacity, "blacksmith should have capacity tree");
 }
 
 #[test]

@@ -851,6 +851,16 @@ impl BuildingRegistry {
     pub fn guild_skill_cost_discount(&self, level_code: char) -> Option<f64> {
         self.get_effect_at_level("guild", level_code, "skill_cost_discount")
     }
+
+    /// Get the blacksmith slot count at the given upgrade level.
+    pub fn blacksmith_slots(&self, level_code: char) -> Option<f64> {
+        self.get_effect_at_level("blacksmith", level_code, "blacksmith_slots")
+    }
+
+    /// Get the guild slot count at the given upgrade level.
+    pub fn guild_slots(&self, level_code: char) -> Option<f64> {
+        self.get_effect_at_level("guild", level_code, "guild_slots")
+    }
 }
 
 /// Dungeon level constants for trap difficulty variations.

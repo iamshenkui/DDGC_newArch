@@ -233,11 +233,20 @@ pub enum TownActivity {
     /// Recruit a new hero at the Stagecoach.
     Recruit,
     /// Train at the Guild to gain experience.
-    Train,
+    Train {
+        /// Index of the guild slot being used.
+        slot_index: usize,
+    },
     /// Repair equipment at the Blacksmith.
-    Repair,
+    Repair {
+        /// Index of the blacksmith slot being used.
+        slot_index: usize,
+    },
     /// Upgrade weapon at the Blacksmith.
-    UpgradeWeapon,
+    UpgradeWeapon {
+        /// Index of the blacksmith slot being used.
+        slot_index: usize,
+    },
     /// Upgrade building itself (apply upgrade level).
     UpgradeBuilding,
     /// Treat a quirk at the Sanitarium.
@@ -415,6 +424,8 @@ impl TownVisit {
             slot_state: TownSlotState::new(),
         };
         visit.initialize_tavern_slots();
+        visit.initialize_blacksmith_slots();
+        visit.initialize_guild_slots();
         visit
     }
 
@@ -441,6 +452,43 @@ impl TownVisit {
         self.slot_state.set_capacity("tavern", "bar", slots);
         self.slot_state.set_capacity("tavern", "gambling", slots);
         self.slot_state.set_capacity("tavern", "brothel", slots);
+    }
+
+    /// Initialize blacksmith activity slot capacities based on current building upgrade level.
+    ///
+    /// This should be called at the start of each town visit to set up available
+    /// slots for blacksmith activities (repair, upgrade_weapon).
+    fn initialize_blacksmith_slots(&mut self) {
+        let blacksmith_level = self
+            .town_state
+            .get_upgrade_level("blacksmith")
+            .unwrap_or('a');
+
+        let slots = self
+            .building_registry
+            .blacksmith_slots(blacksmith_level)
+            .unwrap_or(1.0) as usize;
+
+        self.slot_state.set_capacity("blacksmith", "repair", slots);
+        self.slot_state.set_capacity("blacksmith", "upgrade_weapon", slots);
+    }
+
+    /// Initialize guild activity slot capacities based on current building upgrade level.
+    ///
+    /// This should be called at the start of each town visit to set up available
+    /// slots for guild activities (train).
+    fn initialize_guild_slots(&mut self) {
+        let guild_level = self
+            .town_state
+            .get_upgrade_level("guild")
+            .unwrap_or('a');
+
+        let slots = self
+            .building_registry
+            .guild_slots(guild_level)
+            .unwrap_or(1.0) as usize;
+
+        self.slot_state.set_capacity("guild", "train", slots);
     }
 
     /// Create a town visit from dungeon run results.
@@ -556,9 +604,15 @@ impl TownVisit {
             TownActivity::Pray => self.perform_pray(building_id, hero_id, upgrade_level),
             TownActivity::Rest => self.perform_rest(building_id, hero_id, upgrade_level),
             TownActivity::Recruit => self.perform_recruit(building_id),
-            TownActivity::Train => self.perform_train(building_id, hero_id, upgrade_level),
-            TownActivity::Repair => self.perform_repair(building_id, hero_id, upgrade_level),
-            TownActivity::UpgradeWeapon => self.perform_upgrade_weapon(building_id, hero_id, upgrade_level),
+            TownActivity::Train { slot_index } => {
+                self.perform_train(building_id, hero_id, slot_index, upgrade_level)
+            }
+            TownActivity::Repair { slot_index } => {
+                self.perform_repair(building_id, hero_id, slot_index, upgrade_level)
+            }
+            TownActivity::UpgradeWeapon { slot_index } => {
+                self.perform_upgrade_weapon(building_id, hero_id, slot_index, upgrade_level)
+            }
             TownActivity::UpgradeBuilding => self.perform_upgrade_building(building_id, upgrade_level),
             TownActivity::TreatQuirk { slot_index, quirk_type } => {
                 self.perform_treat_quirk(building_id, hero_id, slot_index, quirk_type, upgrade_level)
@@ -807,6 +861,7 @@ impl TownVisit {
         &mut self,
         building_id: &str,
         hero_id: Option<&str>,
+        slot_index: usize,
         upgrade_level: Option<char>,
     ) -> TownActivityRecord {
         let hero_id_str = hero_id.map(|s| s.to_string());
@@ -817,6 +872,39 @@ impl TownVisit {
                 .unwrap_or('a')
         });
 
+        // Get the number of available slots
+        let slots = self
+            .building_registry
+            .guild_slots(level)
+            .unwrap_or(1.0) as usize;
+
+        // Check slot availability
+        if slot_index >= slots {
+            return TownActivityRecord::failure(
+                building_id,
+                TownActivity::Train { slot_index },
+                &format!("Invalid slot index {} (available: {})", slot_index, slots),
+            );
+        }
+
+        // Check if we have any slots available before consuming
+        if !self.slot_state.has_available(building_id, "train") {
+            return TownActivityRecord::failure(
+                building_id,
+                TownActivity::Train { slot_index },
+                "No guild slots available",
+            );
+        }
+
+        // Consume a slot for this activity
+        if !self.slot_state.try_consume(building_id, "train") {
+            return TownActivityRecord::failure(
+                building_id,
+                TownActivity::Train { slot_index },
+                "No guild slots available",
+            );
+        }
+
         // Get the skill cost discount (cumulative 10% per level, up to 50%)
         let discount = self
             .building_registry
@@ -825,7 +913,7 @@ impl TownVisit {
 
         let record = TownActivityRecord::success(
             building_id,
-            TownActivity::Train,
+            TownActivity::Train { slot_index },
             hero_id_str,
             Some(level),
             0,
@@ -847,6 +935,7 @@ impl TownVisit {
         &mut self,
         building_id: &str,
         hero_id: Option<&str>,
+        slot_index: usize,
         upgrade_level: Option<char>,
     ) -> TownActivityRecord {
         let hero_id_str = hero_id.map(|s| s.to_string());
@@ -857,6 +946,39 @@ impl TownVisit {
                 .unwrap_or('a')
         });
 
+        // Get the number of available slots
+        let slots = self
+            .building_registry
+            .blacksmith_slots(level)
+            .unwrap_or(1.0) as usize;
+
+        // Check slot availability
+        if slot_index >= slots {
+            return TownActivityRecord::failure(
+                building_id,
+                TownActivity::Repair { slot_index },
+                &format!("Invalid slot index {} (available: {})", slot_index, slots),
+            );
+        }
+
+        // Check if we have any slots available before consuming
+        if !self.slot_state.has_available(building_id, "repair") {
+            return TownActivityRecord::failure(
+                building_id,
+                TownActivity::Repair { slot_index },
+                "No blacksmith slots available",
+            );
+        }
+
+        // Consume a slot for this activity
+        if !self.slot_state.try_consume(building_id, "repair") {
+            return TownActivityRecord::failure(
+                building_id,
+                TownActivity::Repair { slot_index },
+                "No blacksmith slots available",
+            );
+        }
+
         // Get the equipment cost discount (cumulative 10% per level, up to 50%)
         let discount = self
             .building_registry
@@ -865,7 +987,7 @@ impl TownVisit {
 
         let record = TownActivityRecord::success(
             building_id,
-            TownActivity::Repair,
+            TownActivity::Repair { slot_index },
             hero_id_str,
             Some(level),
             0,
@@ -887,6 +1009,7 @@ impl TownVisit {
         &mut self,
         building_id: &str,
         hero_id: Option<&str>,
+        slot_index: usize,
         upgrade_level: Option<char>,
     ) -> TownActivityRecord {
         let hero_id_str = hero_id.map(|s| s.to_string());
@@ -897,6 +1020,39 @@ impl TownVisit {
                 .unwrap_or('a')
         });
 
+        // Get the number of available slots
+        let slots = self
+            .building_registry
+            .blacksmith_slots(level)
+            .unwrap_or(1.0) as usize;
+
+        // Check slot availability
+        if slot_index >= slots {
+            return TownActivityRecord::failure(
+                building_id,
+                TownActivity::UpgradeWeapon { slot_index },
+                &format!("Invalid slot index {} (available: {})", slot_index, slots),
+            );
+        }
+
+        // Check if we have any slots available before consuming
+        if !self.slot_state.has_available(building_id, "upgrade_weapon") {
+            return TownActivityRecord::failure(
+                building_id,
+                TownActivity::UpgradeWeapon { slot_index },
+                "No blacksmith slots available",
+            );
+        }
+
+        // Consume a slot for this activity
+        if !self.slot_state.try_consume(building_id, "upgrade_weapon") {
+            return TownActivityRecord::failure(
+                building_id,
+                TownActivity::UpgradeWeapon { slot_index },
+                "No blacksmith slots available",
+            );
+        }
+
         // Get the equipment cost discount (cumulative 10% per level, up to 50%)
         let discount = self
             .building_registry
@@ -905,7 +1061,7 @@ impl TownVisit {
 
         let record = TownActivityRecord::success(
             building_id,
-            TownActivity::UpgradeWeapon,
+            TownActivity::UpgradeWeapon { slot_index },
             hero_id_str,
             Some(level),
             0,
