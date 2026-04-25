@@ -50,6 +50,177 @@
       ]
     },
     {
+      "id": "sanitarium",
+      "building_type": "Sanctuary",
+      "unlock_conditions": [{ "condition_type": "completed_runs", "required_count": 1 }],
+      "upgrade_trees": [
+        {
+          "tree_id": "quirk_positive_cost",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [{ "effect_id": "positive_quirk_cost", "value": 7500 }] },
+            { "code": "b", "cost": 2500, "effects": [{ "effect_id": "positive_quirk_cost", "value": 5000 }] },
+            { "code": "c", "cost": 2500, "effects": [{ "effect_id": "positive_quirk_cost", "value": 3750 }] },
+            { "code": "d", "cost": 2500, "effects": [{ "effect_id": "positive_quirk_cost", "value": 3125 }] },
+            { "code": "e", "cost": 2500, "effects": [{ "effect_id": "positive_quirk_cost", "value": 2500 }] }
+          ]
+        },
+        {
+          "tree_id": "quirk_negative_cost",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [{ "effect_id": "negative_quirk_cost", "value": 1500 }] },
+            { "code": "b", "cost": 750, "effects": [{ "effect_id": "negative_quirk_cost", "value": 1125 }] },
+            { "code": "c", "cost": 750, "effects": [{ "effect_id": "negative_quirk_cost", "value": 937 }] },
+            { "code": "d", "cost": 750, "effects": [{ "effect_id": "negative_quirk_cost", "value": 843 }] },
+            { "code": "e", "cost": 750, "effects": [{ "effect_id": "negative_quirk_cost", "value": 750 }] }
+          ]
+        },
+        {
+          "tree_id": "quirk_permanent_negative_cost",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [{ "effect_id": "permanent_negative_quirk_cost", "value": 5000 }] },
+            { "code": "b", "cost": 2500, "effects": [{ "effect_id": "permanent_negative_quirk_cost", "value": 3750 }] },
+            { "code": "c", "cost": 2500, "effects": [{ "effect_id": "permanent_negative_quirk_cost", "value": 3125 }] },
+            { "code": "d", "cost": 2500, "effects": [{ "effect_id": "permanent_negative_quirk_cost", "value": 2812 }] },
+            { "code": "e", "cost": 2500, "effects": [{ "effect_id": "permanent_negative_quirk_cost", "value": 2500 }] }
+          ]
+        },
+        {
+          "tree_id": "quirk_treatment_chance",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [{ "effect_id": "quirk_treatment_chance", "value": 1.0 }] },
+            { "code": "b", "cost": 0, "effects": [{ "effect_id": "quirk_treatment_chance", "value": 1.0 }] },
+            { "code": "c", "cost": 0, "effects": [{ "effect_id": "quirk_treatment_chance", "value": 1.0 }] },
+            { "code": "d", "cost": 0, "effects": [{ "effect_id": "quirk_treatment_chance", "value": 1.0 }] },
+            { "code": "e", "cost": 0, "effects": [{ "effect_id": "quirk_treatment_chance", "value": 1.0 }] }
+          ]
+        },
+        {
+          "tree_id": "quirk_slots",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [{ "effect_id": "quirk_slots", "value": 1 }] },
+            { "code": "b", "cost": 500, "effects": [{ "effect_id": "quirk_slots", "value": 2 }] },
+            { "code": "c", "cost": 0, "effects": [{ "effect_id": "quirk_slots", "value": 2 }] },
+            { "code": "d", "cost": 500, "effects": [{ "effect_id": "quirk_slots", "value": 3 }] },
+            { "code": "e", "cost": 0, "effects": [{ "effect_id": "quirk_slots", "value": 3 }] }
+          ]
+        },
+        {
+          "tree_id": "disease_cost",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [{ "effect_id": "disease_cost", "value": 750 }] },
+            { "code": "b", "cost": 500, "effects": [{ "effect_id": "disease_cost", "value": 750 }] },
+            { "code": "c", "cost": 600, "effects": [{ "effect_id": "disease_cost", "value": 600 }] },
+            { "code": "d", "cost": 500, "effects": [{ "effect_id": "disease_cost", "value": 600 }] },
+            { "code": "e", "cost": 450, "effects": [{ "effect_id": "disease_cost", "value": 450 }] }
+          ]
+        },
+        {
+          "tree_id": "disease_cure_all_chance",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [{ "effect_id": "cure_all_chance", "value": 0.33 }] },
+            { "code": "b", "cost": 500, "effects": [{ "effect_id": "cure_all_chance", "value": 0.5 }] },
+            { "code": "c", "cost": 0, "effects": [{ "effect_id": "cure_all_chance", "value": 0.5 }] },
+            { "code": "d", "cost": 500, "effects": [{ "effect_id": "cure_all_chance", "value": 0.75 }] },
+            { "code": "e", "cost": 0, "effects": [{ "effect_id": "cure_all_chance", "value": 0.75 }] }
+          ]
+        },
+        {
+          "tree_id": "disease_slots",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [{ "effect_id": "disease_slots", "value": 1 }] },
+            { "code": "b", "cost": 500, "effects": [{ "effect_id": "disease_slots", "value": 2 }] },
+            { "code": "c", "cost": 500, "effects": [{ "effect_id": "disease_slots", "value": 3 }] },
+            { "code": "d", "cost": 0, "effects": [{ "effect_id": "disease_slots", "value": 3 }] },
+            { "code": "e", "cost": 0, "effects": [{ "effect_id": "disease_slots", "value": 3 }] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tavern",
+      "building_type": "Tavern",
+      "unlock_conditions": [{ "condition_type": "completed_runs", "required_count": 1 }],
+      "upgrade_trees": [
+        {
+          "tree_id": "tavern_bar_cost",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [{ "effect_id": "bar_cost", "value": 1000 }] },
+            { "code": "b", "cost": 200, "effects": [{ "effect_id": "bar_cost", "value": 900 }] },
+            { "code": "c", "cost": 0, "effects": [{ "effect_id": "bar_cost", "value": 900 }] },
+            { "code": "d", "cost": 0, "effects": [{ "effect_id": "bar_cost", "value": 900 }] },
+            { "code": "e", "cost": 200, "effects": [{ "effect_id": "bar_cost", "value": 700 }] },
+            { "code": "f", "cost": 0, "effects": [{ "effect_id": "bar_cost", "value": 700 }] }
+          ]
+        },
+        {
+          "tree_id": "tavern_bar_stress_heal",
+          "levels": [
+            { "code": "a", "cost": 100, "effects": [{ "effect_id": "bar_stress_heal", "value": 45 }] },
+            { "code": "b", "cost": 0, "effects": [{ "effect_id": "bar_stress_heal", "value": 45 }] },
+            { "code": "c", "cost": 0, "effects": [{ "effect_id": "bar_stress_heal", "value": 45 }] },
+            { "code": "d", "cost": 150, "effects": [{ "effect_id": "bar_stress_heal", "value": 100 }] },
+            { "code": "e", "cost": 0, "effects": [{ "effect_id": "bar_stress_heal", "value": 100 }] },
+            { "code": "f", "cost": 0, "effects": [{ "effect_id": "bar_stress_heal", "value": 100 }] }
+          ]
+        },
+        {
+          "tree_id": "tavern_bar_slots",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [{ "effect_id": "bar_slots", "value": 1 }] },
+            { "code": "b", "cost": 0, "effects": [{ "effect_id": "bar_slots", "value": 1 }] },
+            { "code": "c", "cost": 250, "effects": [{ "effect_id": "bar_slots", "value": 2 }] },
+            { "code": "d", "cost": 0, "effects": [{ "effect_id": "bar_slots", "value": 2 }] },
+            { "code": "e", "cost": 0, "effects": [{ "effect_id": "bar_slots", "value": 2 }] },
+            { "code": "f", "cost": 250, "effects": [{ "effect_id": "bar_slots", "value": 3 }] }
+          ]
+        },
+        {
+          "tree_id": "tavern_gambling_cost",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [{ "effect_id": "gambling_cost", "value": 1250 }] },
+            { "code": "b", "cost": 200, "effects": [{ "effect_id": "gambling_cost", "value": 1100 }] },
+            { "code": "c", "cost": 0, "effects": [{ "effect_id": "gambling_cost", "value": 1100 }] },
+            { "code": "d", "cost": 0, "effects": [{ "effect_id": "gambling_cost", "value": 1100 }] },
+            { "code": "e", "cost": 200, "effects": [{ "effect_id": "gambling_cost", "value": 900 }] },
+            { "code": "f", "cost": 0, "effects": [{ "effect_id": "gambling_cost", "value": 900 }] }
+          ]
+        },
+        {
+          "tree_id": "tavern_gambling_stress_heal",
+          "levels": [
+            { "code": "a", "cost": 100, "effects": [{ "effect_id": "gambling_stress_heal", "value": 55 }] },
+            { "code": "b", "cost": 0, "effects": [{ "effect_id": "gambling_stress_heal", "value": 55 }] },
+            { "code": "c", "cost": 0, "effects": [{ "effect_id": "gambling_stress_heal", "value": 55 }] },
+            { "code": "d", "cost": 150, "effects": [{ "effect_id": "gambling_stress_heal", "value": 86 }] },
+            { "code": "e", "cost": 0, "effects": [{ "effect_id": "gambling_stress_heal", "value": 86 }] },
+            { "code": "f", "cost": 0, "effects": [{ "effect_id": "gambling_stress_heal", "value": 86 }] }
+          ]
+        },
+        {
+          "tree_id": "tavern_brothel_cost",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [{ "effect_id": "brothel_cost", "value": 1500 }] },
+            { "code": "b", "cost": 200, "effects": [{ "effect_id": "brothel_cost", "value": 1350 }] },
+            { "code": "c", "cost": 0, "effects": [{ "effect_id": "brothel_cost", "value": 1350 }] },
+            { "code": "d", "cost": 0, "effects": [{ "effect_id": "brothel_cost", "value": 1350 }] },
+            { "code": "e", "cost": 200, "effects": [{ "effect_id": "brothel_cost", "value": 1100 }] },
+            { "code": "f", "cost": 0, "effects": [{ "effect_id": "brothel_cost", "value": 1100 }] }
+          ]
+        },
+        {
+          "tree_id": "tavern_brothel_stress_heal",
+          "levels": [
+            { "code": "a", "cost": 100, "effects": [{ "effect_id": "brothel_stress_heal", "value": 65 }] },
+            { "code": "b", "cost": 0, "effects": [{ "effect_id": "brothel_stress_heal", "value": 65 }] },
+            { "code": "c", "cost": 0, "effects": [{ "effect_id": "brothel_stress_heal", "value": 65 }] },
+            { "code": "d", "cost": 150, "effects": [{ "effect_id": "brothel_stress_heal", "value": 100 }] },
+            { "code": "e", "cost": 0, "effects": [{ "effect_id": "brothel_stress_heal", "value": 100 }] },
+            { "code": "f", "cost": 0, "effects": [{ "effect_id": "brothel_stress_heal", "value": 100 }] }
+          ]
+        }
+      ]
+    },
+    {
       "id": "guild",
       "building_type": "Tower",
       "unlock_conditions": [{ "condition_type": "completed_runs", "required_count": 2 }],
@@ -69,6 +240,17 @@
             { "code": "a", "cost": 0, "effects": [] },
             { "code": "b", "cost": 500, "effects": [{ "effect_id": "skill_upgrade_chance", "value": 0.05 }] },
             { "code": "c", "cost": 1000, "effects": [{ "effect_id": "skill_upgrade_chance", "value": 0.1 }] }
+          ]
+        },
+        {
+          "tree_id": "guild_skill_discount",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [{ "effect_id": "skill_cost_discount", "value": 0.0 }] },
+            { "code": "b", "cost": 400, "effects": [{ "effect_id": "skill_cost_discount", "value": 0.1 }] },
+            { "code": "c", "cost": 400, "effects": [{ "effect_id": "skill_cost_discount", "value": 0.2 }] },
+            { "code": "d", "cost": 400, "effects": [{ "effect_id": "skill_cost_discount", "value": 0.3 }] },
+            { "code": "e", "cost": 400, "effects": [{ "effect_id": "skill_cost_discount", "value": 0.4 }] },
+            { "code": "f", "cost": 400, "effects": [{ "effect_id": "skill_cost_discount", "value": 0.5 }] }
           ]
         }
       ]
@@ -93,6 +275,17 @@
             { "code": "a", "cost": 0, "effects": [] },
             { "code": "b", "cost": 400, "effects": [{ "effect_id": "weapon_upgrade_cost", "value": 0.15 }] },
             { "code": "c", "cost": 800, "effects": [{ "effect_id": "weapon_upgrade_cost", "value": 0.25 }] }
+          ]
+        },
+        {
+          "tree_id": "blacksmith_equipment_discount",
+          "levels": [
+            { "code": "a", "cost": 0, "effects": [{ "effect_id": "equipment_cost_discount", "value": 0.0 }] },
+            { "code": "b", "cost": 400, "effects": [{ "effect_id": "equipment_cost_discount", "value": 0.1 }] },
+            { "code": "c", "cost": 400, "effects": [{ "effect_id": "equipment_cost_discount", "value": 0.2 }] },
+            { "code": "d", "cost": 400, "effects": [{ "effect_id": "equipment_cost_discount", "value": 0.3 }] },
+            { "code": "e", "cost": 400, "effects": [{ "effect_id": "equipment_cost_discount", "value": 0.4 }] },
+            { "code": "f", "cost": 400, "effects": [{ "effect_id": "equipment_cost_discount", "value": 0.5 }] }
           ]
         }
       ]

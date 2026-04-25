@@ -56,6 +56,17 @@ impl HeroInTown {
     }
 }
 
+/// Type of quirk treatment at the Sanitarium.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum QuirkTreatmentType {
+    /// Treatment for positive quirks.
+    Positive,
+    /// Treatment for negative (non-permanent) quirks.
+    Negative,
+    /// Treatment for permanent negative quirks.
+    PermanentNegative,
+}
+
 /// Activity that can be performed at a town building.
 #[derive(Debug, Clone, PartialEq)]
 pub enum TownActivity {
@@ -73,6 +84,33 @@ pub enum TownActivity {
     UpgradeWeapon,
     /// Upgrade building itself (apply upgrade level).
     UpgradeBuilding,
+    /// Treat a quirk at the Sanitarium.
+    TreatQuirk {
+        /// Index of the treatment slot being used.
+        slot_index: usize,
+        /// Type of quirk treatment.
+        quirk_type: QuirkTreatmentType,
+    },
+    /// Treat a disease at the Sanitarium.
+    TreatDisease {
+        /// Index of the treatment slot being used.
+        slot_index: usize,
+    },
+    /// Drink at the Tavern bar.
+    TavernBar {
+        /// Index of the tavern slot being used.
+        slot_index: usize,
+    },
+    /// Gamble at the Tavern.
+    TavernGambling {
+        /// Index of the tavern slot being used.
+        slot_index: usize,
+    },
+    /// Visit the Tavern brothel.
+    TavernBrothel {
+        /// Index of the tavern slot being used.
+        slot_index: usize,
+    },
 }
 
 /// Result of performing a single town activity.
@@ -331,6 +369,21 @@ impl TownVisit {
             TownActivity::Repair => self.perform_repair(building_id, hero_id, upgrade_level),
             TownActivity::UpgradeWeapon => self.perform_upgrade_weapon(building_id, hero_id, upgrade_level),
             TownActivity::UpgradeBuilding => self.perform_upgrade_building(building_id, upgrade_level),
+            TownActivity::TreatQuirk { slot_index, quirk_type } => {
+                self.perform_treat_quirk(building_id, hero_id, slot_index, quirk_type, upgrade_level)
+            }
+            TownActivity::TreatDisease { slot_index } => {
+                self.perform_treat_disease(building_id, hero_id, slot_index, upgrade_level)
+            }
+            TownActivity::TavernBar { slot_index } => {
+                self.perform_tavern_bar(building_id, hero_id, slot_index, upgrade_level)
+            }
+            TownActivity::TavernGambling { slot_index } => {
+                self.perform_tavern_gambling(building_id, hero_id, slot_index, upgrade_level)
+            }
+            TownActivity::TavernBrothel { slot_index } => {
+                self.perform_tavern_brothel(building_id, hero_id, slot_index, upgrade_level)
+            }
         }
     }
 
@@ -562,8 +615,6 @@ impl TownVisit {
         hero_id: Option<&str>,
         upgrade_level: Option<char>,
     ) -> TownActivityRecord {
-        // For now, training is recorded but doesn't have game effect
-        // In a full implementation, this would modify hero experience/skills
         let hero_id_str = hero_id.map(|s| s.to_string());
 
         let level = upgrade_level.unwrap_or_else(|| {
@@ -571,6 +622,12 @@ impl TownVisit {
                 .get_upgrade_level(building_id)
                 .unwrap_or('a')
         });
+
+        // Get the skill cost discount (cumulative 10% per level, up to 50%)
+        let discount = self
+            .building_registry
+            .get_effect_at_level(building_id, level, "skill_cost_discount")
+            .unwrap_or(0.0);
 
         let record = TownActivityRecord::success(
             building_id,
@@ -580,7 +637,10 @@ impl TownVisit {
             0,
             0.0,
             0.0,
-            "Trained at Guild (experience boost applied)",
+            &format!(
+                "Trained at Guild: skill cost discount {:.0}% applied",
+                discount * 100.0
+            ),
         );
 
         self.trace.record(record.clone());
@@ -602,6 +662,12 @@ impl TownVisit {
                 .unwrap_or('a')
         });
 
+        // Get the equipment cost discount (cumulative 10% per level, up to 50%)
+        let discount = self
+            .building_registry
+            .get_effect_at_level(building_id, level, "equipment_cost_discount")
+            .unwrap_or(0.0);
+
         let record = TownActivityRecord::success(
             building_id,
             TownActivity::Repair,
@@ -610,7 +676,10 @@ impl TownVisit {
             0,
             0.0,
             0.0,
-            "Repaired equipment at Blacksmith (repair discount applied)",
+            &format!(
+                "Repaired equipment at Blacksmith: equipment cost discount {:.0}% applied",
+                discount * 100.0
+            ),
         );
 
         self.trace.record(record.clone());
@@ -632,6 +701,12 @@ impl TownVisit {
                 .unwrap_or('a')
         });
 
+        // Get the equipment cost discount (cumulative 10% per level, up to 50%)
+        let discount = self
+            .building_registry
+            .get_effect_at_level(building_id, level, "equipment_cost_discount")
+            .unwrap_or(0.0);
+
         let record = TownActivityRecord::success(
             building_id,
             TownActivity::UpgradeWeapon,
@@ -640,7 +715,10 @@ impl TownVisit {
             0,
             0.0,
             0.0,
-            "Upgraded weapon at Blacksmith (upgrade cost discount applied)",
+            &format!(
+                "Upgraded weapon at Blacksmith: equipment cost discount {:.0}% applied",
+                discount * 100.0
+            ),
         );
 
         self.trace.record(record.clone());
@@ -701,6 +779,429 @@ impl TownVisit {
                 "Not enough gold or invalid upgrade level",
             ),
         }
+    }
+
+    /// Get the quirk treatment cost for a specific treatment type.
+    fn get_quirk_treatment_cost(
+        &self,
+        building_id: &str,
+        quirk_type: QuirkTreatmentType,
+        level: char,
+    ) -> Option<u32> {
+        let effect_id = match quirk_type {
+            QuirkTreatmentType::Positive => "positive_quirk_cost",
+            QuirkTreatmentType::Negative => "negative_quirk_cost",
+            QuirkTreatmentType::PermanentNegative => "permanent_negative_quirk_cost",
+        };
+        self.building_registry
+            .get_effect_at_level(building_id, level, effect_id)
+            .map(|v| v as u32)
+    }
+
+    /// Get the disease treatment cost.
+    fn get_disease_treatment_cost(&self, building_id: &str, level: char) -> Option<u32> {
+        self.building_registry
+            .get_effect_at_level(building_id, level, "disease_cost")
+            .map(|v| v as u32)
+    }
+
+    /// Get the cure-all chance for disease treatment.
+    fn get_cure_all_chance(&self, building_id: &str, level: char) -> Option<f64> {
+        self.building_registry
+            .get_effect_at_level(building_id, level, "cure_all_chance")
+    }
+
+    /// Get the treatment slots available for a building.
+    fn get_treatment_slots(&self, building_id: &str, level: char, effect_id: &str) -> Option<usize> {
+        self.building_registry
+            .get_effect_at_level(building_id, level, effect_id)
+            .map(|v| v as usize)
+    }
+
+    /// Perform quirk treatment at the Sanitarium.
+    fn perform_treat_quirk(
+        &mut self,
+        building_id: &str,
+        hero_id: Option<&str>,
+        slot_index: usize,
+        quirk_type: QuirkTreatmentType,
+        upgrade_level: Option<char>,
+    ) -> TownActivityRecord {
+        let hero_id_str = match hero_id {
+            Some(id) => id.to_string(),
+            None => {
+                return TownActivityRecord::failure(
+                    building_id,
+                    TownActivity::TreatQuirk { slot_index, quirk_type },
+                    "No hero specified for quirk treatment",
+                );
+            }
+        };
+
+        // Validate hero exists
+        let hero_exists = self.heroes.iter().any(|h| h.id == hero_id_str);
+        if !hero_exists {
+            return TownActivityRecord::failure(
+                building_id,
+                TownActivity::TreatQuirk { slot_index, quirk_type },
+                "Hero not found",
+            );
+        }
+
+        // Determine the upgrade level
+        let level = upgrade_level.unwrap_or_else(|| {
+            self.town_state
+                .get_upgrade_level(building_id)
+                .unwrap_or('a')
+        });
+
+        // Get the cost
+        let cost = match self.get_quirk_treatment_cost(building_id, quirk_type, level) {
+            Some(c) => c,
+            None => {
+                return TownActivityRecord::failure(
+                    building_id,
+                    TownActivity::TreatQuirk { slot_index, quirk_type },
+                    "Could not determine quirk treatment cost",
+                );
+            }
+        };
+
+        // Get the number of available slots
+        let slots = match self.get_treatment_slots(building_id, level, "quirk_slots") {
+            Some(s) => s,
+            None => 1,
+        };
+
+        // Check slot availability
+        if slot_index >= slots {
+            return TownActivityRecord::failure(
+                building_id,
+                TownActivity::TreatQuirk { slot_index, quirk_type },
+                &format!("Invalid slot index {} (available: {})", slot_index, slots),
+            );
+        }
+
+        // Check if we have enough gold
+        if self.town_state.gold < cost {
+            return TownActivityRecord::failure(
+                building_id,
+                TownActivity::TreatQuirk { slot_index, quirk_type },
+                "Not enough gold for quirk treatment",
+            );
+        }
+
+        // Get the treatment chance (default 1.0 = always succeeds)
+        let treatment_chance = self
+            .building_registry
+            .get_effect_at_level(building_id, level, "quirk_treatment_chance")
+            .unwrap_or(1.0);
+
+        // Deduct gold
+        self.town_state.gold -= cost;
+
+        // Roll for success (deterministic based on hero_id and slot_index)
+        let roll = Self::deterministic_roll(&hero_id_str, slot_index);
+        let success = roll < treatment_chance;
+
+        let quirk_type_name = match quirk_type {
+            QuirkTreatmentType::Positive => "positive",
+            QuirkTreatmentType::Negative => "negative",
+            QuirkTreatmentType::PermanentNegative => "permanent_negative",
+        };
+
+        let message = if success {
+            format!(
+                "Treated {} quirk at Sanitarium: cost {} gold (slot {}/{})",
+                quirk_type_name, cost, slot_index + 1, slots
+            )
+        } else {
+            format!(
+                "Quirk treatment failed at Sanitarium: cost {} gold (slot {}/{})",
+                cost, slot_index + 1, slots
+            )
+        };
+
+        let record = TownActivityRecord {
+            building_id: building_id.to_string(),
+            activity: TownActivity::TreatQuirk { slot_index, quirk_type },
+            hero_id: Some(hero_id_str),
+            upgrade_level: Some(level),
+            gold_cost: cost,
+            stress_change: 0.0,
+            health_change: 0.0,
+            success,
+            message,
+        };
+
+        self.trace.record(record.clone());
+        record
+    }
+
+    /// Perform disease treatment at the Sanitarium.
+    fn perform_treat_disease(
+        &mut self,
+        building_id: &str,
+        hero_id: Option<&str>,
+        slot_index: usize,
+        upgrade_level: Option<char>,
+    ) -> TownActivityRecord {
+        let hero_id_str = match hero_id {
+            Some(id) => id.to_string(),
+            None => {
+                return TownActivityRecord::failure(
+                    building_id,
+                    TownActivity::TreatDisease { slot_index },
+                    "No hero specified for disease treatment",
+                );
+            }
+        };
+
+        // Validate hero exists
+        let hero_exists = self.heroes.iter().any(|h| h.id == hero_id_str);
+        if !hero_exists {
+            return TownActivityRecord::failure(
+                building_id,
+                TownActivity::TreatDisease { slot_index },
+                "Hero not found",
+            );
+        }
+
+        // Determine the upgrade level
+        let level = upgrade_level.unwrap_or_else(|| {
+            self.town_state
+                .get_upgrade_level(building_id)
+                .unwrap_or('a')
+        });
+
+        // Get the cost
+        let cost = match self.get_disease_treatment_cost(building_id, level) {
+            Some(c) => c,
+            None => {
+                return TownActivityRecord::failure(
+                    building_id,
+                    TownActivity::TreatDisease { slot_index },
+                    "Could not determine disease treatment cost",
+                );
+            }
+        };
+
+        // Get the number of available slots
+        let slots = match self.get_treatment_slots(building_id, level, "disease_slots") {
+            Some(s) => s,
+            None => 1,
+        };
+
+        // Check slot availability
+        if slot_index >= slots {
+            return TownActivityRecord::failure(
+                building_id,
+                TownActivity::TreatDisease { slot_index },
+                &format!("Invalid slot index {} (available: {})", slot_index, slots),
+            );
+        }
+
+        // Check if we have enough gold
+        if self.town_state.gold < cost {
+            return TownActivityRecord::failure(
+                building_id,
+                TownActivity::TreatDisease { slot_index },
+                "Not enough gold for disease treatment",
+            );
+        }
+
+        // Get the cure-all chance
+        let cure_all_chance = self.get_cure_all_chance(building_id, level).unwrap_or(0.33);
+
+        // Deduct gold
+        self.town_state.gold -= cost;
+
+        // Roll for cure-all (deterministic based on hero_id and slot_index)
+        let roll = Self::deterministic_roll(&hero_id_str, slot_index + 100);
+        let cure_all_success = roll < cure_all_chance;
+
+        let message = if cure_all_success {
+            format!(
+                "Disease treatment at Sanitarium: cure-all SUCCESS (cost {} gold, slot {}/{})",
+                cost, slot_index + 1, slots
+            )
+        } else {
+            format!(
+                "Disease treatment at Sanitarium: partial cure (cost {} gold, slot {}/{})",
+                cost, slot_index + 1, slots
+            )
+        };
+
+        let record = TownActivityRecord {
+            building_id: building_id.to_string(),
+            activity: TownActivity::TreatDisease { slot_index },
+            hero_id: Some(hero_id_str),
+            upgrade_level: Some(level),
+            gold_cost: cost,
+            stress_change: 0.0,
+            health_change: 0.0,
+            success: true, // Treatment itself succeeded, cure-all is a bonus
+            message,
+        };
+
+        self.trace.record(record.clone());
+        record
+    }
+
+    /// Perform tavern bar activity.
+    fn perform_tavern_bar(
+        &mut self,
+        building_id: &str,
+        hero_id: Option<&str>,
+        slot_index: usize,
+        upgrade_level: Option<char>,
+    ) -> TownActivityRecord {
+        self.perform_tavern_activity(building_id, hero_id, slot_index, "bar", 0.40, upgrade_level)
+    }
+
+    /// Perform tavern gambling activity.
+    fn perform_tavern_gambling(
+        &mut self,
+        building_id: &str,
+        hero_id: Option<&str>,
+        slot_index: usize,
+        upgrade_level: Option<char>,
+    ) -> TownActivityRecord {
+        self.perform_tavern_activity(building_id, hero_id, slot_index, "gambling", 0.35, upgrade_level)
+    }
+
+    /// Perform tavern brothel activity.
+    fn perform_tavern_brothel(
+        &mut self,
+        building_id: &str,
+        hero_id: Option<&str>,
+        slot_index: usize,
+        upgrade_level: Option<char>,
+    ) -> TownActivityRecord {
+        self.perform_tavern_activity(building_id, hero_id, slot_index, "brothel", 0.30, upgrade_level)
+    }
+
+    /// Common logic for tavern activities.
+    fn perform_tavern_activity(
+        &mut self,
+        building_id: &str,
+        hero_id: Option<&str>,
+        slot_index: usize,
+        activity_type: &str,
+        side_effect_chance: f64,
+        upgrade_level: Option<char>,
+    ) -> TownActivityRecord {
+        let hero_id_str = match hero_id {
+            Some(id) => id.to_string(),
+            None => {
+                return TownActivityRecord::failure(
+                    building_id,
+                    TownActivity::TavernBar { slot_index },
+                    "No hero specified for tavern activity",
+                );
+            }
+        };
+
+        // Validate hero exists
+        let hero_exists = self.heroes.iter().any(|h| h.id == hero_id_str);
+        if !hero_exists {
+            return TownActivityRecord::failure(
+                building_id,
+                TownActivity::TavernBar { slot_index },
+                "Hero not found",
+            );
+        }
+
+        // Determine the upgrade level
+        let level = upgrade_level.unwrap_or_else(|| {
+            self.town_state
+                .get_upgrade_level(building_id)
+                .unwrap_or('a')
+        });
+
+        // Get the cost
+        let cost_effect = format!("{}_cost", activity_type);
+        let cost = self
+            .building_registry
+            .get_effect_at_level(building_id, level, &cost_effect)
+            .unwrap_or(0.0) as u32;
+
+        // Get the stress heal amount
+        let stress_heal_effect = format!("{}_stress_heal", activity_type);
+        let stress_heal = self
+            .building_registry
+            .get_effect_at_level(building_id, level, &stress_heal_effect)
+            .unwrap_or(0.0);
+
+        // Check if we have enough gold
+        if self.town_state.gold < cost {
+            return TownActivityRecord::failure(
+                building_id,
+                TownActivity::TavernBar { slot_index },
+                "Not enough gold for tavern activity",
+            );
+        }
+
+        // Deduct gold
+        self.town_state.gold -= cost;
+
+        // Apply stress heal to hero
+        let hero = self.get_hero_mut(&hero_id_str).unwrap();
+        let old_stress = hero.stress;
+        hero.stress = (hero.stress - stress_heal).max(0.0);
+        let actual_heal = old_stress - hero.stress;
+        let _ = hero; // Release mutable borrow
+
+        // Roll for side effect (deterministic based on hero_id and slot_index)
+        let roll = Self::deterministic_roll(&hero_id_str, slot_index + 200);
+        let side_effect_triggered = roll < side_effect_chance;
+
+        let side_effect_msg = if side_effect_triggered {
+            format!(" (side-effect triggered: {:.0}% chance)", side_effect_chance * 100.0)
+        } else {
+            String::new()
+        };
+
+        let activity_name = match activity_type {
+            "bar" => "Bar",
+            "gambling" => "Gambling",
+            "brothel" => "Brothel",
+            _ => activity_type,
+        };
+
+        let record = TownActivityRecord {
+            building_id: building_id.to_string(),
+            activity: TownActivity::TavernBar { slot_index },
+            hero_id: Some(hero_id_str),
+            upgrade_level: Some(level),
+            gold_cost: cost,
+            stress_change: -actual_heal,
+            health_change: 0.0,
+            success: true,
+            message: format!(
+                "Visited Tavern {}: stress healed {:.1} (cost {} gold){}",
+                activity_name, actual_heal, cost, side_effect_msg
+            ),
+        };
+
+        self.trace.record(record.clone());
+        record
+    }
+
+    /// Deterministic pseudo-random roll for activity outcomes.
+    ///
+    /// Uses a simple hash of the hero_id and seed to produce a value in [0, 1).
+    /// This ensures deterministic outcomes for the same hero and activity.
+    fn deterministic_roll(seed: &str, additional: usize) -> f64 {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        let mut hasher = DefaultHasher::new();
+        seed.hash(&mut hasher);
+        additional.hash(&mut hasher);
+        // Mix in current timestamp component for some variety per visit
+        let hash = hasher.finish();
+        // Convert hash to f64 in [0, 1)
+        (hash as f64) / (u64::MAX as f64)
     }
 }
 

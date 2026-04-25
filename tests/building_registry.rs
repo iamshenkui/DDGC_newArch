@@ -25,13 +25,13 @@ fn parse_all() -> BuildingRegistry {
 // ── US-007: All 10 buildings are loadable ─────────────────────────────────────
 
 #[test]
-fn all_10_buildings_are_loadable() {
+fn all_11_buildings_are_loadable() {
     let registry = parse_all();
 
     assert_eq!(
         registry.len(),
-        10,
-        "All 10 buildings should be parsed, got {}",
+        11,
+        "All 11 buildings should be parsed, got {}",
         registry.len()
     );
 }
@@ -101,12 +101,13 @@ fn guild_lookup_by_id_works() {
 }
 
 #[test]
-fn all_10_buildings_lookup_by_id_works() {
+fn all_11_buildings_lookup_by_id_works() {
     let registry = parse_all();
 
     let expected_ids = [
         "stagecoach", "abbey", "guild", "blacksmith", "inn",
         "tavern", "graveyard", "museum", "provisioner", "sanctuary",
+        "sanitarium",
     ];
 
     for id in &expected_ids {
@@ -475,12 +476,12 @@ fn upgrade_trees_have_starting_level() {
 // ── US-007: Specific building verification ────────────────────────────────────
 
 #[test]
-fn blacksmith_has_repair_and_upgrade_trees() {
+fn blacksmith_has_repair_upgrade_and_discount_trees() {
     let registry = parse_all();
 
     let blacksmith = registry.get("blacksmith").expect("blacksmith should exist");
     assert_eq!(blacksmith.building_type, BuildingType::Blacksmith);
-    assert_eq!(blacksmith.upgrade_trees.len(), 2);
+    assert_eq!(blacksmith.upgrade_trees.len(), 3);
 
     let has_repair = blacksmith
         .upgrade_trees
@@ -490,9 +491,14 @@ fn blacksmith_has_repair_and_upgrade_trees() {
         .upgrade_trees
         .iter()
         .any(|t| t.tree_id == "blacksmith_upgrade");
+    let has_discount = blacksmith
+        .upgrade_trees
+        .iter()
+        .any(|t| t.tree_id == "blacksmith_equipment_discount");
 
     assert!(has_repair, "blacksmith should have repair tree");
     assert!(has_upgrade, "blacksmith should have upgrade tree");
+    assert!(has_discount, "blacksmith should have equipment discount tree");
 }
 
 #[test]
