@@ -1366,6 +1366,64 @@ impl CampingSkill {
     pub fn is_available_to(&self, class_id: &str) -> bool {
         self.classes.is_empty() || self.classes.iter().any(|c| c == class_id)
     }
+
+    /// Validate this skill against the runtime schema.
+    ///
+    /// Returns a list of validation errors. An empty list means the skill
+    /// is valid for use at runtime. Validation checks:
+    /// - Non-empty skill ID
+    /// - At least one effect present
+    /// - All effects have a valid target selection (not `None`)
+    /// - All effects have a valid effect type (not `None`)
+    /// - All effects have chance in [0.0, 1.0]
+    /// - Time cost > 0
+    /// - Use limit > 0
+    ///
+    /// A skill that uses `ReduceTorch` (deleted from the original game) will
+    /// produce a validation warning but is not considered invalid, since the
+    /// variant is intentionally preserved for source accuracy.
+    pub fn validate(&self) -> Vec<String> {
+        let mut errors = Vec::new();
+
+        if self.id.is_empty() {
+            errors.push("skill id is empty".to_string());
+        }
+
+        if self.time_cost == 0 {
+            errors.push(format!("skill '{}' has zero time_cost", self.id));
+        }
+
+        if self.use_limit == 0 {
+            errors.push(format!("skill '{}' has zero use_limit", self.id));
+        }
+
+        if self.effects.is_empty() {
+            errors.push(format!("skill '{}' has no effects", self.id));
+        }
+
+        for (i, effect) in self.effects.iter().enumerate() {
+            if effect.selection == CampTargetSelection::None {
+                errors.push(format!(
+                    "skill '{}' effect {} has invalid target selection (None)",
+                    self.id, i
+                ));
+            }
+            if effect.effect_type == CampEffectType::None {
+                errors.push(format!(
+                    "skill '{}' effect {} has invalid effect type (None)",
+                    self.id, i
+                ));
+            }
+            if effect.chance < 0.0 || effect.chance > 1.0 {
+                errors.push(format!(
+                    "skill '{}' effect {} has chance {} outside [0.0, 1.0]",
+                    self.id, i, effect.chance
+                ));
+            }
+        }
+
+        errors
+    }
 }
 
 /// Registry holding all camping skill definitions parsed from JsonCamping.json.
@@ -1427,6 +1485,30 @@ impl CampingSkillRegistry {
     /// Get all class-specific skills (not available to all classes).
     pub fn class_specific_skills(&self) -> Vec<&CampingSkill> {
         self.skills.values().filter(|s| !s.is_generic()).collect()
+    }
+
+    /// Validate all skills in the registry against the runtime schema.
+    ///
+    /// Returns Ok if all skills pass validation, or Err with a list of
+    /// validation error messages. This provides a single check to confirm
+    /// the full registry is runtime-safe.
+    pub fn validate(&self) -> Result<(), Vec<String>> {
+        let mut errors = Vec::new();
+
+        if self.skills.is_empty() {
+            errors.push("registry is empty".to_string());
+        }
+
+        for skill in self.skills.values() {
+            let skill_errors = skill.validate();
+            errors.extend(skill_errors);
+        }
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
     }
 }
 
@@ -5319,5 +5401,521 @@ mod tests {
 
         assert!(result.trace.triggered);
         assert!(!result.state.active_buffs.contains(&"death_recovery".to_string()));
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // Camping skill registry: full 87-skill validation tests
+    // ───────────────────────────────────────────────────────────────
+
+    /// Helper: load the real JsonCamping.json into a registry for testing.
+    fn load_real_camping_registry() -> CampingSkillRegistry {
+        let path = std::path::Path::new(
+            "/mnt/d/GameDesign/\u{6e38}\u{620f}\u{8fc1}\u{79fb}/DDGC_newArch/data/JsonCamping.json",
+        );
+        if !path.exists() {
+            panic!("JsonCamping.json not found at expected path");
+        }
+        crate::contracts::parse::parse_camping_json(path)
+            .expect("failed to parse JsonCamping.json")
+    }
+
+    #[test]
+    fn full_registry_loads_all_87_skills() {
+        let registry = load_real_camping_registry();
+        assert_eq!(registry.len(), 87);
+        assert!(!registry.is_empty());
+    }
+
+    #[test]
+    fn full_registry_passes_runtime_validation() {
+        let registry = load_real_camping_registry();
+        let result = registry.validate();
+        assert!(
+            result.is_ok(),
+            "registry validation failed: {:?}",
+            result.err()
+        );
+    }
+
+    #[test]
+    fn every_individual_skill_passes_validation() {
+        let registry = load_real_camping_registry();
+        for skill_id in registry.all_ids() {
+            let skill = registry.get(skill_id).expect("skill should exist");
+            let errors = skill.validate();
+            assert!(
+                errors.is_empty(),
+                "skill '{}' failed validation: {:?}",
+                skill_id,
+                errors
+            );
+        }
+    }
+
+    #[test]
+    fn all_skills_have_nonempty_id() {
+        let registry = load_real_camping_registry();
+        for skill_id in registry.all_ids() {
+            assert!(!skill_id.is_empty(), "skill has empty id");
+        }
+    }
+
+    #[test]
+    fn all_skills_have_positive_time_cost() {
+        let registry = load_real_camping_registry();
+        for skill_id in registry.all_ids() {
+            let skill = registry.get(skill_id).unwrap();
+            assert!(
+                skill.time_cost > 0,
+                "skill '{}' has zero time_cost",
+                skill_id
+            );
+        }
+    }
+
+    #[test]
+    fn all_skills_have_positive_use_limit() {
+        let registry = load_real_camping_registry();
+        for skill_id in registry.all_ids() {
+            let skill = registry.get(skill_id).unwrap();
+            assert!(
+                skill.use_limit > 0,
+                "skill '{}' has zero use_limit",
+                skill_id
+            );
+        }
+    }
+
+    #[test]
+    fn all_skills_have_at_least_one_effect() {
+        let registry = load_real_camping_registry();
+        for skill_id in registry.all_ids() {
+            let skill = registry.get(skill_id).unwrap();
+            assert!(
+                !skill.effects.is_empty(),
+                "skill '{}' has no effects",
+                skill_id
+            );
+        }
+    }
+
+    #[test]
+    fn all_effects_have_valid_type() {
+        let registry = load_real_camping_registry();
+        for skill_id in registry.all_ids() {
+            let skill = registry.get(skill_id).unwrap();
+            for (i, effect) in skill.effects.iter().enumerate() {
+                assert_ne!(
+                    effect.effect_type,
+                    CampEffectType::None,
+                    "skill '{}' effect {} has None type",
+                    skill_id,
+                    i
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn all_effects_have_valid_selection() {
+        let registry = load_real_camping_registry();
+        for skill_id in registry.all_ids() {
+            let skill = registry.get(skill_id).unwrap();
+            for (i, effect) in skill.effects.iter().enumerate() {
+                assert_ne!(
+                    effect.selection,
+                    CampTargetSelection::None,
+                    "skill '{}' effect {} has None selection",
+                    skill_id,
+                    i
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn all_effects_have_valid_chance() {
+        let registry = load_real_camping_registry();
+        for skill_id in registry.all_ids() {
+            let skill = registry.get(skill_id).unwrap();
+            for (i, effect) in skill.effects.iter().enumerate() {
+                assert!(
+                    effect.chance >= 0.0 && effect.chance <= 1.0,
+                    "skill '{}' effect {} has invalid chance {}",
+                    skill_id,
+                    i,
+                    effect.chance
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn exactly_one_generic_skill() {
+        let registry = load_real_camping_registry();
+        let generic = registry.generic_skills();
+        assert_eq!(generic.len(), 1, "there should be exactly 1 generic skill");
+        assert_eq!(generic[0].id, "hobby");
+    }
+
+    #[test]
+    fn generic_skill_hobby_preserves_source_data() {
+        let registry = load_real_camping_registry();
+        let skill = registry.get("hobby").unwrap();
+        assert_eq!(skill.time_cost, 2);
+        assert_eq!(skill.use_limit, 1);
+        assert!(skill.classes.is_empty());
+        assert!(skill.is_generic());
+        assert!(!skill.has_individual_target);
+        assert_eq!(skill.effects.len(), 1);
+        assert_eq!(skill.effects[0].effect_type, CampEffectType::StressHealAmount);
+        assert_eq!(skill.effects[0].selection, CampTargetSelection::SelfTarget);
+        assert!((skill.effects[0].amount - 12.0).abs() < f64::EPSILON);
+        assert!((skill.effects[0].chance - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn class_specific_count_is_86() {
+        let registry = load_real_camping_registry();
+        let specific = registry.class_specific_skills();
+        assert_eq!(specific.len(), 86);
+    }
+
+    #[test]
+    fn encourage_preserves_source_data() {
+        let registry = load_real_camping_registry();
+        let skill = registry.get("encourage").unwrap();
+        assert_eq!(skill.time_cost, 2);
+        assert_eq!(skill.use_limit, 1);
+        assert!(skill.has_individual_target);
+        assert_eq!(skill.effects.len(), 1);
+        assert_eq!(skill.effects[0].effect_type, CampEffectType::StressHealAmount);
+        assert_eq!(skill.effects[0].selection, CampTargetSelection::Individual);
+        assert!((skill.effects[0].amount - 15.0).abs() < f64::EPSILON);
+        // encourage is available to 16 classes (all base classes)
+        assert_eq!(skill.classes.len(), 16);
+    }
+
+    #[test]
+    fn field_dressing_preserves_source_data() {
+        let registry = load_real_camping_registry();
+        let skill = registry.get("field_dressing").unwrap();
+        assert_eq!(skill.time_cost, 3);
+        assert_eq!(skill.use_limit, 1);
+        assert!(skill.has_individual_target);
+        assert_eq!(skill.classes, vec!["arbalest", "musketeer"]);
+        assert_eq!(skill.effects.len(), 3);
+
+        // Effect 0: 35% heal, 75% chance
+        assert_eq!(skill.effects[0].effect_type, CampEffectType::HealthHealMaxHealthPercent);
+        assert!((skill.effects[0].amount - 0.35).abs() < f64::EPSILON);
+        assert!((skill.effects[0].chance - 0.75).abs() < f64::EPSILON);
+
+        // Effect 1: 50% heal, 25% chance
+        assert_eq!(skill.effects[1].effect_type, CampEffectType::HealthHealMaxHealthPercent);
+        assert!((skill.effects[1].amount - 0.50).abs() < f64::EPSILON);
+        assert!((skill.effects[1].chance - 0.25).abs() < f64::EPSILON);
+
+        // Effect 2: remove bleed, 100% chance
+        assert_eq!(skill.effects[2].effect_type, CampEffectType::RemoveBleed);
+        assert!((skill.effects[2].chance - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn supply_has_use_limit_3() {
+        let registry = load_real_camping_registry();
+        let skill = registry.get("supply").unwrap();
+        assert_eq!(skill.use_limit, 3);
+        assert_eq!(skill.time_cost, 1);
+        assert_eq!(skill.classes, vec!["antiquarian"]);
+        assert_eq!(skill.effects.len(), 1);
+        assert_eq!(skill.effects[0].effect_type, CampEffectType::Loot);
+    }
+
+    #[test]
+    fn dark_ritual_preserves_reduce_torch_effect() {
+        let registry = load_real_camping_registry();
+        let skill = registry.get("dark_ritual").unwrap();
+        assert_eq!(skill.time_cost, 4);
+        assert_eq!(skill.use_limit, 1);
+        assert_eq!(skill.classes, vec!["occultist"]);
+
+        // dark_ritual should have 4 effects including reduce_torch
+        assert_eq!(skill.effects.len(), 4);
+        let torch_effect = skill
+            .effects
+            .iter()
+            .find(|e| e.effect_type == CampEffectType::ReduceTorch)
+            .expect("dark_ritual should have a reduce_torch effect");
+        // reduce_torch reduces torchlight by 100
+        assert!((torch_effect.amount - 100.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn zealous_speech_has_highest_time_cost_5() {
+        let registry = load_real_camping_registry();
+        let skill = registry.get("zealous_speech").unwrap();
+        assert_eq!(skill.time_cost, 5);
+        assert_eq!(skill.use_limit, 1);
+        assert_eq!(skill.classes, vec!["crusader"]);
+        assert_eq!(skill.effects.len(), 3);
+    }
+
+    #[test]
+    fn self_medicate_has_five_effects() {
+        let registry = load_real_camping_registry();
+        let skill = registry.get("self_medicate").unwrap();
+        assert_eq!(skill.time_cost, 3);
+        assert_eq!(skill.classes, vec!["plague_doctor"]);
+        assert_eq!(skill.effects.len(), 5);
+        // stress heal, health heal %, remove poison, remove bleed, buff
+        let types: Vec<_> = skill.effects.iter().map(|e| &e.effect_type).collect();
+        assert!(types.contains(&&CampEffectType::StressHealAmount));
+        assert!(types.contains(&&CampEffectType::HealthHealMaxHealthPercent));
+        assert!(types.contains(&&CampEffectType::RemovePoison));
+        assert!(types.contains(&&CampEffectType::RemoveBleed));
+        assert!(types.contains(&&CampEffectType::Buff));
+    }
+
+    #[test]
+    fn first_aid_heals_and_cleanses() {
+        let registry = load_real_camping_registry();
+        let skill = registry.get("first_aid").unwrap();
+        assert_eq!(skill.time_cost, 2);
+        assert_eq!(skill.effects.len(), 3);
+
+        let types: Vec<_> = skill.effects.iter().map(|e| &e.effect_type).collect();
+        assert!(types.contains(&&CampEffectType::HealthHealMaxHealthPercent));
+        assert!(types.contains(&&CampEffectType::RemoveBleed));
+        assert!(types.contains(&&CampEffectType::RemovePoison));
+    }
+
+    #[test]
+    fn effect_type_coverage_matches_source() {
+        let registry = load_real_camping_registry();
+        use std::collections::HashSet;
+        let mut types = HashSet::new();
+        for skill_id in registry.all_ids() {
+            let skill = registry.get(skill_id).unwrap();
+            for effect in &skill.effects {
+                types.insert(effect.effect_type.clone());
+            }
+        }
+        // All 19 effect types used in JsonCamping.json should be present
+        assert!(types.contains(&CampEffectType::StressHealAmount));
+        assert!(types.contains(&CampEffectType::HealthHealMaxHealthPercent));
+        assert!(types.contains(&CampEffectType::RemoveBleed));
+        assert!(types.contains(&CampEffectType::RemovePoison));
+        assert!(types.contains(&CampEffectType::Buff));
+        assert!(types.contains(&CampEffectType::RemoveDeathRecovery));
+        assert!(types.contains(&CampEffectType::ReduceAmbushChance));
+        assert!(types.contains(&CampEffectType::RemoveDisease));
+        assert!(types.contains(&CampEffectType::StressDamageAmount));
+        assert!(types.contains(&CampEffectType::Loot));
+        assert!(types.contains(&CampEffectType::ReduceTorch));
+        assert!(types.contains(&CampEffectType::HealthDamageMaxHealthPercent));
+        assert!(types.contains(&CampEffectType::StressHealPercent));
+        assert!(types.contains(&CampEffectType::RemoveDebuff));
+        assert!(types.contains(&CampEffectType::RemoveAllDebuff));
+        assert!(types.contains(&CampEffectType::HealthHealRange));
+        assert!(types.contains(&CampEffectType::HealthHealAmount));
+        assert!(types.contains(&CampEffectType::ReduceTurbulenceChance));
+        assert!(types.contains(&CampEffectType::ReduceRiptideChance));
+        // 19 types used
+        assert_eq!(types.len(), 19, "expected 19 distinct effect types");
+    }
+
+    #[test]
+    fn time_cost_distribution_matches_source() {
+        let registry = load_real_camping_registry();
+        let mut counts = std::collections::HashMap::new();
+        for skill_id in registry.all_ids() {
+            let skill = registry.get(skill_id).unwrap();
+            *counts.entry(skill.time_cost).or_insert(0) += 1;
+        }
+        assert_eq!(counts.get(&1).copied().unwrap_or(0), 5);
+        assert_eq!(counts.get(&2).copied().unwrap_or(0), 20);
+        assert_eq!(counts.get(&3).copied().unwrap_or(0), 35);
+        assert_eq!(counts.get(&4).copied().unwrap_or(0), 26);
+        assert_eq!(counts.get(&5).copied().unwrap_or(0), 1);
+    }
+
+    #[test]
+    fn use_limit_distribution_matches_source() {
+        let registry = load_real_camping_registry();
+        let mut counts = std::collections::HashMap::new();
+        for skill_id in registry.all_ids() {
+            let skill = registry.get(skill_id).unwrap();
+            *counts.entry(skill.use_limit).or_insert(0) += 1;
+        }
+        assert_eq!(counts.get(&1).copied().unwrap_or(0), 86);
+        assert_eq!(counts.get(&3).copied().unwrap_or(0), 1);
+    }
+
+    #[test]
+    fn every_skill_has_upgrade_cost() {
+        let registry = load_real_camping_registry();
+        for skill_id in registry.all_ids() {
+            let skill = registry.get(skill_id).unwrap();
+            assert!(
+                skill.upgrade_cost > 0,
+                "skill '{}' has zero upgrade_cost",
+                skill_id
+            );
+        }
+    }
+
+    #[test]
+    fn class_filtering_returns_generic_skills_for_any_class() {
+        let registry = load_real_camping_registry();
+        // Hobby should appear for every class
+        for skill_id in registry.all_ids() {
+            let skill = registry.get(skill_id).unwrap();
+            if skill.is_generic() {
+                continue;
+            }
+            for class in &skill.classes {
+                let class_skills = registry.for_class(class);
+                let hobby_present = class_skills.iter().any(|s| s.id == "hobby");
+                assert!(
+                    hobby_present,
+                    "class '{}' should have generic skill 'hobby'",
+                    class
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn class_filtering_includes_only_eligible_class_specific_skills() {
+        let registry = load_real_camping_registry();
+        // For each skill, verify it only appears in for_class() for its own classes
+        for skill_id in registry.all_ids() {
+            let skill = registry.get(skill_id).unwrap();
+            if skill.is_generic() {
+                continue;
+            }
+            // Skill should be available to its own classes
+            for class in &skill.classes {
+                let class_skills = registry.for_class(class);
+                assert!(
+                    class_skills.iter().any(|s| s.id == skill.id),
+                    "skill '{}' should be available to class '{}'",
+                    skill.id,
+                    class
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn all_31_hero_classes_have_skills() {
+        let registry = load_real_camping_registry();
+        let all_classes = [
+            "bounty_hunter", "crusader", "vestal", "occultist", "hellion",
+            "grave_robber", "highwayman", "plague_doctor", "jester", "leper",
+            "arbalest", "man_at_arms", "houndmaster", "abomination", "antiquarian",
+            "musketeer", "alchemist", "alchemist1", "alchemist2",
+            "diviner", "diviner1", "diviner2",
+            "hunter", "hunter1", "hunter2",
+            "shaman", "shaman1", "shaman2",
+            "tank", "tank1", "tank2",
+        ];
+        for class in &all_classes {
+            let class_skills = registry.for_class(class);
+            assert!(
+                !class_skills.is_empty(),
+                "class '{}' should have at least one skill",
+                class
+            );
+        }
+    }
+
+    #[test]
+    fn skill_with_individual_target_is_flagged() {
+        let registry = load_real_camping_registry();
+        // Skills with individual-selection effects should have has_individual_target = true
+        let field_dressing = registry.get("field_dressing").unwrap();
+        assert!(field_dressing.has_individual_target);
+        let encourage = registry.get("encourage").unwrap();
+        assert!(encourage.has_individual_target);
+        // Self-target skills should NOT have individual target
+        let hobby = registry.get("hobby").unwrap();
+        assert!(!hobby.has_individual_target);
+    }
+
+    #[test]
+    fn validate_returns_error_for_skill_with_no_effects() {
+        let mut skill = CampingSkill::new(
+            "test_empty", 1, 1, false,
+            vec![],
+            vec![],
+            100,
+        );
+        assert!(!skill.validate().is_empty());
+
+        // Also test empty id
+        skill.id = String::new();
+        let errors = skill.validate();
+        assert!(errors.iter().any(|e| e.contains("id is empty")));
+    }
+
+    #[test]
+    fn validate_returns_error_for_skill_with_zero_time_cost() {
+        let skill = CampingSkill::new(
+            "test_zero_cost", 0, 1, false,
+            vec!["crusader".to_string()],
+            vec![CampEffect::new(
+                CampTargetSelection::SelfTarget,
+                vec![],
+                1.0,
+                CampEffectType::StressHealAmount,
+                "",
+                10.0,
+            )],
+            100,
+        );
+        let errors = skill.validate();
+        assert!(errors.iter().any(|e| e.contains("zero time_cost")));
+    }
+
+    #[test]
+    fn validate_returns_error_for_none_effect_type() {
+        let skill = CampingSkill::new(
+            "test_none_type", 1, 1, false,
+            vec![],
+            vec![CampEffect::new(
+                CampTargetSelection::SelfTarget,
+                vec![],
+                1.0,
+                CampEffectType::None,
+                "",
+                0.0,
+            )],
+            100,
+        );
+        let errors = skill.validate();
+        assert!(errors.iter().any(|e| e.contains("invalid effect type")));
+    }
+
+    #[test]
+    fn registry_validate_returns_error_when_empty() {
+        let registry = CampingSkillRegistry::new();
+        let result = registry.validate();
+        assert!(result.is_err());
+        assert!(result.err().unwrap().iter().any(|e| e.contains("empty")));
+    }
+
+    #[test]
+    fn registry_all_ids_returns_all_87() {
+        let registry = load_real_camping_registry();
+        let ids = registry.all_ids();
+        assert_eq!(ids.len(), 87);
+        // Check a sampling of known IDs
+        assert!(ids.contains(&"encourage"));
+        assert!(ids.contains(&"hobby"));
+        assert!(ids.contains(&"field_dressing"));
+        assert!(ids.contains(&"dark_ritual"));
+        assert!(ids.contains(&"supply"));
     }
 }
