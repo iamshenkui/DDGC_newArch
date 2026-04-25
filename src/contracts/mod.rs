@@ -1430,6 +1430,352 @@ impl CampingSkillRegistry {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Camp Effect Application
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Minimal hero state for camp effect application.
+///
+/// This struct represents the portion of hero state that camping skills
+/// can modify, allowing effect application to be modeled and tested
+/// independently of the full hero runtime.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct HeroCampState {
+    /// Current health.
+    pub health: f64,
+    /// Maximum health.
+    pub max_health: f64,
+    /// Current stress.
+    pub stress: f64,
+    /// Maximum stress.
+    pub max_stress: f64,
+    /// Active buff IDs.
+    pub active_buffs: Vec<String>,
+    /// Buff IDs that were applied during camping (removable at camp end).
+    pub camping_buffs: Vec<String>,
+}
+
+impl HeroCampState {
+    /// Create a new hero camp state.
+    pub fn new(health: f64, max_health: f64, stress: f64, max_stress: f64) -> Self {
+        HeroCampState {
+            health,
+            max_health,
+            stress,
+            max_stress,
+            active_buffs: Vec::new(),
+            camping_buffs: Vec::new(),
+        }
+    }
+
+    /// Remove all camping buffs from active_buffs.
+    ///
+    /// Called when the camping phase ends to clean up temporary buffs.
+    pub fn remove_camping_buffs(&mut self) {
+        self.active_buffs.retain(|b| !self.camping_buffs.contains(b));
+        self.camping_buffs.clear();
+    }
+}
+
+/// A trace entry recording what a camp effect did during application.
+///
+/// Provides deterministic debug output for effect application,
+/// particularly useful for verifying stubbed effects (bleed removal,
+/// disease removal, etc.) produce expected trace output.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CampEffectTraceEntry {
+    /// The effect type that was applied.
+    pub effect_type: CampEffectType,
+    /// The sub_type string if applicable (buff ID, loot ID, etc.).
+    pub sub_type: String,
+    /// The amount parameter.
+    pub amount: f64,
+    /// The chance roll result (0.0 to 1.0).
+    pub roll: f64,
+    /// Whether the effect triggered based on chance roll.
+    pub triggered: bool,
+    /// Human-readable description of what happened.
+    pub description: String,
+}
+
+/// Result of applying a camp effect to a hero state.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CampEffectApplicationResult {
+    /// The hero state after applying the effect.
+    pub state: HeroCampState,
+    /// The trace entry for this effect application.
+    pub trace: CampEffectTraceEntry,
+}
+
+/// Deterministic pseudo-random roll for effect chance.
+///
+/// Uses a simple hash of skill_id, performer_id, target_id, and effect_idx
+/// to produce a value in [0, 1). This ensures deterministic outcomes
+/// for the same inputs across runs.
+pub fn deterministic_chance_roll(
+    skill_id: &str,
+    performer_id: &str,
+    target_id: Option<&str>,
+    effect_idx: usize,
+) -> f64 {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+    let mut hasher = DefaultHasher::new();
+    skill_id.hash(&mut hasher);
+    performer_id.hash(&mut hasher);
+    if let Some(tid) = target_id {
+        tid.hash(&mut hasher);
+    }
+    effect_idx.hash(&mut hasher);
+    let hash = hasher.finish();
+    (hash as f64) / (u64::MAX as f64)
+}
+
+impl CampEffect {
+    /// Apply this camp effect to a hero state.
+    ///
+    /// Returns the modified hero state and a trace entry documenting
+    /// what happened. The effect is applied conditionally based on
+    /// the chance roll (for non-guaranteed effects).
+    ///
+    /// # Arguments
+    ///
+    /// * `state` - The hero's camp state to modify
+    /// * `skill_id` - The skill ID (for deterministic rolling)
+    /// * `performer_id` - The hero performing the skill
+    /// * `target_id` - The target hero ID
+    /// * `effect_idx` - The index of this effect within the skill (for deterministic rolling)
+    pub fn apply(
+        &self,
+        mut state: HeroCampState,
+        skill_id: &str,
+        performer_id: &str,
+        target_id: Option<&str>,
+        effect_idx: usize,
+    ) -> CampEffectApplicationResult {
+        let roll = deterministic_chance_roll(skill_id, performer_id, target_id, effect_idx);
+        let triggered = roll < self.chance;
+
+        let description = if !triggered {
+            format!(
+                "effect {} did not trigger (roll {:.4} >= chance {:.4})",
+                self.effect_type_debug_name(),
+                roll,
+                self.chance
+            )
+        } else {
+            self.apply_triggered_effect(&mut state)
+        };
+
+        let trace = CampEffectTraceEntry {
+            effect_type: self.effect_type.clone(),
+            sub_type: self.sub_type.clone(),
+            amount: self.amount,
+            roll,
+            triggered,
+            description,
+        };
+
+        CampEffectApplicationResult { state, trace }
+    }
+
+    /// Returns a debug name for the effect type.
+    fn effect_type_debug_name(&self) -> &'static str {
+        match self.effect_type {
+            CampEffectType::None => "None",
+            CampEffectType::StressHealAmount => "StressHealAmount",
+            CampEffectType::HealthHealMaxHealthPercent => "HealthHealMaxHealthPercent",
+            CampEffectType::RemoveBleed => "RemoveBleed",
+            CampEffectType::RemovePoison => "RemovePoison",
+            CampEffectType::Buff => "Buff",
+            CampEffectType::RemoveDeathRecovery => "RemoveDeathRecovery",
+            CampEffectType::ReduceAmbushChance => "ReduceAmbushChance",
+            CampEffectType::RemoveDisease => "RemoveDisease",
+            CampEffectType::StressDamageAmount => "StressDamageAmount",
+            CampEffectType::Loot => "Loot",
+            CampEffectType::ReduceTorch => "ReduceTorch",
+            CampEffectType::HealthDamageMaxHealthPercent => "HealthDamageMaxHealthPercent",
+            CampEffectType::RemoveBurn => "RemoveBurn",
+            CampEffectType::RemoveFrozen => "RemoveFrozen",
+            CampEffectType::StressHealPercent => "StressHealPercent",
+            CampEffectType::RemoveDebuff => "RemoveDebuff",
+            CampEffectType::RemoveAllDebuff => "RemoveAllDebuff",
+            CampEffectType::HealthHealRange => "HealthHealRange",
+            CampEffectType::HealthHealAmount => "HealthHealAmount",
+            CampEffectType::ReduceTurbulenceChance => "ReduceTurbulenceChance",
+            CampEffectType::ReduceRiptideChance => "ReduceRiptideChance",
+        }
+    }
+
+    /// Apply the effect to the hero state (assumes chance triggered).
+    /// Returns a description of what was done.
+    fn apply_triggered_effect(&self, state: &mut HeroCampState) -> String {
+        match self.effect_type {
+            CampEffectType::StressHealAmount => {
+                let amount = self.amount.min(state.stress);
+                state.stress -= amount;
+                format!("healed {:.1} stress (from {:.1})", amount, state.stress + amount)
+            }
+            CampEffectType::HealthHealMaxHealthPercent => {
+                let heal_amount = state.max_health * self.amount;
+                let actual = heal_amount.min(state.max_health - state.health);
+                state.health += actual;
+                format!(
+                    "healed {:.1} HP ({:.0}% of max, capped by max HP)",
+                    actual,
+                    self.amount * 100.0
+                )
+            }
+            CampEffectType::RemoveBleed => {
+                let had_bled = state.active_buffs.contains(&"bleed".to_string());
+                state.active_buffs.retain(|b| b != "bleed");
+                if had_bled {
+                    "removed bleed effect".to_string()
+                } else {
+                    "no bleed effect to remove".to_string()
+                }
+            }
+            CampEffectType::RemovePoison => {
+                let had_poison = state.active_buffs.contains(&"poison".to_string());
+                state.active_buffs.retain(|b| b != "poison");
+                if had_poison {
+                    "removed poison effect".to_string()
+                } else {
+                    "no poison effect to remove".to_string()
+                }
+            }
+            CampEffectType::Buff => {
+                let buff_id = &self.sub_type;
+                if !state.active_buffs.contains(buff_id) {
+                    state.active_buffs.push(buff_id.clone());
+                }
+                // Mark as camping buff so it can be removed at camp end
+                if !state.camping_buffs.contains(buff_id) {
+                    state.camping_buffs.push(buff_id.clone());
+                }
+                format!("applied buff '{}'", buff_id)
+            }
+            CampEffectType::RemoveDeathRecovery => {
+                let had_recovery = state.active_buffs.contains(&"death_recovery".to_string());
+                state.active_buffs.retain(|b| b != "death_recovery");
+                if had_recovery {
+                    "removed death recovery debuff".to_string()
+                } else {
+                    "no death recovery debuff to remove".to_string()
+                }
+            }
+            CampEffectType::ReduceAmbushChance => {
+                // Stub: would set ambush chance modifier
+                "[STUB] reduce ambush chance (no state change)".to_string()
+            }
+            CampEffectType::RemoveDisease => {
+                let had_disease = state.active_buffs.iter().any(|b| b.starts_with("disease_"));
+                state.active_buffs.retain(|b| !b.starts_with("disease_"));
+                if had_disease {
+                    "removed disease effect(s)".to_string()
+                } else {
+                    "no disease effect to remove".to_string()
+                }
+            }
+            CampEffectType::StressDamageAmount => {
+                state.stress = (state.stress + self.amount).min(state.max_stress);
+                format!("took {:.1} stress damage", self.amount)
+            }
+            CampEffectType::Loot => {
+                // Stub: would add loot to party inventory
+                format!("[STUB] generate loot '{}' (no state change)", self.sub_type)
+            }
+            CampEffectType::HealthDamageMaxHealthPercent => {
+                let damage = state.max_health * self.amount;
+                state.health = (state.health - damage).max(0.0);
+                format!("took {:.1} HP damage ({:.0}% of max)", damage, self.amount * 100.0)
+            }
+            CampEffectType::RemoveBurn => {
+                let had_burn = state.active_buffs.contains(&"burning".to_string());
+                state.active_buffs.retain(|b| b != "burning");
+                if had_burn {
+                    "removed burn effect".to_string()
+                } else {
+                    "no burn effect to remove".to_string()
+                }
+            }
+            CampEffectType::RemoveFrozen => {
+                let had_frozen = state.active_buffs.contains(&"frozen".to_string());
+                state.active_buffs.retain(|b| b != "frozen");
+                if had_frozen {
+                    "removed frozen effect".to_string()
+                } else {
+                    "no frozen effect to remove".to_string()
+                }
+            }
+            CampEffectType::StressHealPercent => {
+                let heal_amount = state.max_stress * self.amount;
+                let actual = heal_amount.min(state.stress);
+                state.stress -= actual;
+                format!(
+                    "healed {:.1} stress ({:.0}% of max stress)",
+                    actual,
+                    self.amount * 100.0
+                )
+            }
+            CampEffectType::RemoveDebuff => {
+                // Remove first debuff found
+                let debuff_idx = state.active_buffs.iter().position(|b| b.starts_with("debuff_"));
+                if let Some(idx) = debuff_idx {
+                    let debuff = state.active_buffs[idx].clone();
+                    state.active_buffs.remove(idx);
+                    format!("removed debuff '{}'", debuff)
+                } else {
+                    "no debuff to remove".to_string()
+                }
+            }
+            CampEffectType::RemoveAllDebuff => {
+                let had_debuffs = state.active_buffs.iter().any(|b| b.starts_with("debuff_"));
+                state.active_buffs.retain(|b| !b.starts_with("debuff_"));
+                if had_debuffs {
+                    "removed all debuff effects".to_string()
+                } else {
+                    "no debuffs to remove".to_string()
+                }
+            }
+            CampEffectType::HealthHealRange => {
+                // For deterministic testing, use midpoint of range
+                // Range is encoded as "min.max" in amount, e.g., 3.5 means 3-5
+                let min = self.amount.floor();
+                let max = self.amount.ceil().max(min + 1.0);
+                let heal_amount = (min + max) / 2.0;
+                let actual = heal_amount.min(state.max_health - state.health);
+                state.health += actual;
+                format!(
+                    "healed {:.1} HP (random range {:.0}-{:.0}, deterministic midpoint)",
+                    actual,
+                    min,
+                    max
+                )
+            }
+            CampEffectType::HealthHealAmount => {
+                let actual = self.amount.min(state.max_health - state.health);
+                state.health += actual;
+                format!("healed {:.1} HP (flat amount)", actual)
+            }
+            CampEffectType::ReduceTurbulenceChance => {
+                // Stub: would set turbulence modifier
+                "[STUB] reduce turbulence chance (no state change)".to_string()
+            }
+            CampEffectType::ReduceRiptideChance => {
+                // Stub: would set riptide modifier
+                "[STUB] reduce riptide chance (no state change)".to_string()
+            }
+            CampEffectType::None | CampEffectType::ReduceTorch => {
+                format!(
+                    "[SKIPPED] effect type {:?} is non-functional",
+                    self.effect_type
+                )
+            }
+        }
+    }
+}
+
 /// Dungeon type identifier.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum DungeonType {
@@ -4460,5 +4806,518 @@ mod tests {
             assert_eq!(modifiers[0].attribute_key, expected_key);
             assert_eq!(modifiers[0].value, expected_value);
         }
+    }
+
+    // ── Camp Effect Application tests ─────────────────────────────────────────────
+
+    #[test]
+    fn hero_camp_state_creation() {
+        let state = HeroCampState::new(80.0, 100.0, 60.0, 200.0);
+        assert_eq!(state.health, 80.0);
+        assert_eq!(state.max_health, 100.0);
+        assert_eq!(state.stress, 60.0);
+        assert_eq!(state.max_stress, 200.0);
+        assert!(state.active_buffs.is_empty());
+        assert!(state.camping_buffs.is_empty());
+    }
+
+    #[test]
+    fn hero_camp_state_remove_camping_buffs() {
+        let mut state = HeroCampState::new(80.0, 100.0, 60.0, 200.0);
+        state.active_buffs.push("camping_buff_strength".to_string());
+        state.active_buffs.push("permanent_buff".to_string());
+        state.camping_buffs.push("camping_buff_strength".to_string());
+
+        state.remove_camping_buffs();
+
+        assert_eq!(state.active_buffs.len(), 1);
+        assert_eq!(state.active_buffs[0], "permanent_buff");
+        assert!(state.camping_buffs.is_empty());
+    }
+
+    #[test]
+    fn deterministic_chance_roll_is_deterministic() {
+        let roll1 = deterministic_chance_roll("skill", "hero1", Some("hero2"), 0);
+        let roll2 = deterministic_chance_roll("skill", "hero1", Some("hero2"), 0);
+        assert_eq!(roll1, roll2, "Same inputs should produce same roll");
+
+        let roll3 = deterministic_chance_roll("skill", "hero1", Some("hero2"), 0);
+        let roll4 = deterministic_chance_roll("skill", "hero1", Some("hero2"), 1);
+        assert_ne!(roll3, roll4, "Different effect_idx should produce different roll");
+    }
+
+    #[test]
+    fn stress_heal_amount_effect() {
+        let effect = CampEffect::new(
+            CampTargetSelection::SelfTarget,
+            vec![],
+            1.0,
+            CampEffectType::StressHealAmount,
+            "",
+            20.0,
+        );
+
+        let state = HeroCampState::new(80.0, 100.0, 60.0, 200.0);
+        let result = effect.apply(state, "skill", "hero1", Some("hero1"), 0);
+
+        assert!(result.trace.triggered);
+        assert_eq!(result.state.stress, 40.0); // 60 - 20
+        assert!(result.trace.description.contains("healed"));
+    }
+
+    #[test]
+    fn stress_heal_amount_caps_at_zero() {
+        let effect = CampEffect::new(
+            CampTargetSelection::SelfTarget,
+            vec![],
+            1.0,
+            CampEffectType::StressHealAmount,
+            "",
+            100.0,
+        );
+
+        let state = HeroCampState::new(80.0, 100.0, 30.0, 200.0);
+        let result = effect.apply(state, "skill", "hero1", Some("hero1"), 0);
+
+        assert_eq!(result.state.stress, 0.0); // Capped at 0
+    }
+
+    #[test]
+    fn health_heal_max_health_percent_effect() {
+        let effect = CampEffect::new(
+            CampTargetSelection::SelfTarget,
+            vec![],
+            1.0,
+            CampEffectType::HealthHealMaxHealthPercent,
+            "",
+            0.25,
+        );
+
+        let state = HeroCampState::new(50.0, 100.0, 0.0, 200.0);
+        let result = effect.apply(state, "skill", "hero1", Some("hero1"), 0);
+
+        assert!(result.trace.triggered);
+        assert_eq!(result.state.health, 75.0); // 50 + 25
+        assert!(result.trace.description.contains("healed"));
+    }
+
+    #[test]
+    fn health_heal_amount_effect() {
+        let effect = CampEffect::new(
+            CampTargetSelection::SelfTarget,
+            vec![],
+            1.0,
+            CampEffectType::HealthHealAmount,
+            "",
+            30.0,
+        );
+
+        let state = HeroCampState::new(50.0, 100.0, 0.0, 200.0);
+        let result = effect.apply(state, "skill", "hero1", Some("hero1"), 0);
+
+        assert!(result.trace.triggered);
+        assert_eq!(result.state.health, 80.0); // 50 + 30
+    }
+
+    #[test]
+    fn health_heal_amount_caps_at_max() {
+        let effect = CampEffect::new(
+            CampTargetSelection::SelfTarget,
+            vec![],
+            1.0,
+            CampEffectType::HealthHealAmount,
+            "",
+            100.0,
+        );
+
+        let state = HeroCampState::new(90.0, 100.0, 0.0, 200.0);
+        let result = effect.apply(state, "skill", "hero1", Some("hero1"), 0);
+
+        assert_eq!(result.state.health, 100.0); // Capped at max
+    }
+
+    #[test]
+    fn buff_effect_applies_camping_buff() {
+        let effect = CampEffect::new(
+            CampTargetSelection::SelfTarget,
+            vec![],
+            1.0,
+            CampEffectType::Buff,
+            "campingStressResistBuff",
+            0.0,
+        );
+
+        let state = HeroCampState::new(80.0, 100.0, 60.0, 200.0);
+        let result = effect.apply(state, "skill", "hero1", Some("hero1"), 0);
+
+        assert!(result.trace.triggered);
+        assert!(result.state.active_buffs.contains(&"campingStressResistBuff".to_string()));
+        assert!(result.state.camping_buffs.contains(&"campingStressResistBuff".to_string()));
+    }
+
+    #[test]
+    fn remove_bleed_effect() {
+        let effect = CampEffect::new(
+            CampTargetSelection::SelfTarget,
+            vec![],
+            1.0,
+            CampEffectType::RemoveBleed,
+            "",
+            0.0,
+        );
+
+        let mut state = HeroCampState::new(80.0, 100.0, 60.0, 200.0);
+        state.active_buffs.push("bleed".to_string());
+        state.active_buffs.push("other_buff".to_string());
+
+        let result = effect.apply(state, "skill", "hero1", Some("hero1"), 0);
+
+        assert!(result.trace.triggered);
+        assert!(!result.state.active_buffs.contains(&"bleed".to_string()));
+        assert!(result.state.active_buffs.contains(&"other_buff".to_string()));
+    }
+
+    #[test]
+    fn remove_poison_effect() {
+        let effect = CampEffect::new(
+            CampTargetSelection::SelfTarget,
+            vec![],
+            1.0,
+            CampEffectType::RemovePoison,
+            "",
+            0.0,
+        );
+
+        let mut state = HeroCampState::new(80.0, 100.0, 60.0, 200.0);
+        state.active_buffs.push("poison".to_string());
+
+        let result = effect.apply(state, "skill", "hero1", Some("hero1"), 0);
+
+        assert!(result.trace.triggered);
+        assert!(!result.state.active_buffs.contains(&"poison".to_string()));
+    }
+
+    #[test]
+    fn remove_burn_effect() {
+        let effect = CampEffect::new(
+            CampTargetSelection::SelfTarget,
+            vec![],
+            1.0,
+            CampEffectType::RemoveBurn,
+            "",
+            0.0,
+        );
+
+        let mut state = HeroCampState::new(80.0, 100.0, 60.0, 200.0);
+        state.active_buffs.push("burning".to_string());
+
+        let result = effect.apply(state, "skill", "hero1", Some("hero1"), 0);
+
+        assert!(result.trace.triggered);
+        assert!(!result.state.active_buffs.contains(&"burning".to_string()));
+    }
+
+    #[test]
+    fn remove_frozen_effect() {
+        let effect = CampEffect::new(
+            CampTargetSelection::SelfTarget,
+            vec![],
+            1.0,
+            CampEffectType::RemoveFrozen,
+            "",
+            0.0,
+        );
+
+        let mut state = HeroCampState::new(80.0, 100.0, 60.0, 200.0);
+        state.active_buffs.push("frozen".to_string());
+
+        let result = effect.apply(state, "skill", "hero1", Some("hero1"), 0);
+
+        assert!(result.trace.triggered);
+        assert!(!result.state.active_buffs.contains(&"frozen".to_string()));
+    }
+
+    #[test]
+    fn remove_disease_effect() {
+        let effect = CampEffect::new(
+            CampTargetSelection::SelfTarget,
+            vec![],
+            1.0,
+            CampEffectType::RemoveDisease,
+            "",
+            0.0,
+        );
+
+        let mut state = HeroCampState::new(80.0, 100.0, 60.0, 200.0);
+        state.active_buffs.push("disease_1".to_string());
+        state.active_buffs.push("disease_2".to_string());
+        state.active_buffs.push("other_buff".to_string());
+
+        let result = effect.apply(state, "skill", "hero1", Some("hero1"), 0);
+
+        assert!(result.trace.triggered);
+        assert!(result.state.active_buffs.contains(&"other_buff".to_string()));
+        assert!(!result.state.active_buffs.iter().any(|b| b.starts_with("disease_")));
+    }
+
+    #[test]
+    fn remove_debuff_effect_removes_one() {
+        let effect = CampEffect::new(
+            CampTargetSelection::SelfTarget,
+            vec![],
+            1.0,
+            CampEffectType::RemoveDebuff,
+            "",
+            0.0,
+        );
+
+        let mut state = HeroCampState::new(80.0, 100.0, 60.0, 200.0);
+        state.active_buffs.push("debuff_vulnerable".to_string());
+        state.active_buffs.push("debuff_stun".to_string());
+
+        let result = effect.apply(state, "skill", "hero1", Some("hero1"), 0);
+
+        assert!(result.trace.triggered);
+        // Only one debuff should be removed
+        assert_eq!(result.state.active_buffs.len(), 1);
+    }
+
+    #[test]
+    fn remove_all_debuff_effect() {
+        let effect = CampEffect::new(
+            CampTargetSelection::SelfTarget,
+            vec![],
+            1.0,
+            CampEffectType::RemoveAllDebuff,
+            "",
+            0.0,
+        );
+
+        let mut state = HeroCampState::new(80.0, 100.0, 60.0, 200.0);
+        state.active_buffs.push("debuff_vulnerable".to_string());
+        state.active_buffs.push("debuff_stun".to_string());
+        state.active_buffs.push("other_buff".to_string());
+
+        let result = effect.apply(state, "skill", "hero1", Some("hero1"), 0);
+
+        assert!(result.trace.triggered);
+        assert!(!result.state.active_buffs.iter().any(|b| b.starts_with("debuff_")));
+        assert!(result.state.active_buffs.contains(&"other_buff".to_string()));
+    }
+
+    #[test]
+    fn chance_based_effect_may_not_trigger() {
+        // Create an effect with 0.0 chance (never triggers)
+        let effect = CampEffect::new(
+            CampTargetSelection::SelfTarget,
+            vec![],
+            0.0,
+            CampEffectType::StressHealAmount,
+            "",
+            50.0,
+        );
+
+        let state = HeroCampState::new(80.0, 100.0, 60.0, 200.0);
+        let result = effect.apply(state, "skill", "hero1", Some("hero1"), 0);
+
+        assert!(!result.trace.triggered);
+        assert_eq!(result.state.stress, 60.0); // Unchanged
+    }
+
+    #[test]
+    fn first_aid_effect_application() {
+        // first_aid: 3 effects
+        // 1. health_heal_max_health_percent 0.15 (15% heal)
+        // 2. remove_bleeding (remove bleed)
+        // 3. remove_poison (remove poison)
+        let effects = vec![
+            CampEffect::new(
+                CampTargetSelection::Individual,
+                vec![],
+                1.0,
+                CampEffectType::HealthHealMaxHealthPercent,
+                "",
+                0.15,
+            ),
+            CampEffect::new(
+                CampTargetSelection::Individual,
+                vec![],
+                1.0,
+                CampEffectType::RemoveBleed,
+                "",
+                0.0,
+            ),
+            CampEffect::new(
+                CampTargetSelection::Individual,
+                vec![],
+                1.0,
+                CampEffectType::RemovePoison,
+                "",
+                0.0,
+            ),
+        ];
+
+        let mut state = HeroCampState::new(50.0, 100.0, 0.0, 200.0);
+        state.active_buffs.push("bleed".to_string());
+        state.active_buffs.push("poison".to_string());
+
+        // Apply all effects
+        let mut final_state = state.clone();
+        for (idx, effect) in effects.iter().enumerate() {
+            let result = effect.apply(final_state, "first_aid", "hero1", Some("hero1"), idx);
+            final_state = result.state;
+        }
+
+        // Health should be healed by 15% of max (100 * 0.15 = 15), so 50 + 15 = 65
+        assert_eq!(final_state.health, 65.0);
+        // Bleed and poison should be removed
+        assert!(!final_state.active_buffs.contains(&"bleed".to_string()));
+        assert!(!final_state.active_buffs.contains(&"poison".to_string()));
+    }
+
+    #[test]
+    fn pep_talk_effect_application() {
+        // pep_talk: 1 effect - buff with sub_type "campingStressResistBuff"
+        let effect = CampEffect::new(
+            CampTargetSelection::Individual,
+            vec![],
+            1.0,
+            CampEffectType::Buff,
+            "campingStressResistBuff",
+            0.0,
+        );
+
+        let state = HeroCampState::new(80.0, 100.0, 60.0, 200.0);
+        let result = effect.apply(state, "pep_talk", "hero1", Some("hero1"), 0);
+
+        assert!(result.trace.triggered);
+        assert!(result.state.active_buffs.contains(&"campingStressResistBuff".to_string()));
+        assert!(result.state.camping_buffs.contains(&"campingStressResistBuff".to_string()));
+        assert!(result.trace.description.contains("campingStressResistBuff"));
+    }
+
+    #[test]
+    fn field_dressing_effect_application() {
+        // field_dressing (arbalest/musketeer):
+        // 1. health_heal_max_health_percent 0.35 (35% heal, 75% chance)
+        // 2. health_heal_max_health_percent 0.50 (50% heal, 25% chance)
+        // 3. remove_bleeding (guaranteed)
+        let effects = vec![
+            CampEffect::new(
+                CampTargetSelection::Individual,
+                vec![],
+                0.75,
+                CampEffectType::HealthHealMaxHealthPercent,
+                "",
+                0.35,
+            ),
+            CampEffect::new(
+                CampTargetSelection::Individual,
+                vec![],
+                0.25,
+                CampEffectType::HealthHealMaxHealthPercent,
+                "",
+                0.50,
+            ),
+            CampEffect::new(
+                CampTargetSelection::Individual,
+                vec![],
+                1.0,
+                CampEffectType::RemoveBleed,
+                "",
+                0.0,
+            ),
+        ];
+
+        let mut state = HeroCampState::new(30.0, 100.0, 0.0, 200.0);
+        state.active_buffs.push("bleed".to_string());
+
+        // Apply effects with deterministic indices
+        let mut final_state = state.clone();
+        for (idx, effect) in effects.iter().enumerate() {
+            let result = effect.apply(final_state, "field_dressing", "arbalest1", Some("hero1"), idx);
+            final_state = result.state;
+        }
+
+        // First effect: 75% chance to heal 35% = should trigger
+        // 30 + 35 = 65
+        assert_eq!(final_state.health, 65.0);
+        // Bleed should be removed
+        assert!(!final_state.active_buffs.contains(&"bleed".to_string()));
+    }
+
+    #[test]
+    fn stress_heal_percent_effect() {
+        let effect = CampEffect::new(
+            CampTargetSelection::SelfTarget,
+            vec![],
+            1.0,
+            CampEffectType::StressHealPercent,
+            "",
+            0.25,
+        );
+
+        let state = HeroCampState::new(80.0, 100.0, 100.0, 200.0);
+        let result = effect.apply(state, "skill", "hero1", Some("hero1"), 0);
+
+        assert!(result.trace.triggered);
+        assert_eq!(result.state.stress, 50.0); // 100 - (200 * 0.25) = 50
+    }
+
+    #[test]
+    fn health_damage_max_health_percent_effect() {
+        let effect = CampEffect::new(
+            CampTargetSelection::SelfTarget,
+            vec![],
+            1.0,
+            CampEffectType::HealthDamageMaxHealthPercent,
+            "",
+            0.10,
+        );
+
+        let state = HeroCampState::new(80.0, 100.0, 0.0, 200.0);
+        let result = effect.apply(state, "skill", "hero1", Some("hero1"), 0);
+
+        assert!(result.trace.triggered);
+        assert_eq!(result.state.health, 70.0); // 80 - (100 * 0.10) = 70
+    }
+
+    #[test]
+    fn stubbed_effects_produce_trace_output() {
+        // Test that stubbed effects still produce meaningful trace output
+        let effect = CampEffect::new(
+            CampTargetSelection::SelfTarget,
+            vec![],
+            1.0,
+            CampEffectType::ReduceAmbushChance,
+            "",
+            0.0,
+        );
+
+        let state = HeroCampState::new(80.0, 100.0, 60.0, 200.0);
+        let result = effect.apply(state, "skill", "hero1", Some("hero1"), 0);
+
+        assert!(result.trace.triggered);
+        assert!(result.trace.description.contains("STUB"));
+    }
+
+    #[test]
+    fn remove_death_recovery_effect() {
+        let effect = CampEffect::new(
+            CampTargetSelection::SelfTarget,
+            vec![],
+            1.0,
+            CampEffectType::RemoveDeathRecovery,
+            "",
+            0.0,
+        );
+
+        let mut state = HeroCampState::new(80.0, 100.0, 60.0, 200.0);
+        state.active_buffs.push("death_recovery".to_string());
+
+        let result = effect.apply(state, "skill", "hero1", Some("hero1"), 0);
+
+        assert!(result.trace.triggered);
+        assert!(!result.state.active_buffs.contains(&"death_recovery".to_string()));
     }
 }
