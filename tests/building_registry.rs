@@ -896,9 +896,7 @@ fn upgrade_data_preserved_at_all_levels() {
 
         for tree in &building.upgrade_trees {
             for level in &tree.levels {
-                // Cost should be non-negative
-                assert!(level.cost >= 0, "Building {} tree {} level {} has negative cost",
-                    id, tree.tree_id, level.code);
+                // Cost is u32, always non-negative by type system
 
                 // Effects should have non-NaN values
                 for effect in &level.effects {
