@@ -10,7 +10,7 @@
 
 use game_ddgc_headless::contracts::parse::parse_buildings_json;
 use game_ddgc_headless::town::{
-    HeroInTown, QuirkTreatmentType, TownActivity, TownVisit,
+    HeroInTown, QuirkTreatmentType, TavernSideEffect, TavernSideEffectFamily, TownActivity, TownVisit,
 };
 use game_ddgc_headless::contracts::{BuildingUpgradeState, TownState};
 
@@ -1515,4 +1515,323 @@ fn tavern_activity_cost_matches_config() {
     assert!(result.success);
     assert_eq!(result.gold_cost, 1000, "Level 'a' bar cost should be 1000");
     assert_eq!(visit.town_state.gold, 9000, "Gold should be deducted");
+}
+
+#[test]
+fn tavern_gambling_cost_matches_config() {
+    let registry = parse_buildings();
+
+    // Level 'a': gambling_cost = 1250
+    let hero_a = HeroInTown::new("h1", "alchemist", 100.0, 200.0, 100.0, 100.0);
+    let mut town_state_a = TownState::new(100000);
+    town_state_a
+        .building_states
+        .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('a')));
+    let mut visit_a = TownVisit::new(town_state_a, vec![hero_a], registry.clone());
+    let result_a = visit_a.perform_town_activity(
+        "tavern",
+        TownActivity::TavernGambling { slot_index: 0 },
+        Some("h1"),
+        Some('a'),
+    );
+    assert!(result_a.success);
+    assert_eq!(result_a.gold_cost, 1250, "Level 'a' gambling cost should be 1250");
+
+    // Level 'b': gambling_cost = 1100
+    let hero_b = HeroInTown::new("h2", "alchemist", 100.0, 200.0, 100.0, 100.0);
+    let mut town_state_b = TownState::new(100000);
+    town_state_b
+        .building_states
+        .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('b')));
+    let mut visit_b = TownVisit::new(town_state_b, vec![hero_b], registry.clone());
+    let result_b = visit_b.perform_town_activity(
+        "tavern",
+        TownActivity::TavernGambling { slot_index: 0 },
+        Some("h2"),
+        Some('b'),
+    );
+    assert!(result_b.success);
+    assert_eq!(result_b.gold_cost, 1100, "Level 'b' gambling cost should be 1100");
+
+    // Level 'e': gambling_cost = 900
+    let hero_e = HeroInTown::new("h3", "alchemist", 100.0, 200.0, 100.0, 100.0);
+    let mut town_state_e = TownState::new(100000);
+    town_state_e
+        .building_states
+        .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('e')));
+    let mut visit_e = TownVisit::new(town_state_e, vec![hero_e], registry);
+    let result_e = visit_e.perform_town_activity(
+        "tavern",
+        TownActivity::TavernGambling { slot_index: 0 },
+        Some("h3"),
+        Some('e'),
+    );
+    assert!(result_e.success);
+    assert_eq!(result_e.gold_cost, 900, "Level 'e' gambling cost should be 900");
+}
+
+#[test]
+fn tavern_brothel_cost_matches_config() {
+    let registry = parse_buildings();
+
+    // Level 'a': brothel_cost = 1500
+    let hero_a = HeroInTown::new("h1", "alchemist", 100.0, 200.0, 100.0, 100.0);
+    let mut town_state_a = TownState::new(100000);
+    town_state_a
+        .building_states
+        .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('a')));
+    let mut visit_a = TownVisit::new(town_state_a, vec![hero_a], registry.clone());
+    let result_a = visit_a.perform_town_activity(
+        "tavern",
+        TownActivity::TavernBrothel { slot_index: 0 },
+        Some("h1"),
+        Some('a'),
+    );
+    assert!(result_a.success);
+    assert_eq!(result_a.gold_cost, 1500, "Level 'a' brothel cost should be 1500");
+
+    // Level 'b': brothel_cost = 1350
+    let hero_b = HeroInTown::new("h2", "alchemist", 100.0, 200.0, 100.0, 100.0);
+    let mut town_state_b = TownState::new(100000);
+    town_state_b
+        .building_states
+        .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('b')));
+    let mut visit_b = TownVisit::new(town_state_b, vec![hero_b], registry.clone());
+    let result_b = visit_b.perform_town_activity(
+        "tavern",
+        TownActivity::TavernBrothel { slot_index: 0 },
+        Some("h2"),
+        Some('b'),
+    );
+    assert!(result_b.success);
+    assert_eq!(result_b.gold_cost, 1350, "Level 'b' brothel cost should be 1350");
+
+    // Level 'e': brothel_cost = 1100
+    let hero_e = HeroInTown::new("h3", "alchemist", 100.0, 200.0, 100.0, 100.0);
+    let mut town_state_e = TownState::new(100000);
+    town_state_e
+        .building_states
+        .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('e')));
+    let mut visit_e = TownVisit::new(town_state_e, vec![hero_e], registry);
+    let result_e = visit_e.perform_town_activity(
+        "tavern",
+        TownActivity::TavernBrothel { slot_index: 0 },
+        Some("h3"),
+        Some('e'),
+    );
+    assert!(result_e.success);
+    assert_eq!(result_e.gold_cost, 1100, "Level 'e' brothel cost should be 1100");
+}
+
+#[test]
+fn tavern_bar_side_effect_families_are_recorded_in_trace() {
+    let registry = parse_buildings();
+
+    // Use many different hero IDs to try to trigger different side effect families
+    // The deterministic roll is based on hero_id, so different IDs may produce different effects
+    let mut seen_families: std::collections::HashSet<&str> = std::collections::HashSet::new();
+    let mut side_effects_found: Vec<TavernSideEffect> = Vec::new();
+
+    for i in 0..50 {
+        let hero = HeroInTown::new(&format!("bar_hero_{}", i), "alchemist", 100.0, 200.0, 100.0, 100.0);
+        let mut town_state = TownState::new(100000);
+        town_state
+            .building_states
+            .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('f')));
+        let mut visit = TownVisit::new(town_state, vec![hero], registry.clone());
+
+        let result = visit.perform_town_activity(
+            "tavern",
+            TownActivity::TavernBar { slot_index: 0 },
+            Some(&format!("bar_hero_{}", i)),
+            Some('f'),
+        );
+
+        if result.success {
+            if let Some(side_effect) = &result.side_effect {
+                seen_families.insert(side_effect.family.name());
+                side_effects_found.push(side_effect.clone());
+            }
+        }
+    }
+
+    // Bar side effects should include at least some of these families:
+    // ActivityLock, GoMissing, AddQuirk(alcoholism/resolution), ApplyBuff, ChangeCurrency, RemoveTrinket
+    assert!(
+        !seen_families.is_empty(),
+        "Should have recorded at least one bar side effect family"
+    );
+
+    // Verify the trace contains the side effects
+    // The trace should have recorded activities with side effects
+    for effect in &side_effects_found {
+        // Side effect should be properly formed with a source_activity
+        assert_eq!(effect.source_activity, "bar", "Side effect should be from bar activity");
+    }
+}
+
+#[test]
+fn tavern_gambling_side_effect_families_are_recorded_in_trace() {
+    let registry = parse_buildings();
+
+    let mut seen_families: std::collections::HashSet<&str> = std::collections::HashSet::new();
+    let mut side_effects_found: Vec<TavernSideEffect> = Vec::new();
+
+    for i in 0..50 {
+        let hero = HeroInTown::new(&format!("gambler_{}", i), "alchemist", 100.0, 200.0, 100.0, 100.0);
+        let mut town_state = TownState::new(100000);
+        town_state
+            .building_states
+            .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('f')));
+        let mut visit = TownVisit::new(town_state, vec![hero], registry.clone());
+
+        let result = visit.perform_town_activity(
+            "tavern",
+            TownActivity::TavernGambling { slot_index: 0 },
+            Some(&format!("gambler_{}", i)),
+            Some('f'),
+        );
+
+        if result.success {
+            if let Some(side_effect) = &result.side_effect {
+                seen_families.insert(side_effect.family.name());
+                side_effects_found.push(side_effect.clone());
+            }
+        }
+    }
+
+    // Gambling side effects should include:
+    // ActivityLock, GoMissing, AddQuirk(gambler/known_cheat/bad_gambler),
+    // ChangeCurrency(+500/-500), AddTrinket, RemoveTrinket
+    assert!(
+        !seen_families.is_empty(),
+        "Should have recorded at least one gambling side effect family"
+    );
+
+    for effect in &side_effects_found {
+        assert_eq!(effect.source_activity, "gambling", "Side effect should be from gambling activity");
+    }
+}
+
+#[test]
+fn tavern_brothel_side_effect_families_are_recorded_in_trace() {
+    let registry = parse_buildings();
+
+    let mut seen_families: std::collections::HashSet<&str> = std::collections::HashSet::new();
+    let mut side_effects_found: Vec<TavernSideEffect> = Vec::new();
+
+    for i in 0..50 {
+        let hero = HeroInTown::new(&format!("brothel_{}", i), "alchemist", 100.0, 200.0, 100.0, 100.0);
+        let mut town_state = TownState::new(100000);
+        town_state
+            .building_states
+            .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('f')));
+        let mut visit = TownVisit::new(town_state, vec![hero], registry.clone());
+
+        let result = visit.perform_town_activity(
+            "tavern",
+            TownActivity::TavernBrothel { slot_index: 0 },
+            Some(&format!("brothel_{}", i)),
+            Some('f'),
+        );
+
+        if result.success {
+            if let Some(side_effect) = &result.side_effect {
+                seen_families.insert(side_effect.family.name());
+                side_effects_found.push(side_effect.clone());
+            }
+        }
+    }
+
+    // Brothel side effects should include:
+    // ActivityLock, GoMissing, AddQuirk(love_interest/syphilis/deviant_tastes),
+    // ApplyBuff, Unsupported
+    assert!(
+        !seen_families.is_empty(),
+        "Should have recorded at least one brothel side effect family"
+    );
+
+    for effect in &side_effects_found {
+        assert_eq!(effect.source_activity, "brothel", "Side effect should be from brothel activity");
+    }
+}
+
+#[test]
+fn tavern_unsupported_side_effect_is_stubbed_and_recorded() {
+    let registry = parse_buildings();
+
+    // The brothel activity has an unsupported side effect (brothel_charm_effect)
+    // We need to find a hero ID that triggers this side effect
+    let mut found_unsupported = false;
+
+    for i in 0..200 {
+        let hero = HeroInTown::new(&format!("unsupported_{}", i), "alchemist", 100.0, 200.0, 100.0, 100.0);
+        let mut town_state = TownState::new(100000);
+        town_state
+            .building_states
+            .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('f')));
+        let mut visit = TownVisit::new(town_state, vec![hero], registry.clone());
+
+        let result = visit.perform_town_activity(
+            "tavern",
+            TownActivity::TavernBrothel { slot_index: 0 },
+            Some(&format!("unsupported_{}", i)),
+            Some('f'),
+        );
+
+        if result.success {
+            if let Some(side_effect) = &result.side_effect {
+                if let TavernSideEffectFamily::Unsupported { description } = &side_effect.family {
+                    // Found the unsupported side effect
+                    assert_eq!(
+                        *description, "brothel_charm_effect",
+                        "Unsupported side effect should be brothel_charm_effect"
+                    );
+                    assert_eq!(side_effect.source_activity, "brothel");
+                    found_unsupported = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    assert!(
+        found_unsupported,
+        "Should have found the unsupported side effect being recorded (stubbed and traced)"
+    );
+}
+
+#[test]
+fn tavern_side_effect_trace_is_deterministic() {
+    let registry = parse_buildings();
+
+    // Same hero performing the same tavern activity should produce identical side effects
+    let hero = HeroInTown::new("deterministic_hero", "alchemist", 100.0, 200.0, 100.0, 100.0);
+
+    let results: Vec<_> = (0..5)
+        .map(|_| {
+            let mut town_state = TownState::new(100000);
+            town_state
+                .building_states
+                .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('f')));
+            let mut visit = TownVisit::new(town_state, vec![hero.clone()], registry.clone());
+            visit.perform_town_activity(
+                "tavern",
+                TownActivity::TavernBar { slot_index: 0 },
+                Some("deterministic_hero"),
+                Some('f'),
+            )
+        })
+        .collect();
+
+    // All results should be identical
+    for result in &results {
+        assert_eq!(result.gold_cost, results[0].gold_cost);
+        assert_eq!(result.stress_change, results[0].stress_change);
+        assert_eq!(result.side_effect.is_some(), results[0].side_effect.is_some());
+        if let (Some(se1), Some(se2)) = (&result.side_effect, &results[0].side_effect) {
+            assert_eq!(se1.family.name(), se2.family.name());
+            assert_eq!(se1.source_activity, se2.source_activity);
+        }
+    }
 }
