@@ -199,3 +199,114 @@ fn dungeon_distribution_matches_original_design() {
     assert_eq!(zhuque.len(), 5, "ZhuQue should have 5 common families");
     assert_eq!(xuanwu.len(), 3, "XuanWu should have 3 common families");
 }
+
+/// Verifies that movement skills (push/pull effects on self) use SelfOnly targeting.
+///
+/// DDGC movement skills (.move) use push/pull to reposition the actor itself,
+/// targeting @23 (self/allies in DDGC terms). This is distinct from attack
+/// skills that also have pull effects on targets (e.g., tiger_sword pull,
+/// water_grass convolve). This test ensures pure movement skills correctly
+/// use SelfOnly targeting per DDGC source data.
+#[test]
+fn movement_skills_use_self_only_targeting() {
+    use game_ddgc_headless::monsters::MonsterTier;
+    use framework_combat::targeting::TargetSelector;
+
+    let pack = ContentPack::default();
+    let registry = build_registry();
+    let common_families: Vec<_> = registry.by_tier(MonsterTier::Common);
+
+    let mut movement_with_wrong_targeting = Vec::new();
+
+    for family in common_families {
+        for skill_id in &family.skill_ids {
+            // Only check skills named "move" - these are the pure movement skills
+            // that use push/pull for self-repositioning
+            if skill_id.0 != "move" {
+                continue;
+            }
+
+            if let Some(skill) = pack.get_skill(skill_id) {
+                // Movement skills must target SelfOnly
+                if !matches!(skill.target_selector, TargetSelector::SelfOnly) {
+                    movement_with_wrong_targeting.push(format!(
+                        "{} movement skill '{}' targets {:?}, expected SelfOnly",
+                        family.id.0, skill_id.0, skill.target_selector
+                    ));
+                }
+            }
+        }
+    }
+
+    assert!(
+        movement_with_wrong_targeting.is_empty(),
+        "Movement skills with incorrect targeting:\n{}",
+        movement_with_wrong_targeting.join("\n")
+    );
+}
+
+/// Verifies that all common monster skills have valid action costs.
+///
+/// DDGC skills have action_cost >= 1 (one action per turn for common monsters).
+/// This test ensures the framework correctly captures DDGC action semantics.
+#[test]
+fn all_common_skill_action_costs_are_valid() {
+    use game_ddgc_headless::monsters::MonsterTier;
+
+    let pack = ContentPack::default();
+    let registry = build_registry();
+    let common_families: Vec<_> = registry.by_tier(MonsterTier::Common);
+
+    let mut invalid_action_costs = Vec::new();
+
+    for family in common_families {
+        for skill_id in &family.skill_ids {
+            if let Some(skill) = pack.get_skill(skill_id) {
+                if skill.action_cost < 1 {
+                    invalid_action_costs.push(format!(
+                        "{} skill '{}' has action_cost {} (must be >= 1)",
+                        family.id.0, skill_id.0, skill.action_cost
+                    ));
+                }
+            }
+        }
+    }
+
+    assert!(
+        invalid_action_costs.is_empty(),
+        "Skills with invalid action costs:\n{}",
+        invalid_action_costs.join("\n")
+    );
+}
+
+/// Verifies that each common monster family has identity skills defined
+/// in ContentPack matching the parity fixture expectations.
+///
+/// This test closes the loop between the source-backed inventory
+/// (MonsterFamilyParityFixture) and the actual skill definitions,
+/// ensuring DDGC source data is correctly migrated.
+#[test]
+fn identity_skills_match_parity_fixture_expectations() {
+    let pack = ContentPack::default();
+    let fixture = MonsterFamilyParityFixture::new();
+
+    let mut missing_identity = Vec::new();
+
+    for exp in &fixture.families {
+        for &skill_id_str in exp.identity_skills {
+            let skill_id = framework_combat::skills::SkillId::new(skill_id_str);
+            if let None = pack.get_skill(&skill_id) {
+                missing_identity.push(format!(
+                    "{} identity skill '{}' (from parity fixture) not found in ContentPack",
+                    exp.family_id, skill_id_str
+                ));
+            }
+        }
+    }
+
+    assert!(
+        missing_identity.is_empty(),
+        "Missing identity skills:\n{}",
+        missing_identity.join("\n")
+    );
+}
