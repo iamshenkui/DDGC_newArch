@@ -4,6 +4,7 @@
 //! `DefaultRoomGenerator` with DDGC-appropriate room weights,
 //! room-by-room progression, and post-battle reward application.
 
+pub mod camping;
 pub mod conditions;
 pub mod damage_policy;
 pub mod disease_events;
