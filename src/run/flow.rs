@@ -1135,7 +1135,7 @@ fn trigger_camping(
 /// Called when the dungeon run continues after a camping phase.
 /// Removes buffs that were marked as camping-only and carries forward
 /// HP/stress changes applied during camping.
-fn cleanup_camping_buffs(heroes: &mut [HeroState], camping_phase: &CampingPhase) {
+pub fn cleanup_camping_buffs(heroes: &mut [HeroState], camping_phase: &CampingPhase) {
     for hero_in_camp in &camping_phase.heroes {
         // Find the corresponding HeroState by hero_id
         if let Some(hero_state) = heroes.iter_mut().find(|h| h.id == hero_in_camp.hero_id) {
