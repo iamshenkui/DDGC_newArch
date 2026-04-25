@@ -974,8 +974,26 @@ impl TownVisit {
                 .unwrap_or('a')
         });
 
-        // Get the cost
-        let cost = match self.get_disease_treatment_cost(building_id, level) {
+        // Disease treatment uses SEPARATE upgrade paths:
+        // - cost (a/c/e): progressive cost reduction upgrades
+        // - cure_all_chance (b/d): progressive cure-all chance upgrades
+        //
+        // The cost path uses levels a, c, e (which provide actual cost reductions)
+        // The cure_all path uses levels b, d (which provide cure improvements)
+        //
+        // We determine the "effective" level for each path based on the current
+        // upgrade state, looking at which levels in each path have been purchased.
+
+        // For cost path (a/c/e): use the highest owned level from {a, c, e}
+        // that is at or below the current upgrade level
+        let cost_level = Self::highest_owned_level_for_path(level, &['a', 'c', 'e']);
+
+        // For cure_all path (b/d): use the highest owned level from {b, d}
+        // that is at or below the current upgrade level
+        let cure_all_level = Self::highest_owned_level_for_path(level, &['b', 'd']);
+
+        // Get the cost using the cost-path level
+        let cost = match self.get_disease_treatment_cost(building_id, cost_level) {
             Some(c) => c,
             None => {
                 return TownActivityRecord::failure(
@@ -1010,8 +1028,8 @@ impl TownVisit {
             );
         }
 
-        // Get the cure-all chance
-        let cure_all_chance = self.get_cure_all_chance(building_id, level).unwrap_or(0.33);
+        // Get the cure-all chance using the cure_all-path level
+        let cure_all_chance = self.get_cure_all_chance(building_id, cure_all_level).unwrap_or(0.33);
 
         // Deduct gold
         self.town_state.gold -= cost;
@@ -1046,6 +1064,25 @@ impl TownVisit {
 
         self.trace.record(record.clone());
         record
+    }
+
+    /// Determine the highest owned level in an upgrade path that is at or below
+    /// the given upgrade level. This supports the disease treatment system where
+    /// cost uses path {a, c, e} and cure-all uses path {b, d}.
+    ///
+    /// For example, with path ['a', 'c', 'e'] and current_level='c':
+    /// - 'a' <= 'c' is true
+    /// - 'c' <= 'c' is true
+    /// - 'e' <= 'c' is false
+    /// Returns 'c' as the highest owned.
+    fn highest_owned_level_for_path(current_level: char, path: &[char]) -> char {
+        let mut result = path[0]; // Start with the first (lowest) level
+        for &level in path {
+            if level <= current_level && level > result {
+                result = level;
+            }
+        }
+        result
     }
 
     /// Perform tavern bar activity.
