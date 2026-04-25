@@ -71,4 +71,16 @@ fn main() {
         let room = &run_result.floor.rooms_map[room_id];
         println!("  Room {:?} — {:?} ({:?})", room.id, room.kind, room.state);
     }
+
+    // Camping output
+    if run_result.state.camping_phase.is_some() {
+        println!("\nCamping occurred during this run.");
+        println!("Camping activities recorded: {}", run_result.camping_trace.len());
+        for activity in &run_result.camping_trace {
+            let status = if activity.success { "✓" } else { "✗" };
+            println!("  {} {} (time cost: {})", status, activity.skill_id, activity.time_cost);
+        }
+    } else {
+        println!("\nNo camping occurred during this run.");
+    }
 }
