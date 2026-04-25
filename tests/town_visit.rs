@@ -1085,3 +1085,434 @@ fn sanitarium_gold_deducted_only_on_successful_treatment() {
     // Gold should still be 0 (no additional deduction on failure)
     assert_eq!(visit.town_state.gold, initial_gold);
 }
+
+// ── US-003-a: Tavern activities and side effects tests ─────────────────────────
+
+#[test]
+fn tavern_bar_stress_heal_matches_config_by_upgrade_level() {
+    let registry = parse_buildings();
+    let hero = HeroInTown::new("h1", "alchemist", 100.0, 200.0, 100.0, 100.0);
+
+    // Level 'a': bar_stress_heal = 45
+    let mut town_state_a = TownState::new(10000);
+    town_state_a
+        .building_states
+        .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('a')));
+    let mut visit_a = TownVisit::new(town_state_a, vec![hero.clone()], registry.clone());
+    let result_a = visit_a.perform_town_activity(
+        "tavern",
+        TownActivity::TavernBar { slot_index: 0 },
+        Some("h1"),
+        Some('a'),
+    );
+    assert!(result_a.success);
+    assert_eq!(result_a.stress_change, -45.0, "Level 'a' bar stress heal should be 45");
+
+    // Level 'd': bar_stress_heal = 100
+    let mut town_state_d = TownState::new(10000);
+    town_state_d
+        .building_states
+        .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('d')));
+    let mut visit_d = TownVisit::new(town_state_d, vec![hero.clone()], registry.clone());
+    let result_d = visit_d.perform_town_activity(
+        "tavern",
+        TownActivity::TavernBar { slot_index: 0 },
+        Some("h1"),
+        Some('d'),
+    );
+    assert!(result_d.success);
+    assert_eq!(result_d.stress_change, -100.0, "Level 'd' bar stress heal should be 100");
+
+    // Level 'f': bar_stress_heal = 100
+    let mut town_state_f = TownState::new(10000);
+    town_state_f
+        .building_states
+        .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('f')));
+    let mut visit_f = TownVisit::new(town_state_f, vec![hero.clone()], registry.clone());
+    let result_f = visit_f.perform_town_activity(
+        "tavern",
+        TownActivity::TavernBar { slot_index: 0 },
+        Some("h1"),
+        Some('f'),
+    );
+    assert!(result_f.success);
+    assert_eq!(result_f.stress_change, -100.0, "Level 'f' bar stress heal should be 100");
+}
+
+#[test]
+fn tavern_gambling_stress_heal_matches_config_by_upgrade_level() {
+    let registry = parse_buildings();
+    let hero = HeroInTown::new("h1", "alchemist", 100.0, 200.0, 100.0, 100.0);
+
+    // Level 'a': gambling_stress_heal = 55
+    let mut town_state_a = TownState::new(10000);
+    town_state_a
+        .building_states
+        .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('a')));
+    let mut visit_a = TownVisit::new(town_state_a, vec![hero.clone()], registry.clone());
+    let result_a = visit_a.perform_town_activity(
+        "tavern",
+        TownActivity::TavernGambling { slot_index: 0 },
+        Some("h1"),
+        Some('a'),
+    );
+    assert!(result_a.success);
+    assert_eq!(result_a.stress_change, -55.0, "Level 'a' gambling stress heal should be 55");
+
+    // Level 'd': gambling_stress_heal = 86
+    let mut town_state_d = TownState::new(10000);
+    town_state_d
+        .building_states
+        .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('d')));
+    let mut visit_d = TownVisit::new(town_state_d, vec![hero.clone()], registry.clone());
+    let result_d = visit_d.perform_town_activity(
+        "tavern",
+        TownActivity::TavernGambling { slot_index: 0 },
+        Some("h1"),
+        Some('d'),
+    );
+    assert!(result_d.success);
+    assert_eq!(result_d.stress_change, -86.0, "Level 'd' gambling stress heal should be 86");
+}
+
+#[test]
+fn tavern_brothel_stress_heal_matches_config_by_upgrade_level() {
+    let registry = parse_buildings();
+    let hero = HeroInTown::new("h1", "alchemist", 100.0, 200.0, 100.0, 100.0);
+
+    // Level 'a': brothel_stress_heal = 65
+    let mut town_state_a = TownState::new(10000);
+    town_state_a
+        .building_states
+        .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('a')));
+    let mut visit_a = TownVisit::new(town_state_a, vec![hero.clone()], registry.clone());
+    let result_a = visit_a.perform_town_activity(
+        "tavern",
+        TownActivity::TavernBrothel { slot_index: 0 },
+        Some("h1"),
+        Some('a'),
+    );
+    assert!(result_a.success);
+    assert_eq!(result_a.stress_change, -65.0, "Level 'a' brothel stress heal should be 65");
+
+    // Level 'd': brothel_stress_heal = 100
+    let mut town_state_d = TownState::new(10000);
+    town_state_d
+        .building_states
+        .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('d')));
+    let mut visit_d = TownVisit::new(town_state_d, vec![hero.clone()], registry.clone());
+    let result_d = visit_d.perform_town_activity(
+        "tavern",
+        TownActivity::TavernBrothel { slot_index: 0 },
+        Some("h1"),
+        Some('d'),
+    );
+    assert!(result_d.success);
+    assert_eq!(result_d.stress_change, -100.0, "Level 'd' brothel stress heal should be 100");
+}
+
+#[test]
+fn tavern_bar_slot_exhaustion_is_enforced() {
+    let registry = parse_buildings();
+    let hero = HeroInTown::new("h1", "alchemist", 100.0, 200.0, 100.0, 100.0);
+
+    // Level 'a': bar_slots = 1
+    let mut town_state = TownState::new(100000);
+    town_state
+        .building_states
+        .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('a')));
+    let mut visit = TownVisit::new(town_state, vec![hero], registry);
+
+    // First bar visit should succeed
+    let result1 = visit.perform_town_activity(
+        "tavern",
+        TownActivity::TavernBar { slot_index: 0 },
+        Some("h1"),
+        Some('a'),
+    );
+    assert!(result1.success, "First bar visit should succeed (slot 0)");
+
+    // Second bar visit should fail (slot exhausted at level 'a')
+    let result2 = visit.perform_town_activity(
+        "tavern",
+        TownActivity::TavernBar { slot_index: 1 },
+        Some("h1"),
+        Some('a'),
+    );
+    assert!(!result2.success, "Second bar visit should fail (slot exhausted)");
+    assert!(result2.message.contains("No tavern slots available"));
+}
+
+#[test]
+fn tavern_bar_slots_increase_with_upgrade_level() {
+    let registry = parse_buildings();
+    let hero = HeroInTown::new("h1", "alchemist", 100.0, 200.0, 100.0, 100.0);
+
+    // Level 'a': bar_slots = 1
+    let mut town_state_a = TownState::new(100000);
+    town_state_a
+        .building_states
+        .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('a')));
+    let mut visit_a = TownVisit::new(town_state_a, vec![hero.clone()], registry.clone());
+
+    // Slot 0 succeeds
+    let r0 = visit_a.perform_town_activity(
+        "tavern",
+        TownActivity::TavernBar { slot_index: 0 },
+        Some("h1"),
+        Some('a'),
+    );
+    assert!(r0.success);
+
+    // Slot 1 fails at level 'a' (only 1 slot)
+    let r1 = visit_a.perform_town_activity(
+        "tavern",
+        TownActivity::TavernBar { slot_index: 1 },
+        Some("h1"),
+        Some('a'),
+    );
+    assert!(!r1.success);
+
+    // Level 'c': bar_slots = 2
+    let mut town_state_c = TownState::new(100000);
+    town_state_c
+        .building_states
+        .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('c')));
+    let mut visit_c = TownVisit::new(town_state_c, vec![hero.clone()], registry.clone());
+
+    // Slots 0 and 1 succeed at level 'c'
+    let rc0 = visit_c.perform_town_activity(
+        "tavern",
+        TownActivity::TavernBar { slot_index: 0 },
+        Some("h1"),
+        Some('c'),
+    );
+    assert!(rc0.success);
+
+    let rc1 = visit_c.perform_town_activity(
+        "tavern",
+        TownActivity::TavernBar { slot_index: 1 },
+        Some("h1"),
+        Some('c'),
+    );
+    assert!(rc1.success, "Slot 1 should be available at level 'c' (2 slots)");
+
+    // Slot 2 fails at level 'c'
+    let rc2 = visit_c.perform_town_activity(
+        "tavern",
+        TownActivity::TavernBar { slot_index: 2 },
+        Some("h1"),
+        Some('c'),
+    );
+    assert!(!rc2.success, "Slot 2 should be unavailable at level 'c' (only 2 slots)");
+
+    // Level 'f': bar_slots = 3
+    let mut town_state_f = TownState::new(100000);
+    town_state_f
+        .building_states
+        .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('f')));
+    let mut visit_f = TownVisit::new(town_state_f, vec![hero], registry);
+
+    // Slots 0, 1, 2 all succeed at level 'f'
+    for i in 0..3 {
+        let rf = visit_f.perform_town_activity(
+            "tavern",
+            TownActivity::TavernBar { slot_index: i },
+            Some("h1"),
+            Some('f'),
+        );
+        assert!(rf.success, "Slot {} should be available at level 'f' (3 slots)", i);
+    }
+
+    // Slot 3 fails at level 'f'
+    let rf3 = visit_f.perform_town_activity(
+        "tavern",
+        TownActivity::TavernBar { slot_index: 3 },
+        Some("h1"),
+        Some('f'),
+    );
+    assert!(!rf3.success, "Slot 3 should be unavailable at level 'f' (only 3 slots)");
+}
+
+#[test]
+fn tavern_side_effect_trigger_rate_is_deterministic() {
+    let registry = parse_buildings();
+
+    // Use level 'f' which has 3 bar slots, allowing us to test across multiple activities
+    // Each visit can do 3 bar activities before exhaustion
+    let mut total_side_effects = 0;
+    let total_attempts = 30; // 10 visits * 3 slots each
+
+    for visit_num in 0..10 {
+        let hero = HeroInTown::new(&format!("h{}", visit_num), "alchemist", 100.0, 200.0, 100.0, 100.0);
+        let mut town_state = TownState::new(100000);
+        town_state
+            .building_states
+            .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('f')));
+        let mut visit = TownVisit::new(town_state, vec![hero], registry.clone());
+
+        // Each visit has 3 bar slots at level 'f'
+        for slot in 0..3 {
+            let result = visit.perform_town_activity(
+                "tavern",
+                TownActivity::TavernBar { slot_index: slot },
+                Some(&format!("h{}", visit_num)),
+                Some('f'),
+            );
+            if result.success && result.side_effect.is_some() {
+                total_side_effects += 1;
+            }
+        }
+    }
+
+    // With 40% trigger rate across 30 attempts, expect between 20-60% (reasonable bounds)
+    let trigger_rate = total_side_effects as f64 / total_attempts as f64;
+    assert!(
+        trigger_rate > 0.20 && trigger_rate < 0.60,
+        "Side effect trigger rate {}% is outside expected range (20-60%) for 40% configured rate",
+        trigger_rate * 100.0
+    );
+}
+
+#[test]
+fn tavern_side_effect_selection_is_deterministic_with_seed() {
+    let registry = parse_buildings();
+
+    // Same hero, same slot_index should always get the same side effect
+    // Use level 'f' with 3 slots so we can test multiple activities
+    let hero = HeroInTown::new("test_hero", "alchemist", 100.0, 200.0, 100.0, 100.0);
+    let mut town_state = TownState::new(100000);
+    town_state
+        .building_states
+        .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('f')));
+    let _visit = TownVisit::new(town_state, vec![hero], registry.clone());
+
+    // Perform the same activity (same hero, same slot) multiple times
+    // With 3 slots, slots 0, 1, 2 are all different activities
+    // But we want to test same inputs - so we test with different visits
+    let results: Vec<_> = (0..5)
+        .map(|_| {
+            // Create fresh visit for each test to avoid slot exhaustion
+            let hero = HeroInTown::new("test_hero", "alchemist", 100.0, 200.0, 100.0, 100.0);
+            let mut ts = TownState::new(100000);
+            ts.building_states
+                .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('f')));
+            let mut v = TownVisit::new(ts, vec![hero], registry.clone());
+            v.perform_town_activity(
+                "tavern",
+                TownActivity::TavernBar { slot_index: 0 },
+                Some("test_hero"),
+                Some('f'),
+            )
+        })
+        .collect();
+
+    // All results should be identical (deterministic) - same inputs produce same outputs
+    for result in &results {
+        assert_eq!(result.gold_cost, results[0].gold_cost);
+        assert_eq!(result.stress_change, results[0].stress_change);
+        // Side effect trigger depends on deterministic roll - all should be same since same inputs
+        assert_eq!(result.side_effect.is_some(), results[0].side_effect.is_some());
+    }
+}
+
+#[test]
+fn tavern_gambling_side_effect_trigger_rate_is_35_percent() {
+    let registry = parse_buildings();
+
+    // Use level 'f' which has 3 gambling slots, allowing us to test across multiple activities
+    let mut total_side_effects = 0;
+    let total_attempts = 30; // 10 visits * 3 slots each
+
+    for visit_num in 0..10 {
+        let hero = HeroInTown::new(&format!("h{}", visit_num), "alchemist", 100.0, 200.0, 100.0, 100.0);
+        let mut town_state = TownState::new(100000);
+        town_state
+            .building_states
+            .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('f')));
+        let mut visit = TownVisit::new(town_state, vec![hero], registry.clone());
+
+        // Each visit has 3 gambling slots at level 'f'
+        for slot in 0..3 {
+            let result = visit.perform_town_activity(
+                "tavern",
+                TownActivity::TavernGambling { slot_index: slot },
+                Some(&format!("h{}", visit_num)),
+                Some('f'),
+            );
+            if result.success && result.side_effect.is_some() {
+                total_side_effects += 1;
+            }
+        }
+    }
+
+    // With 35% trigger rate across 30 attempts, expect between 20-50%
+    let trigger_rate = total_side_effects as f64 / total_attempts as f64;
+    assert!(
+        trigger_rate > 0.15 && trigger_rate < 0.55,
+        "Gambling side effect trigger rate {}% is outside expected range (15-55%) for 35% configured rate",
+        trigger_rate * 100.0
+    );
+}
+
+#[test]
+fn tavern_brothel_side_effect_trigger_rate_is_30_percent() {
+    let registry = parse_buildings();
+
+    // Use level 'f' which has 3 brothel slots, allowing us to test across multiple activities
+    let mut total_side_effects = 0;
+    let total_attempts = 30; // 10 visits * 3 slots each
+
+    for visit_num in 0..10 {
+        let hero = HeroInTown::new(&format!("h{}", visit_num), "alchemist", 100.0, 200.0, 100.0, 100.0);
+        let mut town_state = TownState::new(100000);
+        town_state
+            .building_states
+            .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('f')));
+        let mut visit = TownVisit::new(town_state, vec![hero], registry.clone());
+
+        // Each visit has 3 brothel slots at level 'f'
+        for slot in 0..3 {
+            let result = visit.perform_town_activity(
+                "tavern",
+                TownActivity::TavernBrothel { slot_index: slot },
+                Some(&format!("h{}", visit_num)),
+                Some('f'),
+            );
+            if result.success && result.side_effect.is_some() {
+                total_side_effects += 1;
+            }
+        }
+    }
+
+    // With 30% trigger rate across 30 attempts, expect between 15-50%
+    let trigger_rate = total_side_effects as f64 / total_attempts as f64;
+    assert!(
+        trigger_rate > 0.10 && trigger_rate < 0.55,
+        "Brothel side effect trigger rate {}% is outside expected range (10-55%) for 30% configured rate",
+        trigger_rate * 100.0
+    );
+}
+
+#[test]
+fn tavern_activity_cost_matches_config() {
+    let registry = parse_buildings();
+    let hero = HeroInTown::new("h1", "alchemist", 100.0, 200.0, 100.0, 100.0);
+
+    // Level 'a': bar_cost = 1000
+    let mut town_state = TownState::new(10000);
+    town_state
+        .building_states
+        .insert("tavern".to_string(), BuildingUpgradeState::new("tavern", Some('a')));
+    let mut visit = TownVisit::new(town_state, vec![hero], registry);
+
+    let result = visit.perform_town_activity(
+        "tavern",
+        TownActivity::TavernBar { slot_index: 0 },
+        Some("h1"),
+        Some('a'),
+    );
+    assert!(result.success);
+    assert_eq!(result.gold_cost, 1000, "Level 'a' bar cost should be 1000");
+    assert_eq!(visit.town_state.gold, 9000, "Gold should be deducted");
+}

@@ -9,7 +9,7 @@
 
 use crate::contracts::{
     BuildingRegistry, BuildingUpgradeState, TownBuilding,
-    TownState,
+    TownSlotState, TownState,
 };
 
 /// A hero in town with their current stress and health state.
@@ -65,6 +65,162 @@ pub enum QuirkTreatmentType {
     Negative,
     /// Treatment for permanent negative quirks.
     PermanentNegative,
+}
+
+/// Family of tavern side effects that can occur after an activity.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum TavernSideEffectFamily {
+    /// Hero cannot perform further activities this visit.
+    ActivityLock,
+    /// Hero is unavailable for some duration.
+    GoMissing { weeks: usize },
+    /// Add a quirk to the hero.
+    AddQuirk { quirk_id: &'static str },
+    /// Apply a buff/debuff to the hero.
+    ApplyBuff { buff_id: &'static str },
+    /// Change currency (gold).
+    ChangeCurrency { delta: i32 },
+    /// Remove a trinket from the hero.
+    RemoveTrinket,
+    /// Add a trinket to the hero.
+    AddTrinket,
+    /// Side effect stub for when the dependent subsystem is not yet available.
+    Unsupported { description: &'static str },
+}
+
+impl TavernSideEffectFamily {
+    /// Returns a human-readable name for this side effect family.
+    pub fn name(&self) -> &'static str {
+        match self {
+            TavernSideEffectFamily::ActivityLock => "Activity Lock",
+            TavernSideEffectFamily::GoMissing { .. } => "Go Missing",
+            TavernSideEffectFamily::AddQuirk { .. } => "Add Quirk",
+            TavernSideEffectFamily::ApplyBuff { .. } => "Apply Buff",
+            TavernSideEffectFamily::ChangeCurrency { .. } => "Change Currency",
+            TavernSideEffectFamily::RemoveTrinket => "Remove Trinket",
+            TavernSideEffectFamily::AddTrinket => "Add Trinket",
+            TavernSideEffectFamily::Unsupported { .. } => "Unsupported",
+        }
+    }
+}
+
+/// A tavern side effect with its triggering activity context.
+#[derive(Debug, Clone, PartialEq)]
+pub struct TavernSideEffect {
+    /// The family/type of side effect.
+    pub family: TavernSideEffectFamily,
+    /// Which tavern activity triggered this side effect.
+    pub source_activity: String,
+}
+
+impl std::fmt::Display for TavernSideEffect {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.family {
+            TavernSideEffectFamily::ActivityLock => {
+                write!(f, "{}: hero locked from further activities", self.family.name())
+            }
+            TavernSideEffectFamily::GoMissing { weeks } => {
+                write!(f, "{}: hero missing for {} weeks", self.family.name(), weeks)
+            }
+            TavernSideEffectFamily::AddQuirk { quirk_id } => {
+                write!(f, "{}: added quirk '{}'", self.family.name(), quirk_id)
+            }
+            TavernSideEffectFamily::ApplyBuff { buff_id } => {
+                write!(f, "{}: applied buff '{}'", self.family.name(), buff_id)
+            }
+            TavernSideEffectFamily::ChangeCurrency { delta } => {
+                write!(f, "{}: gold {:+}", self.family.name(), delta)
+            }
+            TavernSideEffectFamily::RemoveTrinket => {
+                write!(f, "{}: removed random trinket", self.family.name())
+            }
+            TavernSideEffectFamily::AddTrinket => {
+                write!(f, "{}: added random trinket", self.family.name())
+            }
+            TavernSideEffectFamily::Unsupported { description } => {
+                write!(f, "UNSUPPORTED: {}", description)
+            }
+        }
+    }
+}
+
+/// Weighted entry for side effect selection.
+struct WeightedSideEffect {
+    weight: f64,
+    effect: TavernSideEffectFamily,
+}
+
+/// Weighted tables for tavern side effect selection.
+///
+/// Weights are relative and get normalized during selection.
+mod tavern_side_effect_tables {
+    use super::{TavernSideEffectFamily, WeightedSideEffect};
+
+    /// Side effects for the Bar activity.
+    ///
+    /// Based on the original DDGC game:
+    /// - activity_lock: prevents hero from more activities
+    /// - go_missing: hero gone for 1-2 weeks
+    /// - add_quirk: alcoholism, resolution
+    /// - apply_buff: townHungoverAccDebuff, townHungoverDEFDebuff
+    /// - change_currency: -500 gold
+    /// - remove_trinket: lose a trinket
+    pub fn bar_effects() -> Vec<WeightedSideEffect> {
+        vec![
+            WeightedSideEffect { weight: 15.0, effect: TavernSideEffectFamily::ActivityLock },
+            WeightedSideEffect { weight: 10.0, effect: TavernSideEffectFamily::GoMissing { weeks: 1 } },
+            WeightedSideEffect { weight: 10.0, effect: TavernSideEffectFamily::GoMissing { weeks: 2 } },
+            WeightedSideEffect { weight: 8.0, effect: TavernSideEffectFamily::AddQuirk { quirk_id: "alcoholism" } },
+            WeightedSideEffect { weight: 8.0, effect: TavernSideEffectFamily::AddQuirk { quirk_id: "resolution" } },
+            WeightedSideEffect { weight: 10.0, effect: TavernSideEffectFamily::ApplyBuff { buff_id: "townHungoverAccDebuff" } },
+            WeightedSideEffect { weight: 10.0, effect: TavernSideEffectFamily::ApplyBuff { buff_id: "townHungoverDEFDebuff" } },
+            WeightedSideEffect { weight: 14.0, effect: TavernSideEffectFamily::ChangeCurrency { delta: -500 } },
+            WeightedSideEffect { weight: 15.0, effect: TavernSideEffectFamily::RemoveTrinket },
+        ]
+    }
+
+    /// Side effects for the Gambling activity.
+    ///
+    /// - activity_lock: prevents hero from more activities
+    /// - go_missing: hero gone for some time
+    /// - add_quirk: gambler, known_cheat, bad_gambler
+    /// - change_currency: +500 or -500 gold
+    /// - add_trinket: gain a trinket
+    /// - remove_trinket: lose a trinket
+    pub fn gambling_effects() -> Vec<WeightedSideEffect> {
+        vec![
+            WeightedSideEffect { weight: 12.0, effect: TavernSideEffectFamily::ActivityLock },
+            WeightedSideEffect { weight: 8.0, effect: TavernSideEffectFamily::GoMissing { weeks: 1 } },
+            WeightedSideEffect { weight: 8.0, effect: TavernSideEffectFamily::GoMissing { weeks: 2 } },
+            WeightedSideEffect { weight: 10.0, effect: TavernSideEffectFamily::AddQuirk { quirk_id: "gambler" } },
+            WeightedSideEffect { weight: 5.0, effect: TavernSideEffectFamily::AddQuirk { quirk_id: "known_cheat" } },
+            WeightedSideEffect { weight: 5.0, effect: TavernSideEffectFamily::AddQuirk { quirk_id: "bad_gambler" } },
+            WeightedSideEffect { weight: 15.0, effect: TavernSideEffectFamily::ChangeCurrency { delta: 500 } },
+            WeightedSideEffect { weight: 15.0, effect: TavernSideEffectFamily::ChangeCurrency { delta: -500 } },
+            WeightedSideEffect { weight: 12.0, effect: TavernSideEffectFamily::AddTrinket },
+            WeightedSideEffect { weight: 10.0, effect: TavernSideEffectFamily::RemoveTrinket },
+        ]
+    }
+
+    /// Side effects for the Brothel activity.
+    ///
+    /// - activity_lock: prevents hero from more activities
+    /// - go_missing: hero gone for some time
+    /// - add_quirk: love_interest, syphilis, deviant_tastes
+    /// - apply_buff: townBrothelSPDBuff, townBrothelSPDDebuff
+    pub fn brothel_effects() -> Vec<WeightedSideEffect> {
+        vec![
+            WeightedSideEffect { weight: 15.0, effect: TavernSideEffectFamily::ActivityLock },
+            WeightedSideEffect { weight: 10.0, effect: TavernSideEffectFamily::GoMissing { weeks: 1 } },
+            WeightedSideEffect { weight: 10.0, effect: TavernSideEffectFamily::GoMissing { weeks: 2 } },
+            WeightedSideEffect { weight: 10.0, effect: TavernSideEffectFamily::AddQuirk { quirk_id: "love_interest" } },
+            WeightedSideEffect { weight: 8.0, effect: TavernSideEffectFamily::AddQuirk { quirk_id: "syphilis" } },
+            WeightedSideEffect { weight: 7.0, effect: TavernSideEffectFamily::AddQuirk { quirk_id: "deviant_tastes" } },
+            WeightedSideEffect { weight: 15.0, effect: TavernSideEffectFamily::ApplyBuff { buff_id: "townBrothelSPDBuff" } },
+            WeightedSideEffect { weight: 15.0, effect: TavernSideEffectFamily::ApplyBuff { buff_id: "townBrothelSPDDebuff" } },
+            WeightedSideEffect { weight: 10.0, effect: TavernSideEffectFamily::Unsupported { description: "brothel_charm_effect" } },
+        ]
+    }
 }
 
 /// Activity that can be performed at a town building.
@@ -134,6 +290,8 @@ pub struct TownActivityRecord {
     pub success: bool,
     /// Description of the result.
     pub message: String,
+    /// Side effect that occurred (if any).
+    pub side_effect: Option<TavernSideEffect>,
 }
 
 impl TownActivityRecord {
@@ -147,6 +305,7 @@ impl TownActivityRecord {
         stress_change: f64,
         health_change: f64,
         message: &str,
+        side_effect: Option<TavernSideEffect>,
     ) -> Self {
         TownActivityRecord {
             building_id: building_id.to_string(),
@@ -158,6 +317,7 @@ impl TownActivityRecord {
             health_change,
             success: true,
             message: message.to_string(),
+            side_effect,
         }
     }
 
@@ -173,6 +333,7 @@ impl TownActivityRecord {
             health_change: 0.0,
             success: false,
             message: message.to_string(),
+            side_effect: None,
         }
     }
 }
@@ -235,6 +396,8 @@ pub struct TownVisit {
     pub building_registry: BuildingRegistry,
     /// Trace of activities performed this visit.
     pub trace: TownActivityTrace,
+    /// Slot state for tracking activity slot usage.
+    slot_state: TownSlotState,
 }
 
 impl TownVisit {
@@ -244,12 +407,40 @@ impl TownVisit {
         heroes: Vec<HeroInTown>,
         building_registry: BuildingRegistry,
     ) -> Self {
-        TownVisit {
+        let mut visit = TownVisit {
             town_state,
             heroes,
             building_registry,
             trace: TownActivityTrace::new(),
-        }
+            slot_state: TownSlotState::new(),
+        };
+        visit.initialize_tavern_slots();
+        visit
+    }
+
+    /// Initialize tavern activity slot capacities based on current building upgrade levels.
+    ///
+    /// This should be called at the start of each town visit to set up available
+    /// slots for tavern activities (bar, gambling, brothel).
+    ///
+    /// All tavern activities share the same slot pool (bar_slots) as they use
+    /// the same physical tavern space in the original game.
+    fn initialize_tavern_slots(&mut self) {
+        // Get tavern building upgrade level
+        let tavern_level = self
+            .town_state
+            .get_upgrade_level("tavern")
+            .unwrap_or('a');
+
+        // All tavern activities share the bar_slots capacity
+        let slots = self
+            .building_registry
+            .tavern_bar_slots(tavern_level)
+            .unwrap_or(1.0) as usize;
+
+        self.slot_state.set_capacity("tavern", "bar", slots);
+        self.slot_state.set_capacity("tavern", "gambling", slots);
+        self.slot_state.set_capacity("tavern", "brothel", slots);
     }
 
     /// Create a town visit from dungeon run results.
@@ -471,6 +662,7 @@ impl TownVisit {
                 "Prayed at Abbey: stress healed {:.1} ({} -> {:.1}), cost {} gold",
                 actual_heal, old_stress, new_stress, cost
             ),
+            None,
         );
 
         self.trace.record(record.clone());
@@ -554,6 +746,7 @@ impl TownVisit {
                 "Rested at Inn: healed {:.1} HP ({} -> {:.1}), reduced stress by {:.1} ({} -> {:.1}), cost {} gold",
                 health_recovered, old_health, new_health, stress_reduced, old_stress, new_stress, cost
             ),
+            None,
         );
 
         self.trace.record(record.clone());
@@ -602,6 +795,7 @@ impl TownVisit {
             0.0,
             0.0,
             &format!("Recruited new hero for {} gold (discount: {:.0}%)", cost, discount * 100.0),
+            None,
         );
 
         self.trace.record(record.clone());
@@ -641,6 +835,7 @@ impl TownVisit {
                 "Trained at Guild: skill cost discount {:.0}% applied",
                 discount * 100.0
             ),
+            None,
         );
 
         self.trace.record(record.clone());
@@ -680,6 +875,7 @@ impl TownVisit {
                 "Repaired equipment at Blacksmith: equipment cost discount {:.0}% applied",
                 discount * 100.0
             ),
+            None,
         );
 
         self.trace.record(record.clone());
@@ -719,6 +915,7 @@ impl TownVisit {
                 "Upgraded weapon at Blacksmith: equipment cost discount {:.0}% applied",
                 discount * 100.0
             ),
+            None,
         );
 
         self.trace.record(record.clone());
@@ -769,6 +966,7 @@ impl TownVisit {
                         "Upgraded {} to level {} for {} gold",
                         building_id, level, cost
                     ),
+                    None,
                 );
                 self.trace.record(record.clone());
                 record
@@ -932,6 +1130,7 @@ impl TownVisit {
             health_change: 0.0,
             success,
             message,
+            side_effect: None,
         };
 
         self.trace.record(record.clone());
@@ -1060,6 +1259,7 @@ impl TownVisit {
             health_change: 0.0,
             success: true, // Treatment itself succeeded, cure-all is a bonus
             message,
+            side_effect: None,
         };
 
         self.trace.record(record.clone());
@@ -1156,6 +1356,15 @@ impl TownVisit {
                 .unwrap_or('a')
         });
 
+        // Check slot availability before proceeding
+        if !self.slot_state.has_available(building_id, activity_type) {
+            return TownActivityRecord::failure(
+                building_id,
+                TownActivity::TavernBar { slot_index },
+                "No tavern slots available",
+            );
+        }
+
         // Get the cost
         let cost_effect = format!("{}_cost", activity_type);
         let cost = self
@@ -1179,6 +1388,15 @@ impl TownVisit {
             );
         }
 
+        // Consume a slot for this activity
+        if !self.slot_state.try_consume(building_id, activity_type) {
+            return TownActivityRecord::failure(
+                building_id,
+                TownActivity::TavernBar { slot_index },
+                "No tavern slots available",
+            );
+        }
+
         // Deduct gold
         self.town_state.gold -= cost;
 
@@ -1193,8 +1411,16 @@ impl TownVisit {
         let roll = Self::deterministic_roll(&hero_id_str, slot_index + 200);
         let side_effect_triggered = roll < side_effect_chance;
 
-        let side_effect_msg = if side_effect_triggered {
-            format!(" (side-effect triggered: {:.0}% chance)", side_effect_chance * 100.0)
+        // Select and apply side effect if triggered
+        let side_effect = if side_effect_triggered {
+            let effect = self.select_tavern_side_effect(activity_type, &hero_id_str, slot_index);
+            Some(effect)
+        } else {
+            None
+        };
+
+        let side_effect_msg = if let Some(ref se) = side_effect {
+            format!(" ({})", se)
         } else {
             String::new()
         };
@@ -1219,10 +1445,53 @@ impl TownVisit {
                 "Visited Tavern {}: stress healed {:.1} (cost {} gold){}",
                 activity_name, actual_heal, cost, side_effect_msg
             ),
+            side_effect,
         };
 
         self.trace.record(record.clone());
         record
+    }
+
+    /// Select a side effect using weighted random selection.
+    ///
+    /// Uses deterministic rolling based on hero_id and slot_index to ensure
+    /// reproducible outcomes for the same inputs.
+    fn select_tavern_side_effect(
+        &self,
+        activity_type: &str,
+        hero_id: &str,
+        slot_index: usize,
+    ) -> TavernSideEffect {
+        // Get the appropriate weighted table
+        let effects = match activity_type {
+            "bar" => tavern_side_effect_tables::bar_effects(),
+            "gambling" => tavern_side_effect_tables::gambling_effects(),
+            "brothel" => tavern_side_effect_tables::brothel_effects(),
+            _ => tavern_side_effect_tables::bar_effects(),
+        };
+
+        // Calculate total weight
+        let total_weight: f64 = effects.iter().map(|e| e.weight).sum();
+
+        // Deterministic roll to select an effect
+        let roll = Self::deterministic_roll(hero_id, slot_index + 500);
+        let mut cumulative = 0.0;
+
+        for effect in &effects {
+            cumulative += effect.weight / total_weight;
+            if roll < cumulative {
+                return TavernSideEffect {
+                    family: effect.effect.clone(),
+                    source_activity: activity_type.to_string(),
+                };
+            }
+        }
+
+        // Fallback to last effect (should rarely happen due to floating point)
+        TavernSideEffect {
+            family: effects.last().unwrap().effect.clone(),
+            source_activity: activity_type.to_string(),
+        }
     }
 
     /// Deterministic pseudo-random roll for activity outcomes.
