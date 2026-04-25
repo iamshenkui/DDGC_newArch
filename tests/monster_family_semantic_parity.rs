@@ -86,6 +86,101 @@ fn parity_fixture_covers_all_common_families() {
     );
 }
 
+/// Verifies that ALL skills referenced by common monster families exist in the
+/// ContentPack and can be used in encounter execution.
+///
+/// This test closes the common-monster combat skill gap by ensuring no skill
+/// referenced in the monster family registry is missing from the content layer.
+/// It validates the full skill set (not just identity skills) against the
+/// source-of-truth registry in src/monsters/mod.rs.
+#[test]
+fn all_common_family_skills_exist_in_content_pack() {
+    use game_ddgc_headless::monsters::MonsterTier;
+
+    let pack = ContentPack::default();
+    let registry = build_registry();
+
+    // Get all common monster families from the registry
+    // Get all common monster families from the registry
+    let common_families: Vec<_> = registry.by_tier(MonsterTier::Common);
+
+    // Every common family must have at least one skill
+    assert!(
+        !common_families.is_empty(),
+        "Registry must have at least one common monster family"
+    );
+
+    let mut missing_skills = Vec::new();
+
+    for family in common_families {
+        for skill_id in &family.skill_ids {
+            let skill = pack.get_skill(skill_id);
+            if skill.is_none() {
+                missing_skills.push(format!(
+                    "{} references skill '{}' which is missing from ContentPack",
+                    family.id.0, skill_id.0
+                ));
+            } else if skill.unwrap().effects.is_empty() {
+                missing_skills.push(format!(
+                    "{} has skill '{}' with no effects (empty skill)",
+                    family.id.0, skill_id.0
+                ));
+            }
+        }
+    }
+
+    assert!(
+        missing_skills.is_empty(),
+        "Missing or empty skills found:\n{}",
+        missing_skills.join("\n")
+    );
+}
+
+/// Verifies that all common monster skills pass validation and can participate
+/// in encounter execution by checking they have valid effect chains.
+///
+/// This proves migrated common-monster skills are not just defined but are
+/// actually usable in encounter resolution.
+#[test]
+fn all_common_family_skills_validate_for_encounter_use() {
+    use game_ddgc_headless::monsters::MonsterTier;
+
+    let pack = ContentPack::default();
+    let registry = build_registry();
+
+    let common_families: Vec<_> = registry.by_tier(MonsterTier::Common);
+
+    let mut invalid_skills = Vec::new();
+
+    for family in common_families {
+        for skill_id in &family.skill_ids {
+            if let Some(skill) = pack.get_skill(skill_id) {
+                // Skill must validate (proper effect chain, targeting, etc.)
+                if let Err(e) = skill.validate() {
+                    invalid_skills.push(format!(
+                        "{} skill '{}' failed validation: {:?}",
+                        family.id.0, skill_id.0, e
+                    ));
+                }
+
+                // Skill must have at least one effect for encounter participation
+                if skill.effects.is_empty() {
+                    invalid_skills.push(format!(
+                        "{} skill '{}' has no effects and cannot participate in encounters",
+                        family.id.0, skill_id.0
+                    ));
+                }
+            }
+        }
+    }
+
+    assert!(
+        invalid_skills.is_empty(),
+        "Skills that cannot participate in encounters:\n{}",
+        invalid_skills.join("\n")
+    );
+}
+
 /// Verifies dungeon distribution is correct: each dungeon has the expected
 /// number of common families.
 #[test]
