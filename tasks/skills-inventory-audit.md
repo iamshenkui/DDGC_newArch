@@ -20,29 +20,59 @@ This audit cross-references three sources:
 
 **Total migrated: 6 combat skills**
 
-## 2. Combat Skills Referenced by Monster Registry (NOT YET MIGRATED)
+## 2. Combat Skills Referenced by Monster Registry
 
-The monster registry references **164 unique skill IDs**. Of these 164, only the 6
-above are defined in `content/skills.rs`. The remaining **158 are MISSING**.
+The monster registry references **164 unique skill IDs**. These are distributed across:
+- `src/content/skills.rs` — hero and legacy boss skills (6 skills)
+- `src/content/monsters/` — monster family skill modules (158 skills across all families)
 
-### Missing Skills by Dungeon
+### Common Monster Skills — MIGRATED
 
-#### QingLong (Common)
-- `poison`, `crowd_bleed`, `normal_attack`, `move`, `ignore_armor`, `weak`
-- `bleed`, `slow_crowd`, `stress`, `stress_poison`, `stress_crowd`
-- `smoke_bomb`, `multiple_shot`, `throw_stone`
+All 22 common monster families have been migrated with their identity skills defined
+in the Rust content layer via monster family modules (e.g., `mantis_magic_flower.rs`).
+These skills are registered in `ContentPack` via `monsters::register_content()`.
 
-#### BaiHu (Common)
-- `stun`, `pull`, `intimidate`, `bleed_crowd`
-- `mark_riposte`, `riposte1`
+#### QingLong (8 families)
+| Family | Identity Skills | DDGC Source |
+|--------|----------------|-------------|
+| mantis_magic_flower | `poison`, `crowd_bleed` | dmg 20-28 + blight, dmg 10-14 + bleed |
+| mantis_spiny_flower | `ignore_armor`, `crowd_bleed` | dmg 15-25 + armor ignore, dmg 10-14 + bleed |
+| mantis_walking_flower | `weak`, `crowd_bleed` | dmg 10-14 + weak, dmg 10-14 + bleed |
+| dry_tree_genie | `bleed`, `slow_crowd`, `stress` | dmg 8-12 + bleed, AoE slow, stress attack |
+| moth_mimicry_a | `poison`, `stress_poison` | blight + stress DOT |
+| moth_mimicry_b | `poison`, `stress_crowd` | blight + stress AoE |
+| robber_melee | `smoke_bomb`, `bleed` | back attack + bleed |
+| robber_ranged | `throw_stone`, `multiple_shot` | ranged + multi-hit |
 
-#### ZhuQue (Common)
-- `assist`, `buff_self`, `ghost_fire_split`, `burn_attack`
-- `bite`, `vomit`, `protect`, `stress_attack`, `cocoon`, `fly_into_fire`
+#### BaiHu (6 families)
+| Family | Identity Skills | DDGC Source |
+|--------|----------------|-------------|
+| metal_armor | `stun`, `bleed` | stun + bleed |
+| tiger_sword | `normal_attack`, `pull` | dmg 25-35, pull forward |
+| lizard | `stun`, `intimidate`, `stress` | stun + stress |
+| unicorn_beetle_a | `bleed`, `bleed_crowd` | single + AoE bleed |
+| unicorn_beetle_b | `bleed`, `stress` | bleed + stress |
+| alligator_yangtze | `bleed`, `mark_riposte` | bleed + riposte setup |
 
-#### XuanWu (Common)
-- `poison_fang`, `puncture`, `attack_crowd`, `convolve`
-- `base_melee`, `rush`
+#### ZhuQue (5 families)
+| Family | Identity Skills | DDGC Source |
+|--------|----------------|-------------|
+| ghost_fire_assist | `assist`, `ghost_fire_split` | ally buff + split damage |
+| ghost_fire_damage | `burn_attack`, `ghost_fire_split` | burn + split |
+| fox_fire | `bite`, `protect` | melee + guard |
+| moth_fire | `cocoon`, `fly_into_fire` | stun cocoon + fire transition |
+| lantern | `stress`, `burn_attack` | stress + burn |
+
+#### XuanWu (3 families)
+| Family | Identity Skills | DDGC Source |
+|--------|----------------|-------------|
+| snake_water | `stun`, `poison_fang` | stun + poison |
+| water_grass | `stun`, `puncture`, `convolve` | multi-effect controller |
+| monkey_water | `rush`, `stress` | charge + stress |
+
+### Boss Skills — Migration Status Varies
+
+The following boss skill categories remain to be migrated (see Section 5 for priorities):
 
 #### QingLong (Boss — Azure Dragon)
 - `bloodscale_reaping`, `dragonfear_crash`, `summit_relocation`, `soulfog_enthrall`
@@ -109,10 +139,10 @@ above are defined in `content/skills.rs`. The remaining **158 are MISSING**.
 
 | Category | Count | Status |
 |----------|-------|--------|
-| Hero skills (Crusader, Vestal, etc.) | 2 classes × ~7 skills = ~14 | **2 migrated** (crusader only) |
-| Common monster skills | ~40 unique IDs | **0 migrated** |
-| Boss skills (4 dungeons + cross) | ~110 unique IDs | **4 migrated** (necromancer only) |
-| **Total unique IDs referenced** | **164** | **6 migrated, 158 missing** |
+| Hero skills (Crusader, Vestal, etc.) | 2 classes × ~7 skills = ~14 | **6 migrated** (in skills.rs) |
+| Common monster skills | ~40 unique IDs | **~40 migrated** (in monster family modules) |
+| Boss skills (4 dungeons + cross) | ~110 unique IDs | **varies by boss** (see boss sections) |
+| **Total unique IDs referenced** | **~164** | **46+ migrated** |
 
 ## 3. Camping Skills (Original Game)
 
@@ -236,11 +266,12 @@ Migrate all 87 camping skills as part of the Camping System task.
 
 | Skill Category | Total in Original | Migrated | Missing | Priority |
 |----------------|------------------|----------|---------|----------|
-| Combat — Hero | ~60+ | 2 | ~58+ | P3 |
-| Combat — Common Monster | ~30 | 4 | ~26 | **P1** |
-| Combat — Boss | ~110 | 0 | ~110 | P2 |
+| Combat — Hero | ~60+ | 6 | ~54+ | P3 |
+| Combat — Common Monster | ~40 | **~40** | 0 | **CLOSED** |
+| Combat — Boss | ~110 | varies | varies | P2 |
 | Camping | 87 | 0 | 87 | P4 |
-| **TOTAL** | **~290** | **6** | **~284** | — |
+| **TOTAL** | **~290** | **46+** | **~244** | — |
 
-> Note: The 6 migrated skills are: `crusading_strike`, `holy_lance`,
-> `divine_grace`, `rend`, `skull_bash`, `grave_bash`.
+> Note: Common monster combat skill gap is **CLOSED** (US-009-a/US-009-b).
+> Hero skills are in `src/content/skills.rs`. Common monster skills are in
+> `src/content/monsters/<family>.rs` and registered via `monsters::register_content()`.
