@@ -155,8 +155,8 @@
         {
           "tree_id": "tavern_bar_stress_heal",
           "levels": [
-            { "code": "a", "cost": 100, "effects": [{ "effect_id": "bar_stress_heal", "value": 45 }] },
-            { "code": "b", "cost": 0, "effects": [{ "effect_id": "bar_stress_heal", "value": 45 }] },
+            { "code": "a", "cost": 0, "effects": [{ "effect_id": "bar_stress_heal", "value": 45 }] },
+            { "code": "b", "cost": 100, "effects": [{ "effect_id": "bar_stress_heal", "value": 45 }] },
             { "code": "c", "cost": 0, "effects": [{ "effect_id": "bar_stress_heal", "value": 45 }] },
             { "code": "d", "cost": 150, "effects": [{ "effect_id": "bar_stress_heal", "value": 100 }] },
             { "code": "e", "cost": 0, "effects": [{ "effect_id": "bar_stress_heal", "value": 100 }] },
@@ -188,8 +188,8 @@
         {
           "tree_id": "tavern_gambling_stress_heal",
           "levels": [
-            { "code": "a", "cost": 100, "effects": [{ "effect_id": "gambling_stress_heal", "value": 55 }] },
-            { "code": "b", "cost": 0, "effects": [{ "effect_id": "gambling_stress_heal", "value": 55 }] },
+            { "code": "a", "cost": 0, "effects": [{ "effect_id": "gambling_stress_heal", "value": 55 }] },
+            { "code": "b", "cost": 100, "effects": [{ "effect_id": "gambling_stress_heal", "value": 55 }] },
             { "code": "c", "cost": 0, "effects": [{ "effect_id": "gambling_stress_heal", "value": 55 }] },
             { "code": "d", "cost": 150, "effects": [{ "effect_id": "gambling_stress_heal", "value": 86 }] },
             { "code": "e", "cost": 0, "effects": [{ "effect_id": "gambling_stress_heal", "value": 86 }] },
@@ -210,8 +210,8 @@
         {
           "tree_id": "tavern_brothel_stress_heal",
           "levels": [
-            { "code": "a", "cost": 100, "effects": [{ "effect_id": "brothel_stress_heal", "value": 65 }] },
-            { "code": "b", "cost": 0, "effects": [{ "effect_id": "brothel_stress_heal", "value": 65 }] },
+            { "code": "a", "cost": 0, "effects": [{ "effect_id": "brothel_stress_heal", "value": 65 }] },
+            { "code": "b", "cost": 100, "effects": [{ "effect_id": "brothel_stress_heal", "value": 65 }] },
             { "code": "c", "cost": 0, "effects": [{ "effect_id": "brothel_stress_heal", "value": 65 }] },
             { "code": "d", "cost": 150, "effects": [{ "effect_id": "brothel_stress_heal", "value": 100 }] },
             { "code": "e", "cost": 0, "effects": [{ "effect_id": "brothel_stress_heal", "value": 100 }] },

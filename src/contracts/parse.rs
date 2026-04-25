@@ -315,8 +315,18 @@ pub fn parse_buildings_json(path: &Path) -> Result<BuildingRegistry, String> {
             })
             .collect();
 
-        let building = TownBuilding::new(&raw.id, building_type, unlock_conditions, upgrade_trees);
-        registry.register(building);
+        // Check if a building with this ID already exists; if so, merge upgrade trees
+        if let Some(existing) = registry.buildings.get_mut(&raw.id) {
+            // Merge upgrade trees from the new building into the existing one
+            for new_tree in upgrade_trees {
+                if !existing.upgrade_trees.iter().any(|t| t.tree_id == new_tree.tree_id) {
+                    existing.upgrade_trees.push(new_tree);
+                }
+            }
+        } else {
+            let building = TownBuilding::new(&raw.id, building_type, unlock_conditions, upgrade_trees);
+            registry.register(building);
+        }
     }
 
     Ok(registry)

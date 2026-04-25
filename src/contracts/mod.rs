@@ -285,6 +285,52 @@ pub enum BuildingType {
     WeaponRack,
 }
 
+/// Activity types for slot-based town services.
+///
+/// Covers Sanitarium quirk/disease treatment and Tavern bar/gambling/brothel activities.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum TownActivity {
+    /// Sanitarium quirk treatment activity.
+    SanitariumQuirk,
+    /// Sanitarium disease treatment activity.
+    SanitariumDisease,
+    /// Tavern bar/drink activity.
+    TavernBar,
+    /// Tavern gambling activity.
+    TavernGambling,
+    /// Tavern brothel activity.
+    TavernBrothel,
+}
+
+impl TownActivity {
+    /// Returns the string representation used by TownSlotState keys.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            TownActivity::SanitariumQuirk => "quirk",
+            TownActivity::SanitariumDisease => "disease",
+            TownActivity::TavernBar => "bar",
+            TownActivity::TavernGambling => "gambling",
+            TownActivity::TavernBrothel => "brothel",
+        }
+    }
+
+    /// Get all Sanitarium activities.
+    pub fn sanitarium_activities() -> [TownActivity; 2] {
+        [TownActivity::SanitariumQuirk, TownActivity::SanitariumDisease]
+    }
+
+    /// Get all Tavern activities.
+    pub fn tavern_activities() -> [TownActivity; 3] {
+        [TownActivity::TavernBar, TownActivity::TavernGambling, TownActivity::TavernBrothel]
+    }
+}
+
+impl std::fmt::Display for TownActivity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
 /// An unlock condition for a town building.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct UnlockCondition {
@@ -413,6 +459,123 @@ impl BuildingUpgradeState {
     }
 }
 
+/// Tracks slot usage for a single building activity during a town visit.
+///
+/// Slots represent capacity for services like Sanitarium quirk/disease treatment
+/// or Tavern bar/gambling/brothel visits. Each slot can be used once per visit.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BuildingSlotState {
+    /// Maximum number of slots available at the current upgrade level.
+    pub capacity: usize,
+    /// Number of slots currently consumed.
+    pub consumed: usize,
+}
+
+impl BuildingSlotState {
+    /// Create a new slot state with given capacity.
+    pub fn new(capacity: usize) -> Self {
+        BuildingSlotState { capacity, consumed: 0 }
+    }
+
+    /// Check if any slots are available.
+    pub fn has_available(&self) -> bool {
+        self.consumed < self.capacity
+    }
+
+    /// Get the number of available slots.
+    pub fn available(&self) -> usize {
+        self.capacity.saturating_sub(self.consumed)
+    }
+
+    /// Consume a slot, returning true if successful.
+    pub fn consume(&mut self) -> bool {
+        if self.has_available() {
+            self.consumed += 1;
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Reset consumed slots to 0 for a new visit.
+    pub fn reset(&mut self) {
+        self.consumed = 0;
+    }
+}
+
+/// Tracks all slot-based activities for a single town visit.
+///
+/// This struct maintains per-building and per-activity slot capacity and consumption,
+/// reset at the start of each town visit.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TownSlotState {
+    /// Slot states keyed by building_id::activity_type.
+    /// Activity types: "quirk", "disease", "bar", "gambling", "brothel".
+    slot_states: std::collections::HashMap<String, BuildingSlotState>,
+}
+
+impl TownSlotState {
+    /// Create a new empty slot state.
+    pub fn new() -> Self {
+        TownSlotState {
+            slot_states: std::collections::HashMap::new(),
+        }
+    }
+
+    /// Initialize slot capacity for a building activity.
+    pub fn set_capacity(&mut self, building_id: &str, activity_type: &str, capacity: usize) {
+        let key = format!("{}::{}", building_id, activity_type);
+        self.slot_states.insert(key, BuildingSlotState::new(capacity));
+    }
+
+    /// Get the capacity for a building activity.
+    pub fn get_capacity(&self, building_id: &str, activity_type: &str) -> usize {
+        let key = format!("{}::{}", building_id, activity_type);
+        self.slot_states.get(&key).map(|s| s.capacity).unwrap_or(0)
+    }
+
+    /// Get the number of available slots for a building activity.
+    pub fn available(&self, building_id: &str, activity_type: &str) -> usize {
+        let key = format!("{}::{}", building_id, activity_type);
+        self.slot_states.get(&key).map(|s| s.available()).unwrap_or(0)
+    }
+
+    /// Check if a slot is available for a building activity.
+    pub fn has_available(&self, building_id: &str, activity_type: &str) -> bool {
+        let key = format!("{}::{}", building_id, activity_type);
+        self.slot_states.get(&key).map(|s| s.has_available()).unwrap_or(false)
+    }
+
+    /// Try to consume a slot for a building activity.
+    /// Returns true if successful, false if no slots available.
+    pub fn try_consume(&mut self, building_id: &str, activity_type: &str) -> bool {
+        let key = format!("{}::{}", building_id, activity_type);
+        if let Some(state) = self.slot_states.get_mut(&key) {
+            state.consume()
+        } else {
+            false
+        }
+    }
+
+    /// Reset all consumed slots for a new town visit.
+    pub fn reset(&mut self) {
+        for state in self.slot_states.values_mut() {
+            state.reset();
+        }
+    }
+
+    /// Get total slots consumed across all activities.
+    pub fn total_consumed(&self) -> usize {
+        self.slot_states.values().map(|s| s.consumed).sum()
+    }
+}
+
+impl Default for TownSlotState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// State of the town including building upgrades and currencies.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TownState {
@@ -522,11 +685,12 @@ impl BuildingRegistry {
 
     /// Get the effect value for a specific effect_id at a given upgrade level.
     ///
-    /// Searches through the building's upgrade trees for the specified level code
-    /// and returns the effect value if found.
+    /// Searches through ALL building's upgrade trees for the specified level code
+    /// and returns the effect value if found. Continues searching all trees
+    /// until the effect_id is found at that level.
     ///
-    /// Returns `None` if the building doesn't exist, the level doesn't exist,
-    /// or the effect_id is not found at that level.
+    /// Returns `None` if the building doesn't exist, no level with the code exists,
+    /// or the effect_id is not found at any tree's level.
     pub fn get_effect_at_level(
         &self,
         building_id: &str,
@@ -535,13 +699,12 @@ impl BuildingRegistry {
     ) -> Option<f64> {
         let building = self.buildings.get(building_id)?;
 
+        // Search all trees for the level code, then search that level's effects
         for tree in &building.upgrade_trees {
             if let Some(level) = tree.levels.iter().find(|l| l.code == level_code) {
-                return level
-                    .effects
-                    .iter()
-                    .find(|e| e.effect_id == effect_id)
-                    .map(|e| e.value);
+                if let Some(effect) = level.effects.iter().find(|e| e.effect_id == effect_id) {
+                    return Some(effect.value);
+                }
             }
         }
 
@@ -577,6 +740,116 @@ impl BuildingRegistry {
 
         all_levels.sort_by_key(|l| l.code);
         Some(all_levels)
+    }
+
+    // ── Sanitarium helper methods ───────────────────────────────────────────────
+
+    /// Sanitarium disease upgrade paths follow specific patterns:
+    /// - Treatment cost upgrades are at levels `a`, `c`, `e`
+    /// - Cure-all chance upgrades are at levels `b`, `d`
+    ///
+    /// This reflects the original game's upgrade structure where disease treatment
+    /// cost and cure-all chance were upgraded independently.
+
+    /// Get the disease treatment cost at the given upgrade level.
+    ///
+    /// Disease treatment cost upgrades follow the `a/c/e` path.
+    /// Returns `None` if the building doesn't exist or the level has no disease_cost effect.
+    pub fn sanitarium_disease_cost(&self, level_code: char) -> Option<f64> {
+        self.get_effect_at_level("sanitarium", level_code, "disease_cost")
+    }
+
+    /// Get the disease cure-all chance at the given upgrade level.
+    ///
+    /// Cure-all chance upgrades follow the `b/d` path.
+    /// Returns `None` if the building doesn't exist or the level has no cure_all_chance effect.
+    pub fn sanitarium_cure_all_chance(&self, level_code: char) -> Option<f64> {
+        self.get_effect_at_level("sanitarium", level_code, "cure_all_chance")
+    }
+
+    /// Get the disease slot count at the given upgrade level.
+    ///
+    /// Returns `None` if the building doesn't exist or the level has no disease_slots effect.
+    pub fn sanitarium_disease_slots(&self, level_code: char) -> Option<f64> {
+        self.get_effect_at_level("sanitarium", level_code, "disease_slots")
+    }
+
+    /// Get the quirk slot count at the given upgrade level.
+    ///
+    /// Returns `None` if the building doesn't exist or the level has no quirk_slots effect.
+    pub fn sanitarium_quirk_slots(&self, level_code: char) -> Option<f64> {
+        self.get_effect_at_level("sanitarium", level_code, "quirk_slots")
+    }
+
+    // ── Tavern helper methods ──────────────────────────────────────────────────
+
+    /// Get the tavern bar cost at the given upgrade level.
+    pub fn tavern_bar_cost(&self, level_code: char) -> Option<f64> {
+        self.get_effect_at_level("tavern", level_code, "bar_cost")
+    }
+
+    /// Get the tavern bar stress heal at the given upgrade level.
+    pub fn tavern_bar_stress_heal(&self, level_code: char) -> Option<f64> {
+        self.get_effect_at_level("tavern", level_code, "bar_stress_heal")
+    }
+
+    /// Get the tavern bar slot count at the given upgrade level.
+    pub fn tavern_bar_slots(&self, level_code: char) -> Option<f64> {
+        self.get_effect_at_level("tavern", level_code, "bar_slots")
+    }
+
+    /// Get the tavern gambling cost at the given upgrade level.
+    pub fn tavern_gambling_cost(&self, level_code: char) -> Option<f64> {
+        self.get_effect_at_level("tavern", level_code, "gambling_cost")
+    }
+
+    /// Get the tavern gambling stress heal at the given upgrade level.
+    pub fn tavern_gambling_stress_heal(&self, level_code: char) -> Option<f64> {
+        self.get_effect_at_level("tavern", level_code, "gambling_stress_heal")
+    }
+
+    /// Get the tavern brothel cost at the given upgrade level.
+    pub fn tavern_brothel_cost(&self, level_code: char) -> Option<f64> {
+        self.get_effect_at_level("tavern", level_code, "brothel_cost")
+    }
+
+    /// Get the tavern brothel stress heal at the given upgrade level.
+    pub fn tavern_brothel_stress_heal(&self, level_code: char) -> Option<f64> {
+        self.get_effect_at_level("tavern", level_code, "brothel_stress_heal")
+    }
+
+    // ── Blacksmith helper methods ───────────────────────────────────────────────
+
+    /// Get the blacksmith repair discount at the given upgrade level.
+    pub fn blacksmith_repair_discount(&self, level_code: char) -> Option<f64> {
+        self.get_effect_at_level("blacksmith", level_code, "repair_discount")
+    }
+
+    /// Get the blacksmith weapon upgrade cost reduction at the given upgrade level.
+    pub fn blacksmith_weapon_upgrade_cost(&self, level_code: char) -> Option<f64> {
+        self.get_effect_at_level("blacksmith", level_code, "weapon_upgrade_cost")
+    }
+
+    /// Get the blacksmith equipment discount at the given upgrade level.
+    pub fn blacksmith_equipment_discount(&self, level_code: char) -> Option<f64> {
+        self.get_effect_at_level("blacksmith", level_code, "equipment_cost_discount")
+    }
+
+    // ── Guild helper methods ───────────────────────────────────────────────────
+
+    /// Get the guild experience boost at the given upgrade level.
+    pub fn guild_experience_boost(&self, level_code: char) -> Option<f64> {
+        self.get_effect_at_level("guild", level_code, "experience_boost")
+    }
+
+    /// Get the guild skill upgrade chance at the given upgrade level.
+    pub fn guild_skill_upgrade_chance(&self, level_code: char) -> Option<f64> {
+        self.get_effect_at_level("guild", level_code, "skill_upgrade_chance")
+    }
+
+    /// Get the guild skill cost discount at the given upgrade level.
+    pub fn guild_skill_cost_discount(&self, level_code: char) -> Option<f64> {
+        self.get_effect_at_level("guild", level_code, "skill_cost_discount")
     }
 }
 
