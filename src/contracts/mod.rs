@@ -3498,6 +3498,188 @@ impl BuffRegistry {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Loot Registry — DDGC loot item definitions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Represents the category/source of a loot item.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum LootCategory {
+    /// Loot from curio interactions (e.g., "gold_chalice", "ancient_coin").
+    Curio,
+    /// Loot from camping skill effects (e.g., "S", "T_ANTIQ_CAMP").
+    Camping,
+    /// Loot from combat encounters.
+    Combat,
+    /// Loot from quest rewards.
+    Quest,
+    /// Unknown or uncategorized loot.
+    Unknown,
+}
+
+impl LootCategory {
+    /// Parse from a string source indicator.
+    pub fn from_source(source: &str) -> Self {
+        match source {
+            "curio" | "Curio" => LootCategory::Curio,
+            "camping" | "Camping" => LootCategory::Camping,
+            "combat" | "Combat" => LootCategory::Combat,
+            "quest" | "Quest" => LootCategory::Quest,
+            _ => LootCategory::Unknown,
+        }
+    }
+}
+
+/// A single loot item definition.
+///
+/// Loot items in DDGC come from multiple sources:
+/// - Curio interactions (specific treasure IDs like "gold_chalice")
+/// - Camping skill effects (category IDs like "S", "T_ANTIQ_CAMP")
+///
+/// Each loot item has an ID, optional display name, category, and base value.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct LootDefinition {
+    /// Unique identifier for this loot item (e.g., "gold_chalice", "T_ANTIQ_CAMP").
+    pub id: String,
+    /// Display name for UI purposes (e.g., "Gold Chalice").
+    pub name: String,
+    /// Category indicating the source/type of loot.
+    pub category: LootCategory,
+    /// Base value in gold equivalent.
+    pub base_value: f64,
+    /// Optional description of what this loot represents.
+    pub description: String,
+}
+
+impl LootDefinition {
+    /// Create a new loot definition.
+    pub fn new(id: &str, name: &str, category: LootCategory, base_value: f64, description: &str) -> Self {
+        LootDefinition {
+            id: id.to_string(),
+            name: name.to_string(),
+            category,
+            base_value,
+            description: description.to_string(),
+        }
+    }
+
+    /// Create a curio loot item with default values.
+    pub fn curio(id: &str) -> Self {
+        let name = id
+            .split('_')
+            .map(|word| {
+                let mut chars = word.chars();
+                match chars.next() {
+                    None => String::new(),
+                    Some(c) => c.to_uppercase().collect::<String>() + chars.as_str(),
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
+
+        LootDefinition {
+            id: id.to_string(),
+            name,
+            category: LootCategory::Curio,
+            base_value: 0.0,
+            description: format!("Curio loot: {}", id),
+        }
+    }
+
+    /// Create a camping loot category item.
+    pub fn camping(id: &str) -> Self {
+        LootDefinition {
+            id: id.to_string(),
+            name: format!("Camping Loot ({})", id),
+            category: LootCategory::Camping,
+            base_value: 0.0,
+            description: format!("Camping skill loot category: {}", id),
+        }
+    }
+}
+
+/// Registry mapping loot IDs to their definitions.
+///
+/// The registry provides lookup by loot ID and supports registration
+/// of new loot definitions at runtime.
+#[derive(Debug, Clone, Default)]
+pub struct LootRegistry {
+    items: std::collections::HashMap<String, LootDefinition>,
+}
+
+impl LootRegistry {
+    /// Create a new empty loot registry.
+    pub fn new() -> Self {
+        LootRegistry {
+            items: std::collections::HashMap::new(),
+        }
+    }
+
+    /// Register a loot definition.
+    pub fn register(&mut self, loot: LootDefinition) {
+        self.items.insert(loot.id.clone(), loot);
+    }
+
+    /// Get a loot definition by its ID.
+    pub fn get(&self, id: &str) -> Option<&LootDefinition> {
+        self.items.get(id)
+    }
+
+    /// Get all registered loot IDs.
+    pub fn all_ids(&self) -> Vec<&str> {
+        self.items.keys().map(|s| s.as_str()).collect()
+    }
+
+    /// Get the total number of registered loot items.
+    pub fn len(&self) -> usize {
+        self.items.len()
+    }
+
+    /// Returns true if the registry is empty.
+    pub fn is_empty(&self) -> bool {
+        self.items.is_empty()
+    }
+
+    /// Get all loot items in a specific category.
+    pub fn for_category(&self, category: &LootCategory) -> Vec<&LootDefinition> {
+        self.items
+            .values()
+            .filter(|l| &l.category == category)
+            .collect()
+    }
+
+    /// Check if a loot ID is registered.
+    pub fn is_registered(&self, id: &str) -> bool {
+        self.items.contains_key(id)
+    }
+
+    /// Validate all loot items in the registry.
+    ///
+    /// Returns Ok if all items pass validation, or Err with a list of
+    /// validation error messages.
+    pub fn validate(&self) -> Result<(), Vec<String>> {
+        let mut errors = Vec::new();
+
+        for loot in self.items.values() {
+            if loot.id.is_empty() {
+                errors.push("loot definition has empty id".to_string());
+            }
+            if loot.name.is_empty() {
+                errors.push(format!("loot '{}' has empty name", loot.id));
+            }
+            if loot.base_value < 0.0 {
+                errors.push(format!("loot '{}' has negative base_value", loot.id));
+            }
+        }
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Campaign Snapshot — canonical save/load boundary for headless migration
 // ─────────────────────────────────────────────────────────────────────────────
 //

@@ -214,6 +214,18 @@ pub struct CampingPhase {
     pub heroes: Vec<HeroInCamp>,
     /// Activity trace of all skill uses.
     pub trace: Vec<CampActivityRecord>,
+    /// Loot generated during this camp phase.
+    #[serde(default)]
+    pub loot_inventory: Vec<LootGrant>,
+}
+
+/// A single loot item granted during camping.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct LootGrant {
+    /// The loot category/type ID that was triggered.
+    pub loot_id: String,
+    /// The quantity granted.
+    pub quantity: u32,
 }
 
 impl CampingPhase {
@@ -225,6 +237,7 @@ impl CampingPhase {
             skill_uses: HashMap::new(),
             heroes,
             trace: Vec::new(),
+            loot_inventory: Vec::new(),
         }
     }
 
@@ -236,6 +249,7 @@ impl CampingPhase {
             skill_uses: HashMap::new(),
             heroes,
             trace: Vec::new(),
+            loot_inventory: Vec::new(),
         }
     }
 
@@ -616,7 +630,18 @@ fn apply_effect_to_hero(phase: &mut CampingPhase, hero_id: &str, effect: &CampEf
             hero.stress += effect.amount;
         }
         Loot => {
-            // Stub: would add loot to party inventory
+            // Loot effect: add the loot grant to the phase inventory
+            // The sub_type contains the loot category ID (e.g., "S", "T_ANTIQ_CAMP")
+            // The amount field contains the quantity to grant
+            let quantity = if effect.amount >= 1.0 {
+                effect.amount as u32
+            } else {
+                1 // Default to 1 if amount is less than 1
+            };
+            phase.loot_inventory.push(LootGrant {
+                loot_id: effect.sub_type.clone(),
+                quantity,
+            });
         }
         HealthDamageMaxHealthPercent => {
             let damage = hero.max_health * effect.amount;

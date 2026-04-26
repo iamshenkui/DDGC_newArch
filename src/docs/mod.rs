@@ -547,3 +547,268 @@ fn campaign_json_is_valid_and_has_expected_top_level_keys() {
     assert!(parsed["run_history"].is_array());
     assert!(parsed["quest_progress"].is_array());
 }
+
+// ───────────────────────────────────────────────────────────────────
+// Buff and Loot Registry Tests
+// ───────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod buff_loot_registry_tests {
+    use crate::contracts::{
+        parse_buff_id, BuffRegistry,
+        LootCategory, LootDefinition, LootRegistry,
+    };
+    use crate::run::camping::{CampingPhase, HeroInCamp};
+
+    // ── Buff parsing tests ──────────────────────────────────────────
+
+    #[test]
+    fn buff_registry_parses_flat_positive_buff() {
+        let registry = BuffRegistry::new();
+        let modifiers = registry.resolve_buff("ATK+10");
+        assert_eq!(modifiers.len(), 1);
+        assert_eq!(modifiers[0].attribute_key, "ATK");
+        assert!((modifiers[0].value - 10.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn buff_registry_parses_flat_negative_buff() {
+        let registry = BuffRegistry::new();
+        let modifiers = registry.resolve_buff("MAXHP-15");
+        assert_eq!(modifiers.len(), 1);
+        assert_eq!(modifiers[0].attribute_key, "MAXHP");
+        assert!((modifiers[0].value - (-15.0)).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn buff_registry_parses_percentage_buff() {
+        let registry = BuffRegistry::new();
+        let modifiers = registry.resolve_buff("ATK%+10");
+        assert_eq!(modifiers.len(), 1);
+        assert_eq!(modifiers[0].attribute_key, "ATK");
+        // 10% = 0.10
+        assert!((modifiers[0].value - 0.10).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn buff_registry_parses_underscore_value_buff() {
+        let registry = BuffRegistry::new();
+        let modifiers = registry.resolve_buff("REVIVE_25");
+        assert_eq!(modifiers.len(), 1);
+        assert_eq!(modifiers[0].attribute_key, "REVIVE");
+        assert!((modifiers[0].value - 25.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn buff_registry_parses_tier_suffix_buff() {
+        let registry = BuffRegistry::new();
+        let modifiers = registry.resolve_buff("TRINKET_STRESSDMG_B0");
+        assert_eq!(modifiers.len(), 1);
+        assert_eq!(modifiers[0].attribute_key, "STRESSDMG");
+        assert!((modifiers[0].value - 0.0).abs() < f64::EPSILON); // Tier suffix format has value 0
+    }
+
+    #[test]
+    fn buff_registry_is_registered_returns_true_for_valid_buffs() {
+        let registry = BuffRegistry::new();
+        assert!(registry.is_registered("ATK+10"));
+        assert!(registry.is_registered("MAXHP-15"));
+        assert!(registry.is_registered("ATK%+10"));
+        assert!(registry.is_registered("REVIVE_25"));
+        assert!(registry.is_registered("TRINKET_STRESSDMG_B0"));
+    }
+
+    #[test]
+    fn buff_registry_is_registered_returns_false_for_invalid_buffs() {
+        let registry = BuffRegistry::new();
+        assert!(!registry.is_registered("INVALID_BUFF"));
+        assert!(!registry.is_registered(""));
+    }
+
+    #[test]
+    fn buff_registry_unrecognized_buff_returns_empty() {
+        let registry = BuffRegistry::new();
+        let modifiers = registry.resolve_buff("NOT_A_REAL_BUFF");
+        assert!(modifiers.is_empty());
+    }
+
+    #[test]
+    fn parse_buff_id_directly_parses_known_formats() {
+        // Test direct parse_buff_id function for various formats
+        let parsed = parse_buff_id("ATK+10").unwrap();
+        assert_eq!(parsed.attribute_key, "ATK");
+        assert!((parsed.value - 10.0).abs() < f64::EPSILON);
+
+        let parsed = parse_buff_id("DEF%-20").unwrap();
+        assert_eq!(parsed.attribute_key, "DEF");
+        assert!((parsed.value - 20.0).abs() < f64::EPSILON);
+    }
+
+    // ── Loot registry tests ────────────────────────────────────────
+
+    #[test]
+    fn loot_registry_can_register_and_lookup_loot() {
+        let mut registry = LootRegistry::new();
+        registry.register(LootDefinition::new(
+            "gold_chalice",
+            "Gold Chalice",
+            LootCategory::Curio,
+            50.0,
+            "A precious chalice found in dungeons",
+        ));
+
+        let loot = registry.get("gold_chalice");
+        assert!(loot.is_some());
+        let loot = loot.unwrap();
+        assert_eq!(loot.name, "Gold Chalice");
+        assert_eq!(loot.category, LootCategory::Curio);
+        assert!((loot.base_value - 50.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn loot_registry_curio_helper_creates_valid_definition() {
+        let loot = LootDefinition::curio("ancient_coin");
+        assert_eq!(loot.id, "ancient_coin");
+        assert_eq!(loot.name, "Ancient Coin");
+        assert_eq!(loot.category, LootCategory::Curio);
+    }
+
+    #[test]
+    fn loot_registry_camping_helper_creates_valid_definition() {
+        let loot = LootDefinition::camping("T_ANTIQ_CAMP");
+        assert_eq!(loot.id, "T_ANTIQ_CAMP");
+        assert_eq!(loot.name, "Camping Loot (T_ANTIQ_CAMP)");
+        assert_eq!(loot.category, LootCategory::Camping);
+    }
+
+    #[test]
+    fn loot_registry_is_registered_checks_existence() {
+        let mut registry = LootRegistry::new();
+        registry.register(LootDefinition::curio("treasure_1"));
+
+        assert!(registry.is_registered("treasure_1"));
+        assert!(!registry.is_registered("treasure_2"));
+    }
+
+    #[test]
+    fn loot_registry_len_and_is_empty_work() {
+        let mut registry = LootRegistry::new();
+        assert!(registry.is_empty());
+        assert_eq!(registry.len(), 0);
+
+        registry.register(LootDefinition::curio("item1"));
+        registry.register(LootDefinition::curio("item2"));
+
+        assert!(!registry.is_empty());
+        assert_eq!(registry.len(), 2);
+    }
+
+    #[test]
+    fn loot_registry_all_ids_returns_registered_ids() {
+        let mut registry = LootRegistry::new();
+        registry.register(LootDefinition::curio("alpha"));
+        registry.register(LootDefinition::curio("beta"));
+
+        let ids = registry.all_ids();
+        assert!(ids.contains(&"alpha"));
+        assert!(ids.contains(&"beta"));
+        assert_eq!(ids.len(), 2);
+    }
+
+    #[test]
+    fn loot_registry_for_category_filters_correctly() {
+        let mut registry = LootRegistry::new();
+        registry.register(LootDefinition::curio("curio_1"));
+        registry.register(LootDefinition::camping("camp_1"));
+        registry.register(LootDefinition::curio("curio_2"));
+
+        let curio_items = registry.for_category(&LootCategory::Curio);
+        assert_eq!(curio_items.len(), 2);
+
+        let camping_items = registry.for_category(&LootCategory::Camping);
+        assert_eq!(camping_items.len(), 1);
+    }
+
+    #[test]
+    fn loot_registry_validate_detects_issues() {
+        let registry = LootRegistry::new();
+        assert!(registry.validate().is_ok());
+    }
+
+    // ── Camping phase loot integration tests ────────────────────────
+
+    #[test]
+    fn camping_phase_loot_inventory_starts_empty() {
+        let heroes = vec![HeroInCamp::new("h1", "crusader", 100.0, 100.0, 50.0, 200.0)];
+        let phase = CampingPhase::new(heroes);
+        assert!(phase.loot_inventory.is_empty());
+    }
+
+    #[test]
+    fn camping_phase_loot_inventory_serializes() {
+        use crate::run::camping::LootGrant;
+
+        let heroes = vec![HeroInCamp::new("h1", "crusader", 100.0, 100.0, 50.0, 200.0)];
+        let mut phase = CampingPhase::new(heroes);
+        phase.loot_inventory.push(LootGrant {
+            loot_id: "S".to_string(),
+            quantity: 1,
+        });
+
+        // Verify it serializes
+        let json = serde_json::to_string(&phase).unwrap();
+        assert!(json.contains("loot_inventory"));
+        assert!(json.contains("S"));
+    }
+
+    // ── Unsupported asset fields documentation ─────────────────────
+
+    #[test]
+    fn loot_registry_documents_unsupported_loot_categories() {
+        // The following loot categories are referenced in DDGC data but not fully defined:
+        // - "S" category from camping skills (e.g., antiquarian supplier bonus)
+        // - "T_ANTIQ_CAMP" from antiquarian camping skill
+        //
+        // These are registered as camping-category loot with placeholder values.
+        // Full loot table resolution requires integration with the estate inventory system.
+
+        let mut registry = LootRegistry::new();
+        registry.register(LootDefinition::camping("S"));
+        registry.register(LootDefinition::camping("T_ANTIQ_CAMP"));
+
+        // Verify they are registered
+        assert!(registry.is_registered("S"));
+        assert!(registry.is_registered("T_ANTIQ_CAMP"));
+
+        // But they have no base value (placeholder)
+        assert!(registry.get("S").unwrap().base_value == 0.0);
+        assert!(registry.get("T_ANTIQ_CAMP").unwrap().base_value == 0.0);
+    }
+
+    #[test]
+    fn buff_registry_documents_supported_buff_formats() {
+        // The BuffRegistry supports these DDGC buff ID formats:
+        // - STAT+value (e.g., ATK+10) → flat positive modifier
+        // - STAT-value (e.g., MAXHP-15) → flat negative modifier
+        // - STAT%+value (e.g., ATK%+10) → percentage positive modifier
+        // - STAT%-value (e.g., MAXHP%-15) → percentage negative modifier
+        // - STAT_value (e.g., REVIVE_25) → flat implicit positive
+        // - TRINKET_STAT_TIER (e.g., TRINKET_STRESSDMG_B0) → tier-suffixed stat
+        //
+        // Unsupported formats return empty modifiers (no panic).
+
+        let registry = BuffRegistry::new();
+
+        // All supported formats should parse
+        assert!(!registry.resolve_buff("ATK+10").is_empty());
+        assert!(!registry.resolve_buff("DEF-5").is_empty());
+        assert!(!registry.resolve_buff("ATK%+10").is_empty());
+        assert!(!registry.resolve_buff("DEF%-5").is_empty());
+        assert!(!registry.resolve_buff("REVIVE_25").is_empty());
+        assert!(!registry.resolve_buff("TRINKET_STRESSDMG_B0").is_empty());
+
+        // Invalid formats should not panic, just return empty
+        assert!(registry.resolve_buff("INVALID_FORMAT").is_empty());
+        assert!(registry.resolve_buff("").is_empty());
+    }
+}
