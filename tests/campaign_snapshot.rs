@@ -705,7 +705,7 @@ fn load_campaign_fails_on_missing_file() {
     assert!(result.is_err());
     let err = result.unwrap_err();
     assert!(
-        err.contains("failed to read campaign save from")
+        err.contains("cannot read")
             || err.contains("not found")
             || err.contains("No such file"),
         "unexpected error message: {}",

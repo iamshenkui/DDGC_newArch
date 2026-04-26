@@ -161,37 +161,37 @@ impl GameState {
 
     /// Save the current campaign state to a JSON file.
     ///
-    /// Serialization is deterministic: the same campaign state always
-    /// produces identical JSON bytes. This is guaranteed by the use of
-    /// `BTreeMap` for all keyed collections in [`CampaignState`].
+    /// Delegates to [`CampaignState::save_to_file`] which serializes the full
+    /// campaign snapshot using the Phase 7 schema. Serialization is deterministic:
+    /// the same campaign state always produces identical JSON bytes.
+    ///
+    /// The in-memory campaign state is never modified by this operation.
     ///
     /// # Errors
     ///
-    /// Returns an error if serialization or file I/O fails.
+    /// Returns an error if serialization or file I/O fails. Errors are surfaced
+    /// explicitly and do not modify the in-memory state.
     pub fn save_campaign(&self, path: &Path) -> Result<(), String> {
-        let json = self.campaign.to_json().map_err(|e| format!("campaign serialization failed: {}", e))?;
-        std::fs::write(path, &json)
-            .map_err(|e| format!("failed to write campaign save to {}: {}", path.display(), e))
+        self.campaign.save_to_file(path)
     }
 
     /// Load a campaign state from a JSON save file.
     ///
-    /// Validates the schema version after loading. Returns an error if
-    /// the save file has an unsupported schema version.
-    ///
+    /// Delegates to [`CampaignState::load_from_file`] which reads the file,
+    /// deserializes the full campaign snapshot, and validates the schema version.
+    /// On success, the current campaign is replaced with the loaded state.
     /// Content datasets (camping skills, etc.) are preserved.
+    ///
+    /// If loading fails for any reason, the in-memory campaign state is left
+    /// unchanged — errors do not silently reset progress.
     ///
     /// # Errors
     ///
     /// Returns an error if the file cannot be read, the JSON is malformed,
-    /// or the schema version is unsupported.
+    /// or the schema version is unsupported. The existing campaign state
+    /// is preserved on error.
     pub fn load_campaign(&mut self, path: &Path) -> Result<(), String> {
-        let json = std::fs::read_to_string(path)
-            .map_err(|e| format!("failed to read campaign save from {}: {}", path.display(), e))?;
-        let campaign = CampaignState::from_json(&json)
-            .map_err(|e| format!("campaign deserialization failed: {}", e))?;
-        campaign.validate_version()?;
-        self.campaign = campaign;
+        self.campaign = CampaignState::load_from_file(path)?;
         Ok(())
     }
 
@@ -1153,7 +1153,12 @@ mod tests {
         std::fs::remove_file(&save_path).ok();
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("deserialization failed"));
+        let err = result.unwrap_err();
+        assert!(
+            err.contains("deserialization error") || err.contains("expected value"),
+            "unexpected error message: {}",
+            err
+        );
     }
 
     #[test]
@@ -1191,6 +1196,126 @@ mod tests {
         state.load_campaign(&save_path).unwrap();
         assert_eq!(state.campaign.gold, 2000);
         assert_eq!(state.campaign.inventory.len(), 2);
+
+        std::fs::remove_file(&save_path).ok();
+    }
+
+    #[test]
+    fn game_state_load_campaign_preserves_state_on_failure() {
+        let mut state = load_real_state();
+        state.new_campaign(500);
+        state.campaign.roster.push(
+            CampaignHero::new("h1", "alchemist", 1, 50, 90.0, 100.0, 15.0, 200.0),
+        );
+        state.campaign.inventory.push(CampaignInventoryItem::new("torch", 8));
+        state.campaign.heirlooms.insert(HeirloomCurrency::Bones, 30);
+
+        // Attempt to load from a nonexistent file — must fail
+        let result = state.load_campaign(Path::new("/nonexistent/campaign_save.json"));
+        assert!(result.is_err(), "loading a missing file must return an error");
+
+        // Existing campaign state must be preserved
+        assert_eq!(state.campaign.gold, 500);
+        assert_eq!(state.campaign.roster.len(), 1);
+        assert_eq!(state.campaign.roster[0].id, "h1");
+        assert_eq!(state.campaign.roster[0].health, 90.0);
+        assert_eq!(state.campaign.roster[0].stress, 15.0);
+        assert_eq!(state.campaign.inventory[0].id, "torch");
+        assert_eq!(state.campaign.inventory[0].quantity, 8);
+        assert_eq!(state.campaign.heirlooms[&HeirloomCurrency::Bones], 30);
+        assert_eq!(state.camping_skill_count(), 87);
+    }
+
+    #[test]
+    fn campaign_continues_across_multiple_persisted_loops() {
+        let save_path = temp_save_path("multi_loop_e2e");
+
+        // ── Session 1: fresh campaign, first dungeon run ──────────────
+        let mut state = load_real_state();
+        state.new_campaign(500);
+        state.campaign.roster.push(
+            CampaignHero::new("hero_1", "crusader", 1, 50, 90.0, 100.0, 15.0, 200.0),
+        );
+        state.campaign.inventory.push(CampaignInventoryItem::new("torch", 8));
+        state.campaign.inventory.push(CampaignInventoryItem::new("shovel", 2));
+        state.save_campaign(&save_path).unwrap();
+
+        // ── Session 2: load, simulate dungeon rewards, save ───────────
+        let mut state = load_real_state();
+        state.load_campaign(&save_path).unwrap();
+        assert_eq!(state.campaign.gold, 500);
+        assert_eq!(state.campaign.roster.len(), 1);
+        assert_eq!(state.campaign.inventory.len(), 2);
+        assert_eq!(state.campaign.roster[0].health, 90.0);
+
+        // Simulate rewards from a completed dungeon run
+        state.campaign.gold += 350;
+        state.campaign.roster[0].xp += 200;
+        state.campaign.roster[0].health = 75.0;
+        state.campaign.roster[0].stress = 45.0;
+        state.campaign.run_history.push(CampaignRunRecord::new(
+            DungeonType::QingLong, MapSize::Short,
+            9, 3, true, 350,
+        ));
+        state.campaign.heirlooms.insert(HeirloomCurrency::Bones, 15);
+        state.campaign.inventory[0].quantity -= 3;
+        state.campaign.inventory.push(CampaignInventoryItem::new("bandage", 2));
+        state.save_campaign(&save_path).unwrap();
+
+        // ── Session 3: load, verify accumulated state ─────────────────
+        let mut state = load_real_state();
+        state.load_campaign(&save_path).unwrap();
+        assert_eq!(state.campaign.gold, 850, "gold should accumulate across sessions");
+        assert_eq!(state.campaign.roster.len(), 1);
+        assert_eq!(state.campaign.roster[0].health, 75.0);
+        assert_eq!(state.campaign.roster[0].stress, 45.0);
+        assert_eq!(state.campaign.roster[0].xp, 250);
+        assert_eq!(state.campaign.run_history.len(), 1);
+        assert_eq!(state.campaign.run_history[0].gold_earned, 350);
+        assert_eq!(state.campaign.inventory[0].quantity, 5);
+        assert_eq!(state.campaign.heirlooms[&HeirloomCurrency::Bones], 15);
+
+        // Simulate recruiting a second hero and another dungeon
+        state.campaign.roster.push(
+            CampaignHero::new("hero_2", "hunter", 1, 0, 100.0, 100.0, 0.0, 200.0),
+        );
+        state.campaign.roster[1].skills = vec![
+            "skill_aimed_shot".to_string(),
+            "skill_quick_shot".to_string(),
+        ];
+        state.campaign.roster[1].equipment.weapon_level = 1;
+        state.campaign.gold += 500;
+        state.campaign.roster[0].xp += 300;
+        state.campaign.roster[0].health = 60.0;
+        state.campaign.roster[1].xp += 250;
+        state.campaign.roster[1].health = 80.0;
+        state.campaign.run_history.push(CampaignRunRecord::new(
+            DungeonType::BaiHu, MapSize::Medium,
+            12, 4, true, 500,
+        ));
+        state.campaign.inventory[0].quantity -= 2;
+        state.save_campaign(&save_path).unwrap();
+
+        // ── Session 4: load, verify all accumulated state ─────────────
+        let mut state = load_real_state();
+        state.load_campaign(&save_path).unwrap();
+        assert_eq!(state.campaign.gold, 1350, "gold should accumulate across all sessions");
+        assert_eq!(state.campaign.roster.len(), 2);
+        assert_eq!(state.campaign.roster[0].id, "hero_1");
+        assert_eq!(state.campaign.roster[0].health, 60.0);
+        assert_eq!(state.campaign.roster[0].xp, 550);
+        assert_eq!(state.campaign.roster[1].id, "hero_2");
+        assert_eq!(state.campaign.roster[1].health, 80.0);
+        assert_eq!(state.campaign.roster[1].xp, 250);
+        assert_eq!(state.campaign.roster[1].equipment.weapon_level, 1);
+        assert_eq!(state.campaign.roster[1].skills, vec!["skill_aimed_shot", "skill_quick_shot"]);
+        assert_eq!(state.campaign.run_history.len(), 2);
+        assert_eq!(state.campaign.run_history[0].dungeon, DungeonType::QingLong);
+        assert_eq!(state.campaign.run_history[1].dungeon, DungeonType::BaiHu);
+        assert_eq!(state.campaign.inventory.len(), 3);
+        assert_eq!(state.campaign.inventory[0].quantity, 3); // torches: 8-3-2=3
+        assert_eq!(state.campaign.heirlooms[&HeirloomCurrency::Bones], 15);
+        assert_eq!(state.camping_skill_count(), 87); // content intact
 
         std::fs::remove_file(&save_path).ok();
     }
