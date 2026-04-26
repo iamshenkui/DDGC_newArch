@@ -22,6 +22,7 @@
 //! beyond combat.
 
 use serde::{Deserialize, Serialize};
+use std::path::Path;
 
 /// Represents a min/max range pair for density and count parameters.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -3808,6 +3809,51 @@ impl CampaignState {
             ))
         }
     }
+
+    /// Save this campaign state to a JSON file on disk.
+    ///
+    /// Serializes the full campaign snapshot using the Phase 7 schema and writes
+    /// it to the given path. Serialization is deterministic — the same
+    /// `CampaignState` always produces byte-identical save files.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if serialization fails or the file cannot be written.
+    /// Errors are surfaced explicitly and do not modify the in-memory state.
+    pub fn save_to_file(&self, path: &Path) -> Result<(), String> {
+        let json = self
+            .to_json()
+            .map_err(|e| format!("campaign save failed: serialization error: {}", e))?;
+        std::fs::write(path, &json)
+            .map_err(|e| format!("campaign save failed: cannot write to {}: {}", path.display(), e))
+    }
+
+    /// Load a campaign state from a JSON save file on disk.
+    ///
+    /// Reads the file at `path`, deserializes it as a `CampaignState`, and
+    /// validates the schema version. Returns the reconstructed campaign state
+    /// on success.
+    ///
+    /// This is a constructor-style method — it returns a new `CampaignState`
+    /// rather than mutating an existing one.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if:
+    /// - The file cannot be read (missing, permissions, etc.)
+    /// - The JSON is malformed or does not match the campaign schema
+    /// - The schema version in the save file is not [`CAMPAIGN_SNAPSHOT_VERSION`]
+    ///
+    /// Errors are surfaced explicitly. If loading fails, no in-memory state
+    /// is modified.
+    pub fn load_from_file(path: &Path) -> Result<Self, String> {
+        let json = std::fs::read_to_string(path)
+            .map_err(|e| format!("campaign load failed: cannot read {}: {}", path.display(), e))?;
+        let campaign = Self::from_json(&json)
+            .map_err(|e| format!("campaign load failed: deserialization error: {}", e))?;
+        campaign.validate_version()?;
+        Ok(campaign)
+    }
 }
 
 #[cfg(test)]
@@ -6628,5 +6674,381 @@ mod tests {
         assert_eq!(e.weapon_level, 0);
         assert_eq!(e.armor_level, 0);
         assert!(e.trinkets.is_empty());
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // US-002: Campaign save/load pipeline — file I/O tests
+    // ───────────────────────────────────────────────────────────────
+
+    /// Create a temporary file path for save/load testing.
+    fn temp_file(name: &str) -> std::path::PathBuf {
+        std::env::temp_dir().join(format!("ddgc_us002_{}.json", name))
+    }
+
+    // ── (a) Save then load produces equivalent runtime state ──────────
+
+    #[test]
+    fn save_to_file_then_load_from_file_is_identity() {
+        let original = build_test_campaign();
+        let path = temp_file("save_load_identity");
+
+        original.save_to_file(&path).expect("save should succeed");
+        let restored =
+            CampaignState::load_from_file(&path).expect("load should succeed");
+
+        std::fs::remove_file(&path).ok();
+        assert_eq!(original, restored, "save then load must produce equivalent CampaignState");
+    }
+
+    #[test]
+    fn save_to_file_then_load_from_file_preserves_all_substates() {
+        let original = build_test_campaign();
+        let path = temp_file("save_load_substates");
+
+        original.save_to_file(&path).unwrap();
+        let restored = CampaignState::load_from_file(&path).unwrap();
+        std::fs::remove_file(&path).ok();
+
+        assert_eq!(restored.gold, 1500);
+        assert_eq!(restored.schema_version, CAMPAIGN_SNAPSHOT_VERSION);
+        assert_eq!(restored.heirlooms.len(), 3);
+        assert_eq!(restored.heirlooms[&HeirloomCurrency::Bones], 42);
+        assert_eq!(restored.building_states.len(), 2);
+        assert_eq!(restored.building_states["inn"].current_level, Some('b'));
+        assert_eq!(restored.roster.len(), 2);
+        assert_eq!(restored.roster[0].id, "hero_1");
+        assert_eq!(restored.roster[0].equipment.weapon_level, 2);
+        assert_eq!(restored.roster[1].id, "hero_2");
+        assert_eq!(restored.inventory.len(), 3);
+        assert_eq!(restored.run_history.len(), 2);
+        assert_eq!(restored.run_history[0].dungeon, DungeonType::QingLong);
+        assert_eq!(restored.quest_progress.len(), 1);
+        assert_eq!(restored.quest_progress[0].quest_id, "kill_boss_qinglong");
+    }
+
+    #[test]
+    fn save_to_file_then_load_from_file_empty_campaign_is_identity() {
+        let original = CampaignState::new(0);
+        let path = temp_file("save_load_empty");
+
+        original.save_to_file(&path).unwrap();
+        let restored = CampaignState::load_from_file(&path).unwrap();
+        std::fs::remove_file(&path).ok();
+
+        assert_eq!(restored.gold, 0);
+        assert!(restored.roster.is_empty());
+        assert!(restored.heirlooms.is_empty());
+        assert_eq!(original, restored);
+    }
+
+    // ── (b) Multiple save cycles remain deterministic ─────────────────
+
+    #[test]
+    fn multiple_saves_of_same_state_produce_identical_files() {
+        let campaign = build_test_campaign();
+        let path_a = temp_file("multi_save_a");
+        let path_b = temp_file("multi_save_b");
+
+        campaign.save_to_file(&path_a).unwrap();
+        campaign.save_to_file(&path_b).unwrap();
+
+        let bytes_a = std::fs::read(&path_a).unwrap();
+        let bytes_b = std::fs::read(&path_b).unwrap();
+        std::fs::remove_file(&path_a).ok();
+        std::fs::remove_file(&path_b).ok();
+
+        assert_eq!(bytes_a, bytes_b, "identical state must produce identical save file bytes across multiple saves");
+    }
+
+    #[test]
+    fn load_save_cycle_without_modification_is_byte_stable() {
+        let campaign = build_test_campaign();
+        let path = temp_file("byte_stable");
+
+        campaign.save_to_file(&path).unwrap();
+        let first_bytes = std::fs::read(&path).unwrap();
+
+        // Load and re-save without any modification
+        let restored = CampaignState::load_from_file(&path).unwrap();
+        restored.save_to_file(&path).unwrap();
+        let second_bytes = std::fs::read(&path).unwrap();
+
+        std::fs::remove_file(&path).ok();
+        assert_eq!(first_bytes, second_bytes,
+            "load-then-save without modification must produce byte-identical file");
+    }
+
+    #[test]
+    fn three_cycle_save_load_produces_stable_bytes() {
+        let campaign = build_test_campaign();
+        let path = temp_file("three_cycle");
+
+        campaign.save_to_file(&path).unwrap();
+        let original_bytes = std::fs::read(&path).unwrap();
+
+        for cycle in 1..=3 {
+            let current = CampaignState::load_from_file(&path).unwrap();
+            assert_eq!(current, campaign, "cycle {}: loaded state must equal original", cycle);
+            current.save_to_file(&path).unwrap();
+            let re_saved = std::fs::read(&path).unwrap();
+            assert_eq!(re_saved, original_bytes,
+                "cycle {}: re-saved bytes must match original", cycle);
+        }
+
+        std::fs::remove_file(&path).ok();
+    }
+
+    // ── (c) Invalid schema versions fail clearly ──────────────────────
+
+    #[test]
+    fn load_from_file_rejects_unsupported_schema_version() {
+        let mut campaign = CampaignState::new(500);
+        campaign.schema_version = 99;
+        let path = temp_file("bad_version");
+
+        campaign.save_to_file(&path).unwrap();
+
+        let result = CampaignState::load_from_file(&path);
+        std::fs::remove_file(&path).ok();
+
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(
+            err.contains("unsupported campaign schema version"),
+            "error should mention unsupported schema version, got: {}",
+            err
+        );
+    }
+
+    #[test]
+    fn load_from_file_rejects_future_schema_version() {
+        let mut campaign = CampaignState::new(500);
+        campaign.schema_version = CAMPAIGN_SNAPSHOT_VERSION + 5;
+        let path = temp_file("future_version");
+
+        campaign.save_to_file(&path).unwrap();
+
+        let result = CampaignState::load_from_file(&path);
+        std::fs::remove_file(&path).ok();
+
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("unsupported campaign schema version"));
+    }
+
+    #[test]
+    fn load_from_file_rejects_zero_schema_version() {
+        let mut campaign = CampaignState::new(500);
+        campaign.schema_version = 0;
+        let path = temp_file("zero_version");
+
+        campaign.save_to_file(&path).unwrap();
+
+        let result = CampaignState::load_from_file(&path);
+        std::fs::remove_file(&path).ok();
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn load_from_file_fails_on_missing_file() {
+        let result = CampaignState::load_from_file(Path::new("/nonexistent/campaign_save.json"));
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(
+            err.contains("cannot read") || err.contains("failed to read")
+                || err.contains("not found") || err.contains("No such file"),
+            "unexpected error: {}",
+            err
+        );
+    }
+
+    #[test]
+    fn load_from_file_fails_on_malformed_json() {
+        let path = temp_file("malformed");
+        std::fs::write(&path, "this is not valid {{{ json").unwrap();
+
+        let result = CampaignState::load_from_file(&path);
+        std::fs::remove_file(&path).ok();
+
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("deserialization error"));
+    }
+
+    #[test]
+    fn load_from_file_fails_on_wrong_json_shape() {
+        let path = temp_file("wrong_shape");
+        std::fs::write(&path, "[1, 2, 3]").unwrap();
+
+        let result = CampaignState::load_from_file(&path);
+        std::fs::remove_file(&path).ok();
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn load_from_file_fails_on_json_without_schema_version() {
+        let path = temp_file("no_version");
+        std::fs::write(&path, r#"{"gold": 500}"#).unwrap();
+
+        let result = CampaignState::load_from_file(&path);
+        std::fs::remove_file(&path).ok();
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn save_to_file_fails_on_invalid_path() {
+        let campaign = CampaignState::new(500);
+        let result = campaign.save_to_file(Path::new("/nonexistent/dir/campaign.json"));
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("cannot write"));
+    }
+
+    #[test]
+    fn save_to_file_does_not_modify_state_on_error() {
+        let campaign = CampaignState::new(500);
+        let original_json = campaign.to_json().unwrap();
+
+        let _ = campaign.save_to_file(Path::new("/nonexistent/dir/campaign.json"));
+
+        let after_json = campaign.to_json().unwrap();
+        assert_eq!(original_json, after_json,
+            "save_to_file failure must not alter in-memory state");
+    }
+
+    // ── End-to-end: campaign continues across multiple persisted loops ──
+
+    #[test]
+    fn campaign_continues_across_multiple_persisted_loops() {
+        let path = temp_file("multi_loop_e2e");
+
+        // ── Loop 1: fresh campaign, first dungeon run ──────────────────
+        let mut campaign = CampaignState::new(500);
+        campaign.roster.push(
+            CampaignHero::new("hero_1", "crusader", 1, 50, 90.0, 100.0, 15.0, 200.0),
+        );
+        campaign.inventory.push(CampaignInventoryItem::new("torch", 8));
+        campaign.inventory.push(CampaignInventoryItem::new("shovel", 2));
+        campaign.save_to_file(&path).unwrap();
+
+        // ── Loop 2: continue — add gold from run, level up hero ────────
+        let mut campaign = CampaignState::load_from_file(&path).unwrap();
+        assert_eq!(campaign.gold, 500);
+        assert_eq!(campaign.roster.len(), 1);
+        assert_eq!(campaign.inventory.len(), 2);
+
+        // Simulate rewards from a completed QingLong short run
+        campaign.gold += 350;
+        campaign.roster[0].xp += 200;
+        campaign.roster[0].level = 2;
+        campaign.roster[0].health = 75.0;
+        campaign.roster[0].stress = 45.0;
+        campaign.run_history.push(CampaignRunRecord::new(
+            DungeonType::QingLong, MapSize::Short,
+            9, 3, true, 350,
+        ));
+        campaign.heirlooms.insert(HeirloomCurrency::Bones, 15);
+        campaign.inventory[0].quantity -= 3; // used 3 torches
+        campaign.inventory.push(CampaignInventoryItem::new("bandage", 2));
+        campaign.save_to_file(&path).unwrap();
+
+        // ── Loop 3: continue — another run, recruit second hero ────────
+        let mut campaign = CampaignState::load_from_file(&path).unwrap();
+        assert_eq!(campaign.gold, 850, "gold should accumulate");
+        assert_eq!(campaign.roster.len(), 1);
+        assert_eq!(campaign.roster[0].level, 2);
+        assert_eq!(campaign.roster[0].stress, 45.0);
+        assert_eq!(campaign.run_history.len(), 1);
+        assert_eq!(campaign.run_history[0].gold_earned, 350);
+        assert_eq!(campaign.inventory[0].quantity, 5); // torches
+        assert_eq!(campaign.heirlooms[&HeirloomCurrency::Bones], 15);
+
+        // Recruit a second hero and embark on BaiHu medium run
+        campaign.roster.push(
+            CampaignHero::new("hero_2", "hunter", 1, 0, 100.0, 100.0, 0.0, 200.0),
+        );
+        campaign.roster[1].skills = vec![
+            "skill_aimed_shot".to_string(),
+            "skill_quick_shot".to_string(),
+        ];
+        campaign.roster[1].equipment.weapon_level = 1;
+        // Run outcome: completed, earned 500 gold
+        campaign.gold += 500;
+        campaign.roster[0].xp += 300;
+        campaign.roster[0].health = 60.0;
+        campaign.roster[1].xp += 250;
+        campaign.roster[1].level = 2;
+        campaign.roster[1].health = 80.0;
+        campaign.run_history.push(CampaignRunRecord::new(
+            DungeonType::BaiHu, MapSize::Medium,
+            12, 4, true, 500,
+        ));
+        campaign.heirlooms.insert(HeirloomCurrency::Portraits, 10);
+        // Upgrade a town building
+        campaign.building_states.insert(
+            "blacksmith".to_string(),
+            BuildingUpgradeState::new("blacksmith", Some('a')),
+        );
+        // Start a quest
+        let mut q = CampaignQuestProgress::new("cleanse_all_dungeons", 4);
+        q.current_step = 1;
+        campaign.quest_progress.push(q);
+        campaign.save_to_file(&path).unwrap();
+
+        // ── Loop 4: verify all accumulated state survives ──────────────
+        let campaign = CampaignState::load_from_file(&path).unwrap();
+        std::fs::remove_file(&path).ok();
+
+        // Top-level
+        assert_eq!(campaign.gold, 1350); // 500 + 350 + 500
+        assert_eq!(campaign.schema_version, CAMPAIGN_SNAPSHOT_VERSION);
+
+        // Heirlooms accumulated across loops
+        assert_eq!(campaign.heirlooms.len(), 2);
+        assert_eq!(campaign.heirlooms[&HeirloomCurrency::Bones], 15);
+        assert_eq!(campaign.heirlooms[&HeirloomCurrency::Portraits], 10);
+
+        // Town building from loop 3
+        assert_eq!(campaign.building_states.len(), 1);
+        assert_eq!(campaign.building_states["blacksmith"].current_level, Some('a'));
+
+        // Roster: two heroes with accumulated XP and damage
+        assert_eq!(campaign.roster.len(), 2);
+        let h1 = &campaign.roster[0];
+        assert_eq!(h1.id, "hero_1");
+        assert_eq!(h1.class_id, "crusader");
+        assert_eq!(h1.level, 2);
+        assert_eq!(h1.xp, 550); // 50 + 200 + 300
+        assert_eq!(h1.health, 60.0);
+        assert_eq!(h1.stress, 45.0);
+        let h2 = &campaign.roster[1];
+        assert_eq!(h2.id, "hero_2");
+        assert_eq!(h2.class_id, "hunter");
+        assert_eq!(h2.level, 2);
+        assert_eq!(h2.xp, 250);
+        assert_eq!(h2.health, 80.0);
+        assert_eq!(h2.skills.len(), 2);
+        assert_eq!(h2.equipment.weapon_level, 1);
+
+        // Inventory with quantity changes
+        assert_eq!(campaign.inventory.len(), 3); // torch, shovel, bandage
+        assert_eq!(campaign.inventory[0].id, "torch");
+        assert_eq!(campaign.inventory[0].quantity, 5);
+        assert_eq!(campaign.inventory[1].id, "shovel");
+        assert_eq!(campaign.inventory[1].quantity, 2);
+        assert_eq!(campaign.inventory[2].id, "bandage");
+
+        // Run history from loops 2 and 3
+        assert_eq!(campaign.run_history.len(), 2);
+        assert_eq!(campaign.run_history[0].dungeon, DungeonType::QingLong);
+        assert_eq!(campaign.run_history[0].completed, true);
+        assert_eq!(campaign.run_history[1].dungeon, DungeonType::BaiHu);
+        assert_eq!(campaign.run_history[1].completed, true);
+
+        // Quest from loop 3
+        assert_eq!(campaign.quest_progress.len(), 1);
+        assert_eq!(campaign.quest_progress[0].quest_id, "cleanse_all_dungeons");
+        assert_eq!(campaign.quest_progress[0].current_step, 1);
+        assert_eq!(campaign.quest_progress[0].max_steps, 4);
     }
 }
