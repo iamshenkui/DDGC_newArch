@@ -1191,7 +1191,7 @@ impl CampTargetSelection {
 ///
 /// The remaining variants correspond to DDGC `CampEffectType` entries as documented
 /// in `CampingSkillHelper.cs`.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum CampEffectType {
     /// Uninitialized or unknown effect type.
     None,
@@ -1855,6 +1855,329 @@ impl CampEffect {
                     self.effect_type
                 )
             }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Targeting contract types — DDGC skill targeting intent data model
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Launch constraint — where an actor must be positioned to use a skill.
+///
+/// DDGC skills often have positional requirements (e.g., ".launch 0" means
+/// the actor must be in the front row). This enum captures the pure data
+/// contract for launch constraints without runtime resolution logic.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum LaunchConstraint {
+    /// No launch constraint — the actor can use the skill from any position.
+    Any,
+    /// The actor must be in the front row.
+    FrontRow,
+    /// The actor must be in the back row.
+    BackRow,
+    /// The actor must be in a specific lane (0-indexed).
+    SpecificLane(u32),
+    /// The actor must be in a slot within the given range [min, max].
+    SlotRange { min: u32, max: u32 },
+}
+
+impl LaunchConstraint {
+    /// Returns a human-readable label for this constraint.
+    pub fn label(&self) -> &'static str {
+        match self {
+            LaunchConstraint::Any => "any",
+            LaunchConstraint::FrontRow => "front_row",
+            LaunchConstraint::BackRow => "back_row",
+            LaunchConstraint::SpecificLane(_) => "specific_lane",
+            LaunchConstraint::SlotRange { .. } => "slot_range",
+        }
+    }
+}
+
+/// Target rank — which rows (front/back) are valid targets.
+///
+/// DDGC skills can target specific ranks: front row only, back row only,
+/// or any rank. This is a pure data contract.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum TargetRank {
+    /// Any rank is a valid target.
+    Any,
+    /// Only the front row is a valid target.
+    Front,
+    /// Only the back row is a valid target.
+    Back,
+    /// Both front and back rows are valid targets.
+    FrontAndBack,
+}
+
+impl TargetRank {
+    /// Returns a human-readable label for this target rank.
+    pub fn label(&self) -> &'static str {
+        match self {
+            TargetRank::Any => "any",
+            TargetRank::Front => "front",
+            TargetRank::Back => "back",
+            TargetRank::FrontAndBack => "front_and_back",
+        }
+    }
+}
+
+/// Side affinity — which sides (enemy/ally) can be targeted.
+///
+/// DDGC skills can target enemies, allies, or either side. This is a pure
+/// data contract for side affinity.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum SideAffinity {
+    /// Target enemies only.
+    Enemy,
+    /// Target allies only.
+    Ally,
+    /// Target either side.
+    Any,
+}
+
+impl SideAffinity {
+    /// Returns a human-readable label for this side affinity.
+    pub fn label(&self) -> &'static str {
+        match self {
+            SideAffinity::Enemy => "enemy",
+            SideAffinity::Ally => "ally",
+            SideAffinity::Any => "any",
+        }
+    }
+}
+
+/// Target count — how many targets a skill selects.
+///
+/// DDGC skills can target a single actor or multiple actors. This is a
+/// pure data contract for target count intent.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum TargetCount {
+    /// Target a single actor.
+    Single,
+    /// Target multiple actors.
+    Multiple,
+}
+
+impl TargetCount {
+    /// Returns a human-readable label for this target count.
+    pub fn label(&self) -> &'static str {
+        match self {
+            TargetCount::Single => "single",
+            TargetCount::Multiple => "multiple",
+        }
+    }
+}
+
+/// Targeting intent — the full targeting specification for a DDGC skill.
+///
+/// This struct bundles all targeting dimensions into a single contract
+/// that describes how a skill selects its targets. Resolution logic
+/// against formation state lives in the encounter runtime, not here.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TargetingIntent {
+    /// Where the actor must be positioned to use the skill.
+    pub launch_constraint: LaunchConstraint,
+    /// Which ranks are valid targets.
+    pub target_rank: TargetRank,
+    /// Which side is targeted.
+    pub side_affinity: SideAffinity,
+    /// How many targets are selected.
+    pub target_count: TargetCount,
+}
+
+impl TargetingIntent {
+    /// Create a new targeting intent.
+    pub fn new(
+        launch_constraint: LaunchConstraint,
+        target_rank: TargetRank,
+        side_affinity: SideAffinity,
+        target_count: TargetCount,
+    ) -> Self {
+        TargetingIntent {
+            launch_constraint,
+            target_rank,
+            side_affinity,
+            target_count,
+        }
+    }
+
+    /// The default targeting intent: any launch, any rank, enemy side, single target.
+    /// This is the most common targeting pattern for standard DDGC attack skills.
+    pub fn default_enemy_single() -> Self {
+        TargetingIntent {
+            launch_constraint: LaunchConstraint::Any,
+            target_rank: TargetRank::Any,
+            side_affinity: SideAffinity::Enemy,
+            target_count: TargetCount::Single,
+        }
+    }
+
+    /// Targeting intent for ally-targeting skills (heals, buffs, guards).
+    pub fn ally_single() -> Self {
+        TargetingIntent {
+            launch_constraint: LaunchConstraint::Any,
+            target_rank: TargetRank::Any,
+            side_affinity: SideAffinity::Ally,
+            target_count: TargetCount::Single,
+        }
+    }
+
+    /// Returns true if this intent targets the enemy side.
+    pub fn targets_enemy(&self) -> bool {
+        matches!(self.side_affinity, SideAffinity::Enemy | SideAffinity::Any)
+    }
+
+    /// Returns true if this intent targets the ally side.
+    pub fn targets_ally(&self) -> bool {
+        matches!(self.side_affinity, SideAffinity::Ally | SideAffinity::Any)
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Movement effect contract types — DDGC push/pull/shuffle movement semantics
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Direction of movement for repositioning effects.
+///
+/// In DDGC, movement effects shift actors within the formation.
+/// The direction is relative to the actor's own side:
+/// - Forward = toward the enemy side
+/// - Backward = toward the actor's own back line
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum MovementDirection {
+    /// Move toward the enemy side.
+    Forward,
+    /// Move toward the actor's own back line.
+    Backward,
+}
+
+impl MovementDirection {
+    /// Returns a human-readable label.
+    pub fn label(&self) -> &'static str {
+        match self {
+            MovementDirection::Forward => "forward",
+            MovementDirection::Backward => "backward",
+        }
+    }
+}
+
+/// Movement effect — the type and magnitude of a repositioning effect.
+///
+/// DDGC skills can push, pull, or shuffle actors within the formation.
+/// This enum captures the pure data contract for movement effects
+/// without the runtime formation-mutation logic.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum MovementEffect {
+    /// Push the target backward by N steps (away from enemy side).
+    Push(u32),
+    /// Pull the target forward by N steps (toward enemy side).
+    Pull(u32),
+    /// Randomize the target's position within their formation.
+    Shuffle,
+    /// No movement effect.
+    None,
+}
+
+impl MovementEffect {
+    /// Returns a human-readable label for this movement effect.
+    pub fn label(&self) -> &'static str {
+        match self {
+            MovementEffect::Push(_) => "push",
+            MovementEffect::Pull(_) => "pull",
+            MovementEffect::Shuffle => "shuffle",
+            MovementEffect::None => "none",
+        }
+    }
+
+    /// Returns the number of steps for push/pull, or 0 for other variants.
+    pub fn steps(&self) -> u32 {
+        match self {
+            MovementEffect::Push(n) | MovementEffect::Pull(n) => *n,
+            _ => 0,
+        }
+    }
+
+    /// Returns the direction of the movement effect.
+    pub fn direction(&self) -> MovementDirection {
+        match self {
+            MovementEffect::Push(_) => MovementDirection::Backward,
+            MovementEffect::Pull(_) => MovementDirection::Forward,
+            MovementEffect::Shuffle | MovementEffect::None => MovementDirection::Forward,
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Meta transition contract types — boss phase transition data model
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Trigger condition for a boss phase transition.
+///
+/// DDGC bosses can transition between phases based on various game conditions.
+/// This enum captures the pure data contract for transition triggers.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum PhaseTransitionTrigger {
+    /// Transition after N press attacks on the boss pack.
+    PressAttackCount(u32),
+    /// Transition when boss HP drops below a fraction (0.0–1.0).
+    HealthBelow(f64),
+    /// Transition after N rounds have elapsed.
+    RoundElapsed(u32),
+    /// Transition when a specific ally of the boss dies.
+    OnAllyDeath(String),
+    /// Transition when all specified allies are dead.
+    OnAllAlliesDead(Vec<String>),
+}
+
+impl PhaseTransitionTrigger {
+    /// Returns a human-readable label for this trigger type.
+    pub fn label(&self) -> &'static str {
+        match self {
+            PhaseTransitionTrigger::PressAttackCount(_) => "press_attack_count",
+            PhaseTransitionTrigger::HealthBelow(_) => "health_below",
+            PhaseTransitionTrigger::RoundElapsed(_) => "round_elapsed",
+            PhaseTransitionTrigger::OnAllyDeath(_) => "on_ally_death",
+            PhaseTransitionTrigger::OnAllAlliesDead(_) => "on_all_allies_dead",
+        }
+    }
+}
+
+/// Configuration for a boss phase transition.
+///
+/// Describes the trigger, which actors to remove, and which new actor
+/// to summon when a boss transitions between phases. This is a pure
+/// data contract — the runtime executes the actual formation mutations.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PhaseTransitionConfig {
+    /// Identifier for the boss pack this transition applies to.
+    pub boss_pack_id: String,
+    /// The trigger condition for this transition.
+    pub trigger: PhaseTransitionTrigger,
+    /// Family IDs of actors to remove when transitioning.
+    pub remove_families: Vec<String>,
+    /// Family ID of the actor to summon for the new phase.
+    pub summon_family_id: String,
+    /// Slot index where the new phase actor should be placed.
+    pub placement_slot: u32,
+}
+
+impl PhaseTransitionConfig {
+    /// Create a new phase transition configuration.
+    pub fn new(
+        boss_pack_id: &str,
+        trigger: PhaseTransitionTrigger,
+        remove_families: Vec<String>,
+        summon_family_id: &str,
+        placement_slot: u32,
+    ) -> Self {
+        PhaseTransitionConfig {
+            boss_pack_id: boss_pack_id.to_string(),
+            trigger,
+            remove_families,
+            summon_family_id: summon_family_id.to_string(),
+            placement_slot,
         }
     }
 }
@@ -7617,5 +7940,438 @@ mod tests {
         assert_eq!(campaign.quest_progress[0].quest_id, "cleanse_all_dungeons");
         assert_eq!(campaign.quest_progress[0].current_step, 1);
         assert_eq!(campaign.quest_progress[0].max_steps, 4);
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // US-009-a: Targeting contract type regression tests
+    // ───────────────────────────────────────────────────────────────
+
+    #[test]
+    fn launch_constraint_labels() {
+        assert_eq!(LaunchConstraint::Any.label(), "any");
+        assert_eq!(LaunchConstraint::FrontRow.label(), "front_row");
+        assert_eq!(LaunchConstraint::BackRow.label(), "back_row");
+        assert_eq!(LaunchConstraint::SpecificLane(0).label(), "specific_lane");
+        assert_eq!(LaunchConstraint::SlotRange { min: 0, max: 3 }.label(), "slot_range");
+    }
+
+    #[test]
+    fn launch_constraint_serialization_roundtrip() {
+        let variants = vec![
+            LaunchConstraint::Any,
+            LaunchConstraint::FrontRow,
+            LaunchConstraint::BackRow,
+            LaunchConstraint::SpecificLane(2),
+            LaunchConstraint::SlotRange { min: 0, max: 3 },
+        ];
+        for v in variants {
+            let json = serde_json::to_string(&v).unwrap();
+            let restored: LaunchConstraint = serde_json::from_str(&json).unwrap();
+            assert_eq!(v, restored, "roundtrip failed for {:?}", v);
+        }
+    }
+
+    #[test]
+    fn target_rank_labels() {
+        assert_eq!(TargetRank::Any.label(), "any");
+        assert_eq!(TargetRank::Front.label(), "front");
+        assert_eq!(TargetRank::Back.label(), "back");
+        assert_eq!(TargetRank::FrontAndBack.label(), "front_and_back");
+    }
+
+    #[test]
+    fn target_rank_serialization_roundtrip() {
+        let variants = vec![
+            TargetRank::Any,
+            TargetRank::Front,
+            TargetRank::Back,
+            TargetRank::FrontAndBack,
+        ];
+        for v in variants {
+            let json = serde_json::to_string(&v).unwrap();
+            let restored: TargetRank = serde_json::from_str(&json).unwrap();
+            assert_eq!(v, restored, "roundtrip failed for {:?}", v);
+        }
+    }
+
+    #[test]
+    fn side_affinity_labels() {
+        assert_eq!(SideAffinity::Enemy.label(), "enemy");
+        assert_eq!(SideAffinity::Ally.label(), "ally");
+        assert_eq!(SideAffinity::Any.label(), "any");
+    }
+
+    #[test]
+    fn side_affinity_serialization_roundtrip() {
+        let variants = vec![SideAffinity::Enemy, SideAffinity::Ally, SideAffinity::Any];
+        for v in variants {
+            let json = serde_json::to_string(&v).unwrap();
+            let restored: SideAffinity = serde_json::from_str(&json).unwrap();
+            assert_eq!(v, restored, "roundtrip failed for {:?}", v);
+        }
+    }
+
+    #[test]
+    fn target_count_labels() {
+        assert_eq!(TargetCount::Single.label(), "single");
+        assert_eq!(TargetCount::Multiple.label(), "multiple");
+    }
+
+    #[test]
+    fn targeting_intent_default_enemy_single() {
+        let intent = TargetingIntent::default_enemy_single();
+        assert_eq!(intent.launch_constraint, LaunchConstraint::Any);
+        assert_eq!(intent.target_rank, TargetRank::Any);
+        assert_eq!(intent.side_affinity, SideAffinity::Enemy);
+        assert_eq!(intent.target_count, TargetCount::Single);
+        assert!(intent.targets_enemy());
+        assert!(!intent.targets_ally());
+    }
+
+    #[test]
+    fn targeting_intent_ally_single() {
+        let intent = TargetingIntent::ally_single();
+        assert_eq!(intent.side_affinity, SideAffinity::Ally);
+        assert_eq!(intent.target_count, TargetCount::Single);
+        assert!(!intent.targets_enemy());
+        assert!(intent.targets_ally());
+    }
+
+    #[test]
+    fn targeting_intent_targets_enemy_with_any_affinity() {
+        let intent = TargetingIntent::new(
+            LaunchConstraint::FrontRow,
+            TargetRank::Front,
+            SideAffinity::Any,
+            TargetCount::Multiple,
+        );
+        assert!(intent.targets_enemy());
+        assert!(intent.targets_ally());
+    }
+
+    #[test]
+    fn targeting_intent_serialization_roundtrip() {
+        let intent = TargetingIntent::new(
+            LaunchConstraint::SpecificLane(0),
+            TargetRank::FrontAndBack,
+            SideAffinity::Enemy,
+            TargetCount::Single,
+        );
+        let json = serde_json::to_string(&intent).unwrap();
+        let restored: TargetingIntent = serde_json::from_str(&json).unwrap();
+        assert_eq!(intent, restored);
+    }
+
+    #[test]
+    fn targeting_intent_all_launch_constraints_combinable() {
+        // Verify every launch constraint can be combined into a valid TargetingIntent
+        let constraints = vec![
+            LaunchConstraint::Any,
+            LaunchConstraint::FrontRow,
+            LaunchConstraint::BackRow,
+            LaunchConstraint::SpecificLane(1),
+            LaunchConstraint::SlotRange { min: 0, max: 3 },
+        ];
+        for lc in constraints {
+            let intent = TargetingIntent::new(lc, TargetRank::Any, SideAffinity::Enemy, TargetCount::Single);
+            assert!(intent.targets_enemy());
+        }
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // US-009-a: Movement effect contract type regression tests
+    // ───────────────────────────────────────────────────────────────
+
+    #[test]
+    fn movement_direction_labels() {
+        assert_eq!(MovementDirection::Forward.label(), "forward");
+        assert_eq!(MovementDirection::Backward.label(), "backward");
+    }
+
+    #[test]
+    fn movement_direction_serialization_roundtrip() {
+        let variants = vec![MovementDirection::Forward, MovementDirection::Backward];
+        for v in variants {
+            let json = serde_json::to_string(&v).unwrap();
+            let restored: MovementDirection = serde_json::from_str(&json).unwrap();
+            assert_eq!(v, restored);
+        }
+    }
+
+    #[test]
+    fn movement_effect_labels() {
+        assert_eq!(MovementEffect::Push(2).label(), "push");
+        assert_eq!(MovementEffect::Pull(1).label(), "pull");
+        assert_eq!(MovementEffect::Shuffle.label(), "shuffle");
+        assert_eq!(MovementEffect::None.label(), "none");
+    }
+
+    #[test]
+    fn movement_effect_steps() {
+        assert_eq!(MovementEffect::Push(3).steps(), 3);
+        assert_eq!(MovementEffect::Pull(2).steps(), 2);
+        assert_eq!(MovementEffect::Shuffle.steps(), 0);
+        assert_eq!(MovementEffect::None.steps(), 0);
+    }
+
+    #[test]
+    fn movement_effect_direction() {
+        assert_eq!(MovementEffect::Push(1).direction(), MovementDirection::Backward);
+        assert_eq!(MovementEffect::Pull(1).direction(), MovementDirection::Forward);
+        assert_eq!(MovementEffect::Shuffle.direction(), MovementDirection::Forward);
+        assert_eq!(MovementEffect::None.direction(), MovementDirection::Forward);
+    }
+
+    #[test]
+    fn movement_effect_serialization_roundtrip() {
+        let variants = vec![
+            MovementEffect::Push(3),
+            MovementEffect::Pull(2),
+            MovementEffect::Shuffle,
+            MovementEffect::None,
+        ];
+        for v in variants {
+            let json = serde_json::to_string(&v).unwrap();
+            let restored: MovementEffect = serde_json::from_str(&json).unwrap();
+            assert_eq!(v, restored, "roundtrip failed for {:?}", v);
+        }
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // US-009-a: Meta transition contract type regression tests
+    // ───────────────────────────────────────────────────────────────
+
+    #[test]
+    fn phase_transition_trigger_labels() {
+        assert_eq!(
+            PhaseTransitionTrigger::PressAttackCount(2).label(),
+            "press_attack_count"
+        );
+        assert_eq!(
+            PhaseTransitionTrigger::HealthBelow(0.5).label(),
+            "health_below"
+        );
+        assert_eq!(
+            PhaseTransitionTrigger::RoundElapsed(3).label(),
+            "round_elapsed"
+        );
+        assert_eq!(
+            PhaseTransitionTrigger::OnAllyDeath("clone_a".into()).label(),
+            "on_ally_death"
+        );
+        assert_eq!(
+            PhaseTransitionTrigger::OnAllAlliesDead(vec!["clone_a".into()]).label(),
+            "on_all_allies_dead"
+        );
+    }
+
+    #[test]
+    fn phase_transition_trigger_serialization_roundtrip() {
+        let triggers: Vec<PhaseTransitionTrigger> = vec![
+            PhaseTransitionTrigger::PressAttackCount(2),
+            PhaseTransitionTrigger::HealthBelow(0.25),
+            PhaseTransitionTrigger::RoundElapsed(5),
+            PhaseTransitionTrigger::OnAllyDeath("guardian".into()),
+            PhaseTransitionTrigger::OnAllAlliesDead(vec!["clone_a".into(), "clone_b".into()]),
+        ];
+        for t in triggers {
+            let json = serde_json::to_string(&t).unwrap();
+            let restored: PhaseTransitionTrigger = serde_json::from_str(&json).unwrap();
+            assert_eq!(t, restored, "roundtrip failed for {:?}", t);
+        }
+    }
+
+    #[test]
+    fn phase_transition_config_white_tiger_style() {
+        let config = PhaseTransitionConfig::new(
+            "white_tiger",
+            PhaseTransitionTrigger::PressAttackCount(2),
+            vec!["white_tiger_clone_a".into(), "white_tiger_clone_b".into()],
+            "white_tiger_final",
+            0,
+        );
+        assert_eq!(config.boss_pack_id, "white_tiger");
+        assert_eq!(config.remove_families.len(), 2);
+        assert_eq!(config.summon_family_id, "white_tiger_final");
+        assert_eq!(config.placement_slot, 0);
+        assert!(matches!(
+            config.trigger,
+            PhaseTransitionTrigger::PressAttackCount(2)
+        ));
+    }
+
+    #[test]
+    fn phase_transition_config_serialization_roundtrip() {
+        let config = PhaseTransitionConfig::new(
+            "crimson_duet",
+            PhaseTransitionTrigger::HealthBelow(0.5),
+            vec!["crimson_a".into()],
+            "crimson_merged",
+            0,
+        );
+        let json = serde_json::to_string(&config).unwrap();
+        let restored: PhaseTransitionConfig = serde_json::from_str(&json).unwrap();
+        assert_eq!(config, restored);
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // US-009-a: Stubbed camp effect fence regression tests
+    // ───────────────────────────────────────────────────────────────
+
+    #[test]
+    fn stubbed_camp_effect_produces_trace_output() {
+        // Verify every stubbed effect type produces deterministic trace output
+        // rather than silently dropping the unsupported semantic.
+        let state = HeroCampState::new(80.0, 100.0, 40.0, 200.0);
+
+        let stubbed_effects: Vec<(CampEffectType, &str)> = vec![
+            (CampEffectType::ReduceAmbushChance, "[STUB]"),
+            (CampEffectType::Loot, "[STUB]"),
+            (CampEffectType::ReduceTurbulenceChance, "[STUB]"),
+            (CampEffectType::ReduceRiptideChance, "[STUB]"),
+        ];
+
+        for (effect_type, expected_marker) in stubbed_effects {
+            let effect = CampEffect::new(
+                CampTargetSelection::SelfTarget,
+                vec![],
+                1.0,
+                effect_type,
+                "test_sub",
+                0.0,
+            );
+            let result = effect.apply(
+                state.clone(),
+                "test_skill",
+                "performer",
+                Some("target"),
+                0,
+            );
+            let desc = &result.trace.description;
+            assert!(
+                desc.contains(expected_marker),
+                "Effect {:?} should produce '{}' trace but got: {}",
+                effect_type,
+                expected_marker,
+                desc
+            );
+        }
+    }
+
+    #[test]
+    fn non_functional_camp_effects_produce_skipped_trace() {
+        // None and ReduceTorch are explicitly non-functional and should produce
+        // [SKIPPED] trace rather than silently doing nothing.
+        let state = HeroCampState::new(80.0, 100.0, 40.0, 200.0);
+
+        for effect_type in [CampEffectType::None, CampEffectType::ReduceTorch] {
+            let effect = CampEffect::new(
+                CampTargetSelection::SelfTarget,
+                vec![],
+                1.0,
+                effect_type,
+                "",
+                0.0,
+            );
+            let result = effect.apply(
+                state.clone(),
+                "test_skill",
+                "performer",
+                Some("target"),
+                0,
+            );
+            let desc = &result.trace.description;
+            assert!(
+                desc.contains("[SKIPPED]"),
+                "Effect {:?} should produce [SKIPPED] trace but got: {}",
+                effect_type,
+                desc
+            );
+        }
+    }
+
+    #[test]
+    fn all_camp_effect_variants_produce_non_empty_trace() {
+        // Regression: every CampEffectType variant must produce a non-empty
+        // trace description. No variant should silently drop its effect.
+        let all_variants = vec![
+            CampEffectType::StressHealAmount,
+            CampEffectType::HealthHealMaxHealthPercent,
+            CampEffectType::RemoveBleed,
+            CampEffectType::RemovePoison,
+            CampEffectType::Buff,
+            CampEffectType::RemoveDeathRecovery,
+            CampEffectType::ReduceAmbushChance,
+            CampEffectType::RemoveDisease,
+            CampEffectType::StressDamageAmount,
+            CampEffectType::Loot,
+            CampEffectType::ReduceTorch,
+            CampEffectType::HealthDamageMaxHealthPercent,
+            CampEffectType::RemoveBurn,
+            CampEffectType::RemoveFrozen,
+            CampEffectType::StressHealPercent,
+            CampEffectType::RemoveDebuff,
+            CampEffectType::RemoveAllDebuff,
+            CampEffectType::HealthHealRange,
+            CampEffectType::HealthHealAmount,
+            CampEffectType::ReduceTurbulenceChance,
+            CampEffectType::ReduceRiptideChance,
+            CampEffectType::None,
+        ];
+
+        let state = HeroCampState::new(80.0, 100.0, 40.0, 200.0);
+
+        for variant in all_variants {
+            let effect = CampEffect::new(
+                CampTargetSelection::SelfTarget,
+                vec![],
+                1.0,
+                variant,
+                "test_sub",
+                10.0,
+            );
+            let result = effect.apply(
+                state.clone(),
+                "test_skill",
+                "performer",
+                Some("target"),
+                0,
+            );
+            assert!(
+                !result.trace.description.is_empty(),
+                "CampEffectType::{:?} produced empty trace description",
+                variant
+            );
+        }
+    }
+
+    #[test]
+    fn stubbed_effects_are_deterministic() {
+        // Regression: stubbed effects must produce identical output for
+        // identical inputs (deterministic stub behavior).
+        let state = HeroCampState::new(80.0, 100.0, 40.0, 200.0);
+
+        let stubbed_types = vec![
+            CampEffectType::ReduceAmbushChance,
+            CampEffectType::Loot,
+            CampEffectType::ReduceTurbulenceChance,
+            CampEffectType::ReduceRiptideChance,
+        ];
+
+        for effect_type in stubbed_types {
+            let effect1 = CampEffect::new(
+                CampTargetSelection::SelfTarget, vec![], 1.0, effect_type, "x", 5.0,
+            );
+            let effect2 = CampEffect::new(
+                CampTargetSelection::SelfTarget, vec![], 1.0, effect_type, "x", 5.0,
+            );
+            let r1 = effect1.apply(state.clone(), "s", "p", Some("t"), 0);
+            let r2 = effect2.apply(state.clone(), "s", "p", Some("t"), 0);
+            assert_eq!(
+                r1.trace.description, r2.trace.description,
+                "Stubbed effect {:?} is non-deterministic",
+                effect_type
+            );
+        }
     }
 }
