@@ -18,6 +18,7 @@ pub mod guard_detection;
 pub mod guard_redirect_execution;
 pub mod paired_boss;
 pub mod phase_transition;
+pub mod quest_runtime;
 pub mod reactive_events;
 pub mod reactive_queue;
 pub mod rewards;
