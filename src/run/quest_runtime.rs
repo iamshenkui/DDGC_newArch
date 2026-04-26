@@ -203,6 +203,20 @@ impl QuestRuntime {
     pub fn active_count(&self) -> usize {
         self.active_quests.iter().filter(|q| q.is_active()).count()
     }
+
+    /// Mark a quest as failed by its ID.
+    ///
+    /// This is used by tests to simulate a quest failure event.
+    /// Returns true if the quest was found and marked as failed.
+    pub fn fail_quest(&mut self, quest_id: &str) -> bool {
+        if let Some(quest) = self.active_quests.iter_mut().find(|q| q.quest_id == quest_id) {
+            if quest.is_active() {
+                quest.failed = true;
+                return true;
+            }
+        }
+        false
+    }
 }
 
 impl Default for QuestRuntime {
