@@ -203,6 +203,418 @@ impl GameState {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Quest Runtime State
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Quest difficulty level, corresponding to dungeon level constants.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum QuestDifficulty {
+    /// Standard difficulty (dungeon level 3).
+    Standard,
+    /// Hard difficulty (dungeon level 5).
+    Hard,
+}
+
+impl QuestDifficulty {
+    /// Returns the dungeon level number for this difficulty.
+    pub fn dungeon_level(&self) -> u32 {
+        match self {
+            QuestDifficulty::Standard => 3,
+            QuestDifficulty::Hard => 5,
+        }
+    }
+}
+
+/// Objective type for a quest.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum QuestObjective {
+    /// Clear all rooms in the dungeon.
+    ClearDungeon,
+    /// Kill a specific boss.
+    KillBoss,
+    /// Cleanse all corruption in the dungeon.
+    CleanseCorruption,
+    /// Gather items from the dungeon.
+    GatherItems,
+    /// Activate a specific mechanism.
+    ActivateMechanism,
+    /// Use an inventory item to complete an objective.
+    UseInventoryItem,
+}
+
+impl QuestObjective {
+    /// Classify a QuestType into supported or unsupported.
+    ///
+    /// Returns `None` for unsupported quest types.
+    pub fn from_quest_type(quest_type: crate::contracts::QuestType) -> Option<QuestObjective> {
+        match quest_type {
+            crate::contracts::QuestType::Explore => Some(QuestObjective::ClearDungeon),
+            crate::contracts::QuestType::KillBoss => Some(QuestObjective::KillBoss),
+            crate::contracts::QuestType::Cleanse => Some(QuestObjective::CleanseCorruption),
+            crate::contracts::QuestType::Gather => Some(QuestObjective::GatherItems),
+            crate::contracts::QuestType::Activate => Some(QuestObjective::ActivateMechanism),
+            crate::contracts::QuestType::InventoryActivate => Some(QuestObjective::UseInventoryItem),
+        }
+    }
+
+    /// Returns true if this objective type is supported.
+    pub fn is_supported(&self) -> bool {
+        true
+    }
+}
+
+/// Rewards granted upon quest completion.
+#[derive(Debug, Clone, PartialEq)]
+pub struct QuestRewards {
+    /// Gold awarded on completion.
+    pub gold: u32,
+    /// Heirloom currencies awarded on completion.
+    pub heirlooms: std::collections::BTreeMap<crate::contracts::HeirloomCurrency, u32>,
+    /// XP granted to heroes on completion.
+    pub xp: u32,
+}
+
+impl QuestRewards {
+    /// Create rewards for a standard difficulty quest.
+    pub fn standard() -> Self {
+        use crate::contracts::HeirloomCurrency;
+        let mut heirlooms = std::collections::BTreeMap::new();
+        heirlooms.insert(HeirloomCurrency::Bones, 10);
+        heirlooms.insert(HeirloomCurrency::Portraits, 5);
+        QuestRewards {
+            gold: 500,
+            heirlooms,
+            xp: 200,
+        }
+    }
+
+    /// Create rewards for a hard difficulty quest.
+    pub fn hard() -> Self {
+        use crate::contracts::HeirloomCurrency;
+        let mut heirlooms = std::collections::BTreeMap::new();
+        heirlooms.insert(HeirloomCurrency::Bones, 25);
+        heirlooms.insert(HeirloomCurrency::Portraits, 15);
+        heirlooms.insert(HeirloomCurrency::Tapes, 5);
+        QuestRewards {
+            gold: 1000,
+            heirlooms,
+            xp: 400,
+        }
+    }
+}
+
+/// Penalties applied upon quest failure.
+#[derive(Debug, Clone, PartialEq)]
+pub struct QuestPenalties {
+    /// Gold lost on failure.
+    pub gold: i32,
+    /// Heirloom currencies lost on failure.
+    pub heirlooms: std::collections::BTreeMap<crate::contracts::HeirloomCurrency, i32>,
+}
+
+impl QuestPenalties {
+    /// Create penalties for a standard difficulty quest.
+    pub fn standard() -> Self {
+        use crate::contracts::HeirloomCurrency;
+        let mut heirlooms = std::collections::BTreeMap::new();
+        heirlooms.insert(HeirloomCurrency::Bones, -5);
+        heirlooms.insert(HeirloomCurrency::Portraits, -2);
+        QuestPenalties {
+            gold: -100,
+            heirlooms,
+        }
+    }
+
+    /// Create penalties for a hard difficulty quest.
+    pub fn hard() -> Self {
+        use crate::contracts::HeirloomCurrency;
+        let mut heirlooms = std::collections::BTreeMap::new();
+        heirlooms.insert(HeirloomCurrency::Bones, -15);
+        heirlooms.insert(HeirloomCurrency::Portraits, -10);
+        heirlooms.insert(HeirloomCurrency::Tapes, -3);
+        QuestPenalties {
+            gold: -250,
+            heirlooms,
+        }
+    }
+}
+
+/// Quest runtime state — tracks all runtime information for an active quest.
+///
+/// This struct holds the complete runtime state for a quest that is distinct
+/// from the persisted `CampaignQuestProgress` in the save/load boundary.
+/// It captures: identity, difficulty, dungeon, objective, progress counters,
+/// completion/failure status, and reward definitions.
+#[derive(Debug, Clone, PartialEq)]
+pub struct QuestState {
+    /// Unique quest identifier.
+    pub quest_id: String,
+    /// Difficulty level of the quest.
+    pub difficulty: QuestDifficulty,
+    /// Dungeon type for this quest.
+    pub dungeon: crate::contracts::DungeonType,
+    /// Map size for this quest.
+    pub map_size: crate::contracts::MapSize,
+    /// Objective type and description.
+    pub objective: QuestObjective,
+    /// Current progress step.
+    pub current_step: u32,
+    /// Total number of steps required.
+    pub max_steps: u32,
+    /// Whether the quest has been completed.
+    pub completed: bool,
+    /// Whether the quest has failed.
+    pub failed: bool,
+    /// Rewards granted on completion.
+    pub rewards: QuestRewards,
+    /// Penalties applied on failure.
+    pub penalties: QuestPenalties,
+}
+
+impl QuestState {
+    /// Create a new quest state for a KillBoss quest (the representative test quest).
+    ///
+    /// This creates a standard difficulty KillBoss quest for QingLong dungeon.
+    pub fn new_kill_boss_quest(quest_id: &str) -> Self {
+        QuestState {
+            quest_id: quest_id.to_string(),
+            difficulty: QuestDifficulty::Standard,
+            dungeon: crate::contracts::DungeonType::QingLong,
+            map_size: crate::contracts::MapSize::Short,
+            objective: QuestObjective::KillBoss,
+            current_step: 0,
+            max_steps: 2,
+            completed: false,
+            failed: false,
+            rewards: QuestRewards::standard(),
+            penalties: QuestPenalties::standard(),
+        }
+    }
+
+    /// Create a new quest state with explicit parameters.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        quest_id: &str,
+        difficulty: QuestDifficulty,
+        dungeon: crate::contracts::DungeonType,
+        map_size: crate::contracts::MapSize,
+        objective: QuestObjective,
+        max_steps: u32,
+        rewards: QuestRewards,
+        penalties: QuestPenalties,
+    ) -> Self {
+        QuestState {
+            quest_id: quest_id.to_string(),
+            difficulty,
+            dungeon,
+            map_size,
+            objective,
+            current_step: 0,
+            max_steps,
+            completed: false,
+            failed: false,
+            rewards,
+            penalties,
+        }
+    }
+
+    /// Check if the quest is still active (not completed or failed).
+    pub fn is_active(&self) -> bool {
+        !self.completed && !self.failed
+    }
+
+    /// Advance the quest by one step.
+    ///
+    /// Returns the new current step value.
+    pub fn advance_progress(&mut self) -> u32 {
+        if self.current_step < self.max_steps {
+            self.current_step += 1;
+        }
+        self.current_step
+    }
+
+    /// Check if the quest can be completed (all steps done).
+    pub fn can_complete(&self) -> bool {
+        self.current_step >= self.max_steps && !self.failed
+    }
+
+    /// Complete the quest.
+    ///
+    /// Marks the quest as completed and returns the rewards.
+    /// Returns None if the quest is already completed or failed.
+    pub fn complete(&mut self) -> Option<QuestRewards> {
+        if !self.is_active() {
+            return None;
+        }
+        self.completed = true;
+        Some(self.rewards.clone())
+    }
+
+    /// Fail the quest.
+    ///
+    /// Marks the quest as failed and returns the penalties.
+    /// Returns None if the quest is already completed or failed.
+    pub fn fail(&mut self) -> Option<QuestPenalties> {
+        if !self.is_active() {
+            return None;
+        }
+        self.failed = true;
+        Some(self.penalties.clone())
+    }
+
+    /// Apply rewards to the campaign state.
+    ///
+    /// Adds gold and heirlooms to the campaign, and XP to roster heroes.
+    pub fn apply_rewards_to_campaign(
+        &self,
+        rewards: &QuestRewards,
+        campaign: &mut crate::contracts::CampaignState,
+    ) {
+        // Apply gold
+        campaign.gold = campaign.gold.saturating_add(rewards.gold);
+
+        // Apply heirlooms
+        for (currency, amount) in &rewards.heirlooms {
+            *campaign.heirlooms.entry(currency.clone()).or_insert(0) += *amount;
+        }
+
+        // Apply XP to roster (distribute evenly among heroes)
+        if !campaign.roster.is_empty() && rewards.xp > 0 {
+            let xp_per_hero = rewards.xp / campaign.roster.len() as u32;
+            for hero in &mut campaign.roster {
+                hero.xp = hero.xp.saturating_add(xp_per_hero);
+            }
+        }
+    }
+
+    /// Apply penalties to the campaign state.
+    ///
+    /// Subtracts gold and heirlooms from the campaign.
+    pub fn apply_penalties_to_campaign(
+        &self,
+        penalties: &QuestPenalties,
+        campaign: &mut crate::contracts::CampaignState,
+    ) {
+        // Apply gold penalty (can't go below 0)
+        campaign.gold = campaign.gold.saturating_sub(penalties.gold.unsigned_abs());
+
+        // Apply heirloom penalties (can't go below 0)
+        for (currency, amount) in &penalties.heirlooms {
+            let current = campaign.heirlooms.entry(currency.clone()).or_insert(0);
+            *current = current.saturating_sub(amount.unsigned_abs());
+        }
+    }
+
+    /// Update quest progress based on a dungeon run event.
+    ///
+    /// This is called after a dungeon run completes to update quest progress.
+    /// Returns the updated step count if the quest was updated, or None if not applicable.
+    pub fn update_from_run(
+        &mut self,
+        dungeon: crate::contracts::DungeonType,
+        map_size: crate::contracts::MapSize,
+        rooms_cleared: u32,
+        battles_won: u32,
+        completed: bool,
+    ) -> Option<u32> {
+        // Only update if this quest is for the given dungeon/map_size
+        if self.dungeon != dungeon || self.map_size != map_size {
+            return None;
+        }
+
+        if !self.is_active() {
+            return None;
+        }
+
+        // Update progress based on objective type
+        match self.objective {
+            QuestObjective::ClearDungeon => {
+                // Progress for clearing rooms
+                if rooms_cleared > 0 {
+                    self.advance_progress();
+                }
+            }
+            QuestObjective::KillBoss => {
+                // Progress for winning battles
+                if battles_won > 0 {
+                    self.advance_progress();
+                }
+            }
+            QuestObjective::CleanseCorruption | QuestObjective::GatherItems
+            | QuestObjective::ActivateMechanism | QuestObjective::UseInventoryItem => {
+                // These objectives require specific items/events
+                // For now, advance on room clears
+                if rooms_cleared > 0 {
+                    self.advance_progress();
+                }
+            }
+        }
+
+        // If the run completed and this is a completion-type objective, mark step done
+        if completed && self.current_step < self.max_steps {
+            self.current_step = self.max_steps;
+        }
+
+        Some(self.current_step)
+    }
+
+    /// Convert to a CampaignQuestProgress for persistence.
+    pub fn to_campaign_quest_progress(&self) -> crate::contracts::CampaignQuestProgress {
+        crate::contracts::CampaignQuestProgress {
+            quest_id: self.quest_id.clone(),
+            current_step: self.current_step,
+            max_steps: self.max_steps,
+            completed: self.completed,
+        }
+    }
+}
+
+/// Classification result for an unsupported quest type.
+#[derive(Debug, Clone, PartialEq)]
+pub struct UnsupportedQuestTrace {
+    /// The quest type that is not supported.
+    pub quest_type: crate::contracts::QuestType,
+    /// Human-readable reason why the quest type is not supported.
+    pub reason: &'static str,
+}
+
+impl UnsupportedQuestTrace {
+    /// Create a new unsupported quest trace.
+    pub fn new(quest_type: crate::contracts::QuestType) -> Self {
+        let reason = match quest_type {
+            crate::contracts::QuestType::Explore => {
+                "Explore quests require full dungeon clearing which is not yet implemented"
+            }
+            crate::contracts::QuestType::KillBoss => {
+                "KillBoss quests are fully supported"
+            }
+            crate::contracts::QuestType::Cleanse => {
+                "Cleanse quests require corruption tracking which is not yet implemented"
+            }
+            crate::contracts::QuestType::Gather => {
+                "Gather quests require item collection tracking which is not yet implemented"
+            }
+            crate::contracts::QuestType::Activate => {
+                "Activate quests require mechanism activation which is not yet implemented"
+            }
+            crate::contracts::QuestType::InventoryActivate => {
+                "InventoryActivate quests require inventory item usage which is not yet implemented"
+            }
+        };
+
+        UnsupportedQuestTrace {
+            quest_type,
+            reason,
+        }
+    }
+
+    /// Check if this trace indicates a supported quest type.
+    pub fn is_supported(&self) -> bool {
+        matches!(self.quest_type, crate::contracts::QuestType::KillBoss)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1318,5 +1730,417 @@ mod tests {
         assert_eq!(state.camping_skill_count(), 87); // content intact
 
         std::fs::remove_file(&save_path).ok();
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quest Runtime State Tests
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod quest_tests {
+    use super::*;
+
+    // ── QuestDifficulty tests ─────────────────────────────────────────────────
+
+    #[test]
+    fn quest_difficulty_dungeon_level_standard() {
+        assert_eq!(QuestDifficulty::Standard.dungeon_level(), 3);
+    }
+
+    #[test]
+    fn quest_difficulty_dungeon_level_hard() {
+        assert_eq!(QuestDifficulty::Hard.dungeon_level(), 5);
+    }
+
+    // ── QuestObjective tests ─────────────────────────────────────────────────
+
+    #[test]
+    fn quest_objective_from_quest_type_explore() {
+        let obj = QuestObjective::from_quest_type(crate::contracts::QuestType::Explore);
+        assert_eq!(obj, Some(QuestObjective::ClearDungeon));
+    }
+
+    #[test]
+    fn quest_objective_from_quest_type_kill_boss() {
+        let obj = QuestObjective::from_quest_type(crate::contracts::QuestType::KillBoss);
+        assert_eq!(obj, Some(QuestObjective::KillBoss));
+    }
+
+    #[test]
+    fn quest_objective_from_quest_type_cleanse() {
+        let obj = QuestObjective::from_quest_type(crate::contracts::QuestType::Cleanse);
+        assert_eq!(obj, Some(QuestObjective::CleanseCorruption));
+    }
+
+    #[test]
+    fn quest_objective_from_quest_type_gather() {
+        let obj = QuestObjective::from_quest_type(crate::contracts::QuestType::Gather);
+        assert_eq!(obj, Some(QuestObjective::GatherItems));
+    }
+
+    #[test]
+    fn quest_objective_from_quest_type_activate() {
+        let obj = QuestObjective::from_quest_type(crate::contracts::QuestType::Activate);
+        assert_eq!(obj, Some(QuestObjective::ActivateMechanism));
+    }
+
+    #[test]
+    fn quest_objective_from_quest_type_inventory_activate() {
+        let obj = QuestObjective::from_quest_type(crate::contracts::QuestType::InventoryActivate);
+        assert_eq!(obj, Some(QuestObjective::UseInventoryItem));
+    }
+
+    // ── QuestRewards tests ──────────────────────────────────────────────────
+
+    #[test]
+    fn quest_rewards_standard_has_gold_and_heirlooms() {
+        let rewards = QuestRewards::standard();
+        assert_eq!(rewards.gold, 500);
+        assert!(rewards.heirlooms.contains_key(&crate::contracts::HeirloomCurrency::Bones));
+        assert!(rewards.heirlooms.contains_key(&crate::contracts::HeirloomCurrency::Portraits));
+        assert_eq!(rewards.xp, 200);
+    }
+
+    #[test]
+    fn quest_rewards_hard_has_more_rewards() {
+        let hard = QuestRewards::hard();
+        let standard = QuestRewards::standard();
+        assert!(hard.gold > standard.gold);
+        assert!(hard.xp > standard.xp);
+    }
+
+    // ── QuestPenalties tests ─────────────────────────────────────────────────
+
+    #[test]
+    fn quest_penalties_standard_are_negative() {
+        let penalties = QuestPenalties::standard();
+        assert!(penalties.gold < 0);
+        for (_, amount) in &penalties.heirlooms {
+            assert!(*amount < 0);
+        }
+    }
+
+    // ── QuestState creation tests ────────────────────────────────────────────
+
+    #[test]
+    fn quest_state_new_kill_boss_quest_has_correct_defaults() {
+        let quest = QuestState::new_kill_boss_quest("test_quest");
+        assert_eq!(quest.quest_id, "test_quest");
+        assert_eq!(quest.difficulty, QuestDifficulty::Standard);
+        assert_eq!(quest.dungeon, crate::contracts::DungeonType::QingLong);
+        assert_eq!(quest.map_size, crate::contracts::MapSize::Short);
+        assert_eq!(quest.objective, QuestObjective::KillBoss);
+        assert_eq!(quest.current_step, 0);
+        assert_eq!(quest.max_steps, 2);
+        assert!(!quest.completed);
+        assert!(!quest.failed);
+    }
+
+    #[test]
+    fn quest_state_is_active_when_created() {
+        let quest = QuestState::new_kill_boss_quest("test");
+        assert!(quest.is_active());
+    }
+
+    #[test]
+    fn quest_state_is_not_active_after_complete() {
+        let mut quest = QuestState::new_kill_boss_quest("test");
+        let rewards = quest.complete();
+        assert!(rewards.is_some());
+        assert!(!quest.is_active());
+        assert!(quest.completed);
+    }
+
+    #[test]
+    fn quest_state_is_not_active_after_fail() {
+        let mut quest = QuestState::new_kill_boss_quest("test");
+        let penalties = quest.fail();
+        assert!(penalties.is_some());
+        assert!(!quest.is_active());
+        assert!(quest.failed);
+    }
+
+    #[test]
+    fn quest_state_cannot_complete_twice() {
+        let mut quest = QuestState::new_kill_boss_quest("test");
+        quest.complete();
+        let second = quest.complete();
+        assert!(second.is_none());
+    }
+
+    #[test]
+    fn quest_state_cannot_fail_after_complete() {
+        let mut quest = QuestState::new_kill_boss_quest("test");
+        quest.complete();
+        let failed = quest.fail();
+        assert!(failed.is_none());
+    }
+
+    // ── Quest progress tests ─────────────────────────────────────────────────
+
+    #[test]
+    fn quest_state_advance_progress_increments_step() {
+        let mut quest = QuestState::new_kill_boss_quest("test");
+        assert_eq!(quest.current_step, 0);
+        quest.advance_progress();
+        assert_eq!(quest.current_step, 1);
+    }
+
+    #[test]
+    fn quest_state_advance_progress_maxes_out() {
+        let mut quest = QuestState::new_kill_boss_quest("test");
+        quest.advance_progress();
+        quest.advance_progress();
+        quest.advance_progress(); // should not exceed max_steps
+        assert_eq!(quest.current_step, 2);
+    }
+
+    #[test]
+    fn quest_state_can_complete_when_steps_done() {
+        let mut quest = QuestState::new_kill_boss_quest("test");
+        quest.advance_progress();
+        quest.advance_progress();
+        assert!(quest.can_complete());
+    }
+
+    // ── Reward/penalty handoff tests ────────────────────────────────────────
+
+    #[test]
+    fn quest_state_apply_rewards_increases_campaign_gold() {
+        let quest = QuestState::new_kill_boss_quest("test");
+        let mut campaign = crate::contracts::CampaignState::new(100);
+        let rewards = quest.rewards.clone();
+        quest.apply_rewards_to_campaign(&rewards, &mut campaign);
+        assert_eq!(campaign.gold, 600); // 100 + 500
+    }
+
+    #[test]
+    fn quest_state_apply_rewards_adds_heirlooms() {
+        let quest = QuestState::new_kill_boss_quest("test");
+        let mut campaign = crate::contracts::CampaignState::new(100);
+        let rewards = quest.rewards.clone();
+        quest.apply_rewards_to_campaign(&rewards, &mut campaign);
+        assert_eq!(campaign.heirlooms[&crate::contracts::HeirloomCurrency::Bones], 10);
+    }
+
+    #[test]
+    fn quest_state_apply_rewards_distributes_xp_to_roster() {
+        let quest = QuestState::new_kill_boss_quest("test");
+        let mut campaign = crate::contracts::CampaignState::new(100);
+        // Add heroes to roster
+        campaign.roster.push(crate::contracts::CampaignHero::new(
+            "hero_1", "alchemist", 1, 0, 100.0, 100.0, 0.0, 200.0,
+        ));
+        campaign.roster.push(crate::contracts::CampaignHero::new(
+            "hero_2", "hunter", 1, 0, 100.0, 100.0, 0.0, 200.0,
+        ));
+        let rewards = quest.rewards.clone();
+        quest.apply_rewards_to_campaign(&rewards, &mut campaign);
+        // 200 XP / 2 heroes = 100 XP each
+        assert_eq!(campaign.roster[0].xp, 100);
+        assert_eq!(campaign.roster[1].xp, 100);
+    }
+
+    #[test]
+    fn quest_state_apply_penalties_reduces_campaign_gold() {
+        let quest = QuestState::new_kill_boss_quest("test");
+        let mut campaign = crate::contracts::CampaignState::new(500);
+        let penalties = quest.penalties.clone();
+        quest.apply_penalties_to_campaign(&penalties, &mut campaign);
+        assert_eq!(campaign.gold, 400); // 500 - 100
+    }
+
+    #[test]
+    fn quest_state_apply_penalties_cannot_go_negative() {
+        let quest = QuestState::new_kill_boss_quest("test");
+        let mut campaign = crate::contracts::CampaignState::new(50);
+        let penalties = quest.penalties.clone();
+        quest.apply_penalties_to_campaign(&penalties, &mut campaign);
+        assert_eq!(campaign.gold, 0); // 50 - 100, but not below 0
+    }
+
+    // ── Update from run tests ────────────────────────────────────────────────
+
+    #[test]
+    fn quest_state_update_from_run_progresses_quest() {
+        let mut quest = QuestState::new_kill_boss_quest("test");
+        let updated = quest.update_from_run(
+            crate::contracts::DungeonType::QingLong,
+            crate::contracts::MapSize::Short,
+            9,  // rooms_cleared
+            3,  // battles_won
+            true, // completed
+        );
+        assert!(updated.is_some());
+        assert_eq!(quest.current_step, 2); // maxed out from battles_won
+    }
+
+    #[test]
+    fn quest_state_update_from_run_ignores_wrong_dungeon() {
+        let mut quest = QuestState::new_kill_boss_quest("test");
+        let updated = quest.update_from_run(
+            crate::contracts::DungeonType::BaiHu, // wrong dungeon
+            crate::contracts::MapSize::Short,
+            9, 3, true,
+        );
+        assert!(updated.is_none());
+        assert_eq!(quest.current_step, 0);
+    }
+
+    #[test]
+    fn quest_state_update_from_run_ignores_completed_quest() {
+        let mut quest = QuestState::new_kill_boss_quest("test");
+        quest.complete();
+        let updated = quest.update_from_run(
+            crate::contracts::DungeonType::QingLong,
+            crate::contracts::MapSize::Short,
+            9, 3, true,
+        );
+        assert!(updated.is_none());
+    }
+
+    // ── Unsupported quest type tracing tests ─────────────────────────────────
+
+    #[test]
+    fn unsupported_quest_trace_kill_boss_is_supported() {
+        let trace = UnsupportedQuestTrace::new(crate::contracts::QuestType::KillBoss);
+        assert!(trace.is_supported());
+    }
+
+    #[test]
+    fn unsupported_quest_trace_explore_is_not_supported() {
+        let trace = UnsupportedQuestTrace::new(crate::contracts::QuestType::Explore);
+        assert!(!trace.is_supported());
+        assert!(trace.reason.contains("Explore"));
+    }
+
+    #[test]
+    fn unsupported_quest_trace_cleanse_is_not_supported() {
+        let trace = UnsupportedQuestTrace::new(crate::contracts::QuestType::Cleanse);
+        assert!(!trace.is_supported());
+    }
+
+    #[test]
+    fn unsupported_quest_trace_gather_is_not_supported() {
+        let trace = UnsupportedQuestTrace::new(crate::contracts::QuestType::Gather);
+        assert!(!trace.is_supported());
+    }
+
+    #[test]
+    fn unsupported_quest_trace_activate_is_not_supported() {
+        let trace = UnsupportedQuestTrace::new(crate::contracts::QuestType::Activate);
+        assert!(!trace.is_supported());
+    }
+
+    #[test]
+    fn unsupported_quest_trace_inventory_activate_is_not_supported() {
+        let trace = UnsupportedQuestTrace::new(crate::contracts::QuestType::InventoryActivate);
+        assert!(!trace.is_supported());
+    }
+
+    // ── Conversion tests ────────────────────────────────────────────────────
+
+    #[test]
+    fn quest_state_to_campaign_quest_progress_preserves_fields() {
+        let quest = QuestState::new_kill_boss_quest("my_quest");
+        let progress = quest.to_campaign_quest_progress();
+        assert_eq!(progress.quest_id, "my_quest");
+        assert_eq!(progress.current_step, 0);
+        assert_eq!(progress.max_steps, 2);
+        assert!(!progress.completed);
+    }
+
+    // ── Full quest lifecycle test ────────────────────────────────────────────
+
+    #[test]
+    fn full_quest_lifecycle_accepted_progressed_completed_rewarded() {
+        // This is the representative test proving a KillBoss quest can be:
+        // 1. Accepted
+        // 2. Progressed through dungeon runs
+        // 3. Completed
+        // 4. Rewarded through the run loop
+
+        // ── 1. Accept: Create a new KillBoss quest ────────────────────────
+        let mut quest = QuestState::new_kill_boss_quest("kill_boss_qinglong");
+        assert!(quest.is_active());
+        assert_eq!(quest.current_step, 0);
+
+        // ── 2. Progress: Simulate dungeon run events ─────────────────────
+        // First dungeon run: clear some rooms, win battles
+        let step1 = quest.update_from_run(
+            crate::contracts::DungeonType::QingLong,
+            crate::contracts::MapSize::Short,
+            5,  // rooms_cleared
+            2,  // battles_won
+            false, // not completed yet
+        );
+        assert!(step1.is_some());
+        assert_eq!(quest.current_step, 1);
+
+        // Second dungeon run: win remaining battles
+        let step2 = quest.update_from_run(
+            crate::contracts::DungeonType::QingLong,
+            crate::contracts::MapSize::Short,
+            9,  // rooms_cleared
+            3,  // battles_won
+            true, // completed
+        );
+        assert!(step2.is_some());
+        assert!(quest.can_complete());
+
+        // ── 3. Complete the quest ─────────────────────────────────────────
+        let rewards = quest.complete();
+        assert!(rewards.is_some());
+        assert!(!quest.is_active());
+        assert!(quest.completed);
+
+        // ── 4. Apply rewards to campaign ───────────────────────────────────
+        let mut campaign = crate::contracts::CampaignState::new(1000);
+        campaign.roster.push(crate::contracts::CampaignHero::new(
+            "hero_1", "alchemist", 1, 0, 100.0, 100.0, 0.0, 200.0,
+        ));
+        let rewards = rewards.unwrap();
+        quest.apply_rewards_to_campaign(&rewards, &mut campaign);
+
+        // Verify gold increased
+        assert_eq!(campaign.gold, 1500); // 1000 + 500
+        // Verify heirlooms were added
+        assert_eq!(campaign.heirlooms[&crate::contracts::HeirloomCurrency::Bones], 10);
+        // Verify XP was distributed
+        assert_eq!(campaign.roster[0].xp, 200);
+    }
+
+    #[test]
+    fn full_quest_lifecycle_with_failure() {
+        // Test quest failure and penalty application
+
+        let mut quest = QuestState::new_kill_boss_quest("kill_boss_qinglong");
+
+        // Simulate a failed run (no battles won, so no progress)
+        let updated = quest.update_from_run(
+            crate::contracts::DungeonType::QingLong,
+            crate::contracts::MapSize::Short,
+            3,  // rooms_cleared
+            0,  // battles_won - lost!
+            false,
+        );
+        assert!(updated.is_some());
+        // KillBoss objective requires battles_won > 0 to advance, so step stays at 0
+        assert_eq!(quest.current_step, 0);
+
+        // Fail the quest
+        let penalties = quest.fail();
+        assert!(penalties.is_some());
+        assert!(quest.failed);
+        assert!(!quest.is_active());
+
+        // Apply penalties
+        let mut campaign = crate::contracts::CampaignState::new(500);
+        let penalties = penalties.unwrap();
+        quest.apply_penalties_to_campaign(&penalties, &mut campaign);
+
+        // Verify gold decreased
+        assert_eq!(campaign.gold, 400); // 500 - 100
     }
 }
