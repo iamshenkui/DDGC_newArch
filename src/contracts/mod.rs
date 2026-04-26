@@ -3810,6 +3810,169 @@ impl CampaignState {
         }
     }
 
+    // ─────────────────────────────────────────────────────────────────
+    // Dungeon run reward application — explicit state transitions
+    // ─────────────────────────────────────────────────────────────────
+
+    /// Apply gold earned from a dungeon run to the campaign.
+    ///
+    /// Uses saturating addition to prevent overflow.
+    pub fn apply_dungeon_gold(&mut self, gold_earned: u32) {
+        self.gold = self.gold.saturating_add(gold_earned);
+    }
+
+    /// Apply heirlooms earned from a dungeon run to the campaign.
+    ///
+    /// Uses saturating addition per currency to prevent overflow.
+    pub fn apply_dungeon_heirlooms(
+        &mut self,
+        heirlooms: &std::collections::BTreeMap<HeirloomCurrency, u32>,
+    ) {
+        for (currency, amount) in heirlooms {
+            *self.heirlooms.entry(currency.clone()).or_insert(0) =
+                self.heirlooms.get(currency).copied().unwrap_or(0).saturating_add(*amount);
+        }
+    }
+
+    /// Apply XP earned from a dungeon run, distributed evenly among roster heroes.
+    ///
+    /// Each hero receives `xp / roster.len()` XP. Uses saturating addition.
+    pub fn apply_dungeon_xp(&mut self, xp: u32) {
+        if self.roster.is_empty() || xp == 0 {
+            return;
+        }
+        let xp_per_hero = xp / self.roster.len() as u32;
+        for hero in &mut self.roster {
+            hero.xp = hero.xp.saturating_add(xp_per_hero);
+        }
+    }
+
+    /// Apply an inventory item change (positive = gain, negative = consumed).
+    ///
+    /// If the resulting quantity is <= 0, the item is removed from inventory.
+    /// This handles dungeon loot as well as consumables like torches.
+    pub fn apply_inventory_change(&mut self, item_id: &str, quantity: i32) {
+        if quantity == 0 {
+            return;
+        }
+        if let Some(existing) = self.inventory.iter_mut().find(|i| i.id == item_id) {
+            let new_qty = existing.quantity as i32 + quantity;
+            if new_qty <= 0 {
+                self.inventory.retain(|i| i.id != item_id);
+            } else {
+                existing.quantity = new_qty as u32;
+            }
+        } else if quantity > 0 {
+            self.inventory
+                .push(CampaignInventoryItem::new(item_id, quantity as u32));
+        }
+    }
+
+    /// Sync a hero's health and stress from a dungeon run back to the campaign roster.
+    ///
+    /// This is called after a dungeon run completes to update hero vitals
+    /// in the persistent campaign state. Health is clamped to [0, max_health].
+    /// Stress is clamped to [0, max_stress].
+    pub fn sync_hero_vitals(&mut self, hero_id: &str, health: f64, stress: f64) {
+        if let Some(hero) = self.roster.iter_mut().find(|h| h.id == hero_id) {
+            hero.health = health.clamp(0.0, hero.max_health);
+            hero.stress = stress.clamp(0.0, hero.max_stress);
+        }
+    }
+
+    /// Add a hero to the campaign roster.
+    ///
+    /// This is called when a new hero is recruited at the Stagecoach.
+    pub fn add_hero(&mut self, mut hero: CampaignHero) {
+        // Assign a unique ID if the hero has no ID
+        if hero.id.is_empty() {
+            hero.id = format!("hero_{}", self.roster.len());
+        }
+        self.roster.push(hero);
+    }
+
+    /// Remove a hero from the campaign roster by ID.
+    ///
+    /// Returns the removed hero, or None if not found.
+    pub fn remove_hero(&mut self, hero_id: &str) -> Option<CampaignHero> {
+        let idx = self.roster.iter().position(|h| h.id == hero_id)?;
+        Some(self.roster.remove(idx))
+    }
+
+    /// Record a completed dungeon run in the campaign's run history.
+    pub fn record_dungeon_run(
+        &mut self,
+        dungeon: DungeonType,
+        map_size: MapSize,
+        rooms_cleared: u32,
+        battles_won: u32,
+        completed: bool,
+        gold_earned: u32,
+    ) {
+        self.run_history.push(CampaignRunRecord::new(
+            dungeon,
+            map_size,
+            rooms_cleared,
+            battles_won,
+            completed,
+            gold_earned,
+        ));
+    }
+
+    /// Apply equipment upgrade to a hero's weapon.
+    pub fn upgrade_hero_weapon(&mut self, hero_id: &str) {
+        if let Some(hero) = self.roster.iter_mut().find(|h| h.id == hero_id) {
+            hero.equipment.weapon_level = hero.equipment.weapon_level.saturating_add(1);
+        }
+    }
+
+    /// Apply equipment upgrade to a hero's armor.
+    pub fn upgrade_hero_armor(&mut self, hero_id: &str) {
+        if let Some(hero) = self.roster.iter_mut().find(|h| h.id == hero_id) {
+            hero.equipment.armor_level = hero.equipment.armor_level.saturating_add(1);
+        }
+    }
+
+    /// Apply a trinket to a hero's equipment.
+    pub fn equip_trinket(&mut self, hero_id: &str, trinket_id: &str) {
+        if let Some(hero) = self.roster.iter_mut().find(|h| h.id == hero_id) {
+            if !hero.equipment.trinkets.contains(&trinket_id.to_string()) {
+                hero.equipment.trinkets.push(trinket_id.to_string());
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // Town activity application — explicit state transitions
+    // ─────────────────────────────────────────────────────────────────
+
+    /// Apply stress healing from a town activity (e.g., Abbey prayer).
+    ///
+    /// The stress_healed value is subtracted from hero stress.
+    /// Clamps stress to [0, max_stress].
+    pub fn apply_town_stress_heal(&mut self, hero_id: &str, stress_healed: f64) {
+        if let Some(hero) = self.roster.iter_mut().find(|h| h.id == hero_id) {
+            hero.stress = (hero.stress - stress_healed).clamp(0.0, hero.max_stress);
+        }
+    }
+
+    /// Apply health recovery from a town activity (e.g., Inn rest).
+    ///
+    /// The health_recovered value is added to hero health.
+    /// Clamps health to [0, max_health].
+    pub fn apply_town_health_heal(&mut self, hero_id: &str, health_recovered: f64) {
+        if let Some(hero) = self.roster.iter_mut().find(|h| h.id == hero_id) {
+            hero.health = (hero.health + health_recovered).clamp(0.0, hero.max_health);
+        }
+    }
+
+    /// Apply gold spent on a town activity.
+    ///
+    /// Uses saturating subtraction so gold cannot go below 0.
+    pub fn apply_town_gold_spent(&mut self, gold_spent: u32) {
+        self.gold = self.gold.saturating_sub(gold_spent);
+    }
+
     /// Save this campaign state to a JSON file on disk.
     ///
     /// Serializes the full campaign snapshot using the Phase 7 schema and writes

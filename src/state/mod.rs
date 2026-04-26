@@ -1731,6 +1731,254 @@ mod tests {
 
         std::fs::remove_file(&save_path).ok();
     }
+
+    // ── US-004: Three-loop continuity test ────────────────────────────────────
+
+    #[test]
+    fn three_loop_seeded_scenario_preserves_hero_estate_inventory_continuity() {
+        // US-004 acceptance test: proves that a three-loop seeded scenario
+        // preserves hero/estate/inventory continuity when dungeon rewards and
+        // town activities are applied through explicit campaign state transitions.
+        //
+        // Loop 1: Fresh campaign, start with 2 heroes, 500 gold, basic inventory
+        // Loop 2: After dungeon rewards (gold, XP, heirlooms) and town stress heal
+        // Loop 3: After equipment upgrades, more dungeon rewards, roster growth
+
+        let save_path = temp_save_path("three_loop_continuity");
+
+        // ── Loop 1: Fresh campaign ────────────────────────────────────────────
+        let mut state = load_real_state();
+        state.new_campaign(500);
+
+        // Add initial heroes
+        let mut hero1 = CampaignHero::new("hero_1", "crusader", 1, 0, 100.0, 100.0, 20.0, 200.0);
+        hero1.skills = vec!["skill_stab".to_string(), "skill_inspire".to_string()];
+        hero1.equipment.weapon_level = 1;
+        hero1.equipment.armor_level = 1;
+        hero1.quirks.positive = vec!["eagle_eye".to_string()];
+        state.campaign.roster.push(hero1);
+
+        let mut hero2 = CampaignHero::new("hero_2", "alchemist", 1, 0, 100.0, 100.0, 15.0, 200.0);
+        hero2.skills = vec!["skill_fire_bomb".to_string()];
+        hero2.equipment.weapon_level = 0;
+        hero2.equipment.armor_level = 1;
+        state.campaign.roster.push(hero2);
+
+        // Initial inventory: torches, bandages, shovel
+        state.campaign.inventory.push(CampaignInventoryItem::new("torch", 8));
+        state.campaign.inventory.push(CampaignInventoryItem::new("bandage", 4));
+        state.campaign.inventory.push(CampaignInventoryItem::new("shovel", 1));
+
+        // Initial heirlooms
+        state.campaign.heirlooms.insert(HeirloomCurrency::Bones, 10);
+
+        state.save_campaign(&save_path).unwrap();
+
+        // ── Loop 2: Load, apply dungeon rewards, apply town activity ──────────
+        let mut state = load_real_state();
+        state.load_campaign(&save_path).unwrap();
+
+        // Verify initial state
+        assert_eq!(state.campaign.gold, 500);
+        assert_eq!(state.campaign.roster.len(), 2);
+        assert_eq!(state.campaign.roster[0].id, "hero_1");
+        assert_eq!(state.campaign.roster[1].id, "hero_2");
+        assert_eq!(state.campaign.inventory.len(), 3);
+        assert_eq!(state.campaign.heirlooms[&HeirloomCurrency::Bones], 10);
+
+        // Simulate dungeon run 1: QingLong short, won, earned rewards
+        // Apply dungeon rewards via explicit state transitions
+        state.campaign.apply_dungeon_gold(350);
+        state.campaign.apply_dungeon_xp(150);
+
+        // Apply some heirlooms from dungeon
+        let mut heirlooms = std::collections::BTreeMap::new();
+        heirlooms.insert(HeirloomCurrency::Bones, 15);
+        heirlooms.insert(HeirloomCurrency::Portraits, 5);
+        state.campaign.apply_dungeon_heirlooms(&heirlooms);
+
+        // Consume torches from dungeon
+        state.campaign.apply_inventory_change("torch", -3);
+
+        // Add loot found
+        state.campaign.apply_inventory_change("antiquarian_teacup", 1);
+
+        // Update hero vitals from dungeon run
+        state.campaign.sync_hero_vitals("hero_1", 75.0, 45.0);
+        state.campaign.sync_hero_vitals("hero_2", 80.0, 35.0);
+
+        // Record the run
+        state.campaign.record_dungeon_run(
+            DungeonType::QingLong,
+            MapSize::Short,
+            9,
+            3,
+            true,
+            350,
+        );
+
+        // Apply town activity: stress heal at Abbey (gold spent reduces campaign gold)
+        state.campaign.apply_town_gold_spent(100);
+        state.campaign.apply_town_stress_heal("hero_1", 20.0);
+        state.campaign.apply_town_stress_heal("hero_2", 15.0);
+
+        state.save_campaign(&save_path).unwrap();
+
+        // ── Loop 3: Load, more dungeon rewards, equipment upgrade, recruit ─────
+        let mut state = load_real_state();
+        state.load_campaign(&save_path).unwrap();
+
+        // Verify loop 2 state preserved
+        assert_eq!(state.campaign.gold, 750); // 500 + 350 - 100
+        assert_eq!(state.campaign.roster.len(), 2);
+        assert_eq!(state.campaign.roster[0].xp, 75); // XP distributed: 150/2 = 75 each
+        assert_eq!(state.campaign.roster[1].xp, 75);
+        assert_eq!(state.campaign.heirlooms[&HeirloomCurrency::Bones], 25); // 10 + 15
+        assert_eq!(state.campaign.heirlooms[&HeirloomCurrency::Portraits], 5);
+        assert_eq!(state.campaign.inventory.len(), 4);
+        assert_eq!(state.campaign.inventory[0].quantity, 5); // torches: 8-3=5
+        assert_eq!(state.campaign.run_history.len(), 1);
+
+        // Hero vitals after town stress heal
+        assert_eq!(state.campaign.roster[0].stress, 25.0); // 45 - 20
+        assert_eq!(state.campaign.roster[1].stress, 20.0); // 35 - 15
+
+        // Simulate dungeon run 2: BaiHu medium, won, earned more rewards
+        state.campaign.apply_dungeon_gold(500);
+        state.campaign.apply_dungeon_xp(200);
+
+        // More heirlooms
+        let mut heirlooms2 = std::collections::BTreeMap::new();
+        heirlooms2.insert(HeirloomCurrency::Bones, 20);
+        heirlooms2.insert(HeirloomCurrency::Tapes, 3);
+        state.campaign.apply_dungeon_heirlooms(&heirlooms2);
+
+        // Consume more torches
+        state.campaign.apply_inventory_change("torch", -2);
+
+        // Add more loot
+        state.campaign.apply_inventory_change("sacred_chalice", 1);
+
+        // Upgrade hero 1's weapon
+        state.campaign.upgrade_hero_weapon("hero_1");
+        // Upgrade hero 2's armor
+        state.campaign.upgrade_hero_armor("hero_2");
+
+        // Record the run
+        state.campaign.record_dungeon_run(
+            DungeonType::BaiHu,
+            MapSize::Medium,
+            12,
+            4,
+            true,
+            500,
+        );
+
+        // Town activity: recruit a new hero
+        state.campaign.apply_town_gold_spent(500);
+        let new_hero = CampaignHero::new("hero_3", "hunter", 1, 0, 100.0, 100.0, 0.0, 200.0);
+        state.campaign.add_hero(new_hero);
+
+        state.save_campaign(&save_path).unwrap();
+
+        // ── Loop 4: Final verification ────────────────────────────────────────
+        let mut state = load_real_state();
+        state.load_campaign(&save_path).unwrap();
+
+        // Gold: 750 + 500 - 500 = 750
+        assert_eq!(state.campaign.gold, 750, "Gold should reflect all earnings and spending");
+
+        // Roster should have 3 heroes
+        assert_eq!(state.campaign.roster.len(), 3, "Should have recruited hero_3");
+        assert_eq!(state.campaign.roster[0].id, "hero_1");
+        assert_eq!(state.campaign.roster[1].id, "hero_2");
+        assert_eq!(state.campaign.roster[2].id, "hero_3");
+
+        // hero_1: weapon upgraded, XP accumulated
+        assert_eq!(state.campaign.roster[0].equipment.weapon_level, 2);
+        assert_eq!(state.campaign.roster[0].xp, 175); // 75 + 100 from second dungeon run
+
+        // hero_2: armor upgraded
+        assert_eq!(state.campaign.roster[1].equipment.armor_level, 2);
+
+        // Run history should have 2 entries
+        assert_eq!(state.campaign.run_history.len(), 2);
+        assert_eq!(state.campaign.run_history[0].dungeon, DungeonType::QingLong);
+        assert_eq!(state.campaign.run_history[1].dungeon, DungeonType::BaiHu);
+
+        // Heirlooms accumulated
+        assert_eq!(state.campaign.heirlooms[&HeirloomCurrency::Bones], 45); // 25 + 20
+        assert_eq!(state.campaign.heirlooms[&HeirloomCurrency::Portraits], 5);
+        assert_eq!(state.campaign.heirlooms[&HeirloomCurrency::Tapes], 3);
+
+        // Inventory: torches 8-3-2=3, plus loot
+        let torch_qty = state.campaign.inventory.iter()
+            .find(|i| i.id == "torch")
+            .map(|i| i.quantity)
+            .unwrap_or(0);
+        assert_eq!(torch_qty, 3, "Torches should be consumed across runs");
+
+        // Should have 5 inventory items: torch, bandage, shovel, antiquarian_teacup, sacred_chalice
+        assert_eq!(state.campaign.inventory.len(), 5, "Inventory should include dungeon loot");
+
+        std::fs::remove_file(&save_path).ok();
+    }
+
+    #[test]
+    fn apply_dungeon_gold_saturates_on_overflow() {
+        let mut campaign = CampaignState::new(u32::MAX);
+        campaign.apply_dungeon_gold(100);
+        assert_eq!(campaign.gold, u32::MAX);
+    }
+
+    #[test]
+    fn apply_inventory_change_removes_item_when_depleted() {
+        let mut campaign = CampaignState::new(0);
+        campaign.inventory.push(CampaignInventoryItem::new("torch", 3));
+
+        // Consume more than we have
+        campaign.apply_inventory_change("torch", -5);
+
+        // Item should be removed
+        assert!(!campaign.inventory.iter().any(|i| i.id == "torch"));
+    }
+
+    #[test]
+    fn sync_hero_vitals_clamps_to_valid_range() {
+        let mut campaign = CampaignState::new(0);
+        campaign.roster.push(CampaignHero::new("h1", "crusader", 1, 0, 100.0, 100.0, 0.0, 200.0));
+
+        // Try to set health above max and stress above max
+        campaign.sync_hero_vitals("h1", 150.0, 250.0);
+
+        let hero = campaign.roster.iter().find(|h| h.id == "h1").unwrap();
+        assert_eq!(hero.health, 100.0); // Clamped to max
+        assert_eq!(hero.stress, 200.0); // Clamped to max
+    }
+
+    #[test]
+    fn add_hero_assigns_id_if_empty() {
+        let mut campaign = CampaignState::new(0);
+        let hero = CampaignHero::new("", "alchemist", 1, 0, 100.0, 100.0, 0.0, 200.0);
+        campaign.add_hero(hero);
+
+        assert!(!campaign.roster[0].id.is_empty());
+        assert!(campaign.roster[0].id.starts_with("hero_"));
+    }
+
+    #[test]
+    fn remove_hero_returns_and_removes_hero() {
+        let mut campaign = CampaignState::new(0);
+        campaign.roster.push(CampaignHero::new("h1", "alchemist", 1, 0, 100.0, 100.0, 0.0, 200.0));
+        campaign.roster.push(CampaignHero::new("h2", "hunter", 1, 0, 100.0, 100.0, 0.0, 200.0));
+
+        let removed = campaign.remove_hero("h1");
+
+        assert!(removed.is_some());
+        assert_eq!(removed.unwrap().id, "h1");
+        assert_eq!(campaign.roster.len(), 1);
+        assert_eq!(campaign.roster[0].id, "h2");
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
