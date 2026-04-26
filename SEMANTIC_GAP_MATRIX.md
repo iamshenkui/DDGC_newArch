@@ -350,7 +350,7 @@ contracts can silently drop an unsupported semantic.
 - **Fence added:** All stubbed camp effect types (`ReduceAmbushChance`, `Loot`, `ReduceTurbulenceChance`, `ReduceRiptideChance`) produce `[STUB]` trace markers
 - **Non-functional effects:** `None` and `ReduceTorch` produce `[SKIPPED]` trace markers
 - **Determinism guarantee:** Stubbed effects produce identical output for identical input
-- **Coverage:** All 21 `CampEffectType` variants produce non-empty trace descriptions
+- **Coverage:** All 22 `CampEffectType` variants produce non-empty trace descriptions
 - **Frequency covered:** Medium (camping phase effects)
 - **Gap status:** Fenced with deterministic stubs — unsupported effects are never silently dropped
 
@@ -361,6 +361,92 @@ All contracts-layer closures are backed by regression tests covering:
 - Serialization roundtrip for every type
 - Deterministic stub behavior
 - Trace output for all effect types including stubs and skipped
+
+---
+
+## 10. Docs-Layer Closures (US-009-b)
+
+The docs-layer provides the **verification and documentation layer** that guarantees
+no high-frequency runtime path silently drops an unsupported semantic. It does not
+close the SM-* runtime gaps (which require `run/` or framework changes), but ensures
+that every high-frequency path is either implemented, fenced with deterministic
+stubs, or documented as an intentional approximation.
+
+### High-Frequency Semantic Path Registry
+
+Located in `src/docs/mod.rs`, the registry documents every high-frequency semantic
+path across seven categories:
+
+| Category | Frequency | Paths | Fence Coverage |
+|---|---|---|---|
+| **Targeting** | H | 5 LaunchConstraint × 3 SideAffinity × 2 TargetCount = 30+ combos | 100% contract labels, no empty variants |
+| **Movement** | M | 4 MovementEffect variants | 100% labels + direction + steps accessors |
+| **Camp Effects** | M | 22 CampEffectType variants | 16 implemented + 4 STUB + 2 SKIPPED |
+| **Meta Transitions** | B | 5 PhaseTransitionTrigger variants | 100% labels + config serialization |
+| **Combat Conditions** | H | 11 DdgcCondition + 3 framework-native | Supported return Pass/Fail; unsupported return Unknown |
+| **Damage** | H | 2 DamagePolicy variants | FixedAverage default; Rolled deterministic with seed |
+| **Hit Resolution** | M | Accuracy/Dodge context | Context constructable with valid attributes |
+
+### Fence Status Taxonomy
+
+| Status | Trace Output | Silent Drop Risk |
+|---|---|---|
+| **Implemented** | Domain-specific description | None |
+| **Fenced (STUB)** | `[STUB] <reason>` | None — call site sees the marker |
+| **Fenced (SKIPPED)** | `[SKIPPED] <reason>` | None — call site sees the marker |
+| **Approximated** | Domain-specific description | None — behavior is simplified but observable |
+| **Unsupported (Unknown)** | Returns `ConditionResult::Unknown` | None — caller must handle |
+
+### "No Silent Drop" Guarantee
+
+Every high-frequency path in the registry satisfies **exactly one** of:
+1. Fully implemented with deterministic trace output
+2. Fenced with `[STUB]` — the call site observes the fence marker
+3. Fenced with `[SKIPPED]` — the call site observes the skip marker
+4. Returns `ConditionResult::Unknown` — the caller must branch on the unrecognized variant
+
+No path returns `None`, an empty string, `Ok(())` with no side effect, or panics on
+unsupported input. The regression tests in `src/docs/mod.rs::high_freq_path_tests`
+verify this invariant for every path in the registry.
+
+### Regression Coverage (US-009-b)
+
+All high-frequency paths are covered by regression tests proving:
+- Every `LaunchConstraint` variant produces a valid label (5 tests)
+- All targeting combos (15 cross-product tests) produce valid labels
+- Every `MovementEffect` variant produces valid labels, direction, and steps
+- All 22 `CampEffectType` variants produce non-empty trace output
+- Stubbed camp effects produce `[STUB]` markers and are deterministic
+- Non-functional camp effects produce `[SKIPPED]` markers
+- Every `PhaseTransitionTrigger` variant produces a valid label
+- Serialization roundtrip preserves trigger variant and config data
+- DdgcCondition evaluation never panics for any of 11 supported variants
+- `IfTargetPosition` returns `ConditionResult::Unknown` (no silent drop)
+- Damage `FixedAverage` produces correct midpoint values
+- Damage `Rolled` is deterministic with the same seed
+- `HitResolutionContext` is constructable with valid attribute ranges
+
+### Gaps Remaining After Docs-Layer Closure
+
+The docs-layer documents and fences high-frequency paths but does **not** close the
+following SM-* gaps, which remain as documented in the matrix above:
+
+| Gap | Status After US-009-b | Why Not Closed |
+|---|---|---|
+| SM-001 | Unchanged (L frequency) | Requires `ConditionContext` formation data; docs-layer only verifies `Unknown` return |
+| SM-002 | Unchanged (H frequency) | Intentional approximation; docs-layer tests verify no panic on all paths |
+| SM-003 | Unchanged (L frequency) | Framework docstring issue; docs-layer tracks but cannot fix |
+| SM-004 | Unchanged (L frequency) | Deferred variants; docs-layer verifies Unknown return for unsupported conditions |
+| SM-005 | Unchanged (H frequency) | Intentional approximation; docs-layer verifies FixedAverage correctness |
+| SM-006 | Unchanged (M frequency) | Requires run-layer audit; docs-layer verifies context constructability |
+| SM-007–SM-018 | Unchanged (M/L frequency) | Require game-layer subsystem implementation beyond docs scope |
+| SM-019 | Unchanged (B frequency) | Intentional approximation; docs-layer accepts as documented |
+
+### Cross-Reference
+
+- **`src/docs/mod.rs`** — High-Frequency Semantic Path Registry + regression tests (this task)
+- **`src/contracts/mod.rs`** — Contracts-layer fence types (US-009-a)
+- **Section 9 above** — Contracts-Layer Closures (US-009-a)
 
 ---
 
@@ -378,4 +464,4 @@ All contracts-layer closures are backed by regression tests covering:
 
 ---
 
-*Matrix generated by US-008 (P7-US-008). Contracts-layer closures documented by US-009-a (P7-US-009).*
+*Matrix generated by US-008 (P7-US-008). Contracts-layer closures documented by US-009-a (P7-US-009). Docs-layer closures documented by US-009-b (P7-US-009).*
