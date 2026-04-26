@@ -3,6 +3,7 @@
 //! This crate migrates real DDGC game content onto the turn-based roguelike
 //! framework using only public framework APIs.
 
+pub mod cli;
 pub mod content;
 pub mod contracts;
 pub mod docs;
