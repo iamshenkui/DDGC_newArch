@@ -108,3 +108,8 @@ duplicate blocker content.
 
 When a blocker affects parity, `SEMANTIC_GAPS.md` cross-references the
 blocker ID and classifies the parity impact using the terms defined here.
+
+For the complete inventory of remaining unresolved gaps, see
+**[`SEMANTIC_GAP_MATRIX.md`](SEMANTIC_GAP_MATRIX.md)** — the canonical matrix
+of all 19 remaining gaps (SM-001 through SM-019) classified by subsystem,
+gameplay impact, frequency tier, and owning code path.

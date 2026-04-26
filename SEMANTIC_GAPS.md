@@ -5,6 +5,11 @@ game and the headless migration, organized by system. Each gap is classified
 using the terminology from `SEMANTIC_PARITY.md` and cross-references the
 corresponding blocker in `MIGRATION_BLOCKERS.md`.
 
+> **Note:** All gaps in this ledger (SG-001 through SG-004) are resolved.
+> For remaining unresolved gaps, see **[`SEMANTIC_GAP_MATRIX.md`](SEMANTIC_GAP_MATRIX.md)** —
+> the canonical matrix of all 19 remaining gaps (SM-001 through SM-019),
+> classified by subsystem, gameplay impact, frequency tier, and owning code path.
+
 ---
 
 ## Hero Gaps

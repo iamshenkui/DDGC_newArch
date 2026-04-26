@@ -34,6 +34,9 @@ games/game_ddgc_headless/
 ├── README.md
 ├── MIGRATION_MAP.md       # Systems mapped for migration
 ├── MIGRATION_BLOCKERS.md  # Blocker ledger (core/framework/game-gap labels)
+├── SEMANTIC_GAPS.md       # Resolved semantic gap ledger (SG-001 through SG-004)
+├── SEMANTIC_GAP_MATRIX.md # Remaining gap matrix (SM-001 through SM-019)
+├── SEMANTIC_PARITY.md     # Parity vocabulary and definitions
 ├── src/
 │   ├── lib.rs             # Library exports
 │   ├── main.rs            # Binary entry point
