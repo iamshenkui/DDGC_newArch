@@ -745,16 +745,13 @@ impl BuildingRegistry {
 
     // ── Sanitarium helper methods ───────────────────────────────────────────────
 
-    /// Sanitarium disease upgrade paths follow specific patterns:
-    /// - Treatment cost upgrades are at levels `a`, `c`, `e`
-    /// - Cure-all chance upgrades are at levels `b`, `d`
-    ///
-    /// This reflects the original game's upgrade structure where disease treatment
-    /// cost and cure-all chance were upgraded independently.
-
     /// Get the disease treatment cost at the given upgrade level.
     ///
     /// Disease treatment cost upgrades follow the `a/c/e` path.
+    /// Cure-all chance upgrades follow the `b/d` path.
+    /// This reflects the original game's upgrade structure where disease treatment
+    /// cost and cure-all chance were upgraded independently.
+    ///
     /// Returns `None` if the building doesn't exist or the level has no disease_cost effect.
     pub fn sanitarium_disease_cost(&self, level_code: char) -> Option<f64> {
         self.get_effect_at_level("sanitarium", level_code, "disease_cost")
@@ -1651,7 +1648,7 @@ impl CampEffect {
         };
 
         let trace = CampEffectTraceEntry {
-            effect_type: self.effect_type.clone(),
+            effect_type: self.effect_type,
             sub_type: self.sub_type.clone(),
             amount: self.amount,
             roll,
@@ -3860,7 +3857,7 @@ pub fn parse_buff_id(buff_id: &str) -> Option<ParsedBuff> {
     // Extract the stat and value portion
     let (working, had_tier_suffix) = if s.starts_with("TRINKET_") {
         // Remove TRINKET_ prefix and tier suffix (_B0, _A1, etc.)
-        let inner = &s[8..]; // Remove "TRINKET_"
+        let inner = s.strip_prefix("TRINKET_").unwrap();
         // Find the last underscore and check if it's a tier suffix
         if let Some(underscore_pos) = inner.rfind('_') {
             let potential_tier = &inner[underscore_pos + 1..];
