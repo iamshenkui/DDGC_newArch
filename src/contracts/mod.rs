@@ -1946,6 +1946,228 @@ impl QuestType {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Quest Definition — static quest templates parsed from quest assets
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Difficulty level for quests, affecting rewards and penalties.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum QuestDifficulty {
+    Standard,
+    Hard,
+}
+
+impl QuestDifficulty {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            QuestDifficulty::Standard => "standard",
+            QuestDifficulty::Hard => "hard",
+        }
+    }
+
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "standard" => Some(QuestDifficulty::Standard),
+            "hard" => Some(QuestDifficulty::Hard),
+            _ => None,
+        }
+    }
+}
+
+/// Rewards granted upon quest completion.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct QuestRewards {
+    /// Gold awarded on completion.
+    pub gold: u32,
+    /// Heirloom currencies awarded on completion.
+    pub heirlooms: std::collections::BTreeMap<HeirloomCurrency, u32>,
+    /// XP granted to heroes on completion.
+    pub xp: u32,
+}
+
+impl QuestRewards {
+    pub fn standard() -> Self {
+        let mut heirlooms = std::collections::BTreeMap::new();
+        heirlooms.insert(HeirloomCurrency::Bones, 10);
+        heirlooms.insert(HeirloomCurrency::Portraits, 5);
+        QuestRewards {
+            gold: 500,
+            heirlooms,
+            xp: 200,
+        }
+    }
+
+    pub fn hard() -> Self {
+        let mut heirlooms = std::collections::BTreeMap::new();
+        heirlooms.insert(HeirloomCurrency::Bones, 25);
+        heirlooms.insert(HeirloomCurrency::Portraits, 15);
+        heirlooms.insert(HeirloomCurrency::Tapes, 5);
+        QuestRewards {
+            gold: 1000,
+            heirlooms,
+            xp: 400,
+        }
+    }
+}
+
+/// Penalties applied upon quest failure.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct QuestPenalties {
+    /// Gold lost on failure.
+    pub gold: i32,
+    /// Heirloom currencies lost on failure.
+    pub heirlooms: std::collections::BTreeMap<HeirloomCurrency, i32>,
+}
+
+impl QuestPenalties {
+    pub fn standard() -> Self {
+        let mut heirlooms = std::collections::BTreeMap::new();
+        heirlooms.insert(HeirloomCurrency::Bones, -5);
+        heirlooms.insert(HeirloomCurrency::Portraits, -2);
+        QuestPenalties {
+            gold: -100,
+            heirlooms,
+        }
+    }
+
+    pub fn hard() -> Self {
+        let mut heirlooms = std::collections::BTreeMap::new();
+        heirlooms.insert(HeirloomCurrency::Bones, -15);
+        heirlooms.insert(HeirloomCurrency::Portraits, -10);
+        heirlooms.insert(HeirloomCurrency::Tapes, -3);
+        QuestPenalties {
+            gold: -250,
+            heirlooms,
+        }
+    }
+}
+
+/// A static quest definition parsed from quest assets.
+///
+/// This represents the template for a quest that can be instantiated
+/// into a QuestState at runtime. It contains all the static parameters
+/// that define the quest: type, dungeon, size, difficulty, objectives,
+/// and reward/penalty configurations.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct QuestDefinition {
+    /// Unique identifier for this quest definition.
+    pub quest_id: String,
+    /// The type of quest (determines map generation behavior).
+    pub quest_type: QuestType,
+    /// Dungeon type for this quest.
+    pub dungeon: DungeonType,
+    /// Map size for this quest.
+    pub map_size: MapSize,
+    /// Difficulty level affecting rewards and penalties.
+    pub difficulty: QuestDifficulty,
+    /// Number of steps (runs) required to complete this quest.
+    pub max_steps: u32,
+    /// Rewards granted upon completion.
+    pub rewards: QuestRewards,
+    /// Penalties applied upon failure.
+    pub penalties: QuestPenalties,
+}
+
+impl QuestDefinition {
+    /// Create a new quest definition.
+    pub fn new(
+        quest_id: &str,
+        quest_type: QuestType,
+        dungeon: DungeonType,
+        map_size: MapSize,
+        difficulty: QuestDifficulty,
+        max_steps: u32,
+        rewards: QuestRewards,
+        penalties: QuestPenalties,
+    ) -> Self {
+        QuestDefinition {
+            quest_id: quest_id.to_string(),
+            quest_type,
+            dungeon,
+            map_size,
+            difficulty,
+            max_steps,
+            rewards,
+            penalties,
+        }
+    }
+
+    /// Create the representative KillBoss quest for QingLong short dungeon.
+    ///
+    /// This is the standard test quest used for acceptance testing.
+    pub fn kill_boss_qinglong_short() -> Self {
+        QuestDefinition {
+            quest_id: "kill_boss_qinglong_short".to_string(),
+            quest_type: QuestType::KillBoss,
+            dungeon: DungeonType::QingLong,
+            map_size: MapSize::Short,
+            difficulty: QuestDifficulty::Standard,
+            max_steps: 2,
+            rewards: QuestRewards::standard(),
+            penalties: QuestPenalties::standard(),
+        }
+    }
+}
+
+/// Registry holding all quest definitions parsed from quest assets.
+///
+/// This registry is consumed by quest selection (choosing which quest to undertake)
+/// and quest resolution (determining rewards/penalties upon completion).
+#[derive(Debug, Clone, Default)]
+pub struct QuestRegistry {
+    quests: std::collections::HashMap<String, QuestDefinition>,
+}
+
+impl QuestRegistry {
+    /// Create a new empty registry.
+    pub fn new() -> Self {
+        QuestRegistry {
+            quests: std::collections::HashMap::new(),
+        }
+    }
+
+    /// Register a quest definition.
+    pub fn register(&mut self, quest: QuestDefinition) {
+        self.quests.insert(quest.quest_id.clone(), quest);
+    }
+
+    /// Get a quest definition by its ID.
+    pub fn get(&self, quest_id: &str) -> Option<&QuestDefinition> {
+        self.quests.get(quest_id)
+    }
+
+    /// Get all quest definitions for a specific dungeon type.
+    pub fn by_dungeon(&self, dungeon: DungeonType) -> Vec<&QuestDefinition> {
+        self.quests
+            .values()
+            .filter(|q| q.dungeon == dungeon)
+            .collect()
+    }
+
+    /// Get all quest definitions for a specific quest type.
+    pub fn by_type(&self, quest_type: QuestType) -> Vec<&QuestDefinition> {
+        self.quests
+            .values()
+            .filter(|q| q.quest_type == quest_type)
+            .collect()
+    }
+
+    /// Get all registered quest IDs.
+    pub fn all_ids(&self) -> Vec<&str> {
+        self.quests.keys().map(|s| s.as_str()).collect()
+    }
+
+    /// Get the total number of registered quests.
+    pub fn len(&self) -> usize {
+        self.quests.len()
+    }
+
+    /// Returns true if the registry is empty.
+    pub fn is_empty(&self) -> bool {
+        self.quests.is_empty()
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Dungeon Encounter Config — weighted encounter pack definitions from .bytes
 // ─────────────────────────────────────────────────────────────────────────────
 

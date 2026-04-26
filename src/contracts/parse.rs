@@ -6,8 +6,9 @@ use serde::Deserialize;
 use crate::contracts::{
     ActOutAction, ActOutEntry, BuildingRegistry, BuildingType, CampEffect, CampEffectType,
     CampTargetSelection, CampingSkill, CampingSkillRegistry, CurioDefinition,
-    CurioRegistry, CurioResult, CurioResultType, DungeonType, ItemInteraction,
-    ObstacleDefinition, ObstacleRegistry, OverstressType, QuirkClassification, QuirkDefinition,
+    CurioRegistry, CurioResult, CurioResultType, DungeonType, HeirloomCurrency, ItemInteraction,
+    ObstacleDefinition, ObstacleRegistry, OverstressType, QuestDefinition, QuestDifficulty,
+    QuestPenalties, QuestRegistry, QuestRewards, QuestType, QuirkClassification, QuirkDefinition,
     QuirkRegistry, ReactionEffect, ReactionEntry, ReactionTrigger, TownBuilding, TrapDefinition,
     TrapRegistry, TrapVariation, TraitDefinition, TraitRegistry, TrinketDefinition,
     TrinketRarity, TrinketRegistry, UnlockCondition, UpgradeEffect, UpgradeLevel, UpgradeTree,
@@ -328,6 +329,137 @@ pub fn parse_buildings_json(path: &Path) -> Result<BuildingRegistry, String> {
             let building = TownBuilding::new(&raw.id, building_type, unlock_conditions, upgrade_trees);
             registry.register(building);
         }
+    }
+
+    Ok(registry)
+}
+
+/// Parse Quests.json into a QuestRegistry.
+pub fn parse_quests_json(path: &Path) -> Result<QuestRegistry, String> {
+    let content = std::fs::read_to_string(path)
+        .map_err(|e| format!("failed to read Quests.json: {}", e))?;
+
+    #[derive(Deserialize)]
+    struct RawHeirloomAmount {
+        currency: String,
+        amount: i32,
+    }
+
+    #[derive(Deserialize)]
+    struct RawQuestRewards {
+        gold: u32,
+        heirlooms: Vec<RawHeirloomAmount>,
+        xp: u32,
+    }
+
+    #[derive(Deserialize)]
+    struct RawQuestPenalties {
+        gold: i32,
+        heirlooms: Vec<RawHeirloomAmount>,
+    }
+
+    #[derive(Deserialize)]
+    struct RawQuest {
+        quest_id: String,
+        quest_type: String,
+        dungeon: String,
+        map_size: String,
+        difficulty: String,
+        max_steps: u32,
+        rewards: RawQuestRewards,
+        penalties: RawQuestPenalties,
+    }
+
+    #[derive(Deserialize)]
+    struct RawQuestsRoot {
+        quests: Vec<RawQuest>,
+    }
+
+    let root: RawQuestsRoot = serde_json::from_str(&content)
+        .map_err(|e| format!("failed to parse Quests.json: {}", e))?;
+
+    let mut registry = QuestRegistry::new();
+
+    for raw in root.quests {
+        let quest_type = match raw.quest_type.as_str() {
+            "Explore" => QuestType::Explore,
+            "KillBoss" => QuestType::KillBoss,
+            "Cleanse" => QuestType::Cleanse,
+            "Gather" => QuestType::Gather,
+            "Activate" => QuestType::Activate,
+            "InventoryActivate" => QuestType::InventoryActivate,
+            _ => return Err(format!("unknown QuestType: {}", raw.quest_type)),
+        };
+
+        let dungeon = match raw.dungeon.as_str() {
+            "QingLong" => DungeonType::QingLong,
+            "BaiHu" => DungeonType::BaiHu,
+            "ZhuQue" => DungeonType::ZhuQue,
+            "XuanWu" => DungeonType::XuanWu,
+            _ => return Err(format!("unknown DungeonType: {}", raw.dungeon)),
+        };
+
+        let map_size = match raw.map_size.as_str() {
+            "Short" => crate::contracts::MapSize::Short,
+            "Medium" => crate::contracts::MapSize::Medium,
+            _ => return Err(format!("unknown MapSize: {}", raw.map_size)),
+        };
+
+        let difficulty = QuestDifficulty::from_str(&raw.difficulty)
+            .ok_or_else(|| format!("unknown QuestDifficulty: {}", raw.difficulty))?;
+
+        let heirlooms: std::collections::BTreeMap<HeirloomCurrency, u32> = raw
+            .rewards
+            .heirlooms
+            .iter()
+            .map(|h| {
+                let currency = match h.currency.as_str() {
+                    "Bones" => HeirloomCurrency::Bones,
+                    "Portraits" => HeirloomCurrency::Portraits,
+                    "Tapes" => HeirloomCurrency::Tapes,
+                    _ => return Err(format!("unknown HeirloomCurrency: {}", h.currency)),
+                };
+                Ok((currency, h.amount as u32))
+            })
+            .collect::<Result<std::collections::BTreeMap<HeirloomCurrency, u32>, String>>()?;
+
+        let rewards = QuestRewards {
+            gold: raw.rewards.gold,
+            heirlooms,
+            xp: raw.rewards.xp,
+        };
+
+        let penalty_heirlooms: std::collections::BTreeMap<HeirloomCurrency, i32> = raw
+            .penalties
+            .heirlooms
+            .iter()
+            .map(|h| {
+                let currency = match h.currency.as_str() {
+                    "Bones" => HeirloomCurrency::Bones,
+                    "Portraits" => HeirloomCurrency::Portraits,
+                    "Tapes" => HeirloomCurrency::Tapes,
+                    _ => return Err(format!("unknown HeirloomCurrency: {}", h.currency)),
+                };
+                Ok((currency, h.amount))
+            })
+            .collect::<Result<std::collections::BTreeMap<HeirloomCurrency, i32>, String>>()?;
+
+        let penalties = QuestPenalties {
+            gold: raw.penalties.gold,
+            heirlooms: penalty_heirlooms,
+        };
+
+        let quest = QuestDefinition::new(
+            &raw.quest_id,
+            quest_type,
+            dungeon,
+            map_size,
+            difficulty,
+            raw.max_steps,
+            rewards,
+            penalties,
+        );
+        registry.register(quest);
     }
 
     Ok(registry)

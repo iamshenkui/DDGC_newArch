@@ -1,0 +1,169 @@
+{
+  "quests": [
+    {
+      "quest_id": "kill_boss_qinglong_short",
+      "quest_type": "KillBoss",
+      "dungeon": "QingLong",
+      "map_size": "Short",
+      "difficulty": "standard",
+      "max_steps": 2,
+      "rewards": {
+        "gold": 500,
+        "heirlooms": [
+          { "currency": "Bones", "amount": 10 },
+          { "currency": "Portraits", "amount": 5 }
+        ],
+        "xp": 200
+      },
+      "penalties": {
+        "gold": -100,
+        "heirlooms": [
+          { "currency": "Bones", "amount": -5 },
+          { "currency": "Portraits", "amount": -2 }
+        ]
+      }
+    },
+    {
+      "quest_id": "kill_boss_qinglong_medium",
+      "quest_type": "KillBoss",
+      "dungeon": "QingLong",
+      "map_size": "Medium",
+      "difficulty": "standard",
+      "max_steps": 3,
+      "rewards": {
+        "gold": 750,
+        "heirlooms": [
+          { "currency": "Bones", "amount": 15 },
+          { "currency": "Portraits", "amount": 8 }
+        ],
+        "xp": 300
+      },
+      "penalties": {
+        "gold": -150,
+        "heirlooms": [
+          { "currency": "Bones", "amount": -8 },
+          { "currency": "Portraits", "amount": -4 }
+        ]
+      }
+    },
+    {
+      "quest_id": "kill_boss_baihu_short",
+      "quest_type": "KillBoss",
+      "dungeon": "BaiHu",
+      "map_size": "Short",
+      "difficulty": "standard",
+      "max_steps": 2,
+      "rewards": {
+        "gold": 600,
+        "heirlooms": [
+          { "currency": "Bones", "amount": 12 },
+          { "currency": "Portraits", "amount": 6 }
+        ],
+        "xp": 250
+      },
+      "penalties": {
+        "gold": -120,
+        "heirlooms": [
+          { "currency": "Bones", "amount": -6 },
+          { "currency": "Portraits", "amount": -3 }
+        ]
+      }
+    },
+    {
+      "quest_id": "explore_qinglong_short",
+      "quest_type": "Explore",
+      "dungeon": "QingLong",
+      "map_size": "Short",
+      "difficulty": "standard",
+      "max_steps": 1,
+      "rewards": {
+        "gold": 300,
+        "heirlooms": [
+          { "currency": "Bones", "amount": 5 },
+          { "currency": "Portraits", "amount": 2 }
+        ],
+        "xp": 100
+      },
+      "penalties": {
+        "gold": -50,
+        "heirlooms": [
+          { "currency": "Bones", "amount": -2 },
+          { "currency": "Portraits", "amount": -1 }
+        ]
+      }
+    },
+    {
+      "quest_id": "cleanse_zhuque_medium",
+      "quest_type": "Cleanse",
+      "dungeon": "ZhuQue",
+      "map_size": "Medium",
+      "difficulty": "hard",
+      "max_steps": 4,
+      "rewards": {
+        "gold": 1200,
+        "heirlooms": [
+          { "currency": "Bones", "amount": 30 },
+          { "currency": "Portraits", "amount": 20 },
+          { "currency": "Tapes", "amount": 5 }
+        ],
+        "xp": 500
+      },
+      "penalties": {
+        "gold": -300,
+        "heirlooms": [
+          { "currency": "Bones", "amount": -20 },
+          { "currency": "Portraits", "amount": -12 },
+          { "currency": "Tapes", "amount": -3 }
+        ]
+      }
+    },
+    {
+      "quest_id": "gather_xuanwu_short",
+      "quest_type": "Gather",
+      "dungeon": "XuanWu",
+      "map_size": "Short",
+      "difficulty": "standard",
+      "max_steps": 2,
+      "rewards": {
+        "gold": 400,
+        "heirlooms": [
+          { "currency": "Bones", "amount": 8 },
+          { "currency": "Portraits", "amount": 4 }
+        ],
+        "xp": 150
+      },
+      "penalties": {
+        "gold": -80,
+        "heirlooms": [
+          { "currency": "Bones", "amount": -4 },
+          { "currency": "Portraits", "amount": -2 }
+        ]
+      }
+    },
+    {
+      "quest_id": "kill_boss_qinglong_hard",
+      "quest_type": "KillBoss",
+      "dungeon": "QingLong",
+      "map_size": "Medium",
+      "difficulty": "hard",
+      "max_steps": 3,
+      "rewards": {
+        "gold": 1000,
+        "heirlooms": [
+          { "currency": "Bones", "amount": 25 },
+          { "currency": "Portraits", "amount": 15 },
+          { "currency": "Tapes", "amount": 5 }
+        ],
+        "xp": 400
+      },
+      "penalties": {
+        "gold": -250,
+        "heirlooms": [
+          { "currency": "Bones", "amount": -15 },
+          { "currency": "Portraits", "amount": -10 },
+          { "currency": "Tapes", "amount": -3 }
+        ]
+      }
+    }
+  ]
+}
