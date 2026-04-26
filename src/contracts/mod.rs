@@ -434,7 +434,7 @@ impl TownBuilding {
 }
 
 /// Heirloom currency type for the town.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum HeirloomCurrency {
     Bones,
     Portraits,
@@ -3496,6 +3496,320 @@ impl BuffRegistry {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Campaign Snapshot — canonical save/load boundary for headless migration
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// The types in this section define the persistent campaign state schema.
+// CampaignState is the single struct serialized to and deserialized from
+// the save file. It captures every gameplay-significant field needed to
+// faithfully save and restore a campaign across runs.
+//
+// # Schema versioning
+//
+// The `schema_version` field on `CampaignState` is an integer that identifies
+// the snapshot format. Increment this when making backward-incompatible changes.
+// Version 1 is the initial format.
+//
+// # Deterministic serialization
+//
+// All keyed collections use `BTreeMap` (not `HashMap`) so that serialization
+// is deterministic — the same logical state always produces the same JSON bytes.
+// This is critical for testing, diffing, and save-file integrity verification.
+//
+// # Boundary
+//
+// CampaignState is the canonical save/load boundary for the headless migration.
+// No framework-specific types (ActorId, EncounterId, etc.) appear in this schema.
+// All IDs are plain strings.
+
+/// Current schema version for campaign snapshots.
+pub const CAMPAIGN_SNAPSHOT_VERSION: u32 = 1;
+
+/// A hero on the campaign roster — the persisted hero state saved and loaded
+/// across sessions.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CampaignHero {
+    /// Unique hero identifier.
+    pub id: String,
+    /// Hero class ID (e.g., "alchemist", "hunter", "crusader").
+    pub class_id: String,
+    /// Current resolve level.
+    pub level: u32,
+    /// Experience points toward next level.
+    pub xp: u32,
+    /// Current health.
+    pub health: f64,
+    /// Maximum health.
+    pub max_health: f64,
+    /// Current stress.
+    pub stress: f64,
+    /// Maximum stress.
+    pub max_stress: f64,
+    /// Active quirks.
+    pub quirks: CampaignHeroQuirks,
+    /// Active traits (afflictions/virtues).
+    pub traits: CampaignHeroTraits,
+    /// Equipped skill IDs.
+    pub skills: Vec<String>,
+    /// Equipment state.
+    pub equipment: CampaignHeroEquipment,
+}
+
+impl CampaignHero {
+    pub fn new(id: &str, class_id: &str, level: u32, xp: u32, health: f64, max_health: f64, stress: f64, max_stress: f64) -> Self {
+        CampaignHero {
+            id: id.to_string(),
+            class_id: class_id.to_string(),
+            level,
+            xp,
+            health,
+            max_health,
+            stress,
+            max_stress,
+            quirks: CampaignHeroQuirks::new(),
+            traits: CampaignHeroTraits::new(),
+            skills: Vec::new(),
+            equipment: CampaignHeroEquipment::new(),
+        }
+    }
+}
+
+/// Active quirks on a campaign hero.
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct CampaignHeroQuirks {
+    /// Positive quirk IDs.
+    pub positive: Vec<String>,
+    /// Negative (non-disease) quirk IDs.
+    pub negative: Vec<String>,
+    /// Disease quirk IDs (count toward negative limit).
+    pub diseases: Vec<String>,
+}
+
+impl CampaignHeroQuirks {
+    pub fn new() -> Self {
+        CampaignHeroQuirks::default()
+    }
+
+    /// Returns the total count of negative quirks including diseases.
+    pub fn negative_count(&self) -> usize {
+        self.negative.len() + self.diseases.len()
+    }
+}
+
+/// Active traits (afflictions and virtues) on a campaign hero.
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct CampaignHeroTraits {
+    /// Affliction trait IDs.
+    pub afflictions: Vec<String>,
+    /// Virtue trait IDs.
+    pub virtues: Vec<String>,
+}
+
+impl CampaignHeroTraits {
+    pub fn new() -> Self {
+        CampaignHeroTraits::default()
+    }
+}
+
+/// Equipment state for a campaign hero.
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct CampaignHeroEquipment {
+    /// Weapon upgrade level (0 = base).
+    pub weapon_level: u32,
+    /// Armor upgrade level (0 = base).
+    pub armor_level: u32,
+    /// Equipped trinket IDs.
+    pub trinkets: Vec<String>,
+}
+
+impl CampaignHeroEquipment {
+    pub fn new() -> Self {
+        CampaignHeroEquipment::default()
+    }
+}
+
+/// An item in the estate / campaign inventory.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CampaignInventoryItem {
+    /// Item identifier.
+    pub id: String,
+    /// Quantity held.
+    pub quantity: u32,
+}
+
+impl CampaignInventoryItem {
+    pub fn new(id: &str, quantity: u32) -> Self {
+        CampaignInventoryItem {
+            id: id.to_string(),
+            quantity,
+        }
+    }
+}
+
+/// A record of a completed (or abandoned) dungeon run.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CampaignRunRecord {
+    /// Which dungeon was run.
+    pub dungeon: DungeonType,
+    /// Map size variant.
+    pub map_size: MapSize,
+    /// Number of rooms cleared.
+    pub rooms_cleared: u32,
+    /// Number of battles won.
+    pub battles_won: u32,
+    /// Whether the run was completed (boss defeated).
+    pub completed: bool,
+    /// Gold earned during the run.
+    pub gold_earned: u32,
+}
+
+impl CampaignRunRecord {
+    pub fn new(
+        dungeon: DungeonType,
+        map_size: MapSize,
+        rooms_cleared: u32,
+        battles_won: u32,
+        completed: bool,
+        gold_earned: u32,
+    ) -> Self {
+        CampaignRunRecord {
+            dungeon,
+            map_size,
+            rooms_cleared,
+            battles_won,
+            completed,
+            gold_earned,
+        }
+    }
+}
+
+/// Progress on a quest.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CampaignQuestProgress {
+    /// Quest identifier.
+    pub quest_id: String,
+    /// Current step index.
+    pub current_step: u32,
+    /// Total number of steps.
+    pub max_steps: u32,
+    /// Whether the quest is complete.
+    pub completed: bool,
+}
+
+impl CampaignQuestProgress {
+    pub fn new(quest_id: &str, max_steps: u32) -> Self {
+        CampaignQuestProgress {
+            quest_id: quest_id.to_string(),
+            current_step: 0,
+            max_steps,
+            completed: false,
+        }
+    }
+}
+
+/// The full campaign snapshot — canonical save/load boundary for the headless
+/// migration.
+///
+/// `CampaignState` captures every gameplay-significant field needed to faithfully
+/// save and restore a DDGC campaign:
+///
+/// - **Gold and heirlooms**: currency state
+/// - **Roster**: each hero's health, stress, level, xp, quirks, traits, skills,
+///   and equipment
+/// - **Inventory**: estate items
+/// - **Town**: building upgrade states
+/// - **Run history**: record of completed dungeon runs
+/// - **Quest progress**: active and completed quests
+///
+/// # Schema versioning
+///
+/// `schema_version` identifies the snapshot format. Consumers MUST reject
+/// snapshots with an unsupported version. Increment
+/// [`CAMPAIGN_SNAPSHOT_VERSION`] when making backward-incompatible format
+/// changes.
+///
+/// # Deterministic serialization
+///
+/// All keyed collections use `BTreeMap` so that `serde_json::to_string` produces
+/// byte-identical output for the same logical state. This is intentional:
+/// round-trip testing, save-file diffing, and integrity verification all depend
+/// on deterministic output.
+///
+/// # Boundary contract
+///
+/// `CampaignState` is the canonical save/load boundary. No framework-specific
+/// types (e.g., `ActorId`, `EncounterId`, `SkillDefinition`) appear in this
+/// schema. All identifiers are plain strings so the saved state is decoupled
+/// from the framework type graph.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CampaignState {
+    /// Schema version for save/load compatibility.
+    pub schema_version: u32,
+    /// Current gold.
+    pub gold: u32,
+    /// Heirloom currency balances.
+    pub heirlooms: std::collections::BTreeMap<HeirloomCurrency, u32>,
+    /// Town building upgrade states, keyed by building ID.
+    pub building_states: std::collections::BTreeMap<String, BuildingUpgradeState>,
+    /// The current hero roster.
+    pub roster: Vec<CampaignHero>,
+    /// Estate inventory items.
+    pub inventory: Vec<CampaignInventoryItem>,
+    /// Completed run history, most recent first.
+    pub run_history: Vec<CampaignRunRecord>,
+    /// Active quest progress.
+    pub quest_progress: Vec<CampaignQuestProgress>,
+}
+
+impl CampaignState {
+    /// Create a new campaign state with the given starting gold.
+    ///
+    /// The schema version is set to [`CAMPAIGN_SNAPSHOT_VERSION`].
+    /// All collections are empty.
+    pub fn new(gold: u32) -> Self {
+        CampaignState {
+            schema_version: CAMPAIGN_SNAPSHOT_VERSION,
+            gold,
+            heirlooms: std::collections::BTreeMap::new(),
+            building_states: std::collections::BTreeMap::new(),
+            roster: Vec::new(),
+            inventory: Vec::new(),
+            run_history: Vec::new(),
+            quest_progress: Vec::new(),
+        }
+    }
+
+    /// Serialize this campaign state to a JSON string.
+    ///
+    /// Serialization is deterministic: the same `CampaignState` always produces
+    /// the same JSON bytes (assuming identical field values).
+    pub fn to_json(&self) -> Result<String, serde_json::Error> {
+        serde_json::to_string(self)
+    }
+
+    /// Deserialize a campaign state from a JSON string.
+    pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
+        serde_json::from_str(json)
+    }
+
+    /// Validate that this campaign state's schema version is supported.
+    ///
+    /// Returns `Ok(())` if the version matches [`CAMPAIGN_SNAPSHOT_VERSION`],
+    /// or `Err` with a message describing the mismatch.
+    pub fn validate_version(&self) -> Result<(), String> {
+        if self.schema_version == CAMPAIGN_SNAPSHOT_VERSION {
+            Ok(())
+        } else {
+            Err(format!(
+                "unsupported campaign schema version {} (current: {})",
+                self.schema_version,
+                CAMPAIGN_SNAPSHOT_VERSION
+            ))
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -5917,5 +6231,402 @@ mod tests {
         assert!(ids.contains(&"field_dressing"));
         assert!(ids.contains(&"dark_ritual"));
         assert!(ids.contains(&"supply"));
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // Campaign snapshot: round-trip and determinism tests
+    // ───────────────────────────────────────────────────────────────
+
+    /// Build a non-trivial CampaignState with all substates populated.
+    fn build_test_campaign() -> CampaignState {
+        let mut state = CampaignState::new(1500);
+        state.heirlooms.insert(HeirloomCurrency::Bones, 42);
+        state.heirlooms.insert(HeirloomCurrency::Portraits, 15);
+        state.heirlooms.insert(HeirloomCurrency::Tapes, 7);
+        state.building_states.insert(
+            "inn".to_string(),
+            BuildingUpgradeState::new("inn", Some('b')),
+        );
+        state.building_states.insert(
+            "blacksmith".to_string(),
+            BuildingUpgradeState::new("blacksmith", Some('a')),
+        );
+
+        let mut hero = CampaignHero::new("hero_1", "alchemist", 3, 450, 85.0, 100.0, 25.0, 200.0);
+        hero.quirks.positive = vec!["eagle_eye".to_string(), "tough".to_string()];
+        hero.quirks.negative = vec!["kleptomaniac".to_string()];
+        hero.quirks.diseases = vec!["consumption".to_string()];
+        hero.traits.virtues = vec!["courageous".to_string()];
+        hero.skills = vec![
+            "skill_fire_bomb".to_string(),
+            "skill_acid_spray".to_string(),
+            "skill_healing_vapor".to_string(),
+            "skill_toxin_grenade".to_string(),
+        ];
+        hero.equipment.weapon_level = 2;
+        hero.equipment.armor_level = 1;
+        hero.equipment.trinkets = vec!["sage_stone".to_string(), "lucky_charm".to_string()];
+        state.roster.push(hero);
+
+        let hero2 = CampaignHero::new("hero_2", "hunter", 2, 200, 100.0, 100.0, 10.0, 200.0);
+        state.roster.push(hero2);
+
+        state.inventory.push(CampaignInventoryItem::new("torch", 4));
+        state.inventory.push(CampaignInventoryItem::new("shovel", 1));
+        state.inventory.push(CampaignInventoryItem::new("bandage", 3));
+
+        state.run_history.push(CampaignRunRecord::new(
+            DungeonType::QingLong,
+            MapSize::Short,
+            9, 3, true, 350,
+        ));
+        state.run_history.push(CampaignRunRecord::new(
+            DungeonType::BaiHu,
+            MapSize::Medium,
+            10, 2, false, 125,
+        ));
+
+        state.quest_progress.push({
+            let mut q = CampaignQuestProgress::new("kill_boss_qinglong", 2);
+            q.current_step = 1;
+            q
+        });
+
+        state
+    }
+
+    #[test]
+    fn campaign_state_roundtrip_preserves_all_fields() {
+        let original = build_test_campaign();
+
+        let json = original.to_json().expect("serialization should succeed");
+        let restored = CampaignState::from_json(&json).expect("deserialization should succeed");
+
+        assert_eq!(original, restored);
+    }
+
+    #[test]
+    fn campaign_state_serialization_is_deterministic() {
+        let original = build_test_campaign();
+
+        let json_a = original.to_json().expect("first serialization should succeed");
+        let json_b = original.to_json().expect("second serialization should succeed");
+
+        assert_eq!(json_a, json_b, "identical state must produce identical JSON");
+    }
+
+    #[test]
+    fn campaign_state_schema_version_is_set_on_new() {
+        let state = CampaignState::new(500);
+        assert_eq!(state.schema_version, CAMPAIGN_SNAPSHOT_VERSION);
+    }
+
+    #[test]
+    fn campaign_state_validate_version_accepts_current() {
+        let state = CampaignState::new(500);
+        assert!(state.validate_version().is_ok());
+    }
+
+    #[test]
+    fn campaign_state_validate_version_rejects_mismatch() {
+        let mut state = CampaignState::new(500);
+        state.schema_version = 99;
+        let result = state.validate_version();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("unsupported campaign schema version"));
+    }
+
+    #[test]
+    fn campaign_state_roundtrip_preserves_gold() {
+        let original = CampaignState::new(2500);
+        let json = original.to_json().unwrap();
+        let restored = CampaignState::from_json(&json).unwrap();
+        assert_eq!(restored.gold, 2500);
+    }
+
+    #[test]
+    fn campaign_state_roundtrip_preserves_heirlooms() {
+        let mut state = CampaignState::new(1000);
+        state.heirlooms.insert(HeirloomCurrency::Bones, 99);
+        state.heirlooms.insert(HeirloomCurrency::Tapes, 33);
+
+        let json = state.to_json().unwrap();
+        let restored = CampaignState::from_json(&json).unwrap();
+
+        assert_eq!(restored.heirlooms.get(&HeirloomCurrency::Bones), Some(&99));
+        assert_eq!(restored.heirlooms.get(&HeirloomCurrency::Tapes), Some(&33));
+        assert_eq!(restored.heirlooms.get(&HeirloomCurrency::Portraits), None);
+    }
+
+    #[test]
+    fn campaign_state_roundtrip_preserves_building_states() {
+        let mut state = CampaignState::new(1000);
+        state.building_states.insert(
+            "tavern".to_string(),
+            BuildingUpgradeState::new("tavern", Some('c')),
+        );
+
+        let json = state.to_json().unwrap();
+        let restored = CampaignState::from_json(&json).unwrap();
+
+        let bs = restored.building_states.get("tavern").unwrap();
+        assert_eq!(bs.current_level, Some('c'));
+    }
+
+    #[test]
+    fn campaign_state_roundtrip_preserves_hero_roster() {
+        let mut state = CampaignState::new(1000);
+        let hero = CampaignHero::new("h1", "crusader", 5, 900, 80.0, 120.0, 40.0, 200.0);
+        state.roster.push(hero);
+
+        let json = state.to_json().unwrap();
+        let restored = CampaignState::from_json(&json).unwrap();
+
+        assert_eq!(restored.roster.len(), 1);
+        assert_eq!(restored.roster[0].id, "h1");
+        assert_eq!(restored.roster[0].class_id, "crusader");
+        assert_eq!(restored.roster[0].level, 5);
+        assert_eq!(restored.roster[0].xp, 900);
+        assert_eq!(restored.roster[0].health, 80.0);
+        assert_eq!(restored.roster[0].max_health, 120.0);
+        assert_eq!(restored.roster[0].stress, 40.0);
+        assert_eq!(restored.roster[0].max_stress, 200.0);
+    }
+
+    #[test]
+    fn campaign_state_roundtrip_preserves_hero_quirks() {
+        let mut hero = CampaignHero::new("h1", "alchemist", 1, 0, 100.0, 100.0, 0.0, 200.0);
+        hero.quirks.positive = vec!["eagle_eye".to_string()];
+        hero.quirks.negative = vec!["fearful".to_string()];
+        hero.quirks.diseases = vec!["rabies".to_string()];
+
+        let mut state = CampaignState::new(500);
+        state.roster.push(hero);
+
+        let json = state.to_json().unwrap();
+        let restored = CampaignState::from_json(&json).unwrap();
+
+        let h = &restored.roster[0];
+        assert_eq!(h.quirks.positive, vec!["eagle_eye"]);
+        assert_eq!(h.quirks.negative, vec!["fearful"]);
+        assert_eq!(h.quirks.diseases, vec!["rabies"]);
+        assert_eq!(h.quirks.negative_count(), 2);
+    }
+
+    #[test]
+    fn campaign_state_roundtrip_preserves_hero_traits() {
+        let mut hero = CampaignHero::new("h1", "alchemist", 1, 0, 100.0, 100.0, 0.0, 200.0);
+        hero.traits.virtues = vec!["courageous".to_string()];
+        hero.traits.afflictions = vec!["paranoid".to_string()];
+
+        let mut state = CampaignState::new(500);
+        state.roster.push(hero);
+
+        let json = state.to_json().unwrap();
+        let restored = CampaignState::from_json(&json).unwrap();
+
+        let h = &restored.roster[0];
+        assert_eq!(h.traits.virtues, vec!["courageous"]);
+        assert_eq!(h.traits.afflictions, vec!["paranoid"]);
+    }
+
+    #[test]
+    fn campaign_state_roundtrip_preserves_hero_equipment() {
+        let mut hero = CampaignHero::new("h1", "tank", 1, 0, 100.0, 100.0, 0.0, 200.0);
+        hero.equipment.weapon_level = 3;
+        hero.equipment.armor_level = 2;
+        hero.equipment.trinkets = vec!["shield_medallion".to_string()];
+
+        let mut state = CampaignState::new(500);
+        state.roster.push(hero);
+
+        let json = state.to_json().unwrap();
+        let restored = CampaignState::from_json(&json).unwrap();
+
+        let h = &restored.roster[0];
+        assert_eq!(h.equipment.weapon_level, 3);
+        assert_eq!(h.equipment.armor_level, 2);
+        assert_eq!(h.equipment.trinkets, vec!["shield_medallion"]);
+    }
+
+    #[test]
+    fn campaign_state_roundtrip_preserves_hero_skills() {
+        let mut hero = CampaignHero::new("h1", "shaman", 1, 0, 100.0, 100.0, 0.0, 200.0);
+        hero.skills = vec![
+            "skill_lightning".to_string(),
+            "skill_hex".to_string(),
+            "skill_totem".to_string(),
+        ];
+
+        let mut state = CampaignState::new(500);
+        state.roster.push(hero);
+
+        let json = state.to_json().unwrap();
+        let restored = CampaignState::from_json(&json).unwrap();
+
+        assert_eq!(restored.roster[0].skills.len(), 3);
+        assert_eq!(restored.roster[0].skills[0], "skill_lightning");
+    }
+
+    #[test]
+    fn campaign_state_roundtrip_preserves_inventory() {
+        let mut state = CampaignState::new(500);
+        state.inventory.push(CampaignInventoryItem::new("torch", 8));
+        state.inventory.push(CampaignInventoryItem::new("bandage", 4));
+
+        let json = state.to_json().unwrap();
+        let restored = CampaignState::from_json(&json).unwrap();
+
+        assert_eq!(restored.inventory.len(), 2);
+        assert_eq!(restored.inventory[0].id, "torch");
+        assert_eq!(restored.inventory[0].quantity, 8);
+        assert_eq!(restored.inventory[1].id, "bandage");
+        assert_eq!(restored.inventory[1].quantity, 4);
+    }
+
+    #[test]
+    fn campaign_state_roundtrip_preserves_run_history() {
+        let mut state = CampaignState::new(500);
+        state.run_history.push(CampaignRunRecord::new(
+            DungeonType::ZhuQue,
+            MapSize::Short,
+            9, 3, true, 500,
+        ));
+
+        let json = state.to_json().unwrap();
+        let restored = CampaignState::from_json(&json).unwrap();
+
+        assert_eq!(restored.run_history.len(), 1);
+        let run = &restored.run_history[0];
+        assert_eq!(run.dungeon, DungeonType::ZhuQue);
+        assert_eq!(run.map_size, MapSize::Short);
+        assert_eq!(run.rooms_cleared, 9);
+        assert_eq!(run.battles_won, 3);
+        assert!(run.completed);
+        assert_eq!(run.gold_earned, 500);
+    }
+
+    #[test]
+    fn campaign_state_roundtrip_preserves_quest_progress() {
+        let mut state = CampaignState::new(500);
+        let mut q = CampaignQuestProgress::new("cleanse_all_dungeons", 4);
+        q.current_step = 2;
+        state.quest_progress.push(q);
+
+        let json = state.to_json().unwrap();
+        let restored = CampaignState::from_json(&json).unwrap();
+
+        assert_eq!(restored.quest_progress.len(), 1);
+        let qp = &restored.quest_progress[0];
+        assert_eq!(qp.quest_id, "cleanse_all_dungeons");
+        assert_eq!(qp.current_step, 2);
+        assert_eq!(qp.max_steps, 4);
+        assert!(!qp.completed);
+    }
+
+    #[test]
+    fn campaign_state_empty_has_version_and_gold() {
+        let state = CampaignState::new(0);
+        let json = state.to_json().unwrap();
+        let restored = CampaignState::from_json(&json).unwrap();
+
+        assert_eq!(restored.gold, 0);
+        assert_eq!(restored.schema_version, CAMPAIGN_SNAPSHOT_VERSION);
+        assert!(restored.roster.is_empty());
+        assert!(restored.heirlooms.is_empty());
+        assert!(restored.building_states.is_empty());
+        assert!(restored.inventory.is_empty());
+        assert!(restored.run_history.is_empty());
+        assert!(restored.quest_progress.is_empty());
+    }
+
+    #[test]
+    fn campaign_state_full_roundtrip_no_field_loss() {
+        let original = build_test_campaign();
+        let json = original.to_json().unwrap();
+        let restored = CampaignState::from_json(&json).unwrap();
+
+        // Verify every substate in detail — this test fails if a new field
+        // is added to CampaignState without updating the test builder.
+        assert_eq!(restored.gold, 1500);
+        assert_eq!(restored.schema_version, CAMPAIGN_SNAPSHOT_VERSION);
+
+        // Heirlooms
+        assert_eq!(restored.heirlooms[&HeirloomCurrency::Bones], 42);
+        assert_eq!(restored.heirlooms[&HeirloomCurrency::Portraits], 15);
+        assert_eq!(restored.heirlooms[&HeirloomCurrency::Tapes], 7);
+
+        // Buildings
+        assert_eq!(restored.building_states["inn"].current_level, Some('b'));
+        assert_eq!(restored.building_states["blacksmith"].current_level, Some('a'));
+
+        // Roster
+        assert_eq!(restored.roster.len(), 2);
+        let h1 = &restored.roster[0];
+        assert_eq!(h1.id, "hero_1");
+        assert_eq!(h1.class_id, "alchemist");
+        assert_eq!(h1.level, 3);
+        assert_eq!(h1.xp, 450);
+        assert_eq!(h1.health, 85.0);
+        assert_eq!(h1.max_health, 100.0);
+        assert_eq!(h1.stress, 25.0);
+        assert_eq!(h1.max_stress, 200.0);
+        assert_eq!(h1.quirks.positive.len(), 2);
+        assert_eq!(h1.quirks.negative.len(), 1);
+        assert_eq!(h1.quirks.diseases.len(), 1);
+        assert_eq!(h1.traits.virtues.len(), 1);
+        assert_eq!(h1.skills.len(), 4);
+        assert_eq!(h1.equipment.weapon_level, 2);
+        assert_eq!(h1.equipment.armor_level, 1);
+        assert_eq!(h1.equipment.trinkets.len(), 2);
+
+        // Inventory
+        assert_eq!(restored.inventory.len(), 3);
+
+        // Run history
+        assert_eq!(restored.run_history.len(), 2);
+        assert_eq!(restored.run_history[0].dungeon, DungeonType::QingLong);
+        assert!(restored.run_history[0].completed);
+        assert_eq!(restored.run_history[1].dungeon, DungeonType::BaiHu);
+        assert!(!restored.run_history[1].completed);
+
+        // Quests
+        assert_eq!(restored.quest_progress.len(), 1);
+        assert_eq!(restored.quest_progress[0].quest_id, "kill_boss_qinglong");
+        assert_eq!(restored.quest_progress[0].current_step, 1);
+    }
+
+    #[test]
+    fn campaign_state_serialization_is_json_parseable() {
+        let state = CampaignState::new(100);
+        let json = state.to_json().unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert!(parsed.is_object());
+        assert_eq!(parsed["schema_version"], CAMPAIGN_SNAPSHOT_VERSION);
+        assert_eq!(parsed["gold"], 100);
+    }
+
+    #[test]
+    fn campaign_hero_quirks_default_is_empty() {
+        let q = CampaignHeroQuirks::new();
+        assert!(q.positive.is_empty());
+        assert!(q.negative.is_empty());
+        assert!(q.diseases.is_empty());
+        assert_eq!(q.negative_count(), 0);
+    }
+
+    #[test]
+    fn campaign_hero_traits_default_is_empty() {
+        let t = CampaignHeroTraits::new();
+        assert!(t.afflictions.is_empty());
+        assert!(t.virtues.is_empty());
+    }
+
+    #[test]
+    fn campaign_hero_equipment_default_is_base() {
+        let e = CampaignHeroEquipment::new();
+        assert_eq!(e.weapon_level, 0);
+        assert_eq!(e.armor_level, 0);
+        assert!(e.trinkets.is_empty());
     }
 }
