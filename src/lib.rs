@@ -5,6 +5,7 @@
 
 pub mod content;
 pub mod contracts;
+pub mod docs;
 pub mod encounters;
 pub mod heroes;
 pub mod monsters;
