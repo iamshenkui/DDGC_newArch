@@ -20,7 +20,7 @@ use framework_viewmodels::combat::{ActorSummary, CombatViewModel as FrameworkCom
 use game_ddgc_headless::contracts::viewmodels::{
     BootLoadViewModel, CombatActionInput, CombatFeedback, CombatHudViewModel, CombatPhase, CombatPosition,
     CombatResult, CombatViewModel as DdgcCombatViewModel, CombatantType, DungeonRoomKind, DungeonViewModel,
-    ReturnFlowState, ResultViewModel, TownViewModel, ViewModelError, TownActivityType,
+    OutcomeType, ReturnFlowState, ReturnFlowViewModel, ResultViewModel, TownActivityType, TownViewModel, ViewModelError,
 };
 use game_ddgc_headless::contracts::{
     DungeonType, HeirloomCurrency, MapSize, GridSize,
@@ -2572,4 +2572,371 @@ fn adapter_combat_hud_status_count() {
 
     let h1 = hud_vm.hero_vitals.iter().find(|h| h.id == "ActorId(1)").unwrap();
     assert_eq!(h1.status_count, 2);
+}
+
+// ── US-008-a: Replay-driven end-to-end validation for the vertical slice ────────
+
+/// Replay fixture for BootLoadViewModel — represents initial game boot state.
+fn make_replay_boot_load() -> BootLoadViewModel {
+    BootLoadViewModel::success("Campaign loaded successfully", vec!["heroes", "monsters", "dungeons"])
+        .with_campaign_version(1)
+}
+
+/// Replay fixture for TownViewModel — represents town visit with activities and roster.
+fn make_replay_town_vm() -> TownViewModel {
+    use game_ddgc_headless::contracts::{BuildingUpgradeState, CampaignHero, CampaignHeroQuirks, CampaignState};
+
+    let mut campaign = CampaignState::new(1500);
+    campaign.roster.push(CampaignHero {
+        id: "h1".to_string(),
+        class_id: "crusader".to_string(),
+        level: 3,
+        xp: 500,
+        health: 80.0,
+        max_health: 100.0,
+        stress: 30.0,
+        max_stress: 200.0,
+        quirks: CampaignHeroQuirks::new(),
+        equipment: Default::default(),
+        skills: Vec::new(),
+        traits: Default::default(),
+    });
+    campaign.roster.push(CampaignHero {
+        id: "h2".to_string(),
+        class_id: "hunter".to_string(),
+        level: 2,
+        xp: 300,
+        health: 95.0,
+        max_health: 100.0,
+        stress: 50.0,
+        max_stress: 200.0,
+        quirks: CampaignHeroQuirks::new(),
+        equipment: Default::default(),
+        skills: Vec::new(),
+        traits: Default::default(),
+    });
+    campaign.building_states.insert(
+        "stagecoach".to_string(),
+        BuildingUpgradeState::new("stagecoach", Some('a')),
+    );
+
+    town_from_campaign(&campaign).expect("town_from_campaign should succeed for valid replay fixture")
+}
+
+/// Replay fixture for DungeonViewModel — represents active dungeon run state.
+fn make_replay_dungeon_vm() -> DungeonViewModel {
+    let heroes = vec![
+        make_hero_state("h1", "crusader", 80.0, 100.0, 30.0, 200.0),
+        make_hero_state("h2", "hunter", 95.0, 100.0, 50.0, 200.0),
+    ];
+    let room_encounters = vec![
+        RoomEncounterRecord {
+            room_id: RoomId(1),
+            room_kind: framework_progression::rooms::RoomKind::Combat,
+            pack_id: "pack1".to_string(),
+            family_ids: vec![],
+        },
+        RoomEncounterRecord {
+            room_id: RoomId(2),
+            room_kind: framework_progression::rooms::RoomKind::Boss,
+            pack_id: "boss_pack".to_string(),
+            family_ids: vec![],
+        },
+    ];
+
+    let run_result = DdgcRunResult {
+        run: make_test_run(),
+        state: game_ddgc_headless::run::flow::DdgcRunState::new(),
+        floor: make_test_floor(),
+        battle_pack_ids: vec![],
+        metadata: RunMetadata {
+            dungeon_type: DungeonType::QingLong,
+            map_size: MapSize::Short,
+            base_room_number: 9,
+            base_corridor_number: 4,
+            gridsize: GridSize::new(5, 5),
+            connectivity: 0.9,
+        },
+        room_encounters,
+        interaction_records: vec![],
+        camping_trace: vec![],
+        heroes,
+    };
+
+    dungeon_from_run_result(&run_result).expect("dungeon_from_run_result should succeed for valid replay fixture")
+}
+
+/// Replay fixture for CombatViewModel — represents active combat state.
+fn make_replay_combat_vm() -> DdgcCombatViewModel {
+    let actors = vec![
+        make_actor_summary(1, CombatSide::Ally, 80.0, 100.0, vec![]),
+        make_actor_summary(2, CombatSide::Ally, 95.0, 100.0, vec![]),
+        make_actor_summary(10, CombatSide::Enemy, 150.0, 200.0, vec![]),
+        make_actor_summary(11, CombatSide::Enemy, 200.0, 200.0, vec![]),
+    ];
+    let framework_vm = make_framework_combat_vm(1, 1, actors, vec![1, 2, 10, 11]);
+
+    combat_from_framework(&framework_vm).expect("combat_from_framework should succeed for valid replay fixture")
+}
+
+/// Replay fixture for CombatHudViewModel — represents combat HUD state.
+fn make_replay_combat_hud_vm() -> CombatHudViewModel {
+    let combat_vm = make_replay_combat_vm();
+    combat_hud_from_combat(&combat_vm).expect("combat_hud_from_combat should succeed for valid replay fixture")
+}
+
+/// Replay fixture for ResultViewModel — represents dungeon/combat result state.
+fn make_replay_result_vm() -> ResultViewModel {
+    let heirlooms: std::collections::BTreeMap<HeirloomCurrency, u32> = std::collections::BTreeMap::new();
+
+    result_from_run(
+        DungeonType::ZhuQue,
+        MapSize::Medium,
+        14,
+        6,
+        true,
+        800,
+        200,
+        &heirlooms,
+        vec![],
+    ).expect("result_from_run should succeed for valid replay fixture")
+}
+
+/// Replay fixture for ReturnFlowViewModel — represents return-to-town flow state.
+fn make_replay_return_flow_vm() -> ReturnFlowViewModel {
+    let heroes: Vec<(String, String, f64, f64, f64, f64)> = vec![
+        ("h1".to_string(), "crusader".to_string(), 40.0, 100.0, 150.0, 200.0), // wounded, stressed
+        ("h2".to_string(), "hunter".to_string(), 95.0, 100.0, 50.0, 200.0),
+    ];
+    let died_heroes: Vec<(String, String)> = vec![];
+
+    return_flow_from_state(
+        DungeonType::BaiHu,
+        MapSize::Short,
+        9,
+        4,
+        true,
+        500,
+        &heroes,
+        &died_heroes,
+    ).expect("return_flow_from_state should succeed for valid replay fixture")
+}
+
+/// Verifies BootLoadViewModel replay fixture renders without errors.
+#[test]
+fn replay_boot_load_fixture_renders_without_error() {
+    let vm = make_replay_boot_load();
+    assert!(vm.loaded, "BootLoad should be loaded");
+    assert!(vm.error.is_none(), "BootLoad should have no error: {:?}", vm.error);
+}
+
+/// Verifies BootLoadViewModel replay fixture is deterministic.
+#[test]
+fn replay_boot_load_fixture_deterministic() {
+    let vm1 = make_replay_boot_load();
+    let vm2 = make_replay_boot_load();
+    assert_eq!(vm1, vm2, "BootLoad fixture should be deterministic");
+}
+
+/// Verifies TownViewModel replay fixture renders without errors.
+#[test]
+fn replay_town_fixture_renders_without_error() {
+    let vm = make_replay_town_vm();
+    assert!(vm.error.is_none(), "Town should have no error: {:?}", vm.error);
+    assert_eq!(vm.roster.len(), 2, "Town should have 2 heroes");
+}
+
+/// Verifies TownViewModel replay fixture is deterministic.
+#[test]
+fn replay_town_fixture_deterministic() {
+    let vm1 = make_replay_town_vm();
+    let vm2 = make_replay_town_vm();
+    assert_eq!(vm1, vm2, "Town fixture should be deterministic");
+}
+
+/// Verifies DungeonViewModel replay fixture renders without errors.
+#[test]
+fn replay_dungeon_fixture_renders_without_error() {
+    let vm = make_replay_dungeon_vm();
+    assert!(vm.error.is_none(), "Dungeon should have no error: {:?}", vm.error);
+    assert_eq!(vm.dungeon_type, "QingLong", "Dungeon type should be QingLong");
+    assert_eq!(vm.map_size, "Short", "Map size should be Short");
+}
+
+/// Verifies DungeonViewModel replay fixture is deterministic.
+#[test]
+fn replay_dungeon_fixture_deterministic() {
+    let vm1 = make_replay_dungeon_vm();
+    let vm2 = make_replay_dungeon_vm();
+    assert_eq!(vm1, vm2, "Dungeon fixture should be deterministic");
+}
+
+/// Verifies CombatViewModel replay fixture renders without errors.
+#[test]
+fn replay_combat_fixture_renders_without_error() {
+    let vm = make_replay_combat_vm();
+    assert!(vm.error.is_none(), "Combat should have no error: {:?}", vm.error);
+    assert_eq!(vm.heroes.len(), 2, "Combat should have 2 heroes");
+    assert_eq!(vm.monsters.len(), 2, "Combat should have 2 monsters");
+}
+
+/// Verifies CombatViewModel replay fixture is deterministic.
+#[test]
+fn replay_combat_fixture_deterministic() {
+    let vm1 = make_replay_combat_vm();
+    let vm2 = make_replay_combat_vm();
+    assert_eq!(vm1, vm2, "Combat fixture should be deterministic");
+}
+
+/// Verifies CombatHudViewModel replay fixture renders without errors.
+#[test]
+fn replay_combat_hud_fixture_renders_without_error() {
+    let vm = make_replay_combat_hud_vm();
+    assert!(vm.is_combat_active(), "Combat HUD should show active combat");
+    assert_eq!(vm.heroes_alive, 2, "Should have 2 heroes alive");
+    assert_eq!(vm.monsters_alive, 2, "Should have 2 monsters alive");
+}
+
+/// Verifies CombatHudViewModel replay fixture is deterministic.
+#[test]
+fn replay_combat_hud_fixture_deterministic() {
+    let vm1 = make_replay_combat_hud_vm();
+    let vm2 = make_replay_combat_hud_vm();
+    assert_eq!(vm1, vm2, "CombatHUD fixture should be deterministic");
+}
+
+/// Verifies ResultViewModel replay fixture renders without errors.
+#[test]
+fn replay_result_fixture_renders_without_error() {
+    let vm = make_replay_result_vm();
+    assert_eq!(vm.outcome, OutcomeType::Success, "Result should be Success");
+    assert!(vm.error.is_none(), "Result should have no error: {:?}", vm.error);
+}
+
+/// Verifies ResultViewModel replay fixture is deterministic.
+#[test]
+fn replay_result_fixture_deterministic() {
+    let vm1 = make_replay_result_vm();
+    let vm2 = make_replay_result_vm();
+    assert_eq!(vm1, vm2, "Result fixture should be deterministic");
+}
+
+/// Verifies ReturnFlowViewModel replay fixture renders without errors.
+#[test]
+fn replay_return_flow_fixture_renders_without_error() {
+    let vm = make_replay_return_flow_vm();
+    assert!(vm.error.is_none(), "ReturnFlow should have no error: {:?}", vm.error);
+    assert_eq!(vm.heroes.len(), 2, "ReturnFlow should have 2 heroes");
+}
+
+/// Verifies ReturnFlowViewModel replay fixture is deterministic.
+#[test]
+fn replay_return_flow_fixture_deterministic() {
+    let vm1 = make_replay_return_flow_vm();
+    let vm2 = make_replay_return_flow_vm();
+    assert_eq!(vm1, vm2, "ReturnFlow fixture should be deterministic");
+}
+
+/// Verifies vertical slice can be rendered end-to-end from replay fixtures.
+///
+/// This validates that all view models in the representative slice can be
+/// created and rendered without errors from replay fixtures, proving the
+/// contracts are stable for frontend consumption.
+#[test]
+fn replay_vertical_slice_end_to_end_renders() {
+    // Boot
+    let boot_vm = make_replay_boot_load();
+    assert!(boot_vm.loaded);
+
+    // Town
+    let town_vm = make_replay_town_vm();
+    assert!(town_vm.error.is_none());
+
+    // Dungeon
+    let dungeon_vm = make_replay_dungeon_vm();
+    assert!(dungeon_vm.error.is_none());
+
+    // Combat
+    let combat_vm = make_replay_combat_vm();
+    assert!(combat_vm.error.is_none());
+
+    // Combat HUD
+    let combat_hud_vm = make_replay_combat_hud_vm();
+    assert!(combat_hud_vm.is_combat_active());
+
+    // Result
+    let result_vm = make_replay_result_vm();
+    assert!(result_vm.error.is_none());
+
+    // Return flow
+    let return_vm = make_replay_return_flow_vm();
+    assert!(return_vm.error.is_none());
+}
+
+/// Verifies ViewModelError descriptions are actionable for debugging.
+///
+/// When adapter mapping fails, the error should provide enough context
+/// to identify the source of the failure without requiring deep framework knowledge.
+#[test]
+fn viewmodel_error_descriptions_are_actionable() {
+    let err = ViewModelError::UnsupportedState {
+        state_type: "Combat".to_string(),
+        detail: "monster turn not supported".to_string(),
+    };
+    let desc = err.description();
+    assert!(desc.contains("Combat"), "Error should mention state type");
+    assert!(desc.contains("monster turn not supported"), "Error should mention detail");
+
+    let err2 = ViewModelError::PartialMapping {
+        state_type: "Town".to_string(),
+        missing_fields: vec!["building_states".to_string(), "roster".to_string()],
+    };
+    let desc2 = err2.description();
+    assert!(desc2.contains("Town"), "Error should mention state type");
+    assert!(desc2.contains("building_states"), "Error should list missing fields");
+
+    let err3 = ViewModelError::MissingRequiredField {
+        field: "health".to_string(),
+        context: "CampaignHero".to_string(),
+    };
+    let desc3 = err3.description();
+    assert!(desc3.contains("health"), "Error should mention field");
+    assert!(desc3.contains("CampaignHero"), "Error should mention context");
+
+    let err4 = ViewModelError::IncompatibleSchema {
+        expected: "2.0".to_string(),
+        found: "1.0".to_string(),
+    };
+    let desc4 = err4.description();
+    assert!(desc4.contains("2.0"), "Error should mention expected version");
+    assert!(desc4.contains("1.0"), "Error should mention found version");
+}
+
+/// Verifies replay-driven and live-runtime validation consume same contract boundary.
+///
+/// Both replay fixtures and live-constructed payloads should produce valid
+/// view models when passed through the same adapters, proving the contract
+/// boundary is stable for frontend consumption.
+#[test]
+fn replay_and_live_consume_same_contract_boundary() {
+    // Create live-constructed combat VM
+    let actors = vec![
+        make_actor_summary(1, CombatSide::Ally, 80.0, 100.0, vec![]),
+        make_actor_summary(10, CombatSide::Enemy, 150.0, 200.0, vec![]),
+    ];
+    let framework_vm = make_framework_combat_vm(1, 1, actors, vec![1, 10]);
+    let live_combat_vm = combat_from_framework(&framework_vm).unwrap();
+
+    // Create replay fixture combat VM
+    let replay_combat_vm = make_replay_combat_vm();
+
+    // Both should be valid CombatViewModels (same structure, potentially different IDs)
+    assert!(live_combat_vm.error.is_none(), "Live combat VM should have no error");
+    assert!(replay_combat_vm.error.is_none(), "Replay combat VM should have no error");
+
+    // Both should have heroes and monsters
+    assert!(!live_combat_vm.heroes.is_empty(), "Live combat VM should have heroes");
+    assert!(!replay_combat_vm.heroes.is_empty(), "Replay combat VM should have heroes");
+    assert!(!live_combat_vm.monsters.is_empty(), "Live combat VM should have monsters");
+    assert!(!replay_combat_vm.monsters.is_empty(), "Replay combat VM should have monsters");
 }
