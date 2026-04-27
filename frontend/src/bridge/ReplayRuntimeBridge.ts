@@ -1,11 +1,13 @@
 import type { RuntimeMode } from "../app/runtimeMode";
 import {
-  replayReadySnapshot
+  replayReadySnapshot,
+  replayHeroDetailViewModel
 } from "../validation/replayFixtures";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
 import type {
   DdgcFrontendIntent,
-  DdgcFrontendSnapshot
+  DdgcFrontendSnapshot,
+  TownViewModel
 } from "./contractTypes";
 
 export class ReplayRuntimeBridge implements RuntimeBridge {
@@ -26,12 +28,24 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
 
   async dispatchIntent(intent: DdgcFrontendIntent): Promise<DdgcFrontendSnapshot> {
     switch (intent.type) {
-      case "open-hero":
+      case "open-hero": {
+        const townVm = this.snapshot.viewModel as TownViewModel;
+        const hero = townVm.heroes.find((h) => h.id === intent.heroId) ?? townVm.heroes[0];
         this.snapshot = {
           ...this.snapshot,
-          debugMessage: `Open hero intent received for ${intent.heroId}.`
+          flowState: "town",
+          viewModel: {
+            ...replayHeroDetailViewModel,
+            heroId: hero.id,
+            name: hero.name,
+            classLabel: hero.classLabel,
+            hp: hero.hp.split(" / ")[0],
+            maxHp: hero.hp.split(" / ")[1] ?? hero.hp.split(" / ")[0],
+            stress: hero.stress
+          }
         };
         break;
+      }
       case "open-building":
         this.snapshot = {
           ...this.snapshot,

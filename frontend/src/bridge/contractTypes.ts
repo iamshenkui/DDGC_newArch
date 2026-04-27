@@ -39,6 +39,40 @@ export interface TownBuildingSummary {
   status: "ready" | "partial" | "locked";
 }
 
+export interface HeroProgression {
+  level: number;
+  experience: string;
+  experienceToNext: string;
+}
+
+export interface HeroResistances {
+  stun: string;
+  bleed: string;
+  disease: string;
+  move: string;
+  death: string;
+  trap: string;
+  hazard: string;
+}
+
+export interface HeroDetailViewModel {
+  kind: "hero-detail";
+  heroId: string;
+  name: string;
+  classLabel: string;
+  hp: string;
+  maxHp: string;
+  stress: string;
+  resolve: string;
+  progression: HeroProgression;
+  resistances: HeroResistances;
+  combatSkills: ReadonlyArray<string>;
+  campingSkills: ReadonlyArray<string>;
+  weapon: string;
+  armor: string;
+  campNotes: string;
+}
+
 export interface TownViewModel {
   kind: "town";
   title: string;
@@ -64,6 +98,7 @@ export interface FatalErrorViewModel {
 export type DdgcViewModel =
   | BootLoadViewModel
   | TownViewModel
+  | HeroDetailViewModel
   | UnsupportedViewModel
   | FatalErrorViewModel;
 

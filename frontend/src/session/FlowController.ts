@@ -1,6 +1,6 @@
 import type { DdgcFrontendSnapshot } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -13,6 +13,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.lifecycle === "loading" || snapshot.lifecycle === "booting") {
     return "loading";
+  }
+
+  if (snapshot.viewModel.kind === "hero-detail") {
+    return "hero-detail";
   }
 
   if (snapshot.flowState === "town") {

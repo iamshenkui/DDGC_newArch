@@ -6,6 +6,7 @@ import type {
   TownViewModel,
   TownHeroSummary,
   TownBuildingSummary,
+  HeroDetailViewModel,
 } from "./contractTypes";
 
 const createLiveTownViewModel = (): TownViewModel => ({
@@ -56,6 +57,36 @@ const createLiveTownSnapshot = (): DdgcFrontendSnapshot => ({
   debugMessage: "Live runtime bridge booted: fresh campaign initialized through DdgcHost::boot_live()."
 });
 
+const createLiveHeroDetailViewModel = (hero: TownHeroSummary): HeroDetailViewModel => ({
+  kind: "hero-detail",
+  heroId: hero.id,
+  name: hero.name,
+  classLabel: hero.classLabel,
+  hp: hero.hp.split(" / ")[0],
+  maxHp: hero.hp.split(" / ")[1] ?? hero.hp.split(" / ")[0],
+  stress: hero.stress,
+  resolve: "3",
+  progression: {
+    level: hero.level,
+    experience: "0",
+    experienceToNext: "300"
+  },
+  resistances: {
+    stun: "40%",
+    bleed: "60%",
+    disease: "30%",
+    move: "50%",
+    death: "0%",
+    trap: "70%",
+    hazard: "20%"
+  },
+  combatSkills: ["Skill 1", "Skill 2"],
+  campingSkills: ["Campfire Song"],
+  weapon: "Basic Weapon",
+  armor: "Leather Armor",
+  campNotes: "Hero detail view - live mode placeholder."
+});
+
 export class LiveRuntimeBridge implements RuntimeBridge {
   readonly id = "ddgc-live-bridge";
   readonly mode: RuntimeMode = "live";
@@ -77,12 +108,16 @@ export class LiveRuntimeBridge implements RuntimeBridge {
       case "boot":
         this.snapshot = createLiveTownSnapshot();
         break;
-      case "open-hero":
+      case "open-hero": {
+        const townVm = this.snapshot.viewModel as TownViewModel;
+        const hero = townVm.heroes.find((h) => h.id === intent.heroId) ?? townVm.heroes[0];
         this.snapshot = {
           ...this.snapshot,
-          debugMessage: `Live: open hero intent received for ${intent.heroId}.`
+          flowState: "town",
+          viewModel: createLiveHeroDetailViewModel(hero)
         };
         break;
+      }
       case "open-building":
         this.snapshot = {
           ...this.snapshot,

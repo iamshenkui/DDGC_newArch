@@ -2,6 +2,7 @@ import type {
   BootLoadViewModel,
   DdgcFrontendSnapshot,
   FatalErrorViewModel,
+  HeroDetailViewModel,
   TownViewModel,
   UnsupportedViewModel
 } from "../bridge/contractTypes";
@@ -61,11 +62,48 @@ export const replayTownViewModel: TownViewModel = {
   nextActionLabel: "Provision Expedition"
 };
 
+export const replayHeroDetailViewModel: HeroDetailViewModel = {
+  kind: "hero-detail",
+  heroId: "hero-hunter-01",
+  name: "Shen",
+  classLabel: "Hunter",
+  hp: "38",
+  maxHp: "42",
+  stress: "17",
+  resolve: "3",
+  progression: {
+    level: 2,
+    experience: "240",
+    experienceToNext: "360"
+  },
+  resistances: {
+    stun: "40%",
+    bleed: "60%",
+    disease: "30%",
+    move: "50%",
+    death: "0%",
+    trap: "70%",
+    hazard: "20%"
+  },
+  combatSkills: ["Hunting Bow", "Rapid Shot", "Marked for Death", "Batty Advice"],
+  campingSkills: ["Campfire Song", "Warrior's Restore"],
+  weapon: "Hunter's Bow (+2)",
+  armor: "Leather Armor (+1)",
+  campNotes: "Excellent sustain healer with strong camp utility. Marked for Death synergy with teammates."
+};
+
 export const replayReadySnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
   flowState: "town",
   viewModel: replayTownViewModel,
   debugMessage: "Replay bridge loaded the representative town/meta snapshot."
+};
+
+export const replayHeroDetailSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "town",
+  viewModel: replayHeroDetailViewModel,
+  debugMessage: "Replay bridge showing hero detail for inspection."
 };
 
 const unsupportedViewModel: UnsupportedViewModel = {

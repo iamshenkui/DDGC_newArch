@@ -8,6 +8,7 @@ import {
   replayLoadingSnapshot,
   liveLoadingSnapshot,
   replayReadySnapshot,
+  replayHeroDetailSnapshot,
 } from "../validation/replayFixtures";
 
 describe("FlowController", () => {
@@ -59,13 +60,14 @@ describe("FlowController", () => {
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
       startup: { lifecycle: "ready", flowState: "boot", viewModel: replayReadySnapshot.viewModel },
       loading: replayLoadingSnapshot,
       town: replayReadySnapshot,
+      "hero-detail": replayHeroDetailSnapshot,
       unsupported: unsupportedSnapshot,
       fatal: fatalSnapshot,
     };
