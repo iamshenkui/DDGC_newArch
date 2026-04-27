@@ -13,6 +13,8 @@ import {
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
+  replayFailureResultViewModel,
+  replayPartialResultViewModel,
   replayReturnViewModel,
 } from "../validation/replayFixtures";
 
@@ -97,6 +99,28 @@ describe("FlowController", () => {
         debugMessage: "Replay bridge showing result screen."
       };
       const screen = resolveScreen(resultSnapshot);
+      expect(screen).toBe("result");
+    });
+
+    it("returns result screen for failure outcome result view model", () => {
+      const failureSnapshot: DdgcFrontendSnapshot = {
+        lifecycle: "ready",
+        flowState: "result",
+        viewModel: replayFailureResultViewModel,
+        debugMessage: "Replay bridge showing failure result screen."
+      };
+      const screen = resolveScreen(failureSnapshot);
+      expect(screen).toBe("result");
+    });
+
+    it("returns result screen for partial outcome result view model", () => {
+      const partialSnapshot: DdgcFrontendSnapshot = {
+        lifecycle: "ready",
+        flowState: "result",
+        viewModel: replayPartialResultViewModel,
+        debugMessage: "Replay bridge showing partial result screen."
+      };
+      const screen = resolveScreen(partialSnapshot);
       expect(screen).toBe("result");
     });
 
@@ -363,6 +387,50 @@ describe("canTransition - result and return meta-loop continuation", () => {
         viewModel: replayReadySnapshot.viewModel,
       };
       expect(canTransition(townSnapshot, { type: "start-provisioning" }).allowed).toBe(true);
+    });
+
+    it("proves meta-loop can continue from failure result without dead-end states", () => {
+      const failureResultSnapshot: DdgcFrontendSnapshot = {
+        lifecycle: "ready",
+        flowState: "result",
+        viewModel: replayFailureResultViewModel,
+        debugMessage: "Replay bridge showing failure result screen."
+      };
+
+      // From failure result screen, continue-from-result should be allowed
+      const continueValidation = canTransition(failureResultSnapshot, { type: "continue-from-result" });
+      expect(continueValidation.allowed).toBe(true);
+
+      // After continuing, we should be in town where start-provisioning is allowed
+      const townSnapshot: DdgcFrontendSnapshot = {
+        lifecycle: "ready",
+        flowState: "town",
+        viewModel: replayReadySnapshot.viewModel,
+      };
+      const provValidation = canTransition(townSnapshot, { type: "start-provisioning" });
+      expect(provValidation.allowed).toBe(true);
+    });
+
+    it("proves meta-loop can continue from partial result without dead-end states", () => {
+      const partialResultSnapshot: DdgcFrontendSnapshot = {
+        lifecycle: "ready",
+        flowState: "result",
+        viewModel: replayPartialResultViewModel,
+        debugMessage: "Replay bridge showing partial result screen."
+      };
+
+      // From partial result screen, continue-from-result should be allowed
+      const continueValidation = canTransition(partialResultSnapshot, { type: "continue-from-result" });
+      expect(continueValidation.allowed).toBe(true);
+
+      // After continuing, we should be in town where start-provisioning is allowed
+      const townSnapshot: DdgcFrontendSnapshot = {
+        lifecycle: "ready",
+        flowState: "town",
+        viewModel: replayReadySnapshot.viewModel,
+      };
+      const provValidation = canTransition(townSnapshot, { type: "start-provisioning" });
+      expect(provValidation.allowed).toBe(true);
     });
   });
 });

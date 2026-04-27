@@ -219,6 +219,70 @@ export const replayResultViewModel: ExpeditionResultViewModel = {
   isContinueAvailable: true
 };
 
+export const replayFailureResultViewModel: ExpeditionResultViewModel = {
+  kind: "result",
+  title: "Expedition Failed",
+  expeditionName: "The Depths Await",
+  outcome: "failure",
+  summary: "Your expedition has been utterly defeated. The party was overwhelmed and forced to retreat in disarray.",
+  lootAcquired: [],
+  heroOutcomes: [
+    {
+      heroId: "hero-hunter-01",
+      heroName: "Shen",
+      status: "alive",
+      hpChange: "-18",
+      stressChange: "+25"
+    },
+    {
+      heroId: "hero-white-01",
+      heroName: "Bai Xiu",
+      status: "dead",
+      hpChange: "-41",
+      stressChange: "+40"
+    }
+  ],
+  resourcesGained: {
+    gold: 0,
+    supplies: -100,
+    experience: 50
+  },
+  isContinueAvailable: true
+};
+
+export const replayPartialResultViewModel: ExpeditionResultViewModel = {
+  kind: "result",
+  title: "Expedition Partial Success",
+  expeditionName: "The Depths Await",
+  outcome: "partial",
+  summary: "Your party returned with mixed results. Some objectives were achieved but at significant cost.",
+  lootAcquired: [
+    "Ancient Gold Coin x1"
+  ],
+  heroOutcomes: [
+    {
+      heroId: "hero-hunter-01",
+      heroName: "Shen",
+      status: "alive",
+      hpChange: "-12",
+      stressChange: "+18"
+    },
+    {
+      heroId: "hero-white-01",
+      heroName: "Bai Xiu",
+      status: "stressed",
+      hpChange: "-15",
+      stressChange: "+22"
+    }
+  ],
+  resourcesGained: {
+    gold: 80,
+    supplies: -75,
+    experience: 100
+  },
+  isContinueAvailable: true
+};
+
 export const replayReturnViewModel: ReturnViewModel = {
   kind: "return",
   title: "Returning to Town",
