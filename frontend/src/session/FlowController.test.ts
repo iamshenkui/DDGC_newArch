@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveScreen, type ScreenKey } from "./FlowController";
+import { resolveScreen, canTransition, type ScreenKey } from "./FlowController";
 import type { DdgcFrontendSnapshot } from "../bridge/contractTypes";
 import {
   fatalSnapshot,
@@ -164,5 +164,205 @@ describe("ScreenKey exhaustiveness", () => {
       const screen = resolveScreen(snapshot);
       expect(screen).toBe(key);
     }
+  });
+});
+
+describe("canTransition - result and return meta-loop continuation", () => {
+  const resultSnapshot: DdgcFrontendSnapshot = {
+    lifecycle: "ready",
+    flowState: "result",
+    viewModel: replayResultViewModel,
+    debugMessage: "Replay bridge showing result screen."
+  };
+
+  const returnSnapshot: DdgcFrontendSnapshot = {
+    lifecycle: "ready",
+    flowState: "return",
+    viewModel: replayReturnViewModel,
+    debugMessage: "Replay bridge showing return screen."
+  };
+
+  describe("continue-from-result transitions", () => {
+    it("allows continue-from-result when isContinueAvailable is true", () => {
+      const validation = canTransition(resultSnapshot, { type: "continue-from-result" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("allows continue-from-result when isContinueAvailable is explicitly true", () => {
+      const availableResultSnapshot: DdgcFrontendSnapshot = {
+        ...resultSnapshot,
+        viewModel: { ...replayResultViewModel, isContinueAvailable: true }
+      };
+      const validation = canTransition(availableResultSnapshot, { type: "continue-from-result" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects continue-from-result when isContinueAvailable is false", () => {
+      const unavailableResultSnapshot: DdgcFrontendSnapshot = {
+        ...resultSnapshot,
+        viewModel: { ...replayResultViewModel, isContinueAvailable: false }
+      };
+      const validation = canTransition(unavailableResultSnapshot, { type: "continue-from-result" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not available");
+    });
+
+    it("rejects continue-from-result when not on result screen", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "continue-from-result" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on result screen");
+    });
+
+    it("rejects continue-from-result when not on result screen (town)", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "continue-from-result" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on result screen");
+    });
+
+    it("rejects continue-from-result when not on result screen (hero-detail)", () => {
+      const validation = canTransition(replayHeroDetailSnapshot, { type: "continue-from-result" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on result screen");
+    });
+  });
+
+  describe("resume-from-return transitions", () => {
+    it("allows resume-from-return when isTownResumeAvailable is true", () => {
+      const validation = canTransition(returnSnapshot, { type: "resume-from-return" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("allows resume-from-return when isTownResumeAvailable is explicitly true", () => {
+      const availableReturnSnapshot: DdgcFrontendSnapshot = {
+        ...returnSnapshot,
+        viewModel: { ...replayReturnViewModel, isTownResumeAvailable: true }
+      };
+      const validation = canTransition(availableReturnSnapshot, { type: "resume-from-return" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects resume-from-return when isTownResumeAvailable is false", () => {
+      const unavailableReturnSnapshot: DdgcFrontendSnapshot = {
+        ...returnSnapshot,
+        viewModel: { ...replayReturnViewModel, isTownResumeAvailable: false }
+      };
+      const validation = canTransition(unavailableReturnSnapshot, { type: "resume-from-return" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not available");
+    });
+
+    it("rejects resume-from-return when not on return screen", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "resume-from-return" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on return screen");
+    });
+
+    it("rejects resume-from-return when not on return screen (building-detail)", () => {
+      const validation = canTransition(replayBuildingDetailSnapshot, { type: "resume-from-return" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on return screen");
+    });
+  });
+
+  describe("return-to-town transitions", () => {
+    it("allows return-to-town from provisioning", () => {
+      const provisioningSnapshot: DdgcFrontendSnapshot = {
+        lifecycle: "ready",
+        flowState: "provisioning",
+        viewModel: replayProvisioningViewModel,
+      };
+      const validation = canTransition(provisioningSnapshot, { type: "return-to-town" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("allows return-to-town from expedition", () => {
+      const expeditionSnapshot: DdgcFrontendSnapshot = {
+        lifecycle: "ready",
+        flowState: "expedition",
+        viewModel: replayExpeditionViewModel,
+      };
+      const validation = canTransition(expeditionSnapshot, { type: "return-to-town" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects return-to-town when already in town", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "return-to-town" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("already in town");
+    });
+
+    it("allows return-to-town from result screen as fallback action", () => {
+      const validation = canTransition(resultSnapshot, { type: "return-to-town" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("allows return-to-town from return screen as fallback action", () => {
+      const validation = canTransition(returnSnapshot, { type: "return-to-town" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects return-to-town from loading screen", () => {
+      const validation = canTransition(replayLoadingSnapshot, { type: "return-to-town" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("already in town");
+    });
+  });
+
+  describe("meta-loop continuation validation", () => {
+    it("proves meta-loop can continue from result without dead-end states", () => {
+      // From result screen, continue-from-result should be allowed
+      const continueValidation = canTransition(resultSnapshot, { type: "continue-from-result" });
+      expect(continueValidation.allowed).toBe(true);
+
+      // After continuing, we should be in town where start-provisioning is allowed
+      const provisioningSnapshot: DdgcFrontendSnapshot = {
+        lifecycle: "ready",
+        flowState: "town",
+        viewModel: replayReadySnapshot.viewModel,
+      };
+      const provValidation = canTransition(provisioningSnapshot, { type: "start-provisioning" });
+      expect(provValidation.allowed).toBe(true);
+    });
+
+    it("proves meta-loop can continue from return without dead-end states", () => {
+      // From return screen, resume-from-return should be allowed
+      const resumeValidation = canTransition(returnSnapshot, { type: "resume-from-return" });
+      expect(resumeValidation.allowed).toBe(true);
+
+      // After resuming, we should be in town where start-provisioning is allowed
+      const provisioningSnapshot: DdgcFrontendSnapshot = {
+        lifecycle: "ready",
+        flowState: "town",
+        viewModel: replayReadySnapshot.viewModel,
+      };
+      const provValidation = canTransition(provisioningSnapshot, { type: "start-provisioning" });
+      expect(provValidation.allowed).toBe(true);
+    });
+
+    it("proves full expedition cycle can loop back to provisioning", () => {
+      const provisioningSnapshot: DdgcFrontendSnapshot = {
+        lifecycle: "ready",
+        flowState: "provisioning",
+        viewModel: replayProvisioningViewModel,
+      };
+      const expeditionSnapshot: DdgcFrontendSnapshot = {
+        lifecycle: "ready",
+        flowState: "expedition",
+        viewModel: replayExpeditionViewModel,
+      };
+
+      // Start from provisioning, go through expedition, come back via result
+      expect(canTransition(provisioningSnapshot, { type: "confirm-provisioning" }).allowed).toBe(true);
+      expect(canTransition(expeditionSnapshot, { type: "launch-expedition" }).allowed).toBe(true);
+      expect(canTransition(resultSnapshot, { type: "continue-from-result" }).allowed).toBe(true);
+
+      // And we should be able to start provisioning again
+      const townSnapshot: DdgcFrontendSnapshot = {
+        lifecycle: "ready",
+        flowState: "town",
+        viewModel: replayReadySnapshot.viewModel,
+      };
+      expect(canTransition(townSnapshot, { type: "start-provisioning" }).allowed).toBe(true);
+    });
   });
 });
