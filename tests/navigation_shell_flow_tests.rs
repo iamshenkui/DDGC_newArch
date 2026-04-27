@@ -722,3 +722,287 @@ fn host_phase_default_is_uninitialized() {
     let phase = HostPhase::default();
     assert_eq!(phase, HostPhase::Uninitialized);
 }
+
+// ── US-007-b: Loop-closure error handling and return-to-town validation tests ─
+
+/// Verifies the full representative success loop returns to town deterministically.
+///
+/// This tests: Boot → Town → Expedition → Result → Town via actual transitions.
+/// The loop-closure path (Result → Town) is exercised to prove the full
+/// representative loop can return to town deterministically.
+#[test]
+fn navigation_shell_full_loop_result_to_town_deterministic() {
+    let history_1 = {
+        let mut shell = make_live_shell();
+        run_boot_to_town_sequence(&mut shell);
+        run_town_to_expedition_sequence(&mut shell);
+
+        // Expedition completed, enter result flow
+        let result = shell.transition_from_payload(RuntimePayload::ExpeditionCompleted);
+        assert!(result.is_some(), "ExpeditionCompleted should transition from Expedition");
+        assert_eq!(result.unwrap(), FlowState::Result);
+
+        // Continue intent returns to town (loop closure)
+        let result = shell.transition_from_intent(FrontendIntent::Continue);
+        assert!(result.is_some(), "Continue should transition from Result to Town");
+        assert_eq!(result.unwrap(), FlowState::Town);
+
+        shell.current_state().clone()
+    };
+
+    let history_2 = {
+        let mut shell = make_live_shell();
+        run_boot_to_town_sequence(&mut shell);
+        run_town_to_expedition_sequence(&mut shell);
+
+        // Expedition completed, enter result flow
+        let result = shell.transition_from_payload(RuntimePayload::ExpeditionCompleted);
+        assert!(result.is_some(), "ExpeditionCompleted should transition from Expedition");
+        assert_eq!(result.unwrap(), FlowState::Result);
+
+        // Continue intent returns to town (loop closure)
+        let result = shell.transition_from_intent(FrontendIntent::Continue);
+        assert!(result.is_some(), "Continue should transition from Result to Town");
+        assert_eq!(result.unwrap(), FlowState::Town);
+
+        shell.current_state().clone()
+    };
+
+    assert_eq!(history_1, history_2, "Full result-to-town loop should be deterministic");
+}
+
+/// Verifies the full representative failure loop returns to town deterministically.
+///
+/// This tests: Boot → Town → Expedition → Return → Town via actual transitions.
+/// The loop-closure path (Return → Town) is exercised to prove the full
+/// representative loop can return to town deterministically after expedition failure.
+#[test]
+fn navigation_shell_full_loop_return_to_town_deterministic() {
+    let history_1 = {
+        let mut shell = make_live_shell();
+        run_boot_to_town_sequence(&mut shell);
+        run_town_to_expedition_sequence(&mut shell);
+
+        // Expedition failed, enter return flow
+        let result = shell.transition_from_payload(RuntimePayload::ExpeditionFailed);
+        assert!(result.is_some(), "ExpeditionFailed should transition to Return");
+        assert_eq!(result.unwrap(), FlowState::Return);
+
+        // Return completed, return to town (loop closure)
+        let result = shell.transition_from_payload(RuntimePayload::ReturnCompleted);
+        assert!(result.is_some(), "ReturnCompleted should transition to Town");
+        assert_eq!(result.unwrap(), FlowState::Town);
+
+        shell.current_state().clone()
+    };
+
+    let history_2 = {
+        let mut shell = make_live_shell();
+        run_boot_to_town_sequence(&mut shell);
+        run_town_to_expedition_sequence(&mut shell);
+
+        // Expedition failed, enter return flow
+        let result = shell.transition_from_payload(RuntimePayload::ExpeditionFailed);
+        assert!(result.is_some(), "ExpeditionFailed should transition to Return");
+        assert_eq!(result.unwrap(), FlowState::Return);
+
+        // Return completed, return to town (loop closure)
+        let result = shell.transition_from_payload(RuntimePayload::ReturnCompleted);
+        assert!(result.is_some(), "ReturnCompleted should transition to Town");
+        assert_eq!(result.unwrap(), FlowState::Town);
+
+        shell.current_state().clone()
+    };
+
+    assert_eq!(history_1, history_2, "Full return-to-town loop should be deterministic");
+}
+
+/// Verifies errors during closure flow are surfaced clearly (not silently dead-ending).
+///
+/// When an invalid transition is attempted during the return flow, the shell
+/// returns None instead of silently staying in the previous state.
+#[test]
+fn navigation_shell_return_completed_from_wrong_state_returns_none() {
+    let mut shell = make_live_shell();
+    run_boot_to_town_sequence(&mut shell);
+
+    // ReturnCompleted from Town state should return None (error surfaced, not silent)
+    let result = shell.transition_from_payload(RuntimePayload::ReturnCompleted);
+    assert!(result.is_none(), "ReturnCompleted from Town should return None (error surfaced)");
+    assert_eq!(shell.current_state(), FlowState::Town, "State should remain unchanged after invalid transition");
+}
+
+/// Verifies errors during Result flow are surfaced clearly (not silently dead-ending).
+///
+/// When an invalid transition is attempted during the result flow, the shell
+/// returns None instead of silently staying in the previous state.
+#[test]
+fn navigation_shell_result_transition_from_wrong_state_returns_none() {
+    let mut shell = make_live_shell();
+    run_boot_to_town_sequence(&mut shell);
+
+    // Continue from Town state should return None (Continue is only valid from Result)
+    let result = shell.transition_from_intent(FrontendIntent::Continue);
+    assert!(result.is_none(), "Continue from Town should return None (error surfaced)");
+    assert_eq!(shell.current_state(), FlowState::Town, "State should remain unchanged after invalid transition");
+}
+
+/// Verifies invalid return journey transition does not silently dead-end.
+///
+/// ReturnCompleted is only valid from Return state. Attempting it from any
+/// other state returns None and leaves state unchanged.
+#[test]
+fn navigation_shell_return_completed_only_valid_from_return_state() {
+    let mut shell = make_live_shell();
+    run_boot_to_town_sequence(&mut shell);
+
+    // From Town, ReturnCompleted should fail
+    let result = shell.transition_from_payload(RuntimePayload::ReturnCompleted);
+    assert!(result.is_none(), "ReturnCompleted from Town should fail");
+    assert_eq!(shell.current_state(), FlowState::Town);
+
+    // From Boot, ReturnCompleted should fail
+    let shell2 = make_live_shell();
+    assert_eq!(shell2.current_state(), FlowState::Boot);
+    // Can't easily test Boot without forcing because BootComplete is needed first
+    // But we can verify the transition_from_payload contract
+
+    // From Expedition, ReturnCompleted should fail
+    let mut shell3 = make_live_shell();
+    run_boot_to_town_sequence(&mut shell3);
+    run_town_to_expedition_sequence(&mut shell3);
+    let result = shell3.transition_from_payload(RuntimePayload::ReturnCompleted);
+    assert!(result.is_none(), "ReturnCompleted from Expedition should fail");
+    assert_eq!(shell3.current_state(), FlowState::Expedition);
+}
+
+/// Verifies the full representative loop is reproducible in replay mode.
+///
+/// This tests that Boot → Town → Expedition → Return → Town produces identical
+/// results in replay mode, ensuring the loop-closure path remains reproducible
+/// across replay-driven execution.
+#[test]
+fn navigation_shell_return_flow_reproducible_in_replay_mode() {
+    let replay_history = {
+        let mut shell = make_replay_shell();
+        run_boot_to_town_sequence(&mut shell);
+        run_town_to_expedition_sequence(&mut shell);
+
+        // Expedition failed, enter return flow
+        let result = shell.transition_from_payload(RuntimePayload::ExpeditionFailed);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), FlowState::Return);
+
+        // Return completed
+        let result = shell.transition_from_payload(RuntimePayload::ReturnCompleted);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), FlowState::Town);
+
+        shell.current_state().clone()
+    };
+
+    let live_history = {
+        let mut shell = make_live_shell();
+        run_boot_to_town_sequence(&mut shell);
+        run_town_to_expedition_sequence(&mut shell);
+
+        // Expedition failed, enter return flow
+        let result = shell.transition_from_payload(RuntimePayload::ExpeditionFailed);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), FlowState::Return);
+
+        // Return completed
+        let result = shell.transition_from_payload(RuntimePayload::ReturnCompleted);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), FlowState::Town);
+
+        shell.current_state().clone()
+    };
+
+    assert_eq!(replay_history, live_history, "Replay and live modes should produce identical loop-closure results");
+}
+
+/// Verifies the full representative success loop is reproducible in replay mode.
+///
+/// This tests that Boot → Town → Expedition → Result → Town produces identical
+/// results in replay mode, ensuring the loop-closure path remains reproducible
+/// across replay-driven execution.
+#[test]
+fn navigation_shell_result_flow_reproducible_in_replay_mode() {
+    let replay_history = {
+        let mut shell = make_replay_shell();
+        run_boot_to_town_sequence(&mut shell);
+        run_town_to_expedition_sequence(&mut shell);
+
+        // Expedition completed, enter result flow
+        let result = shell.transition_from_payload(RuntimePayload::ExpeditionCompleted);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), FlowState::Result);
+
+        // Continue to town
+        let result = shell.transition_from_intent(FrontendIntent::Continue);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), FlowState::Town);
+
+        shell.current_state().clone()
+    };
+
+    let live_history = {
+        let mut shell = make_live_shell();
+        run_boot_to_town_sequence(&mut shell);
+        run_town_to_expedition_sequence(&mut shell);
+
+        // Expedition completed, enter result flow
+        let result = shell.transition_from_payload(RuntimePayload::ExpeditionCompleted);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), FlowState::Result);
+
+        // Continue to town
+        let result = shell.transition_from_intent(FrontendIntent::Continue);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), FlowState::Town);
+
+        shell.current_state().clone()
+    };
+
+    assert_eq!(replay_history, live_history, "Replay and live modes should produce identical result-to-town loop-closure results");
+}
+
+/// Verifies error payload during return flow transitions to Return state.
+///
+/// This ensures that errors occurring during the closure flow are properly
+/// routed through the Return state for clean recovery.
+#[test]
+fn navigation_shell_error_during_expedition_transitions_to_return() {
+    let mut shell = make_live_shell();
+    run_boot_to_town_sequence(&mut shell);
+    run_town_to_expedition_sequence(&mut shell);
+
+    // Error during expedition should transition to Return state
+    let result = shell.transition_from_payload(RuntimePayload::Error {
+        message: "Connection lost during expedition".to_string(),
+    });
+    assert!(result.is_some(), "Error payload should succeed from Expedition");
+    assert_eq!(result.unwrap(), FlowState::Return, "Error should transition to Return state");
+}
+
+/// Verifies invalid combat transition from Result state returns None.
+///
+/// From Result state, EnterCombat is not a valid transition - only
+/// Continue (to Town) and RetryExpedition (to Expedition) are valid.
+#[test]
+fn navigation_shell_enter_combat_from_result_returns_none() {
+    let mut shell = make_live_shell();
+    run_boot_to_town_sequence(&mut shell);
+    run_town_to_expedition_sequence(&mut shell);
+
+    // Complete expedition to get to Result
+    let result = shell.transition_from_payload(RuntimePayload::ExpeditionCompleted);
+    assert!(result.is_some());
+    assert_eq!(result.unwrap(), FlowState::Result);
+
+    // EnterCombat from Result should return None
+    let result = shell.transition_from_intent(FrontendIntent::EnterCombat);
+    assert!(result.is_none(), "EnterCombat from Result should return None (invalid transition)");
+    assert_eq!(shell.current_state(), FlowState::Result, "State should remain Result");
+}
