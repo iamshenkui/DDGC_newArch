@@ -93,6 +93,342 @@ impl HostPhase {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Flow State Model — high-level navigation states for the frontend
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// High-level flow states that represent the explicit game states
+/// visible to the frontend.
+///
+/// These states form a navigation shell that both replay-driven and
+/// live-runtime modes use to drive the UI. Transitions are triggered
+/// by a combination of runtime payloads (from the game engine) and
+/// frontend intents (from user actions).
+///
+/// # State diagram
+///
+/// ```ignore
+///   Boot → Load → Town ←→ Expedition
+///                  ↓         ↓
+///               Combat ← Result
+///                  ↓
+///                Return → Town
+/// ```
+///
+/// - `Boot`: Initial application startup
+/// - `Load`: Loading campaign or starting new run
+/// - `Town`: Town visit between dungeon runs
+/// - `Expedition`: Active dungeon exploration
+/// - `Combat`: Active battle within expedition
+/// - `Result`: Post-combat or post-expedition results
+/// - `Return`: Returning from dungeon to town
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FlowState {
+    /// Initial boot state — application is starting up.
+    Boot,
+    /// Load/start state — loading a campaign or initializing a new run.
+    Load,
+    /// Town visit state — player is in town between runs.
+    Town,
+    /// Expedition state — player is exploring a dungeon.
+    Expedition,
+    /// Combat state — active battle within an expedition.
+    Combat,
+    /// Result state — showing results after combat or expedition.
+    Result,
+    /// Return state — returning from dungeon to town.
+    Return,
+}
+
+impl Default for FlowState {
+    fn default() -> Self {
+        FlowState::Boot
+    }
+}
+
+impl std::fmt::Display for FlowState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FlowState::Boot => write!(f, "boot"),
+            FlowState::Load => write!(f, "load"),
+            FlowState::Town => write!(f, "town"),
+            FlowState::Expedition => write!(f, "expedition"),
+            FlowState::Combat => write!(f, "combat"),
+            FlowState::Result => write!(f, "result"),
+            FlowState::Return => write!(f, "return"),
+        }
+    }
+}
+
+impl FlowState {
+    /// Returns true if this is a terminal state (no further transitions possible).
+    pub fn is_terminal(&self) -> bool {
+        false // All states can transition; terminal is determined by flow logic
+    }
+
+    /// Returns true if this state represents an active game phase.
+    pub fn is_active(&self) -> bool {
+        matches!(
+            self,
+            FlowState::Town | FlowState::Expedition | FlowState::Combat
+        )
+    }
+
+    /// Classify a host phase into a flow state.
+    ///
+    /// This maps the low-level host phase to the appropriate flow state
+    /// for the navigation shell.
+    pub fn from_host_phase(phase: &HostPhase) -> Self {
+        match phase {
+            HostPhase::Uninitialized | HostPhase::Booting => FlowState::Boot,
+            HostPhase::Ready => FlowState::Load,
+            HostPhase::FatalError | HostPhase::Unsupported => FlowState::Boot,
+        }
+    }
+}
+
+/// Frontend intent — an action requested by the frontend/player
+/// that triggers a flow state transition.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FrontendIntent {
+    /// Start a new campaign.
+    NewCampaign,
+    /// Load an existing campaign (replay-driven mode).
+    LoadCampaign,
+    /// Begin a dungeon expedition.
+    StartExpedition,
+    /// Return to town from expedition.
+    ReturnToTown,
+    /// Enter combat from expedition.
+    EnterCombat,
+    /// Exit combat back to expedition.
+    ExitCombat,
+    /// Show expedition results.
+    ShowResults,
+    /// Continue to next expedition or back to town.
+    Continue,
+    /// Retry failed expedition.
+    RetryExpedition,
+    /// Abort current activity.
+    Abort,
+}
+
+impl FrontendIntent {
+    /// Classify a frontend intent into a target flow state.
+    pub fn target_state(&self) -> Option<FlowState> {
+        match self {
+            FrontendIntent::NewCampaign => Some(FlowState::Town),
+            FrontendIntent::LoadCampaign => Some(FlowState::Town),
+            FrontendIntent::StartExpedition => Some(FlowState::Expedition),
+            FrontendIntent::ReturnToTown => Some(FlowState::Town),
+            FrontendIntent::EnterCombat => Some(FlowState::Combat),
+            FrontendIntent::ExitCombat => Some(FlowState::Expedition),
+            FrontendIntent::ShowResults => Some(FlowState::Result),
+            FrontendIntent::Continue => Some(FlowState::Town),
+            FrontendIntent::RetryExpedition => Some(FlowState::Expedition),
+            FrontendIntent::Abort => Some(FlowState::Town),
+        }
+    }
+}
+
+/// Runtime payload — data from the game engine that can trigger
+/// a flow state transition.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RuntimePayload {
+    /// Host finished booting successfully.
+    BootComplete,
+    /// Campaign loaded successfully.
+    CampaignLoaded,
+    /// Expedition started (entering dungeon).
+    ExpeditionStarted,
+    /// Combat encounter started.
+    CombatStarted,
+    /// Combat encounter ended.
+    CombatEnded { victory: bool },
+    /// Expedition completed (all rooms cleared).
+    ExpeditionCompleted,
+    /// Expedition failed (party wipe or aborted).
+    ExpeditionFailed,
+    /// Return journey completed.
+    ReturnCompleted,
+    /// Town visit started.
+    TownVisitStarted,
+    /// Town visit ended.
+    TownVisitEnded,
+    /// An error occurred requiring return to town via the return flow.
+    Error { message: String },
+}
+
+impl RuntimePayload {
+    /// Classify a runtime payload into a target flow state.
+    pub fn target_state(&self) -> Option<FlowState> {
+        match self {
+            RuntimePayload::BootComplete => Some(FlowState::Load),
+            RuntimePayload::CampaignLoaded => Some(FlowState::Town),
+            RuntimePayload::ExpeditionStarted => Some(FlowState::Expedition),
+            RuntimePayload::CombatStarted => Some(FlowState::Combat),
+            RuntimePayload::CombatEnded { .. } => Some(FlowState::Expedition),
+            RuntimePayload::ExpeditionCompleted => Some(FlowState::Result),
+            RuntimePayload::ExpeditionFailed => Some(FlowState::Return),
+            RuntimePayload::ReturnCompleted => Some(FlowState::Town),
+            RuntimePayload::TownVisitStarted => Some(FlowState::Town),
+            RuntimePayload::TownVisitEnded => Some(FlowState::Load),
+            RuntimePayload::Error { .. } => Some(FlowState::Return),
+        }
+    }
+
+    /// Check if this payload indicates a successful outcome.
+    pub fn is_success(&self) -> bool {
+        match self {
+            RuntimePayload::CombatEnded { victory } => *victory,
+            RuntimePayload::ExpeditionCompleted => true,
+            RuntimePayload::ReturnCompleted => true,
+            _ => false,
+        }
+    }
+}
+
+/// Navigation shell — manages flow state transitions for both
+/// replay-driven and live-runtime modes.
+///
+/// The navigation shell provides a unified interface for state
+/// transitions that works regardless of whether the game is running
+/// in replay mode (loading a saved campaign) or live mode (starting fresh).
+///
+/// # Transitions
+///
+/// Transitions are driven by:
+/// - **Runtime payloads**: Events from the game engine (e.g., `CombatEnded`)
+/// - **Frontend intents**: Actions from the player/UI (e.g., `StartExpedition`)
+///
+/// The shell validates transitions and provides feedback when
+/// an invalid transition is attempted.
+#[derive(Debug, Clone)]
+pub struct NavigationShell {
+    /// Current flow state.
+    current_state: FlowState,
+    /// Previous flow state (for back-navigation).
+    previous_state: FlowState,
+    /// Whether the shell is in replay-driven mode.
+    replay_mode: bool,
+}
+
+impl Default for NavigationShell {
+    fn default() -> Self {
+        NavigationShell::new()
+    }
+}
+
+impl NavigationShell {
+    /// Create a new navigation shell in live mode.
+    pub fn new() -> Self {
+        NavigationShell {
+            current_state: FlowState::Boot,
+            previous_state: FlowState::Boot,
+            replay_mode: false,
+        }
+    }
+
+    /// Create a new navigation shell in replay-driven mode.
+    pub fn new_replay() -> Self {
+        NavigationShell {
+            current_state: FlowState::Boot,
+            previous_state: FlowState::Boot,
+            replay_mode: true,
+        }
+    }
+
+    /// Returns the current flow state.
+    pub fn current_state(&self) -> FlowState {
+        self.current_state.clone()
+    }
+
+    /// Returns the previous flow state.
+    pub fn previous_state(&self) -> FlowState {
+        self.previous_state.clone()
+    }
+
+    /// Returns whether this shell is in replay-driven mode.
+    pub fn is_replay_mode(&self) -> bool {
+        self.replay_mode
+    }
+
+    /// Check if a transition to the target state is valid from the current state.
+    pub fn can_transition(&self, target: &FlowState) -> bool {
+        self.valid_transitions().contains(target)
+    }
+
+    /// Get the list of valid transitions from the current state.
+    pub fn valid_transitions(&self) -> Vec<FlowState> {
+        match &self.current_state {
+            FlowState::Boot => vec![FlowState::Load],
+            FlowState::Load => vec![FlowState::Town],
+            FlowState::Town => vec![FlowState::Expedition],
+            FlowState::Expedition => vec![FlowState::Combat, FlowState::Result, FlowState::Return],
+            FlowState::Combat => vec![FlowState::Expedition, FlowState::Result],
+            FlowState::Result => vec![FlowState::Town, FlowState::Expedition],
+            FlowState::Return => vec![FlowState::Town],
+        }
+    }
+
+    /// Transition to a new state driven by a runtime payload.
+    ///
+    /// Returns the new state if the transition is valid, or None if invalid.
+    pub fn transition_from_payload(&mut self, payload: RuntimePayload) -> Option<FlowState> {
+        let target = payload.target_state()?;
+
+        if !self.can_transition(&target) {
+            return None;
+        }
+
+        self.previous_state = self.current_state.clone();
+        self.current_state = target.clone();
+        Some(target)
+    }
+
+    /// Transition to a new state driven by a frontend intent.
+    ///
+    /// Returns the new state if the transition is valid, or None if invalid.
+    pub fn transition_from_intent(&mut self, intent: FrontendIntent) -> Option<FlowState> {
+        let target = intent.target_state()?;
+
+        if !self.can_transition(&target) {
+            return None;
+        }
+
+        self.previous_state = self.current_state.clone();
+        self.current_state = target.clone();
+        Some(target)
+    }
+
+    /// Force a transition to a specific state (bypasses validation).
+    ///
+    /// This is used for error recovery and special cases like loading
+    /// a campaign directly into a specific state.
+    pub fn force_transition(&mut self, target: FlowState) {
+        self.previous_state = self.current_state.clone();
+        self.current_state = target;
+    }
+
+    /// Reset the navigation shell to its initial state.
+    pub fn reset(&mut self) {
+        self.previous_state = self.current_state.clone();
+        self.current_state = FlowState::Boot;
+    }
+
+    /// Go back to the previous state.
+    ///
+    /// Returns the new state, or None if already at the initial state.
+    pub fn go_back(&mut self) -> Option<FlowState> {
+        if self.current_state == FlowState::Boot {
+            return None;
+        }
+        let prev = self.previous_state.clone();
+        self.current_state = self.previous_state.clone();
+        Some(prev)
+    }
+}
+
 /// Full game state loaded from DDGC data files.
 ///
 /// Holds all parsed content datasets plus the active campaign snapshot.
@@ -3168,5 +3504,400 @@ mod quest_tests {
         let hero2 = vm.heroes.iter().find(|h| h.id == "hero_2").unwrap();
         assert!(!hero2.survived);
         assert!(hero2.died);
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // Flow State Model tests
+    // ───────────────────────────────────────────────────────────────
+
+    #[test]
+    fn flow_state_default_is_boot() {
+        let state = FlowState::default();
+        assert_eq!(state, FlowState::Boot);
+    }
+
+    #[test]
+    fn flow_state_display() {
+        assert_eq!(FlowState::Boot.to_string(), "boot");
+        assert_eq!(FlowState::Load.to_string(), "load");
+        assert_eq!(FlowState::Town.to_string(), "town");
+        assert_eq!(FlowState::Expedition.to_string(), "expedition");
+        assert_eq!(FlowState::Combat.to_string(), "combat");
+        assert_eq!(FlowState::Result.to_string(), "result");
+        assert_eq!(FlowState::Return.to_string(), "return");
+    }
+
+    #[test]
+    fn flow_state_is_active() {
+        assert!(!FlowState::Boot.is_active());
+        assert!(!FlowState::Load.is_active());
+        assert!(FlowState::Town.is_active());
+        assert!(FlowState::Expedition.is_active());
+        assert!(FlowState::Combat.is_active());
+        assert!(!FlowState::Result.is_active());
+        assert!(!FlowState::Return.is_active());
+    }
+
+    #[test]
+    fn flow_state_from_host_phase() {
+        assert_eq!(FlowState::from_host_phase(&HostPhase::Uninitialized), FlowState::Boot);
+        assert_eq!(FlowState::from_host_phase(&HostPhase::Booting), FlowState::Boot);
+        assert_eq!(FlowState::from_host_phase(&HostPhase::Ready), FlowState::Load);
+        assert_eq!(FlowState::from_host_phase(&HostPhase::FatalError), FlowState::Boot);
+        assert_eq!(FlowState::from_host_phase(&HostPhase::Unsupported), FlowState::Boot);
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // Frontend Intent tests
+    // ───────────────────────────────────────────────────────────────
+
+    #[test]
+    fn frontend_intent_target_states() {
+        assert_eq!(FrontendIntent::NewCampaign.target_state(), Some(FlowState::Town));
+        assert_eq!(FrontendIntent::LoadCampaign.target_state(), Some(FlowState::Town));
+        assert_eq!(FrontendIntent::StartExpedition.target_state(), Some(FlowState::Expedition));
+        assert_eq!(FrontendIntent::ReturnToTown.target_state(), Some(FlowState::Town));
+        assert_eq!(FrontendIntent::EnterCombat.target_state(), Some(FlowState::Combat));
+        assert_eq!(FrontendIntent::ExitCombat.target_state(), Some(FlowState::Expedition));
+        assert_eq!(FrontendIntent::ShowResults.target_state(), Some(FlowState::Result));
+        assert_eq!(FrontendIntent::Continue.target_state(), Some(FlowState::Town));
+        assert_eq!(FrontendIntent::RetryExpedition.target_state(), Some(FlowState::Expedition));
+        assert_eq!(FrontendIntent::Abort.target_state(), Some(FlowState::Town));
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // Runtime Payload tests
+    // ───────────────────────────────────────────────────────────────
+
+    #[test]
+    fn runtime_payload_target_states() {
+        assert_eq!(RuntimePayload::BootComplete.target_state(), Some(FlowState::Load));
+        assert_eq!(RuntimePayload::CampaignLoaded.target_state(), Some(FlowState::Town));
+        assert_eq!(RuntimePayload::ExpeditionStarted.target_state(), Some(FlowState::Expedition));
+        assert_eq!(RuntimePayload::CombatStarted.target_state(), Some(FlowState::Combat));
+        assert_eq!(
+            RuntimePayload::CombatEnded { victory: true }.target_state(),
+            Some(FlowState::Expedition)
+        );
+        assert_eq!(
+            RuntimePayload::CombatEnded { victory: false }.target_state(),
+            Some(FlowState::Expedition)
+        );
+        assert_eq!(RuntimePayload::ExpeditionCompleted.target_state(), Some(FlowState::Result));
+        assert_eq!(RuntimePayload::ExpeditionFailed.target_state(), Some(FlowState::Return));
+        assert_eq!(RuntimePayload::ReturnCompleted.target_state(), Some(FlowState::Town));
+        assert_eq!(RuntimePayload::TownVisitStarted.target_state(), Some(FlowState::Town));
+        assert_eq!(RuntimePayload::TownVisitEnded.target_state(), Some(FlowState::Load));
+        assert_eq!(
+            RuntimePayload::Error { message: "test".to_string() }.target_state(),
+            Some(FlowState::Return)
+        );
+    }
+
+    #[test]
+    fn runtime_payload_is_success() {
+        assert!(!RuntimePayload::BootComplete.is_success());
+        assert!(!RuntimePayload::CampaignLoaded.is_success());
+        assert!(!RuntimePayload::ExpeditionStarted.is_success());
+        assert!(!RuntimePayload::CombatStarted.is_success());
+        assert!(RuntimePayload::CombatEnded { victory: true }.is_success());
+        assert!(!RuntimePayload::CombatEnded { victory: false }.is_success());
+        assert!(RuntimePayload::ExpeditionCompleted.is_success());
+        assert!(!RuntimePayload::ExpeditionFailed.is_success());
+        assert!(RuntimePayload::ReturnCompleted.is_success());
+        assert!(!RuntimePayload::TownVisitStarted.is_success());
+        assert!(!RuntimePayload::TownVisitEnded.is_success());
+        assert!(!RuntimePayload::Error { message: "test".to_string() }.is_success());
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // Navigation Shell tests
+    // ───────────────────────────────────────────────────────────────
+
+    #[test]
+    fn navigation_shell_new_is_live_mode() {
+        let shell = NavigationShell::new();
+        assert_eq!(shell.current_state(), FlowState::Boot);
+        assert_eq!(shell.previous_state(), FlowState::Boot);
+        assert!(!shell.is_replay_mode());
+    }
+
+    #[test]
+    fn navigation_shell_new_replay_is_replay_mode() {
+        let shell = NavigationShell::new_replay();
+        assert_eq!(shell.current_state(), FlowState::Boot);
+        assert_eq!(shell.previous_state(), FlowState::Boot);
+        assert!(shell.is_replay_mode());
+    }
+
+    #[test]
+    fn navigation_shell_valid_transitions_from_boot() {
+        let shell = NavigationShell::new();
+        let valid = shell.valid_transitions();
+        assert_eq!(valid, vec![FlowState::Load]);
+    }
+
+    #[test]
+    fn navigation_shell_valid_transitions_from_load() {
+        let shell = NavigationShell::new();
+        // Manually set to Load state to test its transitions
+        let mut shell = shell;
+        shell.force_transition(FlowState::Load);
+        let valid = shell.valid_transitions();
+        assert_eq!(valid, vec![FlowState::Town]);
+    }
+
+    #[test]
+    fn navigation_shell_valid_transitions_from_town() {
+        let mut shell = NavigationShell::new();
+        shell.force_transition(FlowState::Town);
+        let valid = shell.valid_transitions();
+        assert_eq!(valid, vec![FlowState::Expedition]);
+    }
+
+    #[test]
+    fn navigation_shell_valid_transitions_from_expedition() {
+        let mut shell = NavigationShell::new();
+        shell.force_transition(FlowState::Expedition);
+        let valid = shell.valid_transitions();
+        assert_eq!(valid, vec![FlowState::Combat, FlowState::Result, FlowState::Return]);
+    }
+
+    #[test]
+    fn navigation_shell_valid_transitions_from_combat() {
+        let mut shell = NavigationShell::new();
+        shell.force_transition(FlowState::Combat);
+        let valid = shell.valid_transitions();
+        assert_eq!(valid, vec![FlowState::Expedition, FlowState::Result]);
+    }
+
+    #[test]
+    fn navigation_shell_valid_transitions_from_result() {
+        let mut shell = NavigationShell::new();
+        shell.force_transition(FlowState::Result);
+        let valid = shell.valid_transitions();
+        assert_eq!(valid, vec![FlowState::Town, FlowState::Expedition]);
+    }
+
+    #[test]
+    fn navigation_shell_valid_transitions_from_return() {
+        let mut shell = NavigationShell::new();
+        shell.force_transition(FlowState::Return);
+        let valid = shell.valid_transitions();
+        assert_eq!(valid, vec![FlowState::Town]);
+    }
+
+    #[test]
+    fn navigation_shell_can_transition() {
+        let mut shell = NavigationShell::new();
+        assert!(shell.can_transition(&FlowState::Load));
+        assert!(!shell.can_transition(&FlowState::Town)); // Invalid from Boot
+        shell.force_transition(FlowState::Load);
+        assert!(shell.can_transition(&FlowState::Town));
+        assert!(!shell.can_transition(&FlowState::Boot)); // Invalid from Load
+    }
+
+    #[test]
+    fn navigation_shell_transition_from_payload_valid() {
+        let mut shell = NavigationShell::new();
+        // Boot -> Load via BootComplete
+        let result = shell.transition_from_payload(RuntimePayload::BootComplete);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), FlowState::Load);
+        assert_eq!(shell.current_state(), FlowState::Load);
+        assert_eq!(shell.previous_state(), FlowState::Boot);
+    }
+
+    #[test]
+    fn navigation_shell_transition_from_payload_invalid() {
+        let mut shell = NavigationShell::new();
+        // Boot -> Town is invalid (must go through Load first)
+        let result = shell.transition_from_payload(RuntimePayload::TownVisitStarted);
+        assert!(result.is_none());
+        assert_eq!(shell.current_state(), FlowState::Boot); // State unchanged
+    }
+
+    #[test]
+    fn navigation_shell_transition_from_intent_valid() {
+        let mut shell = NavigationShell::new();
+        shell.force_transition(FlowState::Load);
+        // Load -> Town via LoadCampaign
+        let result = shell.transition_from_intent(FrontendIntent::LoadCampaign);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), FlowState::Town);
+        assert_eq!(shell.current_state(), FlowState::Town);
+        assert_eq!(shell.previous_state(), FlowState::Load);
+    }
+
+    #[test]
+    fn navigation_shell_transition_from_intent_invalid() {
+        let mut shell = NavigationShell::new();
+        // Boot -> Expedition is invalid
+        let result = shell.transition_from_intent(FrontendIntent::StartExpedition);
+        assert!(result.is_none());
+        assert_eq!(shell.current_state(), FlowState::Boot);
+    }
+
+    #[test]
+    fn navigation_shell_force_transition() {
+        let mut shell = NavigationShell::new();
+        shell.force_transition(FlowState::Town);
+        assert_eq!(shell.current_state(), FlowState::Town);
+        assert_eq!(shell.previous_state(), FlowState::Boot);
+    }
+
+    #[test]
+    fn navigation_shell_reset() {
+        let mut shell = NavigationShell::new();
+        shell.force_transition(FlowState::Town);
+        shell.force_transition(FlowState::Expedition);
+        shell.reset();
+        assert_eq!(shell.current_state(), FlowState::Boot);
+        assert_eq!(shell.previous_state(), FlowState::Expedition);
+    }
+
+    #[test]
+    fn navigation_shell_go_back() {
+        let mut shell = NavigationShell::new();
+        shell.force_transition(FlowState::Load);
+        shell.force_transition(FlowState::Town);
+        let prev = shell.go_back();
+        assert!(prev.is_some());
+        assert_eq!(prev.unwrap(), FlowState::Load);
+        assert_eq!(shell.current_state(), FlowState::Load);
+    }
+
+    #[test]
+    fn navigation_shell_go_back_from_boot_returns_none() {
+        let mut shell = NavigationShell::new();
+        let prev = shell.go_back();
+        assert!(prev.is_none());
+        assert_eq!(shell.current_state(), FlowState::Boot);
+    }
+
+    #[test]
+    fn navigation_shell_full_live_runtime_flow() {
+        // Test the full flow for live-runtime mode: Boot -> Load -> Town -> Expedition -> Combat -> Expedition -> Result -> Town
+        let mut shell = NavigationShell::new();
+
+        // BootComplete -> Load
+        shell.transition_from_payload(RuntimePayload::BootComplete).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Load);
+
+        // NewCampaign -> Town
+        shell.transition_from_intent(FrontendIntent::NewCampaign).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Town);
+
+        // StartExpedition -> Expedition
+        shell.transition_from_intent(FrontendIntent::StartExpedition).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Expedition);
+
+        // CombatStarted -> Combat
+        shell.transition_from_payload(RuntimePayload::CombatStarted).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Combat);
+
+        // CombatEnded(victory) -> Expedition
+        shell.transition_from_payload(RuntimePayload::CombatEnded { victory: true }).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Expedition);
+
+        // ExpeditionCompleted -> Result
+        shell.transition_from_payload(RuntimePayload::ExpeditionCompleted).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Result);
+
+        // Continue -> Town
+        shell.transition_from_intent(FrontendIntent::Continue).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Town);
+    }
+
+    #[test]
+    fn navigation_shell_full_replay_flow() {
+        // Test the full flow for replay-driven mode: Boot -> Load -> Town (via loading)
+        let mut shell = NavigationShell::new_replay();
+
+        // BootComplete -> Load
+        shell.transition_from_payload(RuntimePayload::BootComplete).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Load);
+
+        // LoadCampaign -> Town
+        shell.transition_from_intent(FrontendIntent::LoadCampaign).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Town);
+        assert!(shell.is_replay_mode());
+    }
+
+    #[test]
+    fn navigation_shell_expedition_failed_flow() {
+        // Test expedition failure: Expedition -> Return -> Town
+        let mut shell = NavigationShell::new();
+
+        // Set up to expedition
+        shell.force_transition(FlowState::Town);
+        shell.transition_from_intent(FrontendIntent::StartExpedition).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Expedition);
+
+        // ExpeditionFailed -> Return
+        shell.transition_from_payload(RuntimePayload::ExpeditionFailed).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Return);
+
+        // ReturnCompleted -> Town
+        shell.transition_from_payload(RuntimePayload::ReturnCompleted).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Town);
+    }
+
+    #[test]
+    fn navigation_shell_combat_defeat_flow() {
+        // Test combat defeat leading to result: Combat -> Result -> Town
+        let mut shell = NavigationShell::new();
+
+        // Set up to combat
+        shell.force_transition(FlowState::Town);
+        shell.transition_from_intent(FrontendIntent::StartExpedition).unwrap();
+        shell.transition_from_payload(RuntimePayload::CombatStarted).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Combat);
+
+        // CombatEnded(defeat) -> Expedition (stays in expedition, could lead to result)
+        shell.transition_from_payload(RuntimePayload::CombatEnded { victory: false }).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Expedition);
+
+        // ExpeditionFailed -> Return
+        shell.transition_from_payload(RuntimePayload::ExpeditionFailed).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Return);
+
+        // ReturnCompleted -> Town
+        shell.transition_from_payload(RuntimePayload::ReturnCompleted).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Town);
+    }
+
+    #[test]
+    fn navigation_shell_error_recovery() {
+        // Test error handling: Town -> Expedition -> Error -> Return -> Town
+        let mut shell = NavigationShell::new();
+
+        // Set up to expedition
+        shell.force_transition(FlowState::Town);
+        shell.transition_from_intent(FrontendIntent::StartExpedition).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Expedition);
+
+        // Error -> Return (error forces return flow)
+        shell.transition_from_payload(RuntimePayload::Error {
+            message: "Connection lost".to_string(),
+        }).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Return);
+
+        // ReturnCompleted -> Town
+        shell.transition_from_payload(RuntimePayload::ReturnCompleted).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Town);
+    }
+
+    #[test]
+    fn navigation_shell_retry_expedition() {
+        // Test retry flow: Result -> Expedition
+        let mut shell = NavigationShell::new();
+
+        // Set up to result
+        shell.force_transition(FlowState::Result);
+
+        // RetryExpedition -> Expedition
+        shell.transition_from_intent(FrontendIntent::RetryExpedition).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Expedition);
     }
 }
