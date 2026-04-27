@@ -69,6 +69,39 @@ if let Err(e) = result {
 
 ## Verification Commands
 
+```bash
+# Typecheck
+cargo check
+
+# Run all tests
+cargo test
+
+# Run the binary (headless encounter/run slice)
+cargo run
+
+# Run with logging
+RUST_LOG=debug cargo run
+```
+
+### Contracts Layer Smoke Tests
+
+The contracts module includes a dedicated smoke-test suite that verifies the local runnable build path:
+
+```bash
+# Run contracts smoke tests
+cargo test --test contracts_smoke_tests
+
+# Run contracts adapter/viewmodel tests
+cargo test --test ddgc_adapter_viewmodel_tests
+```
+
+The smoke tests validate:
+- **Live-runtime boot**: `DdgcHost::boot_live` produces a ready host with all registries loaded
+- **Replay-driven boot**: `DdgcHost::boot_from_campaign` correctly restores campaign state
+- **Determinism**: Both boot modes produce identical results on repeated calls
+- **Contract boundary**: No framework-specific types leak into the contract JSON schema
+- **Error handling**: All error variants produce meaningful diagnostic messages
+
 ## Project Structure
 
 ```
