@@ -121,6 +121,31 @@ The smoke tests validate:
 - **State determinism**: NavigationShell produces identical transitions on repeated calls
 - **Replay mode**: NavigationShell correctly tracks replay vs. live mode
 
+### Docs Layer Smoke Tests
+
+The docs module includes a dedicated smoke-test suite that verifies the local runnable build path:
+
+```bash
+# Run docs smoke tests
+cargo test --test docs_smoke_tests
+```
+
+The smoke tests validate:
+- **Module compilation**: Docs module exports are accessible
+- **DdgcHost documentation**: Boot-live and boot-from-campaign produce documented states
+- **Local developer startup**: Build path (cargo check), run path (cargo run) are documented
+- **Replay-driven mode**: boot_from_campaign produces ready host with Replay startup mode
+- **Live-runtime mode**: boot_live produces ready host with Live startup mode
+- **Asset loading**: All registries (curio, trap, obstacle, building) load correctly
+- **Startup flow**: NavigationShell transitions Boot→Load→Town are documented and verified
+- **Runtime wiring**: Both modes use same transition API (proving contract boundary)
+- **Save/load boundary**: CampaignState round-trips without data loss
+- **Schema versioning**: CampaignState.validate_version() works correctly
+- **Deterministic serialization**: Identical state produces identical bytes
+- **Contract boundary**: No framework types leak into CampaignState JSON
+- **High-frequency paths**: Semantic path inventory executes without panic
+- **Smoke-test path**: Focused verification exists via cargo test --test docs_smoke_tests
+
 ## Project Structure
 
 ```
