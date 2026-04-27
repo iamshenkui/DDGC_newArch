@@ -483,6 +483,14 @@ pub struct GameState {
 
     /// Current runtime phase of the application host.
     pub host_phase: HostPhase,
+
+    // ─── Expedition state ───────────────────────────────────────────────
+
+    /// Active dungeon expedition state, if one is in progress.
+    ///
+    /// This tracks the current dungeon run result for the exploration phase.
+    /// It is not persisted (ephemeral runtime state).
+    pub active_expedition: Option<crate::run::flow::DdgcRunResult>,
 }
 
 impl Default for GameState {
@@ -503,6 +511,7 @@ impl Default for GameState {
             equipment_registry: EquipmentRegistry::new(),
             buff_registry: BuffRegistry::new(),
             host_phase: HostPhase::Uninitialized,
+            active_expedition: None,
         }
     }
 }
@@ -617,6 +626,7 @@ impl GameState {
             equipment_registry,
             buff_registry,
             host_phase: HostPhase::Uninitialized,
+            active_expedition: None,
         })
     }
 
@@ -928,6 +938,145 @@ impl GameState {
     pub fn town_entry_view_model(&mut self) -> ViewModelResult<TownViewModel> {
         self.new_representative_campaign();
         self.town_view_model()
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // Expedition state — dungeon exploration slice
+    // ───────────────────────────────────────────────────────────────
+
+    /// Start a fresh representative expedition suitable for the exploration screen.
+    ///
+    /// This creates an expedition state with typical dungeon conditions that
+    /// allow the frontend to present a functional exploration/dungeon interface with:
+    /// - A party of 4 heroes (typical party size)
+    /// - A representative dungeon (QingLong, Short map)
+    /// - Multiple room types (combat, boss, event, corridor)
+    /// - Progress tracking (rooms cleared, battles won/lost)
+    ///
+    /// This is useful for vertical slice development and frontend testing
+    /// where a representative expedition state is needed to demonstrate
+    /// the exploration screen and dungeon navigation flow.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use game_ddgc_headless::state::GameState;
+    ///
+    /// let data_dir = std::path::PathBuf::from("data");
+    /// let mut state = GameState::load_from(&data_dir).expect("failed to load state");
+    /// state.new_representative_expedition();
+    /// let expedition_vm = state.expedition_view_model().expect("failed to produce expedition view model");
+    /// assert!(!expedition_vm.heroes.is_empty());
+    /// assert!(!expedition_vm.rooms.is_empty());
+    /// // Frontend can now present exploration screen with party and dungeon map
+    /// ```
+    pub fn new_representative_expedition(&mut self) {
+        use crate::contracts::{DungeonType, MapSize};
+        use crate::run::flow::{DdgcRunResult, DdgcRunState, HeroState, RoomEncounterRecord, RunMetadata};
+        use framework_progression::floor::{Floor, FloorId};
+        use framework_progression::rooms::RoomId;
+        use framework_progression::run::Run;
+
+        // Create representative party of 4 heroes
+        let heroes = vec![
+            HeroState::new("hero_1", "alchemist", 80.0, 100.0, 20.0, 200.0),
+            HeroState::new("hero_2", "crusader", 75.0, 100.0, 30.0, 200.0),
+            HeroState::new("hero_3", "hunter", 90.0, 100.0, 40.0, 200.0),
+            HeroState::new("hero_4", "vestal", 85.0, 100.0, 60.0, 200.0),
+        ];
+
+        // Create representative room encounters
+        let room_encounters = vec![
+            RoomEncounterRecord {
+                room_id: RoomId(1),
+                room_kind: framework_progression::rooms::RoomKind::Combat,
+                pack_id: "pack1".to_string(),
+                family_ids: vec![],
+            },
+            RoomEncounterRecord {
+                room_id: RoomId(2),
+                room_kind: framework_progression::rooms::RoomKind::Corridor {
+                    trap_id: Some("trap1".to_string()),
+                    curio_id: None,
+                },
+                pack_id: String::new(),
+                family_ids: vec![],
+            },
+            RoomEncounterRecord {
+                room_id: RoomId(3),
+                room_kind: framework_progression::rooms::RoomKind::Boss,
+                pack_id: "boss_pack".to_string(),
+                family_ids: vec![],
+            },
+            RoomEncounterRecord {
+                room_id: RoomId(4),
+                room_kind: framework_progression::rooms::RoomKind::Event {
+                    curio_id: Some("ancient_vase".to_string()),
+                },
+                pack_id: String::new(),
+                family_ids: vec![],
+            },
+            RoomEncounterRecord {
+                room_id: RoomId(5),
+                room_kind: framework_progression::rooms::RoomKind::Combat,
+                pack_id: "pack2".to_string(),
+                family_ids: vec![],
+            },
+        ];
+
+        // Create run metadata
+        let metadata = RunMetadata {
+            dungeon_type: DungeonType::QingLong,
+            map_size: MapSize::Short,
+            base_room_number: 9,
+            base_corridor_number: 4,
+            gridsize: crate::contracts::GridSize::new(5, 5),
+            connectivity: 0.5,
+        };
+
+        // Create run state with some progress
+        let mut state = DdgcRunState::new();
+        state.gold = 100;
+        state.rooms_cleared = 2;
+        state.battles_won = 1;
+        state.battles_lost = 0;
+
+        // Create the run result
+        let run_result = DdgcRunResult {
+            run: Run::new(
+                framework_progression::run::RunId(1),
+                vec![FloorId(1)],
+                42,
+            ),
+            state,
+            floor: Floor::new(FloorId(1), vec![], RoomId(1)),
+            battle_pack_ids: vec!["pack1".to_string(), "pack2".to_string()],
+            metadata,
+            room_encounters,
+            interaction_records: vec![],
+            camping_trace: vec![],
+            heroes,
+        };
+
+        self.active_expedition = Some(run_result);
+    }
+
+    /// Produce an expedition view model for the active expedition state.
+    ///
+    /// This is a convenience method that combines creating a representative expedition
+    /// (if not already active) and converting it to a view model suitable for
+    /// the exploration screen in a single call.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`ViewModelError`] if the expedition state cannot be fully
+    /// mapped to the dungeon view model, or if no expedition is active.
+    pub fn expedition_view_model(&mut self) -> ViewModelResult<DungeonViewModel> {
+        if self.active_expedition.is_none() {
+            self.new_representative_expedition();
+        }
+        let run_result = self.active_expedition.as_ref().unwrap();
+        self.dungeon_view_model(run_result)
     }
 
     /// Save the current campaign state to a JSON file.

@@ -72,6 +72,7 @@ impl Default for DdgcRunConfig {
 ///
 /// The framework manages room/floor progression; this struct holds
 /// game-specific state that the framework doesn't know about.
+#[derive(Debug, Clone)]
 pub struct DdgcRunState {
     pub gold: u32,
     pub rooms_cleared: u32,
@@ -113,6 +114,7 @@ impl Default for DdgcRunState {
 }
 
 /// Result of completing a DDGC run slice.
+#[derive(Debug, Clone)]
 pub struct DdgcRunResult {
     pub run: Run,
     pub state: DdgcRunState,
