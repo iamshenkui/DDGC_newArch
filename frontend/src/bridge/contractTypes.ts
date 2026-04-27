@@ -4,6 +4,7 @@ export type FlowState =
   | "boot"
   | "load"
   | "town"
+  | "provisioning"
   | "expedition"
   | "combat"
   | "result"

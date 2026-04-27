@@ -258,7 +258,7 @@ export class LiveRuntimeBridge implements RuntimeBridge {
       case "start-provisioning":
         this.snapshot = {
           ...this.snapshot,
-          flowState: "town",
+          flowState: "provisioning",
           viewModel: createLiveProvisioningViewModel()
         };
         break;
@@ -290,7 +290,7 @@ export class LiveRuntimeBridge implements RuntimeBridge {
       case "launch-expedition":
         this.snapshot = {
           ...this.snapshot,
-          flowState: "expedition",
+          flowState: "combat",
           viewModel: createLiveExpeditionViewModel()
         };
         break;

@@ -75,7 +75,7 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       case "start-provisioning":
         this.snapshot = {
           ...this.snapshot,
-          flowState: "town",
+          flowState: "provisioning",
           viewModel: replayProvisioningViewModel as ProvisioningViewModel
         };
         break;
@@ -107,7 +107,7 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       case "launch-expedition":
         this.snapshot = {
           ...this.snapshot,
-          flowState: "expedition",
+          flowState: "combat",
           viewModel: replayExpeditionViewModel as ExpeditionSetupViewModel
         };
         break;
