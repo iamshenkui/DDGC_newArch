@@ -2,8 +2,10 @@ import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
   DdgcFrontendSnapshot,
+  ExpeditionSetupViewModel,
   FatalErrorViewModel,
   HeroDetailViewModel,
+  ProvisioningViewModel,
   TownViewModel,
   UnsupportedViewModel
 } from "../bridge/contractTypes";
@@ -142,6 +144,42 @@ export const replayBuildingDetailViewModel: BuildingDetailViewModel = {
     }
   ],
   upgradeRequirement: "Reach Town Level 2 to unlock weapon and armor upgrades."
+};
+
+export const replayProvisioningViewModel: ProvisioningViewModel = {
+  kind: "provisioning",
+  title: "Provision Expedition",
+  campaignName: "The Azure Lantern",
+  expeditionLabel: "The Depths Await",
+  expeditionSummary: "Assemble your party and provision wisely. The expedition awaits those who dare enter.",
+  party: [
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", stress: "17", level: 2, isSelected: true },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", stress: "8", level: 2, isSelected: true },
+    { id: "hero-black-01", name: "Hei Zhen", classLabel: "Black", hp: "34 / 40", stress: "24", level: 1, isSelected: false }
+  ],
+  maxPartySize: 4,
+  isReadyToLaunch: true,
+  supplyLevel: "Adequate",
+  provisionCost: "150 Gold"
+};
+
+export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
+  kind: "expedition",
+  title: "Expedition Launch",
+  expeditionName: "The Depths Await",
+  partySize: 2,
+  difficulty: "Challenging",
+  estimatedDuration: "Medium",
+  objectives: [
+    "Explore the dungeon level",
+    "Collect resources",
+    "Return with treasures"
+  ],
+  warnings: [
+    "Elevated enemy presence detected",
+    "Limited camping opportunities"
+  ],
+  isLaunchable: true
 };
 
 export const replayReadySnapshot: DdgcFrontendSnapshot = {

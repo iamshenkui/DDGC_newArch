@@ -8,6 +8,8 @@ import type {
   TownBuildingSummary,
   HeroDetailViewModel,
   BuildingDetailViewModel,
+  ProvisioningViewModel,
+  ExpeditionSetupViewModel,
 } from "./contractTypes";
 
 const createLiveTownViewModel = (): TownViewModel => ({
@@ -178,6 +180,34 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
   };
 };
 
+const createLiveProvisioningViewModel = (): ProvisioningViewModel => ({
+  kind: "provisioning",
+  title: "Provision Expedition",
+  campaignName: "Fresh Campaign",
+  expeditionLabel: "The Azure Lantern Expedition",
+  expeditionSummary: "Deploy your party into the dungeon. Manage supplies and party composition carefully.",
+  party: [
+    { id: "hero-hunter-live-01", name: "Yuan", classLabel: "Hunter", hp: "42 / 42", stress: "0", level: 1, isSelected: true },
+    { id: "hero-white-live-01", name: "Mei", classLabel: "White", hp: "41 / 41", stress: "0", level: 1, isSelected: true }
+  ],
+  maxPartySize: 4,
+  isReadyToLaunch: true,
+  supplyLevel: "Adequate",
+  provisionCost: "100 Gold"
+});
+
+const createLiveExpeditionViewModel = (): ExpeditionSetupViewModel => ({
+  kind: "expedition",
+  title: "Expedition Launch",
+  expeditionName: "The Azure Lantern Expedition",
+  partySize: 2,
+  difficulty: "Challenging",
+  estimatedDuration: "Medium",
+  objectives: ["Explore the dungeon", "Find the treasure", "Return alive"],
+  warnings: ["High stress area ahead", "Limited camping spots"],
+  isLaunchable: true
+});
+
 export class LiveRuntimeBridge implements RuntimeBridge {
   readonly id = "ddgc-live-bridge";
   readonly mode: RuntimeMode = "live";
@@ -228,15 +258,40 @@ export class LiveRuntimeBridge implements RuntimeBridge {
       case "start-provisioning":
         this.snapshot = {
           ...this.snapshot,
-          debugMessage: "Live: provisioning flow placeholder requested."
+          flowState: "town",
+          viewModel: createLiveProvisioningViewModel()
+        };
+        break;
+      case "toggle-hero-selection": {
+        const provVm = this.snapshot.viewModel as ProvisioningViewModel;
+        const updatedParty = provVm.party.map((hero) =>
+          hero.id === intent.heroId
+            ? { ...hero, isSelected: !hero.isSelected }
+            : hero
+        );
+        const selectedCount = updatedParty.filter((h) => h.isSelected).length;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...provVm,
+            party: updatedParty,
+            isReadyToLaunch: selectedCount >= 2 && selectedCount <= provVm.maxPartySize
+          }
+        };
+        break;
+      }
+      case "confirm-provisioning":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "expedition",
+          viewModel: createLiveExpeditionViewModel()
         };
         break;
       case "launch-expedition":
         this.snapshot = {
           ...this.snapshot,
           flowState: "expedition",
-          debugMessage:
-            "Live: expedition handoff placeholder. Real runtime transition in subsequent Phase 10 iterations."
+          viewModel: createLiveExpeditionViewModel()
         };
         break;
       case "return-to-town":

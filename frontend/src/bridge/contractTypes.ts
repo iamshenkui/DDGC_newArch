@@ -102,6 +102,41 @@ export interface TownViewModel {
   nextActionLabel: string;
 }
 
+export interface ProvisioningHeroSummary {
+  id: string;
+  name: string;
+  classLabel: string;
+  hp: string;
+  stress: string;
+  level: number;
+  isSelected: boolean;
+}
+
+export interface ProvisioningViewModel {
+  kind: "provisioning";
+  title: string;
+  campaignName: string;
+  expeditionLabel: string;
+  expeditionSummary: string;
+  party: ReadonlyArray<ProvisioningHeroSummary>;
+  maxPartySize: number;
+  isReadyToLaunch: boolean;
+  supplyLevel: string;
+  provisionCost: string;
+}
+
+export interface ExpeditionSetupViewModel {
+  kind: "expedition";
+  title: string;
+  expeditionName: string;
+  partySize: number;
+  difficulty: string;
+  estimatedDuration: string;
+  objectives: ReadonlyArray<string>;
+  warnings: ReadonlyArray<string>;
+  isLaunchable: boolean;
+}
+
 export interface UnsupportedViewModel {
   kind: "unsupported";
   title: string;
@@ -119,6 +154,8 @@ export type DdgcViewModel =
   | TownViewModel
   | HeroDetailViewModel
   | BuildingDetailViewModel
+  | ProvisioningViewModel
+  | ExpeditionSetupViewModel
   | UnsupportedViewModel
   | FatalErrorViewModel;
 
@@ -135,5 +172,7 @@ export type DdgcFrontendIntent =
   | { type: "open-building"; buildingId: string }
   | { type: "building-action"; actionId: string }
   | { type: "start-provisioning" }
+  | { type: "toggle-hero-selection"; heroId: string }
+  | { type: "confirm-provisioning" }
   | { type: "launch-expedition" }
   | { type: "return-to-town" };

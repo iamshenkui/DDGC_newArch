@@ -8,8 +8,10 @@ import type { RuntimeBridge } from "../bridge/RuntimeBridge";
 import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
+  ExpeditionSetupViewModel,
   FatalErrorViewModel,
   HeroDetailViewModel,
+  ProvisioningViewModel,
   TownViewModel,
   UnsupportedViewModel
 } from "../bridge/contractTypes";
@@ -36,6 +38,8 @@ import { StartupScreen } from "../screens/startup/StartupScreen";
 import { TownShellScreen } from "../screens/town/TownShellScreen";
 import { HeroDetailScreen } from "../screens/town/HeroDetailScreen";
 import { BuildingDetailScreen } from "../screens/town/BuildingDetailScreen";
+import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
+import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
 
 function createBridge(mode: RuntimeMode): RuntimeBridge {
   return mode === "live" ? new LiveRuntimeBridge() : new ReplayRuntimeBridge();
@@ -197,6 +201,31 @@ export function DdgcApp() {
             }}
             onAction={(actionId) => {
               void dispatchIntent(bridge, { type: "building-action", actionId });
+            }}
+          />
+        </Match>
+        <Match when={screen === "provisioning" && snapshot.viewModel.kind === "provisioning"}>
+          <ProvisioningScreen
+            viewModel={snapshot.viewModel as ProvisioningViewModel}
+            onToggleHeroSelection={(heroId) => {
+              void dispatchIntent(bridge, { type: "toggle-hero-selection", heroId });
+            }}
+            onConfirmProvisioning={() => {
+              void dispatchIntent(bridge, { type: "confirm-provisioning" });
+            }}
+            onReturnToTown={() => {
+              void dispatchIntent(bridge, { type: "return-to-town" });
+            }}
+          />
+        </Match>
+        <Match when={screen === "expedition" && snapshot.viewModel.kind === "expedition"}>
+          <ExpeditionScreen
+            viewModel={snapshot.viewModel as ExpeditionSetupViewModel}
+            onLaunchExpedition={() => {
+              void dispatchIntent(bridge, { type: "launch-expedition" });
+            }}
+            onReturnToTown={() => {
+              void dispatchIntent(bridge, { type: "return-to-town" });
             }}
           />
         </Match>

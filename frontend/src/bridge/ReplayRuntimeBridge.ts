@@ -2,13 +2,17 @@ import type { RuntimeMode } from "../app/runtimeMode";
 import {
   replayReadySnapshot,
   replayHeroDetailViewModel,
-  replayBuildingDetailViewModel
+  replayBuildingDetailViewModel,
+  replayProvisioningViewModel,
+  replayExpeditionViewModel
 } from "../validation/replayFixtures";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
 import type {
   DdgcFrontendIntent,
   DdgcFrontendSnapshot,
-  TownViewModel
+  TownViewModel,
+  ProvisioningViewModel,
+  ExpeditionSetupViewModel
 } from "./contractTypes";
 
 export class ReplayRuntimeBridge implements RuntimeBridge {
@@ -71,15 +75,40 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       case "start-provisioning":
         this.snapshot = {
           ...this.snapshot,
-          debugMessage: "Provisioning flow placeholder requested."
+          flowState: "town",
+          viewModel: replayProvisioningViewModel as ProvisioningViewModel
+        };
+        break;
+      case "toggle-hero-selection": {
+        const provVm = this.snapshot.viewModel as ProvisioningViewModel;
+        const updatedParty = provVm.party.map((hero) =>
+          hero.id === intent.heroId
+            ? { ...hero, isSelected: !hero.isSelected }
+            : hero
+        );
+        const selectedCount = updatedParty.filter((h) => h.isSelected).length;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...provVm,
+            party: updatedParty,
+            isReadyToLaunch: selectedCount >= 2 && selectedCount <= provVm.maxPartySize
+          }
+        };
+        break;
+      }
+      case "confirm-provisioning":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "expedition",
+          viewModel: replayExpeditionViewModel as ExpeditionSetupViewModel
         };
         break;
       case "launch-expedition":
         this.snapshot = {
           ...this.snapshot,
           flowState: "expedition",
-          debugMessage:
-            "Expedition handoff placeholder requested. Replace with real runtime transition in Phase 10."
+          viewModel: replayExpeditionViewModel as ExpeditionSetupViewModel
         };
         break;
       case "return-to-town":
