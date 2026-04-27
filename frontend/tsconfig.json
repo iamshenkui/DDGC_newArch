@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/d/schema.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "noImplicitReturns": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "types": ["vite/client", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "@contracts/app-shell": [
+        "../../WorldEngine/crates/contracts/typescript/packages/app-shell/src/index.ts"
+      ],
+      "@contracts/ui-substrate": [
+        "../../WorldEngine/crates/contracts/typescript/packages/ui-substrate/src/index.ts"
+      ],
+      "@contracts/pixi-renderer": [
+        "../../WorldEngine/crates/contracts/typescript/packages/pixi-renderer/src/index.ts"
+      ],
+      "@contracts/spine-bridge": [
+        "../../WorldEngine/crates/contracts/typescript/packages/spine-bridge/src/index.ts"
+      ],
+      "@contracts/replay-inspector": [
+        "../../WorldEngine/crates/contracts/typescript/packages/replay-inspector/src/index.ts"
+      ]
+    }
+  },
+  "include": ["src/**/*", "vite.config.ts"],
+  "exclude": ["dist", "node_modules"]
+}
