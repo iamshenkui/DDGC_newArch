@@ -64,6 +64,28 @@ describe("FlowController", () => {
       const screen = resolveScreen(replayBuildingDetailSnapshot);
       expect(screen).toBe("building-detail");
     });
+
+    it("returns provisioning screen for provisioning view model", () => {
+      const provisioningSnapshot: DdgcFrontendSnapshot = {
+        lifecycle: "ready",
+        flowState: "provisioning",
+        viewModel: replayProvisioningViewModel,
+        debugMessage: "Replay bridge showing provisioning screen."
+      };
+      const screen = resolveScreen(provisioningSnapshot);
+      expect(screen).toBe("provisioning");
+    });
+
+    it("returns expedition screen for expedition setup view model", () => {
+      const expeditionSnapshot: DdgcFrontendSnapshot = {
+        lifecycle: "ready",
+        flowState: "expedition",
+        viewModel: replayExpeditionViewModel,
+        debugMessage: "Replay bridge showing expedition launch screen."
+      };
+      const screen = resolveScreen(expeditionSnapshot);
+      expect(screen).toBe("expedition");
+    });
   });
 });
 
