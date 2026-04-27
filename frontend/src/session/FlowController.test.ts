@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { resolveScreen, canTransition, type ScreenKey } from "./FlowController";
-import type { DdgcFrontendSnapshot } from "../bridge/contractTypes";
+import type {
+  DdgcFrontendSnapshot,
+  ExpeditionResultViewModel,
+  ReturnViewModel,
+} from "../bridge/contractTypes";
 import {
   fatalSnapshot,
   unsupportedSnapshot,
@@ -10,12 +14,13 @@ import {
   replayReadySnapshot,
   replayHeroDetailSnapshot,
   replayBuildingDetailSnapshot,
-  replayProvisioningViewModel,
-  replayExpeditionViewModel,
-  replayResultViewModel,
-  replayFailureResultViewModel,
-  replayPartialResultViewModel,
-  replayReturnViewModel,
+  startupSnapshot,
+  provisioningSnapshot,
+  expeditionSnapshot,
+  resultSnapshot,
+  failureResultSnapshot,
+  partialResultSnapshot,
+  returnSnapshot,
 } from "../validation/replayFixtures";
 
 describe("FlowController", () => {
@@ -54,13 +59,8 @@ describe("FlowController", () => {
       expect(screen).toBe("town");
     });
 
-    it("returns startup screen for unhandled lifecycle combinations", () => {
-      const unknownLifecycle: DdgcFrontendSnapshot = {
-        lifecycle: "ready",
-        flowState: "boot",
-        viewModel: replayReadySnapshot.viewModel,
-      };
-      const screen = resolveScreen(unknownLifecycle);
+    it("returns startup screen for ready lifecycle with boot flowState", () => {
+      const screen = resolveScreen(startupSnapshot);
       expect(screen).toBe("startup");
     });
 
@@ -70,67 +70,31 @@ describe("FlowController", () => {
     });
 
     it("returns provisioning screen for provisioning view model", () => {
-      const provisioningSnapshot: DdgcFrontendSnapshot = {
-        lifecycle: "ready",
-        flowState: "provisioning",
-        viewModel: replayProvisioningViewModel,
-        debugMessage: "Replay bridge showing provisioning screen."
-      };
       const screen = resolveScreen(provisioningSnapshot);
       expect(screen).toBe("provisioning");
     });
 
     it("returns expedition screen for expedition setup view model", () => {
-      const expeditionSnapshot: DdgcFrontendSnapshot = {
-        lifecycle: "ready",
-        flowState: "expedition",
-        viewModel: replayExpeditionViewModel,
-        debugMessage: "Replay bridge showing expedition launch screen."
-      };
       const screen = resolveScreen(expeditionSnapshot);
       expect(screen).toBe("expedition");
     });
 
     it("returns result screen for result view model", () => {
-      const resultSnapshot: DdgcFrontendSnapshot = {
-        lifecycle: "ready",
-        flowState: "result",
-        viewModel: replayResultViewModel,
-        debugMessage: "Replay bridge showing result screen."
-      };
       const screen = resolveScreen(resultSnapshot);
       expect(screen).toBe("result");
     });
 
     it("returns result screen for failure outcome result view model", () => {
-      const failureSnapshot: DdgcFrontendSnapshot = {
-        lifecycle: "ready",
-        flowState: "result",
-        viewModel: replayFailureResultViewModel,
-        debugMessage: "Replay bridge showing failure result screen."
-      };
-      const screen = resolveScreen(failureSnapshot);
+      const screen = resolveScreen(failureResultSnapshot);
       expect(screen).toBe("result");
     });
 
     it("returns result screen for partial outcome result view model", () => {
-      const partialSnapshot: DdgcFrontendSnapshot = {
-        lifecycle: "ready",
-        flowState: "result",
-        viewModel: replayPartialResultViewModel,
-        debugMessage: "Replay bridge showing partial result screen."
-      };
-      const screen = resolveScreen(partialSnapshot);
+      const screen = resolveScreen(partialResultSnapshot);
       expect(screen).toBe("result");
     });
 
     it("returns return screen for return view model", () => {
-      const returnSnapshot: DdgcFrontendSnapshot = {
-        lifecycle: "ready",
-        flowState: "return",
-        viewModel: replayReturnViewModel,
-        debugMessage: "Replay bridge showing return screen."
-      };
       const screen = resolveScreen(returnSnapshot);
       expect(screen).toBe("return");
     });
@@ -140,45 +104,17 @@ describe("FlowController", () => {
 describe("ScreenKey exhaustiveness", () => {
   const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
 
-  const replayProvisioningSnapshot: DdgcFrontendSnapshot = {
-    lifecycle: "ready",
-    flowState: "town",
-    viewModel: replayProvisioningViewModel,
-    debugMessage: "Replay bridge showing provisioning screen."
-  };
-
-  const replayExpeditionSnapshot: DdgcFrontendSnapshot = {
-    lifecycle: "ready",
-    flowState: "expedition",
-    viewModel: replayExpeditionViewModel,
-    debugMessage: "Replay bridge showing expedition launch screen."
-  };
-
-  const replayResultSnapshot: DdgcFrontendSnapshot = {
-    lifecycle: "ready",
-    flowState: "result",
-    viewModel: replayResultViewModel,
-    debugMessage: "Replay bridge showing expedition result screen."
-  };
-
-  const replayReturnSnapshot: DdgcFrontendSnapshot = {
-    lifecycle: "ready",
-    flowState: "return",
-    viewModel: replayReturnViewModel,
-    debugMessage: "Replay bridge showing return screen."
-  };
-
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
-      startup: { lifecycle: "ready", flowState: "boot", viewModel: replayReadySnapshot.viewModel },
+      startup: startupSnapshot,
       loading: replayLoadingSnapshot,
       town: replayReadySnapshot,
       "hero-detail": replayHeroDetailSnapshot,
       "building-detail": replayBuildingDetailSnapshot,
-      provisioning: replayProvisioningSnapshot,
-      expedition: replayExpeditionSnapshot,
-      result: replayResultSnapshot,
-      return: replayReturnSnapshot,
+      provisioning: provisioningSnapshot,
+      expedition: expeditionSnapshot,
+      result: resultSnapshot,
+      return: returnSnapshot,
       unsupported: unsupportedSnapshot,
       fatal: fatalSnapshot,
     };
@@ -192,20 +128,6 @@ describe("ScreenKey exhaustiveness", () => {
 });
 
 describe("canTransition - result and return meta-loop continuation", () => {
-  const resultSnapshot: DdgcFrontendSnapshot = {
-    lifecycle: "ready",
-    flowState: "result",
-    viewModel: replayResultViewModel,
-    debugMessage: "Replay bridge showing result screen."
-  };
-
-  const returnSnapshot: DdgcFrontendSnapshot = {
-    lifecycle: "ready",
-    flowState: "return",
-    viewModel: replayReturnViewModel,
-    debugMessage: "Replay bridge showing return screen."
-  };
-
   describe("continue-from-result transitions", () => {
     it("allows continue-from-result when isContinueAvailable is true", () => {
       const validation = canTransition(resultSnapshot, { type: "continue-from-result" });
@@ -215,7 +137,10 @@ describe("canTransition - result and return meta-loop continuation", () => {
     it("allows continue-from-result when isContinueAvailable is explicitly true", () => {
       const availableResultSnapshot: DdgcFrontendSnapshot = {
         ...resultSnapshot,
-        viewModel: { ...replayResultViewModel, isContinueAvailable: true }
+        viewModel: {
+          ...resultSnapshot.viewModel,
+          isContinueAvailable: true
+        } as ExpeditionResultViewModel
       };
       const validation = canTransition(availableResultSnapshot, { type: "continue-from-result" });
       expect(validation.allowed).toBe(true);
@@ -224,7 +149,10 @@ describe("canTransition - result and return meta-loop continuation", () => {
     it("rejects continue-from-result when isContinueAvailable is false", () => {
       const unavailableResultSnapshot: DdgcFrontendSnapshot = {
         ...resultSnapshot,
-        viewModel: { ...replayResultViewModel, isContinueAvailable: false }
+        viewModel: {
+          ...resultSnapshot.viewModel,
+          isContinueAvailable: false
+        } as ExpeditionResultViewModel
       };
       const validation = canTransition(unavailableResultSnapshot, { type: "continue-from-result" });
       expect(validation.allowed).toBe(false);
@@ -259,7 +187,10 @@ describe("canTransition - result and return meta-loop continuation", () => {
     it("allows resume-from-return when isTownResumeAvailable is explicitly true", () => {
       const availableReturnSnapshot: DdgcFrontendSnapshot = {
         ...returnSnapshot,
-        viewModel: { ...replayReturnViewModel, isTownResumeAvailable: true }
+        viewModel: {
+          ...returnSnapshot.viewModel,
+          isTownResumeAvailable: true
+        } as ReturnViewModel
       };
       const validation = canTransition(availableReturnSnapshot, { type: "resume-from-return" });
       expect(validation.allowed).toBe(true);
@@ -268,7 +199,10 @@ describe("canTransition - result and return meta-loop continuation", () => {
     it("rejects resume-from-return when isTownResumeAvailable is false", () => {
       const unavailableReturnSnapshot: DdgcFrontendSnapshot = {
         ...returnSnapshot,
-        viewModel: { ...replayReturnViewModel, isTownResumeAvailable: false }
+        viewModel: {
+          ...returnSnapshot.viewModel,
+          isTownResumeAvailable: false
+        } as ReturnViewModel
       };
       const validation = canTransition(unavailableReturnSnapshot, { type: "resume-from-return" });
       expect(validation.allowed).toBe(false);
@@ -290,21 +224,11 @@ describe("canTransition - result and return meta-loop continuation", () => {
 
   describe("return-to-town transitions", () => {
     it("allows return-to-town from provisioning", () => {
-      const provisioningSnapshot: DdgcFrontendSnapshot = {
-        lifecycle: "ready",
-        flowState: "provisioning",
-        viewModel: replayProvisioningViewModel,
-      };
       const validation = canTransition(provisioningSnapshot, { type: "return-to-town" });
       expect(validation.allowed).toBe(true);
     });
 
     it("allows return-to-town from expedition", () => {
-      const expeditionSnapshot: DdgcFrontendSnapshot = {
-        lifecycle: "ready",
-        flowState: "expedition",
-        viewModel: replayExpeditionViewModel,
-      };
       const validation = canTransition(expeditionSnapshot, { type: "return-to-town" });
       expect(validation.allowed).toBe(true);
     });
@@ -339,12 +263,7 @@ describe("canTransition - result and return meta-loop continuation", () => {
       expect(continueValidation.allowed).toBe(true);
 
       // After continuing, we should be in town where start-provisioning is allowed
-      const provisioningSnapshot: DdgcFrontendSnapshot = {
-        lifecycle: "ready",
-        flowState: "town",
-        viewModel: replayReadySnapshot.viewModel,
-      };
-      const provValidation = canTransition(provisioningSnapshot, { type: "start-provisioning" });
+      const provValidation = canTransition(replayReadySnapshot, { type: "start-provisioning" });
       expect(provValidation.allowed).toBe(true);
     });
 
@@ -354,83 +273,122 @@ describe("canTransition - result and return meta-loop continuation", () => {
       expect(resumeValidation.allowed).toBe(true);
 
       // After resuming, we should be in town where start-provisioning is allowed
-      const provisioningSnapshot: DdgcFrontendSnapshot = {
-        lifecycle: "ready",
-        flowState: "town",
-        viewModel: replayReadySnapshot.viewModel,
-      };
-      const provValidation = canTransition(provisioningSnapshot, { type: "start-provisioning" });
+      const provValidation = canTransition(replayReadySnapshot, { type: "start-provisioning" });
       expect(provValidation.allowed).toBe(true);
     });
 
     it("proves full expedition cycle can loop back to provisioning", () => {
-      const provisioningSnapshot: DdgcFrontendSnapshot = {
-        lifecycle: "ready",
-        flowState: "provisioning",
-        viewModel: replayProvisioningViewModel,
-      };
-      const expeditionSnapshot: DdgcFrontendSnapshot = {
-        lifecycle: "ready",
-        flowState: "expedition",
-        viewModel: replayExpeditionViewModel,
-      };
-
       // Start from provisioning, go through expedition, come back via result
       expect(canTransition(provisioningSnapshot, { type: "confirm-provisioning" }).allowed).toBe(true);
       expect(canTransition(expeditionSnapshot, { type: "launch-expedition" }).allowed).toBe(true);
       expect(canTransition(resultSnapshot, { type: "continue-from-result" }).allowed).toBe(true);
 
       // And we should be able to start provisioning again
-      const townSnapshot: DdgcFrontendSnapshot = {
-        lifecycle: "ready",
-        flowState: "town",
-        viewModel: replayReadySnapshot.viewModel,
-      };
-      expect(canTransition(townSnapshot, { type: "start-provisioning" }).allowed).toBe(true);
+      const provValidation = canTransition(replayReadySnapshot, { type: "start-provisioning" });
+      expect(provValidation.allowed).toBe(true);
     });
 
     it("proves meta-loop can continue from failure result without dead-end states", () => {
-      const failureResultSnapshot: DdgcFrontendSnapshot = {
-        lifecycle: "ready",
-        flowState: "result",
-        viewModel: replayFailureResultViewModel,
-        debugMessage: "Replay bridge showing failure result screen."
-      };
-
       // From failure result screen, continue-from-result should be allowed
       const continueValidation = canTransition(failureResultSnapshot, { type: "continue-from-result" });
       expect(continueValidation.allowed).toBe(true);
 
       // After continuing, we should be in town where start-provisioning is allowed
-      const townSnapshot: DdgcFrontendSnapshot = {
-        lifecycle: "ready",
-        flowState: "town",
-        viewModel: replayReadySnapshot.viewModel,
-      };
-      const provValidation = canTransition(townSnapshot, { type: "start-provisioning" });
+      const provValidation = canTransition(replayReadySnapshot, { type: "start-provisioning" });
       expect(provValidation.allowed).toBe(true);
     });
 
     it("proves meta-loop can continue from partial result without dead-end states", () => {
-      const partialResultSnapshot: DdgcFrontendSnapshot = {
-        lifecycle: "ready",
-        flowState: "result",
-        viewModel: replayPartialResultViewModel,
-        debugMessage: "Replay bridge showing partial result screen."
-      };
-
       // From partial result screen, continue-from-result should be allowed
       const continueValidation = canTransition(partialResultSnapshot, { type: "continue-from-result" });
       expect(continueValidation.allowed).toBe(true);
 
       // After continuing, we should be in town where start-provisioning is allowed
-      const townSnapshot: DdgcFrontendSnapshot = {
-        lifecycle: "ready",
-        flowState: "town",
-        viewModel: replayReadySnapshot.viewModel,
-      };
-      const provValidation = canTransition(townSnapshot, { type: "start-provisioning" });
+      const provValidation = canTransition(replayReadySnapshot, { type: "start-provisioning" });
       expect(provValidation.allowed).toBe(true);
+    });
+  });
+
+  describe("provisioning flow transitions", () => {
+    it("allows start-provisioning from town", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "start-provisioning" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects start-provisioning when not in town", () => {
+      const validation = canTransition(provisioningSnapshot, { type: "start-provisioning" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in town");
+    });
+
+    it("allows confirm-provisioning when ready to launch", () => {
+      const validation = canTransition(provisioningSnapshot, { type: "confirm-provisioning" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects confirm-provisioning when not in provisioning screen", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "confirm-provisioning" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in provisioning");
+    });
+
+    it("allows launch-expedition when expedition is launchable", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "launch-expedition" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects launch-expedition when not in expedition screen", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "launch-expedition" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in expedition");
+    });
+
+    it("allows toggle-hero-selection in provisioning", () => {
+      const validation = canTransition(provisioningSnapshot, { type: "toggle-hero-selection", heroId: "hero-hunter-01" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects toggle-hero-selection when not in provisioning", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "toggle-hero-selection", heroId: "hero-hunter-01" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in provisioning");
+    });
+  });
+
+  describe("town screen transitions", () => {
+    it("allows open-hero in town", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "open-hero", heroId: "hero-hunter-01" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects open-hero when not in town", () => {
+      const validation = canTransition(provisioningSnapshot, { type: "open-hero", heroId: "hero-hunter-01" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in town");
+    });
+
+    it("allows open-building in town", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "open-building", buildingId: "guild" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects open-building when not in town", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "open-building", buildingId: "guild" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in town");
+    });
+  });
+
+  describe("building-detail transitions", () => {
+    it("allows building-action in building-detail", () => {
+      const validation = canTransition(replayBuildingDetailSnapshot, { type: "building-action", actionId: "train-combat" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects building-action when not in building-detail", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "building-action", actionId: "train-combat" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in building-detail");
     });
   });
 });
