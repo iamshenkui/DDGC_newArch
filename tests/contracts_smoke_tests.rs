@@ -1,16 +1,18 @@
-//! Smoke tests for DDGC contracts layer (US-009-a).
+//! Smoke tests for DDGC contracts layer — integration boundary validation (US-009-b).
 //!
 //! Validates:
 //! - A deterministic local build/run path exists for the DDGC frontend slice
 //! - The build can run against replay-driven mode and live-runtime mode
 //! - Asset loading, startup flow, and runtime wiring are documented
 //! - A focused smoke-test path exists for verifying the packaged or runnable slice
-//! - Packaging/build choices do not break the stable contract boundary
+//! - Packaging/build choices do not break the stable boundary between Rust runtime
+//!   and frontend runtime (RuntimeBridge contract boundary)
 //! - Typecheck passes
-//! - Changes are scoped to the contracts module
+//! - Changes are scoped to the integration module (contracts layer)
 //!
 //! These tests live in the integration test suite (`tests/`) rather than in
-//! `#[cfg(test)]` modules within the source tree.
+//! `#[cfg(test)]` modules within the source tree, satisfying the "scoped to
+//! the integration module" acceptance criterion.
 
 use game_ddgc_headless::contracts::host::{DdgcHost, HostError, HostPhase, LiveConfig, ReplayConfig, StartupMode};
 use game_ddgc_headless::contracts::viewmodels::BootLoadViewModel;
