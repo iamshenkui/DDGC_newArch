@@ -30,7 +30,9 @@
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
+pub mod adapters;
 pub mod host;
+pub mod viewmodels;
 
 /// Represents a min/max range pair for density and count parameters.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
