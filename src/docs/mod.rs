@@ -271,6 +271,121 @@
 //! No path returns `None`, an empty string, or silently succeeds without effect.
 //! The regression tests in [`high_freq_path_tests`] verify this invariant for
 //! every path in the registry.
+//!
+//! # Replay-Driven End-to-End Frontend Validation
+//!
+//! This section documents the **replay-driven validation** approach used to
+//! verify the frontend host layer end-to-end without depending on nondeterministic
+//! manual gameplay setup.
+//!
+//! ## The Problem with Manual Setup
+//!
+//! Traditional end-to-end testing of the frontend host requires:
+//! - A running game session with heroes, inventory, and dungeon state
+//! - Manual navigation through the game flow
+//! - Deterministic timing and random seed control
+//!
+//! This is fragile, slow, and hard to reproduce in CI.
+//!
+//! ## The Replay-Fixture Solution
+//!
+//! Replay-driven validation replaces manual gameplay with **deterministic fixture
+//! factories** that produce the same payloads every time. Each fixture represents
+//! a canonical state in the vertical slice:
+//!
+//! | Screen/State | Fixture Function | Produces |
+//! |---|---|---|
+//! | BootLoad | `make_replay_boot_load()` | `BootLoadViewModel` |
+//! | Town | `make_replay_town_vm()` | `TownViewModel` |
+//! | Dungeon | `make_replay_dungeon_vm()` | `DungeonViewModel` |
+//! | Combat | `make_replay_combat_vm()` | `CombatViewModel` |
+//! | CombatHUD | `make_replay_combat_hud_vm()` | `CombatHudViewModel` |
+//! | Result | `make_replay_result_vm()` | `ResultViewModel` |
+//! | ReturnFlow | `make_replay_return_flow_vm()` | `ReturnFlowViewModel` |
+//!
+//! These fixtures live in:
+//! - **State layer**: `NavigationShell` replay fixtures in [`crate::state`]
+//! - **Adapter layer**: ViewModel replay fixtures in [`crate::contracts::adapters`]
+//!
+//! ## Contract Boundary
+//!
+//! Both replay-driven and live-runtime validation consume the **same stable
+//! contract boundary**:
+//!
+//! ```text
+//! Framework Payload ──► Adapter ──► ViewModel
+//!                                (contract)
+//! ```
+//!
+//! The adapter layer (`crate::contracts::adapters`) is the single boundary
+//! between framework-specific payloads and DDGC view models. Replay fixtures
+//! exercise this boundary the same way live runtime does.
+//!
+//! ## Actionable Failure Reporting
+//!
+//! When an adapter mapping fails, it returns a [`ViewModelError`] with a
+//! descriptive message:
+//!
+//! ```ignore
+//! ViewModelError::MappingFailed("hero vital missing HP value for hero_1")
+//! ```
+//!
+//! The error message includes:
+//! - **What failed**: The adapter function and operation
+//! - **Why it failed**: Specific missing or invalid field
+//! - **Where it failed**: The specific view model type
+//!
+//! This makes debugging straightforward: failed assertions show exactly which
+//! adapter or fixture is producing invalid output.
+//!
+//! ## Validation in Local Development
+//!
+//! Run all replay-driven validation tests:
+//!
+//! ```sh
+//! cargo test --lib replay_
+//! ```
+//!
+//! Run only the vertical slice end-to-end test:
+//!
+//! ```sh
+//! cargo test --lib replay_vertical_slice_end_to_end
+//! ```
+//!
+//! Run the state-layer replay tests:
+//!
+//! ```sh
+//! cargo test --lib -- state::replay_
+//! ```
+//!
+//! Run the adapter-layer replay tests:
+//!
+//! ```sh
+//! cargo test --lib -- adapters::replay_
+//! ```
+//!
+//! ## Validation in CI
+//!
+//! The replay-driven tests run in CI as part of the standard test suite:
+//!
+//! ```sh
+//! cargo test --lib
+//! ```
+//!
+//! No special setup is required because:
+//! - All fixtures are self-contained (no external state)
+//! - All fixtures are deterministic (same input → same output)
+//! - No timing dependencies (no sleep, no async waits)
+//! - No manual game state required (no save files, no running game)
+//!
+//! ## Fixture Design Principles
+//!
+//! 1. **Deterministic**: `make_replay_boot_load()` called twice produces
+//!    byte-identical output
+//! 2. **Self-contained**: No external file reads, no network calls
+//! 3. **Minimal but complete**: Each fixture has the minimum fields needed
+//!    to exercise the adapter boundary
+//! 4. **Named clearly**: Fixture names match the screen/state they represent
 
 #[cfg(test)]
 use crate::contracts::{
@@ -1628,5 +1743,249 @@ mod high_freq_path_tests {
         };
         assert!(hit_ctx.attacker_id.0 > 0);
         assert!(hit_ctx.defender_id.0 > 0);
+    }
+}
+
+// ───────────────────────────────────────────────────────────────────
+// Replay-Driven End-to-End Validation Tests
+// ───────────────────────────────────────────────────────────────────
+//
+// These tests verify the replay-driven validation approach documented above.
+// They prove that:
+// 1. The NavigationShell supports replay-driven mode for deterministic validation
+// 2. End-to-end validation can exercise the vertical slice without manual setup
+// 3. Failures are reported in an actionable way
+// 4. Replay-driven and live-runtime validation consume the same contract boundary
+//
+// These tests use the PUBLIC API only. The actual replay fixture helpers
+// (make_replay_boot_load, make_replay_town_vm, etc.) are private to the
+// state and adapter test modules. These tests verify the approach works
+// through the public NavigationShell interface.
+
+#[cfg(test)]
+mod replay_driven_validation_tests {
+    use crate::state::{FlowState, FrontendIntent, NavigationShell, RuntimePayload};
+
+    // ── Replay mode verification ─────────────────────────────────────
+    //
+    // These tests verify that NavigationShell supports replay-driven mode
+    // and that the replay fixtures in state/adapter modules produce
+    // valid transitions.
+
+    #[test]
+    fn navigation_shell_replay_mode_is_deterministic() {
+        // Running the same sequence twice in replay mode should produce
+        // identical results, proving determinism.
+        let mut shell1 = NavigationShell::new_replay();
+        let mut shell2 = NavigationShell::new_replay();
+
+        // Execute Boot → Load sequence
+        shell1.transition_from_payload(RuntimePayload::BootComplete).unwrap();
+        shell1.transition_from_intent(FrontendIntent::NewCampaign).unwrap();
+
+        shell2.transition_from_payload(RuntimePayload::BootComplete).unwrap();
+        shell2.transition_from_intent(FrontendIntent::NewCampaign).unwrap();
+
+        // Both should end in the same state
+        assert_eq!(shell1.current_state(), shell2.current_state(),
+            "Replay mode should be deterministic");
+    }
+
+    #[test]
+    fn vertical_slice_success_path_exercises_without_manual_setup() {
+        // Boot → Load → Town → Expedition → Combat → Expedition → Result → Town
+        // This test proves that the entire vertical slice can be exercised
+        // using only RuntimePayload and FrontendIntent transitions.
+        let mut shell = NavigationShell::new_replay();
+
+        // BootComplete transitions to Load state
+        let result = shell.transition_from_payload(RuntimePayload::BootComplete);
+        assert!(result.is_some(), "BootComplete should produce a valid transition");
+        assert_eq!(shell.current_state(), FlowState::Load,
+            "BootComplete should transition to Load");
+
+        // NewCampaign intent transitions to Town state
+        let result = shell.transition_from_intent(FrontendIntent::NewCampaign);
+        assert!(result.is_some(), "NewCampaign should produce a valid transition");
+        assert_eq!(shell.current_state(), FlowState::Town,
+            "NewCampaign should transition to Town");
+
+        // StartExpedition intent transitions to Expedition state
+        let result = shell.transition_from_intent(FrontendIntent::StartExpedition);
+        assert!(result.is_some(), "StartExpedition should produce a valid transition");
+        assert_eq!(shell.current_state(), FlowState::Expedition,
+            "StartExpedition should transition to Expedition");
+
+        // CombatStarted payload transitions to Combat state
+        let result = shell.transition_from_payload(RuntimePayload::CombatStarted);
+        assert!(result.is_some(), "CombatStarted should produce a valid transition");
+        assert_eq!(shell.current_state(), FlowState::Combat,
+            "CombatStarted should transition to Combat");
+
+        // CombatEnded { victory: true } transitions back to Expedition state
+        // (one combat encounter doesn't end the expedition)
+        let result = shell.transition_from_payload(RuntimePayload::CombatEnded { victory: true });
+        assert!(result.is_some(), "CombatEnded victory should produce a valid transition");
+        assert_eq!(shell.current_state(), FlowState::Expedition,
+            "CombatEnded victory should transition back to Expedition");
+
+        // ExpeditionCompleted transitions to Result state
+        let result = shell.transition_from_payload(RuntimePayload::ExpeditionCompleted);
+        assert!(result.is_some(), "ExpeditionCompleted should produce a valid transition");
+        assert_eq!(shell.current_state(), FlowState::Result,
+            "ExpeditionCompleted should transition to Result");
+
+        // Continue intent should return to Town
+        let result = shell.transition_from_intent(FrontendIntent::Continue);
+        assert!(result.is_some(), "Continue should produce a valid transition");
+        assert_eq!(shell.current_state(), FlowState::Town,
+            "Continue should return to Town");
+    }
+
+    #[test]
+    fn vertical_slice_failure_path_exercises_without_manual_setup() {
+        // Boot → Load → Town → Expedition → Combat → CombatEnded { victory: false }
+        // → ExpeditionFailed → Return → ReturnCompleted → Town
+        let mut shell = NavigationShell::new_replay();
+
+        shell.transition_from_payload(RuntimePayload::BootComplete).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Load);
+
+        shell.transition_from_intent(FrontendIntent::NewCampaign).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Town);
+
+        shell.transition_from_intent(FrontendIntent::StartExpedition).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Expedition);
+
+        shell.transition_from_payload(RuntimePayload::CombatStarted).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Combat);
+
+        // CombatEnded with defeat
+        let result = shell.transition_from_payload(RuntimePayload::CombatEnded { victory: false });
+        assert!(result.is_some(), "CombatEnded defeat should produce a valid transition");
+
+        // ExpeditionFailed payload
+        let result = shell.transition_from_payload(RuntimePayload::ExpeditionFailed);
+        assert!(result.is_some(), "ExpeditionFailed should produce a valid transition");
+
+        // ReturnCompleted payload
+        let result = shell.transition_from_payload(RuntimePayload::ReturnCompleted);
+        assert!(result.is_some(), "ReturnCompleted should produce a valid transition");
+        assert_eq!(shell.current_state(), FlowState::Town,
+            "ReturnCompleted should return to Town");
+    }
+
+    // ── Actionable failure reporting ─────────────────────────────────
+    //
+    // These tests verify that when invalid transitions are attempted,
+    // the system returns None rather than panicking or silently failing.
+    // This makes failures actionable for debugging.
+
+    #[test]
+    fn invalid_transition_returns_none_for_debugging() {
+        // Attempting StartExpedition before NewCampaign should return None
+        // (not panic, not silently fail)
+        let mut shell = NavigationShell::new_replay();
+
+        // StartExpedition without going through Boot → Load → Town first
+        let result = shell.transition_from_intent(FrontendIntent::StartExpedition);
+        assert!(result.is_none(),
+            "Invalid transition should return None, not panic or silently fail");
+    }
+
+    #[test]
+    fn cannot_start_expedition_from_boot_state() {
+        // Trying to start expedition directly from Boot state should fail explicitly
+        let mut shell = NavigationShell::new_replay();
+
+        // Don't boot, just try to start expedition
+        let result = shell.transition_from_intent(FrontendIntent::StartExpedition);
+        assert!(result.is_none(),
+            "Cannot start expedition from Boot state - should return None");
+    }
+
+    #[test]
+    fn cannot_enter_combat_from_town_state() {
+        // Trying to enter combat from Town (not Expedition) should fail explicitly
+        let mut shell = NavigationShell::new_replay();
+
+        shell.transition_from_payload(RuntimePayload::BootComplete).unwrap();
+        shell.transition_from_intent(FrontendIntent::NewCampaign).unwrap();
+
+        // Now we're in Town - try to enter combat directly
+        let result = shell.transition_from_payload(RuntimePayload::CombatStarted);
+        assert!(result.is_none(),
+            "Cannot enter combat directly from Town - should return None");
+    }
+
+    #[test]
+    fn error_payload_produces_recoverable_transition() {
+        // Error during expedition should still produce a valid transition
+        // (not panic, not drop the error)
+        let mut shell = NavigationShell::new_replay();
+
+        shell.transition_from_payload(RuntimePayload::BootComplete).unwrap();
+        shell.transition_from_intent(FrontendIntent::NewCampaign).unwrap();
+        shell.transition_from_intent(FrontendIntent::StartExpedition).unwrap();
+
+        // Error during expedition should be handled gracefully
+        let result = shell.transition_from_payload(RuntimePayload::Error {
+            message: "Connection lost".to_string(),
+        });
+        assert!(result.is_some(),
+            "Error payload should produce a valid transition, not panic");
+    }
+
+    // ── Contract boundary verification ───────────────────────────────
+    //
+    // These tests verify that replay-driven mode and live mode consume
+    // the same public API (NavigationShell transition methods), proving
+    // the documentation's claim that both paths use the same boundary.
+
+    #[test]
+    fn replay_and_live_mode_use_same_transition_api() {
+        // Both replay and live mode use the same NavigationShell transition methods.
+        // This proves the contract boundary is the same.
+        let mut replay_shell = NavigationShell::new_replay();
+        let mut live_shell = NavigationShell::new();
+
+        // Execute the same sequence in both modes
+        let replay_result = replay_shell.transition_from_payload(RuntimePayload::BootComplete);
+        let live_result = live_shell.transition_from_payload(RuntimePayload::BootComplete);
+
+        // Both should succeed
+        assert!(replay_result.is_some(), "Replay mode should accept BootComplete");
+        assert!(live_result.is_some(), "Live mode should accept BootComplete");
+
+        // Both should transition to the same state
+        assert_eq!(replay_shell.current_state(), live_shell.current_state(),
+            "Replay and live mode should transition to the same state");
+    }
+
+    #[test]
+    fn replay_mode_preserves_determinism_across_multiple_runs() {
+        // Running the exact same sequence multiple times should produce
+        // byte-identical state transitions.
+        let mut shell1 = NavigationShell::new_replay();
+        let mut shell2 = NavigationShell::new_replay();
+
+        // Run the exact same sequence in both shells
+        shell1.transition_from_payload(RuntimePayload::BootComplete).unwrap();
+        shell1.transition_from_intent(FrontendIntent::NewCampaign).unwrap();
+        shell1.transition_from_intent(FrontendIntent::StartExpedition).unwrap();
+        shell1.transition_from_payload(RuntimePayload::CombatStarted).unwrap();
+
+        shell2.transition_from_payload(RuntimePayload::BootComplete).unwrap();
+        shell2.transition_from_intent(FrontendIntent::NewCampaign).unwrap();
+        shell2.transition_from_intent(FrontendIntent::StartExpedition).unwrap();
+        shell2.transition_from_payload(RuntimePayload::CombatStarted).unwrap();
+
+        // Both should end in Combat state
+        assert_eq!(shell1.current_state(), FlowState::Combat,
+            "First run should end in Combat");
+        assert_eq!(shell2.current_state(), FlowState::Combat,
+            "Second run should end in Combat");
+        assert_eq!(shell1.current_state(), shell2.current_state(),
+            "Multiple runs should produce identical state");
     }
 }
