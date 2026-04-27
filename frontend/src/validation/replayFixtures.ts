@@ -381,3 +381,68 @@ export const liveLoadingSnapshot: DdgcFrontendSnapshot = {
   viewModel: liveLoadingViewModel,
   debugMessage: "Live runtime is establishing the bridge connection and loading campaign state."
 };
+
+// ── Startup, Provisioning, Expedition, Result, and Return snapshots ─────────────
+
+// Startup screen fixture: FlowController resolves "startup" when lifecycle=ready, flowState=boot.
+// StartupScreen uses direct callbacks rather than a view model, so BootLoadViewModel is used
+// as a placeholder in the snapshot structure (the viewModel is not consumed by StartupScreen).
+const startupViewModel: BootLoadViewModel = {
+  kind: "boot-load",
+  title: "DDGC Rendered Frontend",
+  summary: "Boot the product-owned frontend shell through replay mode first.",
+  mode: "replay"
+};
+
+export const startupSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "boot",
+  viewModel: startupViewModel,
+  debugMessage: "Startup screen fixture - ready to boot into replay or live mode."
+};
+
+// Provisioning flow snapshot
+export const provisioningSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "provisioning",
+  viewModel: replayProvisioningViewModel,
+  debugMessage: "Replay bridge showing provisioning screen."
+};
+
+// Expedition launch flow snapshot
+export const expeditionSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "expedition",
+  viewModel: replayExpeditionViewModel,
+  debugMessage: "Replay bridge showing expedition launch screen."
+};
+
+// Result snapshots (success, failure, partial)
+export const resultSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "result",
+  viewModel: replayResultViewModel,
+  debugMessage: "Replay bridge showing successful result screen."
+};
+
+export const failureResultSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "result",
+  viewModel: replayFailureResultViewModel,
+  debugMessage: "Replay bridge showing failure result screen."
+};
+
+export const partialResultSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "result",
+  viewModel: replayPartialResultViewModel,
+  debugMessage: "Replay bridge showing partial result screen."
+};
+
+// Return flow snapshot
+export const returnSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "return",
+  viewModel: replayReturnViewModel,
+  debugMessage: "Replay bridge showing return screen."
+};
