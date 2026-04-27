@@ -36,8 +36,9 @@ use crate::contracts::{
 };
 use crate::contracts::adapters;
 use crate::contracts::viewmodels::{
-    BootLoadViewModel, CombatViewModel, DungeonViewModel, ResultViewModel, ReturnFlowViewModel,
-    TownViewModel, ViewModelResult,
+    BootLoadViewModel, CombatHudViewModel, CombatPhase, CombatResult, CombatViewModel,
+    CombatantType, CombatantVitalViewModel, DungeonViewModel, ResultViewModel,
+    ReturnFlowViewModel, TownViewModel, ViewModelResult,
 };
 
 /// The runtime phase of the application host.
@@ -491,6 +492,38 @@ pub struct GameState {
     /// This tracks the current dungeon run result for the exploration phase.
     /// It is not persisted (ephemeral runtime state).
     pub active_expedition: Option<crate::run::flow::DdgcRunResult>,
+
+    // ─── Combat state ─────────────────────────────────────────────────
+
+    /// Active combat state, if a battle is in progress.
+    ///
+    /// This tracks the current combat state for the combat phase.
+    /// It is not persisted (ephemeral runtime state).
+    pub active_combat: Option<CombatState>,
+}
+
+/// Combat state for the active combat slice.
+///
+/// This tracks the current combat state for the combat phase,
+/// allowing the frontend to render a functional combat HUD and
+/// enabling combat action inputs to be processed through the
+/// contract-based input path.
+#[derive(Debug, Clone)]
+pub struct CombatState {
+    /// Encounter identifier.
+    pub encounter_id: String,
+    /// Current round number.
+    pub round: u32,
+    /// Combat phase.
+    pub phase: CombatPhase,
+    /// Combat result (if combat has ended).
+    pub result: Option<CombatResult>,
+    /// Current turn actor ID.
+    pub current_turn_actor_id: Option<String>,
+    /// Hero vitals for the HUD.
+    pub hero_vitals: Vec<CombatantVitalViewModel>,
+    /// Monster vitals for the HUD.
+    pub monster_vitals: Vec<CombatantVitalViewModel>,
 }
 
 impl Default for GameState {
@@ -512,6 +545,7 @@ impl Default for GameState {
             buff_registry: BuffRegistry::new(),
             host_phase: HostPhase::Uninitialized,
             active_expedition: None,
+            active_combat: None,
         }
     }
 }
@@ -627,6 +661,7 @@ impl GameState {
             buff_registry,
             host_phase: HostPhase::Uninitialized,
             active_expedition: None,
+            active_combat: None,
         })
     }
 
@@ -1077,6 +1112,151 @@ impl GameState {
         }
         let run_result = self.active_expedition.as_ref().unwrap();
         self.dungeon_view_model(run_result)
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // Combat state — combat interaction slice
+    // ───────────────────────────────────────────────────────────────
+
+    /// Start a fresh representative combat suitable for the combat screen.
+    ///
+    /// This creates a combat state with typical battle conditions that
+    /// allow the frontend to present a functional combat interface with:
+    /// - A party of 4 heroes (typical party size)
+    /// - Multiple monster enemies
+    /// - Active combat phase (HeroTurn)
+    /// - Health tracking for all combatants
+    ///
+    /// This is useful for vertical slice development and frontend testing
+    /// where a representative combat state is needed to demonstrate
+    /// the combat screen and combat action flow.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use game_ddgc_headless::state::GameState;
+    ///
+    /// let data_dir = std::path::PathBuf::from("data");
+    /// let mut state = GameState::load_from(&data_dir).expect("failed to load state");
+    /// state.new_representative_campaign();
+    /// state.new_representative_combat();
+    /// let combat_hud = state.combat_hud_view_model().expect("failed to produce combat HUD view model");
+    /// assert!(!combat_hud.hero_vitals.is_empty());
+    /// assert!(!combat_hud.monster_vitals.is_empty());
+    /// assert!(combat_hud.is_combat_active());
+    /// // Frontend can now present combat screen with party and enemies
+    /// ```
+    pub fn new_representative_combat(&mut self) {
+        // Create representative hero vitals (4 heroes, typical party)
+        let hero_vitals = vec![
+            CombatantVitalViewModel {
+                id: "hero_1".to_string(),
+                combatant_type: CombatantType::Hero,
+                health_fraction: 0.80, // 80% health
+                is_at_deaths_door: false,
+                is_dead: false,
+                status_count: 0,
+            },
+            CombatantVitalViewModel {
+                id: "hero_2".to_string(),
+                combatant_type: CombatantType::Hero,
+                health_fraction: 0.75, // 75% health
+                is_at_deaths_door: false,
+                is_dead: false,
+                status_count: 1, // has a status effect
+            },
+            CombatantVitalViewModel {
+                id: "hero_3".to_string(),
+                combatant_type: CombatantType::Hero,
+                health_fraction: 0.45, // 45% health - at death's door
+                is_at_deaths_door: true,
+                is_dead: false,
+                status_count: 0,
+            },
+            CombatantVitalViewModel {
+                id: "hero_4".to_string(),
+                combatant_type: CombatantType::Hero,
+                health_fraction: 0.90, // 90% health
+                is_at_deaths_door: false,
+                is_dead: false,
+                status_count: 0,
+            },
+        ];
+
+        // Create representative monster vitals
+        let monster_vitals = vec![
+            CombatantVitalViewModel {
+                id: "monster_1".to_string(),
+                combatant_type: CombatantType::Monster,
+                health_fraction: 0.85, // 85% health
+                is_at_deaths_door: false,
+                is_dead: false,
+                status_count: 0,
+            },
+            CombatantVitalViewModel {
+                id: "monster_2".to_string(),
+                combatant_type: CombatantType::Monster,
+                health_fraction: 0.60, // 60% health
+                is_at_deaths_door: false,
+                is_dead: false,
+                status_count: 1,
+            },
+            CombatantVitalViewModel {
+                id: "monster_3".to_string(),
+                combatant_type: CombatantType::Monster,
+                health_fraction: 0.30, // 30% health
+                is_at_deaths_door: true,
+                is_dead: false,
+                status_count: 0,
+            },
+        ];
+
+        // Create combat state
+        let combat_state = CombatState {
+            encounter_id: "combat_representative_1".to_string(),
+            round: 1,
+            phase: CombatPhase::HeroTurn,
+            result: None,
+            current_turn_actor_id: Some("hero_1".to_string()),
+            hero_vitals,
+            monster_vitals,
+        };
+
+        self.active_combat = Some(combat_state);
+    }
+
+    /// Produce a combat HUD view model for the active combat state.
+    ///
+    /// This is a convenience method that combines creating a representative combat
+    /// (if not already active) and converting it to a HUD view model suitable for
+    /// the combat screen in a single call.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`ViewModelError`] if the combat state cannot be fully
+    /// mapped to the combat HUD view model, or if no combat is active.
+    pub fn combat_hud_view_model(&mut self) -> ViewModelResult<CombatHudViewModel> {
+        if self.active_combat.is_none() {
+            self.new_representative_combat();
+        }
+        let combat_state = self.active_combat.as_ref().unwrap();
+
+        let heroes_alive = combat_state.hero_vitals.iter().filter(|h| !h.is_dead).count() as u32;
+        let monsters_alive = combat_state.monster_vitals.iter().filter(|m| !m.is_dead).count() as u32;
+
+        Ok(CombatHudViewModel {
+            encounter_id: combat_state.encounter_id.clone(),
+            round: combat_state.round,
+            phase: combat_state.phase.clone(),
+            result: combat_state.result.clone(),
+            current_turn_actor_id: combat_state.current_turn_actor_id.clone(),
+            hero_vitals: combat_state.hero_vitals.clone(),
+            monster_vitals: combat_state.monster_vitals.clone(),
+            heroes_alive,
+            monsters_alive,
+            is_resolving: combat_state.phase == CombatPhase::Resolution,
+            error: None,
+        })
     }
 
     /// Save the current campaign state to a JSON file.
