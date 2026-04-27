@@ -6,6 +6,7 @@ import { LiveRuntimeBridge } from "../bridge/LiveRuntimeBridge";
 import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 import type { RuntimeBridge } from "../bridge/RuntimeBridge";
 import type {
+  BootLoadViewModel,
   FatalErrorViewModel,
   TownViewModel,
   UnsupportedViewModel
@@ -15,6 +16,7 @@ import { createSessionStore } from "../session/SessionStore";
 import { resolveScreen } from "../session/FlowController";
 import { dispatchIntent } from "../session/intentDispatch";
 import { FatalErrorScreen } from "../screens/errors/FatalErrorScreen";
+import { LoadingScreen } from "../screens/loading/LoadingScreen";
 import { UnsupportedStateScreen } from "../screens/errors/UnsupportedStateScreen";
 import { StartupScreen } from "../screens/startup/StartupScreen";
 import { TownShellScreen } from "../screens/town/TownShellScreen";
@@ -54,6 +56,9 @@ export function DdgcApp() {
   return (
     <AppProviders>
       <Switch>
+        <Match when={screen === "loading" && snapshot.viewModel.kind === "boot-load"}>
+          <LoadingScreen viewModel={snapshot.viewModel as BootLoadViewModel} />
+        </Match>
         <Match when={screen === "startup"}>
           <StartupScreen
             onReplayBoot={() => runBoot("replay")}

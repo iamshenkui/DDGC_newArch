@@ -1,4 +1,5 @@
 import type {
+  BootLoadViewModel,
   DdgcFrontendSnapshot,
   FatalErrorViewModel,
   TownViewModel,
@@ -93,4 +94,32 @@ export const fatalSnapshot: DdgcFrontendSnapshot = {
   flowState: "boot",
   viewModel: fatalViewModel,
   debugMessage: "Fatal fallback fixture."
+};
+
+const replayLoadingViewModel: BootLoadViewModel = {
+  kind: "boot-load",
+  title: "Loading Replay Shell",
+  summary: "Initializing the DDGC replay runtime and loading fixture data.",
+  mode: "replay"
+};
+
+export const replayLoadingSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "loading",
+  flowState: "load",
+  viewModel: replayLoadingViewModel,
+  debugMessage: "Replay runtime is loading fixture data and initializing the game state."
+};
+
+const liveLoadingViewModel: BootLoadViewModel = {
+  kind: "boot-load",
+  title: "Loading Live Shell",
+  summary: "Connecting to the DDGC live runtime bridge and bootstrapping campaign state.",
+  mode: "live"
+};
+
+export const liveLoadingSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "loading",
+  flowState: "load",
+  viewModel: liveLoadingViewModel,
+  debugMessage: "Live runtime is establishing the bridge connection and loading campaign state."
 };
