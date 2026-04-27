@@ -812,6 +812,124 @@ impl GameState {
         self.campaign = CampaignState::new(starting_gold);
     }
 
+    /// Start a fresh representative campaign suitable for the town entry screen.
+    ///
+    /// This creates a campaign state with typical starting conditions that
+    /// allow the frontend to present a functional town entry screen with:
+    /// - A roster of 4 heroes (typical party size)
+    /// - Basic town buildings (stagecoach, guild, blacksmith, sanitarium)
+    /// - Starting gold for initial activities
+    ///
+    /// This is useful for vertical slice development and frontend testing
+    /// where a representative campaign state is needed to demonstrate
+    /// the town entry screen and expedition launch flow.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use game_ddgc_headless::state::GameState;
+    ///
+    /// let data_dir = std::path::PathBuf::from("data");
+    /// let mut state = GameState::load_from(&data_dir).expect("failed to load state");
+    /// state.new_representative_campaign();
+    /// let town_vm = state.town_view_model().expect("failed to produce town view model");
+    /// assert!(!town_vm.roster.is_empty());
+    /// assert!(!town_vm.buildings.is_empty());
+    /// // Frontend can now present town entry screen with roster and buildings
+    /// ```
+    pub fn new_representative_campaign(&mut self) {
+        use crate::contracts::{BuildingUpgradeState, CampaignHero, HeirloomCurrency};
+
+        // Create campaign with starting gold
+        self.campaign = CampaignState::new(500);
+
+        // Add basic heirloom currencies
+        self.campaign.heirlooms.insert(HeirloomCurrency::Bones, 50);
+        self.campaign.heirlooms.insert(HeirloomCurrency::Portraits, 10);
+
+        // Add basic buildings required for town activities
+        self.campaign.building_states.insert(
+            "stagecoach".to_string(),
+            BuildingUpgradeState::new("stagecoach", Some('a')),
+        );
+        self.campaign.building_states.insert(
+            "guild".to_string(),
+            BuildingUpgradeState::new("guild", Some('a')),
+        );
+        self.campaign.building_states.insert(
+            "blacksmith".to_string(),
+            BuildingUpgradeState::new("blacksmith", Some('a')),
+        );
+        self.campaign.building_states.insert(
+            "sanitarium".to_string(),
+            BuildingUpgradeState::new("sanitarium", Some('a')),
+        );
+
+        // Add a representative roster of 4 heroes
+        // Hero 1: Alchemist (damage dealer) - healthy state
+        self.campaign.roster.push(CampaignHero::new(
+            "hero_1",
+            "alchemist",
+            1,    // level
+            0,    // xp
+            100.0, // health
+            100.0, // max_health
+            30.0,  // stress
+            200.0, // max_stress
+        ));
+
+        // Hero 2: Crusader (tank) - slightly wounded
+        self.campaign.roster.push(CampaignHero::new(
+            "hero_2",
+            "crusader",
+            1,    // level
+            50,   // xp
+            75.0,  // health (wounded)
+            100.0, // max_health
+            20.0,  // stress
+            200.0, // max_stress
+        ));
+
+        // Hero 3: Hunter (ranged) - healthy
+        self.campaign.roster.push(CampaignHero::new(
+            "hero_3",
+            "hunter",
+            1,    // level
+            0,    // xp
+            100.0, // health
+            100.0, // max_health
+            40.0,  // stress
+            200.0, // max_stress
+        ));
+
+        // Hero 4: Vestal (healer) - high stress but not afflicted
+        self.campaign.roster.push(CampaignHero::new(
+            "hero_4",
+            "vestal",
+            2,    // level (slightly higher level)
+            100,  // xp
+            90.0,  // health
+            100.0, // max_health
+            150.0, // stress (high but below affliction threshold)
+            200.0, // max_stress
+        ));
+    }
+
+    /// Produce a town entry view model for the representative campaign state.
+    ///
+    /// This is a convenience method that combines [`new_representative_campaign`]
+    /// and [`town_view_model`] to produce a town view model suitable for
+    /// the town entry screen in a single call.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`ViewModelError`] if the campaign state cannot be fully
+    /// mapped to the town view model.
+    pub fn town_entry_view_model(&mut self) -> ViewModelResult<TownViewModel> {
+        self.new_representative_campaign();
+        self.town_view_model()
+    }
+
     /// Save the current campaign state to a JSON file.
     ///
     /// Delegates to [`CampaignState::save_to_file`] which serializes the full
@@ -3344,6 +3462,103 @@ mod quest_tests {
         assert!(result.is_ok());
         let vm = result.unwrap();
         assert!(!vm.available_activities.is_empty());
+    }
+
+    // ── US-004-a: Town entry screen and launch-facing view state tests ─────────
+
+    #[test]
+    fn new_representative_campaign_has_four_heroes() {
+        let state = load_real_state();
+        let mut state = state;
+        state.new_representative_campaign();
+        assert_eq!(state.campaign.roster.len(), 4);
+    }
+
+    #[test]
+    fn new_representative_campaign_has_basic_buildings() {
+        let state = load_real_state();
+        let mut state = state;
+        state.new_representative_campaign();
+        assert!(state.campaign.building_states.contains_key("stagecoach"));
+        assert!(state.campaign.building_states.contains_key("guild"));
+        assert!(state.campaign.building_states.contains_key("blacksmith"));
+        assert!(state.campaign.building_states.contains_key("sanitarium"));
+    }
+
+    #[test]
+    fn new_representative_campaign_has_starting_gold() {
+        let state = load_real_state();
+        let mut state = state;
+        state.new_representative_campaign();
+        assert_eq!(state.campaign.gold, 500);
+    }
+
+    #[test]
+    fn new_representative_campaign_has_heirlooms() {
+        let state = load_real_state();
+        let mut state = state;
+        state.new_representative_campaign();
+        assert!(!state.campaign.heirlooms.is_empty());
+    }
+
+    #[test]
+    fn town_entry_view_model_has_roster() {
+        let state = load_real_state();
+        let mut state = state;
+        let result = state.town_entry_view_model();
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert_eq!(vm.roster.len(), 4);
+    }
+
+    #[test]
+    fn town_entry_view_model_has_buildings_and_activities() {
+        let state = load_real_state();
+        let mut state = state;
+        let result = state.town_entry_view_model();
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert!(!vm.buildings.is_empty());
+        assert!(!vm.available_activities.is_empty());
+    }
+
+    #[test]
+    fn town_entry_view_model_has_gold_and_heirlooms() {
+        let state = load_real_state();
+        let mut state = state;
+        let result = state.town_entry_view_model();
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert_eq!(vm.gold, 500);
+        assert!(!vm.heirlooms.is_empty());
+    }
+
+    #[test]
+    fn town_entry_view_model_supports_launch_workflow() {
+        // Verify the town entry view model has all data needed for expedition launch
+        let state = load_real_state();
+        let mut state = state;
+        let result = state.town_entry_view_model();
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+
+        // Roster should have at least 4 heroes for a party
+        assert!(vm.roster.len() >= 4, "Need at least 4 heroes for expedition");
+
+        // All heroes should have valid health/stress values
+        for hero in &vm.roster {
+            assert!(hero.max_health > 0.0);
+            assert!(hero.max_stress > 0.0);
+            assert!(hero.health <= hero.max_health);
+            assert!(hero.stress <= hero.max_stress);
+        }
+
+        // Buildings should include stagecoach for recruitment
+        let has_stagecoach = vm
+            .available_activities
+            .iter()
+            .any(|a| matches!(a, crate::contracts::viewmodels::TownActivityType::Stagecoach));
+        assert!(has_stagecoach, "Stagecoach should be available for hero recruitment");
     }
 
     #[test]
