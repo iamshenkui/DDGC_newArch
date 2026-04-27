@@ -102,6 +102,25 @@ The smoke tests validate:
 - **Contract boundary**: No framework-specific types leak into the contract JSON schema
 - **Error handling**: All error variants produce meaningful diagnostic messages
 
+### State Layer Smoke Tests
+
+The state module includes a dedicated smoke-test suite that verifies the local runnable build path:
+
+```bash
+# Run state smoke tests
+cargo test --test state_smoke_tests
+```
+
+The smoke tests validate:
+- **NavigationShell**: Flow state transitions via runtime payloads and frontend intents
+- **FlowState**: State classification, active/terminal state detection, host phase mapping
+- **HostPhase**: Phase conversion to contracts layer and display formatting
+- **FrontendIntent**: Intent-to-state classification for all game actions
+- **RuntimePayload**: Payload-to-state classification and success detection
+- **GameState**: Default creation, loading from data directory, campaign state management
+- **State determinism**: NavigationShell produces identical transitions on repeated calls
+- **Replay mode**: NavigationShell correctly tracks replay vs. live mode
+
 ## Project Structure
 
 ```
