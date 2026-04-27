@@ -38,7 +38,7 @@ use crate::contracts::adapters;
 use crate::contracts::viewmodels::{
     BootLoadViewModel, CombatHudViewModel, CombatPhase, CombatResult, CombatViewModel,
     CombatantType, CombatantVitalViewModel, DungeonViewModel, ResultViewModel,
-    ReturnFlowViewModel, TownViewModel, ViewModelResult,
+    ReturnFlowViewModel, TownViewModel, ViewModelError, ViewModelResult,
 };
 
 /// The runtime phase of the application host.
@@ -428,6 +428,58 @@ impl NavigationShell {
         self.current_state = self.previous_state.clone();
         Some(prev)
     }
+
+    /// Transition to the Result state.
+    ///
+    /// This is a specialized transition for moving to the Result flow state.
+    /// The result state is set on the game state after this transition.
+    ///
+    /// Returns the new state if the transition is valid, or None if invalid.
+    pub fn transition_to_result(&mut self) -> Option<FlowState> {
+        let target = FlowState::Result;
+
+        if !self.can_transition(&target) {
+            return None;
+        }
+
+        self.previous_state = self.current_state.clone();
+        self.current_state = target.clone();
+        Some(target)
+    }
+
+    /// Transition to the Return state.
+    ///
+    /// This is a specialized transition for moving to the Return flow state.
+    /// The return flow state is set on the game state after this transition.
+    ///
+    /// Returns the new state if the transition is valid, or None if invalid.
+    pub fn transition_to_return(&mut self) -> Option<FlowState> {
+        let target = FlowState::Return;
+
+        if !self.can_transition(&target) {
+            return None;
+        }
+
+        self.previous_state = self.current_state.clone();
+        self.current_state = target.clone();
+        Some(target)
+    }
+
+    /// Check if the current state is a terminal result state.
+    ///
+    /// A terminal result state is one where the player has acknowledged the result
+    /// and the only valid next step is to return to town.
+    pub fn is_result_terminal(&self) -> bool {
+        matches!(self.current_state, FlowState::Result)
+    }
+
+    /// Check if the current state requires a return journey to town.
+    ///
+    /// This returns true when in the Return state, indicating that the party
+    /// must complete their return journey before reaching town.
+    pub fn requires_return_journey(&self) -> bool {
+        matches!(self.current_state, FlowState::Return)
+    }
 }
 
 /// Full game state loaded from DDGC data files.
@@ -500,6 +552,22 @@ pub struct GameState {
     /// This tracks the current combat state for the combat phase.
     /// It is not persisted (ephemeral runtime state).
     pub active_combat: Option<CombatState>,
+
+    // ─── Result state ─────────────────────────────────────────────────
+
+    /// Active result state, if a result screen is being displayed.
+    ///
+    /// This tracks the result data when showing post-combat or post-expedition
+    /// results. It is not persisted (ephemeral runtime state).
+    pub active_result: Option<ResultState>,
+
+    // ─── Return flow state ─────────────────────────────────────────────
+
+    /// Active return flow state, if returning from dungeon to town.
+    ///
+    /// This tracks the return journey data when the party is returning from
+    /// a dungeon back to town. It is not persisted (ephemeral runtime state).
+    pub active_return_flow: Option<ReturnFlowState>,
 }
 
 /// Combat state for the active combat slice.
@@ -526,6 +594,58 @@ pub struct CombatState {
     pub monster_vitals: Vec<CombatantVitalViewModel>,
 }
 
+/// Result state for the post-combat or post-expedition result screen.
+///
+/// This tracks the result data when the frontend is showing a result screen
+/// after combat or dungeon completion. It enables explicit state handoff
+/// between the result flow and other flows (return, town, expedition).
+#[derive(Debug, Clone)]
+pub struct ResultState {
+    /// The result view model for the frontend.
+    pub view_model: ResultViewModel,
+    /// Source flow state that transitioned to result.
+    pub source: FlowState,
+    /// Whether the result has been acknowledged by the player.
+    pub acknowledged: bool,
+}
+
+impl ResultState {
+    /// Create a new result state from a result view model.
+    pub fn new(view_model: ResultViewModel, source: FlowState) -> Self {
+        ResultState {
+            view_model,
+            source,
+            acknowledged: false,
+        }
+    }
+}
+
+/// Return flow state for the dungeon-to-town return journey.
+///
+/// This tracks the return flow data when the party is returning from a
+/// dungeon back to town after completing or abandoning a run. It enables
+/// explicit state handoff between the return flow and the town flow.
+#[derive(Debug, Clone)]
+pub struct ReturnFlowState {
+    /// The return flow view model for the frontend.
+    pub view_model: ReturnFlowViewModel,
+    /// Source flow state that transitioned to return.
+    pub source: FlowState,
+    /// Whether the return journey is complete.
+    pub journey_complete: bool,
+}
+
+impl ReturnFlowState {
+    /// Create a new return flow state from a return flow view model.
+    pub fn new(view_model: ReturnFlowViewModel, source: FlowState) -> Self {
+        ReturnFlowState {
+            view_model,
+            source,
+            journey_complete: false,
+        }
+    }
+}
+
 impl Default for GameState {
     fn default() -> Self {
         GameState {
@@ -546,6 +666,8 @@ impl Default for GameState {
             host_phase: HostPhase::Uninitialized,
             active_expedition: None,
             active_combat: None,
+            active_result: None,
+            active_return_flow: None,
         }
     }
 }
@@ -662,6 +784,8 @@ impl GameState {
             host_phase: HostPhase::Uninitialized,
             active_expedition: None,
             active_combat: None,
+            active_result: None,
+            active_return_flow: None,
         })
     }
 
@@ -1257,6 +1381,122 @@ impl GameState {
             is_resolving: combat_state.phase == CombatPhase::Resolution,
             error: None,
         })
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // Result state — post-combat/post-expedition result screen
+    // ───────────────────────────────────────────────────────────────
+
+    /// Set the active result state for the result screen.
+    ///
+    /// This is called when transitioning to the Result flow state, providing
+    /// the result data that will be displayed on the result screen.
+    ///
+    /// # Arguments
+    ///
+    /// * `view_model` — The result view model to display
+    /// * `source` — The flow state this result originated from (Combat or Expedition)
+    pub fn set_result_state(&mut self, view_model: ResultViewModel, source: FlowState) {
+        self.active_result = Some(ResultState::new(view_model, source));
+    }
+
+    /// Clear the active result state.
+    ///
+    /// This is called when leaving the Result flow state to clean up
+    /// the ephemeral result data.
+    pub fn clear_result_state(&mut self) {
+        self.active_result = None;
+    }
+
+    /// Get the result view model for the frontend.
+    ///
+    /// Returns the view model from the active result state, if one exists.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`ViewModelError`] if no result state is active.
+    pub fn active_result_view_model(&self) -> ViewModelResult<ResultViewModel> {
+        match &self.active_result {
+            Some(state) => Ok(state.view_model.clone()),
+            None => Err(ViewModelError::MissingRequiredField {
+                field: "active_result".to_string(),
+                context: "active_result_view_model".to_string(),
+            }),
+        }
+    }
+
+    /// Check if a result state is currently active.
+    pub fn has_result_state(&self) -> bool {
+        self.active_result.is_some()
+    }
+
+    /// Acknowledge the current result (player has seen it).
+    ///
+    /// This marks the result as acknowledged by the player, which may affect
+    /// whether the result can be revisited or whether certain transitions
+    /// are now allowed.
+    pub fn acknowledge_result(&mut self) {
+        if let Some(ref mut state) = self.active_result {
+            state.acknowledged = true;
+        }
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // Return flow state — dungeon-to-town return journey
+    // ───────────────────────────────────────────────────────────────
+
+    /// Set the active return flow state for the return journey.
+    ///
+    /// This is called when transitioning to the Return flow state, providing
+    /// the return flow data that will be displayed during the return journey.
+    ///
+    /// # Arguments
+    ///
+    /// * `view_model` — The return flow view model to display
+    /// * `source` — The flow state this return flow originated from (Expedition or Result)
+    pub fn set_return_flow_state(&mut self, view_model: ReturnFlowViewModel, source: FlowState) {
+        self.active_return_flow = Some(ReturnFlowState::new(view_model, source));
+    }
+
+    /// Clear the active return flow state.
+    ///
+    /// This is called when the return journey completes to clean up
+    /// the ephemeral return flow data.
+    pub fn clear_return_flow_state(&mut self) {
+        self.active_return_flow = None;
+    }
+
+    /// Get the return flow view model for the frontend.
+    ///
+    /// Returns the view model from the active return flow state, if one exists.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`ViewModelError`] if no return flow state is active.
+    pub fn active_return_flow_view_model(&self) -> ViewModelResult<ReturnFlowViewModel> {
+        match &self.active_return_flow {
+            Some(state) => Ok(state.view_model.clone()),
+            None => Err(ViewModelError::MissingRequiredField {
+                field: "active_return_flow".to_string(),
+                context: "active_return_flow_view_model".to_string(),
+            }),
+        }
+    }
+
+    /// Check if a return flow state is currently active.
+    pub fn has_return_flow_state(&self) -> bool {
+        self.active_return_flow.is_some()
+    }
+
+    /// Mark the return journey as complete.
+    ///
+    /// This signals that the party has arrived at town and the return flow
+    /// is ready to transition to the Town flow state.
+    pub fn complete_return_journey(&mut self) {
+        if let Some(ref mut state) = self.active_return_flow {
+            state.journey_complete = true;
+            state.view_model.ready_for_town = true;
+        }
     }
 
     /// Save the current campaign state to a JSON file.
