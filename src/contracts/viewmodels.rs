@@ -400,6 +400,204 @@ impl DungeonHeroViewModel {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Exploration HUD View Model
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Minimal HUD view model for the exploration shell.
+///
+/// This view model presents only the essential expedition context needed
+/// for the player to understand their current state in the dungeon.
+/// It is a lightweight subset of DungeonViewModel optimized for HUD rendering.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ExplorationHudViewModel {
+    /// Dungeon type identifier.
+    pub dungeon_type: String,
+    /// Map size variant.
+    pub map_size: String,
+    /// Current floor number.
+    pub floor: u32,
+    /// Number of rooms cleared.
+    pub rooms_cleared: u32,
+    /// Total rooms in the dungeon.
+    pub total_rooms: u32,
+    /// Gold carried by the party.
+    pub gold_carried: u32,
+    /// Torchlight level (0-100).
+    pub torchlight: u32,
+    /// Number of battles won.
+    pub battles_won: u32,
+    /// Number of battles lost.
+    pub battles_lost: u32,
+    /// Hero vitals for the HUD (minimal hero state).
+    pub hero_vitals: Vec<HeroVitalViewModel>,
+    /// Current room kind (if in a room).
+    pub current_room_kind: Option<DungeonRoomKind>,
+    /// Whether the dungeon is complete.
+    pub is_complete: bool,
+    /// Error details if any.
+    pub error: Option<ViewModelError>,
+}
+
+/// Minimal hero vital statistics for HUD display.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct HeroVitalViewModel {
+    /// Unique hero identifier.
+    pub id: String,
+    /// Hero class identifier.
+    pub class_id: String,
+    /// Health fraction (0.0 to 1.0).
+    pub health_fraction: f64,
+    /// Stress fraction (0.0 to 1.0).
+    pub stress_fraction: f64,
+    /// Whether this hero is at death's door.
+    pub is_at_deaths_door: bool,
+    /// Whether this hero is dead.
+    pub is_dead: bool,
+}
+
+impl ExplorationHudViewModel {
+    /// Create an empty exploration HUD.
+    pub fn empty() -> Self {
+        ExplorationHudViewModel {
+            dungeon_type: String::new(),
+            map_size: String::new(),
+            floor: 1,
+            rooms_cleared: 0,
+            total_rooms: 0,
+            gold_carried: 0,
+            torchlight: 100,
+            battles_won: 0,
+            battles_lost: 0,
+            hero_vitals: Vec::new(),
+            current_room_kind: None,
+            is_complete: false,
+            error: None,
+        }
+    }
+
+    /// Check if any hero is at death's door.
+    pub fn any_hero_at_deaths_door(&self) -> bool {
+        self.hero_vitals.iter().any(|h| h.is_at_deaths_door)
+    }
+
+    /// Check if any hero is dead.
+    pub fn any_hero_dead(&self) -> bool {
+        self.hero_vitals.iter().any(|h| h.is_dead)
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Room Movement Transition View Model
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Represents a room movement transition in the dungeon.
+///
+/// This view model captures the transition from one room to another,
+/// surfacing movement and room entry events clearly.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RoomMovementViewModel {
+    /// Previous room ID (if any).
+    pub from_room_id: Option<String>,
+    /// Previous room kind (if any).
+    pub from_room_kind: Option<DungeonRoomKind>,
+    /// Current room ID.
+    pub to_room_id: String,
+    /// Current room kind.
+    pub to_room_kind: DungeonRoomKind,
+    /// Whether the destination room has been cleared.
+    pub is_cleared: bool,
+    /// Interaction ID present in the room (curio, trap, etc.).
+    pub interaction_id: Option<String>,
+    /// Type of interaction in the room.
+    pub interaction_type: InteractionType,
+}
+
+/// Type of interaction in a room.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum InteractionType {
+    /// No interaction.
+    None,
+    /// Curio interaction.
+    Curio,
+    /// Trap interaction.
+    Trap,
+    /// Combat encounter.
+    Combat,
+    /// Boss encounter.
+    Boss,
+}
+
+impl InteractionType {
+    /// Convert from DungeonRoomKind to InteractionType.
+    pub fn from_room_kind(kind: &DungeonRoomKind) -> Self {
+        match kind {
+            DungeonRoomKind::Combat => InteractionType::Combat,
+            DungeonRoomKind::Boss => InteractionType::Boss,
+            DungeonRoomKind::Event => InteractionType::Curio,
+            DungeonRoomKind::Corridor => InteractionType::Trap,
+            DungeonRoomKind::Unknown => InteractionType::None,
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Encounter Entry View Model
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Represents entering a combat encounter from exploration.
+///
+/// This view model captures the transition from exploration state
+/// into a combat encounter, providing context needed for the frontend
+/// to render the encounter entry.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct EncounterEntryViewModel {
+    /// Encounter identifier.
+    pub encounter_id: String,
+    /// Room ID where the encounter occurs.
+    pub room_id: String,
+    /// Encounter type.
+    pub encounter_type: EncounterType,
+    /// Pack ID for this encounter.
+    pub pack_id: String,
+    /// Monster family IDs in this encounter.
+    pub family_ids: Vec<String>,
+    /// Party composition at encounter start.
+    pub heroes: Vec<EncounterHeroViewModel>,
+    /// Whether this is a boss encounter.
+    pub is_boss: bool,
+}
+
+/// Type of encounter.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum EncounterType {
+    /// Regular combat encounter.
+    Combat,
+    /// Boss encounter.
+    Boss,
+}
+
+/// Hero state at encounter entry.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct EncounterHeroViewModel {
+    /// Unique hero identifier.
+    pub id: String,
+    /// Hero class identifier.
+    pub class_id: String,
+    /// Health at encounter start.
+    pub health: f64,
+    /// Maximum health.
+    pub max_health: f64,
+    /// Stress at encounter start.
+    pub stress: f64,
+    /// Maximum stress.
+    pub max_stress: f64,
+    /// Active buff IDs.
+    pub active_buffs: Vec<String>,
+    /// Whether hero is at death's door.
+    pub is_at_deaths_door: bool,
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Combat View Model
 // ─────────────────────────────────────────────────────────────────────────────
 

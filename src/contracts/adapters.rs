@@ -20,6 +20,9 @@
 //! | `DdgcHost` + `HostPhase` | `BootLoadViewModel` | [`boot_load_from_host`] |
 //! | `CampaignState` | `TownViewModel` | [`town_from_campaign`] |
 //! | `DdgcRunResult` | `DungeonViewModel` | [`dungeon_from_run_result`] |
+//! | `DdgcRunResult` | `ExplorationHudViewModel` | [`exploration_hud_from_dungeon`] |
+//! | `DdgcRunResult` + room index | `RoomMovementViewModel` | [`room_movement_from_run`] |
+//! | `DdgcRunResult` + room index | `EncounterEntryViewModel` | [`encounter_entry_from_run`] |
 //! | `framework_viewmodels::CombatViewModel` | `CombatViewModel` | [`combat_from_framework`] |
 //! | `RunResult` + rewards | `ResultViewModel` | [`result_from_run`] |
 //! | `DdgcRunState` + heroes | `ReturnFlowViewModel` | [`return_flow_from_state`] |
@@ -27,7 +30,9 @@
 use crate::contracts::viewmodels::{
     BootLoadViewModel, CombatPhase, CombatViewModel, CombatantType,
     CombatantViewModel, CombatPosition, DungeonHeroViewModel, DungeonRoomKind, DungeonRoomViewModel,
-    DungeonViewModel, ViewModelResult,
+    DungeonViewModel, EncounterEntryViewModel, EncounterHeroViewModel, EncounterType,
+    ExplorationHudViewModel, HeroVitalViewModel, InteractionType, RoomMovementViewModel,
+    ViewModelResult,
 };
 use crate::contracts::{
     CampaignState, DungeonType, HeirloomCurrency, MapSize,
@@ -290,6 +295,201 @@ pub fn dungeon_from_run_result(
         is_complete: false,
         party_fled: false,
         error: None,
+    })
+}
+
+/// Adapter: Convert `DungeonViewModel` to `ExplorationHudViewModel`.
+///
+/// Takes a dungeon view model and produces a minimal HUD view model
+/// for the exploration shell, presenting only essential expedition context.
+pub fn exploration_hud_from_dungeon(
+    dungeon: &DungeonViewModel,
+) -> ViewModelResult<ExplorationHudViewModel> {
+    let hero_vitals: Vec<HeroVitalViewModel> = dungeon
+        .heroes
+        .iter()
+        .map(|h| {
+            let health_fraction = if h.max_health > 0.0 {
+                h.health / h.max_health
+            } else {
+                0.0
+            };
+            let stress_fraction = if h.max_stress > 0.0 {
+                h.stress / h.max_stress
+            } else {
+                0.0
+            };
+            HeroVitalViewModel {
+                id: h.id.clone(),
+                class_id: h.class_id.clone(),
+                health_fraction,
+                stress_fraction,
+                is_at_deaths_door: h.is_at_deaths_door,
+                is_dead: h.is_dead,
+            }
+        })
+        .collect();
+
+    Ok(ExplorationHudViewModel {
+        dungeon_type: dungeon.dungeon_type.clone(),
+        map_size: dungeon.map_size.clone(),
+        floor: dungeon.floor,
+        rooms_cleared: dungeon.rooms_cleared,
+        total_rooms: dungeon.total_rooms,
+        gold_carried: dungeon.gold_carried,
+        torchlight: dungeon.torchlight,
+        battles_won: dungeon.battles_won,
+        battles_lost: dungeon.battles_lost,
+        hero_vitals,
+        current_room_kind: dungeon.current_room.as_ref().map(|r| r.kind.clone()),
+        is_complete: dungeon.is_complete,
+        error: dungeon.error.clone(),
+    })
+}
+
+/// Adapter: Convert `DdgcRunResult` and room index to `RoomMovementViewModel`.
+///
+/// Takes a run result and room index to produce a room movement view model
+/// representing the transition into a specific room.
+pub fn room_movement_from_run(
+    run_result: &crate::run::flow::DdgcRunResult,
+    room_index: usize,
+) -> ViewModelResult<RoomMovementViewModel> {
+    use framework_progression::rooms::RoomKind;
+
+    let rooms = &run_result.floor.rooms;
+    if room_index >= rooms.len() {
+        return Err(crate::contracts::viewmodels::ViewModelError::MissingRequiredField {
+            field: "room_index".to_string(),
+            context: format!("room_index {} out of range for {} rooms", room_index, rooms.len()),
+        });
+    }
+
+    let current_room_id = rooms[room_index];
+    let current_room = &run_result.floor.rooms_map[&current_room_id];
+
+    // Previous room (if any)
+    let (from_room_id, from_room_kind) = if room_index > 0 {
+        let prev_room_id = rooms[room_index - 1];
+        let prev_room = &run_result.floor.rooms_map[&prev_room_id];
+        let prev_kind = match &prev_room.kind {
+            RoomKind::Combat => DungeonRoomKind::Combat,
+            RoomKind::Boss => DungeonRoomKind::Boss,
+            RoomKind::Event { .. } => DungeonRoomKind::Event,
+            RoomKind::Corridor { .. } => DungeonRoomKind::Corridor,
+            _ => DungeonRoomKind::Unknown,
+        };
+        (Some(format!("{:?}", prev_room_id)), Some(prev_kind))
+    } else {
+        (None, None)
+    };
+
+    // Current room kind and interaction
+    let (to_room_kind, interaction_id, interaction_type) = match &current_room.kind {
+        RoomKind::Combat => {
+            (DungeonRoomKind::Combat, None, InteractionType::Combat)
+        }
+        RoomKind::Boss => {
+            (DungeonRoomKind::Boss, None, InteractionType::Boss)
+        }
+        RoomKind::Event { curio_id } => {
+            (
+                DungeonRoomKind::Event,
+                curio_id.clone(),
+                InteractionType::Curio,
+            )
+        }
+        RoomKind::Corridor { trap_id, curio_id } => {
+            let int_type = if trap_id.is_some() {
+                InteractionType::Trap
+            } else if curio_id.is_some() {
+                InteractionType::Curio
+            } else {
+                InteractionType::None
+            };
+            (
+                DungeonRoomKind::Corridor,
+                trap_id.clone().or_else(|| curio_id.clone()),
+                int_type,
+            )
+        }
+        _ => (DungeonRoomKind::Unknown, None, InteractionType::None),
+    };
+
+    Ok(RoomMovementViewModel {
+        from_room_id,
+        from_room_kind,
+        to_room_id: format!("{:?}", current_room_id),
+        to_room_kind,
+        is_cleared: matches!(current_room.state, framework_progression::rooms::RoomState::Cleared),
+        interaction_id,
+        interaction_type,
+    })
+}
+
+/// Adapter: Convert `DdgcRunResult` and room index to `EncounterEntryViewModel`.
+///
+/// Takes a run result and room index to produce an encounter entry view model
+/// representing entering a combat encounter from exploration.
+pub fn encounter_entry_from_run(
+    run_result: &crate::run::flow::DdgcRunResult,
+    room_index: usize,
+) -> ViewModelResult<EncounterEntryViewModel> {
+    use framework_progression::rooms::RoomKind;
+
+    if room_index >= run_result.room_encounters.len() {
+        return Err(crate::contracts::viewmodels::ViewModelError::MissingRequiredField {
+            field: "room_index".to_string(),
+            context: format!(
+                "room_index {} out of range for {} room_encounters",
+                room_index,
+                run_result.room_encounters.len()
+            ),
+        });
+    }
+
+    let encounter = &run_result.room_encounters[room_index];
+    let room = &run_result.floor.rooms_map[&encounter.room_id];
+
+    let encounter_type = match &room.kind {
+        RoomKind::Combat => EncounterType::Combat,
+        RoomKind::Boss => EncounterType::Boss,
+        _ => {
+            return Err(crate::contracts::viewmodels::ViewModelError::UnsupportedState {
+                state_type: "EncounterEntry".to_string(),
+                detail: format!(
+                    "Room {:?} is not a combat room (kind: {:?})",
+                    encounter.room_id, room.kind
+                ),
+            });
+        }
+    };
+
+    let is_boss = matches!(encounter_type, EncounterType::Boss);
+
+    let heroes: Vec<EncounterHeroViewModel> = run_result
+        .heroes
+        .iter()
+        .map(|h| EncounterHeroViewModel {
+            id: h.id.clone(),
+            class_id: h.class_id.clone(),
+            health: h.health,
+            max_health: h.max_health,
+            stress: h.stress,
+            max_stress: h.max_stress,
+            active_buffs: h.active_buffs.clone(),
+            is_at_deaths_door: h.health < (h.max_health * 0.5),
+        })
+        .collect();
+
+    Ok(EncounterEntryViewModel {
+        encounter_id: format!("encounter_{:?}", encounter.room_id),
+        room_id: format!("{:?}", encounter.room_id),
+        encounter_type,
+        pack_id: encounter.pack_id.clone(),
+        family_ids: encounter.family_ids.iter().map(|f| f.0.clone()).collect(),
+        heroes,
+        is_boss,
     })
 }
 
