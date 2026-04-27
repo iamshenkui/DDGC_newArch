@@ -29,10 +29,15 @@ use std::path::{Path, PathBuf};
 
 use crate::contracts::{
     BuffRegistry, BuildingRegistry, CampaignState, CampingSkillRegistry, CurioRegistry,
-    DungeonEncounterRegistry, EquipmentRegistry, ObstacleRegistry, QuestRegistry,
-    QuirkRegistry, TraitRegistry, TrapRegistry, TrinketRegistry,
+    DungeonEncounterRegistry, EquipmentRegistry, HeirloomCurrency, ObstacleRegistry,
+    QuestRegistry, QuirkRegistry, TraitRegistry, TrapRegistry, TrinketRegistry,
     parse::{parse_buildings_json, parse_camping_json, parse_curios_csv, parse_obstacles_json,
             parse_quirks_json, parse_traits_json, parse_traps_json},
+};
+use crate::contracts::adapters;
+use crate::contracts::viewmodels::{
+    BootLoadViewModel, CombatViewModel, DungeonViewModel, ResultViewModel, ReturnFlowViewModel,
+    TownViewModel, ViewModelResult,
 };
 
 /// The runtime phase of the application host.
@@ -68,6 +73,22 @@ impl std::fmt::Display for HostPhase {
             HostPhase::Ready => write!(f, "ready"),
             HostPhase::FatalError => write!(f, "fatal_error"),
             HostPhase::Unsupported => write!(f, "unsupported"),
+        }
+    }
+}
+
+impl HostPhase {
+    /// Convert to the contracts module's `HostPhase` type.
+    ///
+    /// This allows the state layer's host phase to be used with
+    /// the contracts module's adapter functions.
+    pub fn to_contracts_host_phase(&self) -> crate::contracts::host::HostPhase {
+        match self {
+            HostPhase::Uninitialized => crate::contracts::host::HostPhase::Uninitialized,
+            HostPhase::Booting => crate::contracts::host::HostPhase::Booting,
+            HostPhase::Ready => crate::contracts::host::HostPhase::Ready,
+            HostPhase::FatalError => crate::contracts::host::HostPhase::FatalError,
+            HostPhase::Unsupported => crate::contracts::host::HostPhase::Unsupported,
         }
     }
 }
@@ -496,6 +517,144 @@ impl GameState {
     /// Returns `Ok(())` if the version matches [`CAMPAIGN_SNAPSHOT_VERSION`].
     pub fn validate_campaign(&self) -> Result<(), String> {
         self.campaign.validate_version()
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // View model shaping — converts runtime state to DDGC view models
+    // ───────────────────────────────────────────────────────────────
+
+    /// Produce a [`BootLoadViewModel`] from the current host phase.
+    ///
+    /// This shapes the boot/load view model that represents the initial
+    /// application state before the player enters the town or begins a dungeon run.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`ViewModelError::UnsupportedState`] if the host phase is not
+    /// recognized. All other phases produce a valid view model.
+    pub fn boot_load_view_model(&self) -> ViewModelResult<BootLoadViewModel> {
+        // A campaign is considered "loaded" if it has meaningful state:
+        // - gold > 0 indicates a campaign was started with starting gold, OR
+        // - run_history is non-empty indicating completed dungeon runs
+        // A freshly loaded GameState has gold = 0 and empty run_history.
+        let campaign_loaded = self.campaign.gold > 0 || !self.campaign.run_history.is_empty();
+        let schema_version = if campaign_loaded {
+            Some(self.campaign.schema_version)
+        } else {
+            None
+        };
+        adapters::boot_load_from_host(&self.host_phase.to_contracts_host_phase(), campaign_loaded, schema_version)
+    }
+
+    /// Produce a [`TownViewModel`] from the current campaign state.
+    ///
+    /// This shapes the town view model representing the state when the player
+    /// is in town between dungeon runs, with access to various services.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`ViewModelError::PartialMapping`] if some campaign fields
+    /// cannot be fully mapped to the town view model.
+    pub fn town_view_model(&self) -> ViewModelResult<TownViewModel> {
+        adapters::town_from_campaign(&self.campaign)
+    }
+
+    /// Produce a [`DungeonViewModel`] from a completed run result.
+    ///
+    /// This shapes the dungeon view model representing the state when the player
+    /// is actively exploring a dungeon and progressing through rooms.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`ViewModelError::UnsupportedState`] if the run result contains
+    /// unsupported room types or dungeon configurations.
+    pub fn dungeon_view_model(
+        &self,
+        run_result: &crate::run::flow::DdgcRunResult,
+    ) -> ViewModelResult<DungeonViewModel> {
+        adapters::dungeon_from_run_result(run_result)
+    }
+
+    /// Produce a [`CombatViewModel`] from a framework combat view model.
+    ///
+    /// This shapes the combat view model representing the state during an active battle.
+    /// The framework combat view model is converted to a DDGC-specific shape.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`ViewModelError::PartialMapping`] if some framework fields
+    /// cannot be fully mapped to the DDGC combat view model.
+    pub fn combat_view_model(
+        &self,
+        framework_vm: &framework_viewmodels::CombatViewModel,
+    ) -> ViewModelResult<CombatViewModel> {
+        adapters::combat_from_framework(framework_vm)
+    }
+
+    /// Produce a [`ResultViewModel`] from dungeon run results.
+    ///
+    /// This shapes the result view model representing the outcome after combat
+    /// or dungeon completion.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`ViewModelError::UnsupportedState`] if the dungeon type or
+    /// map size is not supported.
+    pub fn result_view_model(
+        &self,
+        dungeon_type: crate::contracts::DungeonType,
+        map_size: crate::contracts::MapSize,
+        rooms_cleared: u32,
+        battles_won: u32,
+        completed: bool,
+        gold_earned: u32,
+        xp_earned: u32,
+        heirlooms_earned: &std::collections::BTreeMap<HeirloomCurrency, u32>,
+        casualties: Vec<(String, String)>,
+    ) -> ViewModelResult<ResultViewModel> {
+        adapters::result_from_run(
+            dungeon_type,
+            map_size,
+            rooms_cleared,
+            battles_won,
+            completed,
+            gold_earned,
+            xp_earned,
+            heirlooms_earned,
+            casualties,
+        )
+    }
+
+    /// Produce a [`ReturnFlowViewModel`] from dungeon return state.
+    ///
+    /// This shapes the return flow view model representing the state when the
+    /// party is returning from a dungeon back to town.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`ViewModelError::UnsupportedState`] if the dungeon type or
+    /// map size is not supported.
+    pub fn return_flow_view_model(
+        &self,
+        dungeon_type: crate::contracts::DungeonType,
+        map_size: crate::contracts::MapSize,
+        rooms_cleared: u32,
+        battles_won: u32,
+        completed: bool,
+        gold_earned: u32,
+        heroes: &[(String, String, f64, f64, f64, f64)],
+        died_heroes: &[(String, String)],
+    ) -> ViewModelResult<ReturnFlowViewModel> {
+        adapters::return_flow_from_state(
+            dungeon_type,
+            map_size,
+            rooms_cleared,
+            battles_won,
+            completed,
+            gold_earned,
+            heroes,
+            died_heroes,
+        )
     }
 }
 
@@ -2284,6 +2443,24 @@ mod tests {
 #[cfg(test)]
 mod quest_tests {
     use super::*;
+    use crate::contracts::{
+        BuildingUpgradeState, CampaignHero, CampaignInventoryItem, CampaignQuestProgress,
+        CampaignRunRecord, CampEffectType, DungeonType, HeirloomCurrency, MapSize,
+        CAMPAIGN_SNAPSHOT_VERSION,
+    };
+
+    /// Helper: resolve the data directory for tests.
+    fn test_data_dir() -> std::path::PathBuf {
+        let manifest_dir = std::env::var("CARGO_MANIFEST_DIR")
+            .expect("CARGO_MANIFEST_DIR must be set during cargo test");
+        std::path::PathBuf::from(manifest_dir).join("data")
+    }
+
+    /// Helper: load the real camping skill registry for tests.
+    fn load_real_state() -> GameState {
+        let data_dir = test_data_dir();
+        GameState::load_from(&data_dir).expect("failed to load game state from data dir")
+    }
 
     // ── QuestDifficulty tests ─────────────────────────────────────────────────
 
@@ -2686,5 +2863,310 @@ mod quest_tests {
 
         // Verify gold decreased
         assert_eq!(campaign.gold, 400); // 500 - 100
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // View model shaping tests
+    // ───────────────────────────────────────────────────────────────
+
+    #[test]
+    fn boot_load_view_model_uninitialized() {
+        let state = load_real_state();
+        let result = state.boot_load_view_model();
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert!(vm.loaded);
+        assert_eq!(vm.status_message, "Initialized and ready to boot");
+        assert!(vm.error.is_none());
+    }
+
+    #[test]
+    fn boot_load_view_model_ready_without_campaign() {
+        let mut state = load_real_state();
+        state.set_host_phase(HostPhase::Ready);
+        let result = state.boot_load_view_model();
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert!(vm.loaded);
+        assert_eq!(vm.status_message, "Host ready");
+        assert!(vm.campaign_schema_version.is_none());
+    }
+
+    #[test]
+    fn boot_load_view_model_ready_with_campaign() {
+        let mut state = load_real_state();
+        state.new_campaign(500);
+        state.set_host_phase(HostPhase::Ready);
+        let result = state.boot_load_view_model();
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert!(vm.loaded);
+        assert_eq!(vm.status_message, "Campaign loaded successfully");
+        assert_eq!(vm.campaign_schema_version, Some(CAMPAIGN_SNAPSHOT_VERSION));
+    }
+
+    #[test]
+    fn boot_load_view_model_fatal_error() {
+        let mut state = load_real_state();
+        state.set_host_phase(HostPhase::FatalError);
+        let result = state.boot_load_view_model();
+        assert!(result.is_ok()); // Returns Ok with error in the vm
+        let vm = result.unwrap();
+        assert!(!vm.loaded);
+        assert!(vm.error.is_some());
+    }
+
+    #[test]
+    fn boot_load_view_model_unsupported() {
+        let mut state = load_real_state();
+        state.set_host_phase(HostPhase::Unsupported);
+        let result = state.boot_load_view_model();
+        assert!(result.is_ok()); // Returns Ok with error in the vm
+        let vm = result.unwrap();
+        assert!(!vm.loaded);
+        assert!(vm.error.is_some());
+    }
+
+    #[test]
+    fn town_view_model_empty_campaign() {
+        let state = load_real_state();
+        let result = state.town_view_model();
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert_eq!(vm.gold, 0);
+        assert!(vm.roster.is_empty());
+        assert!(vm.error.is_none());
+    }
+
+    #[test]
+    fn town_view_model_with_campaign_gold() {
+        let mut state = load_real_state();
+        state.new_campaign(1000);
+        let result = state.town_view_model();
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert_eq!(vm.gold, 1000);
+    }
+
+    #[test]
+    fn town_view_model_with_heroes() {
+        let mut state = load_real_state();
+        state.new_campaign(500);
+        let hero = CampaignHero::new("hero_1", "alchemist", 2, 100, 80.0, 100.0, 20.0, 200.0);
+        state.campaign.roster.push(hero);
+
+        let result = state.town_view_model();
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert_eq!(vm.roster.len(), 1);
+        assert_eq!(vm.roster[0].id, "hero_1");
+        assert_eq!(vm.roster[0].class_id, "alchemist");
+        assert!(vm.roster[0].is_wounded); // 80 < 100
+        assert!(!vm.roster[0].is_afflicted); // 20 < 200
+    }
+
+    #[test]
+    fn town_view_model_wounded_and_afflicted_heroes() {
+        let mut state = load_real_state();
+        state.new_campaign(500);
+
+        // Hero with low health (wounded)
+        let wounded_hero = CampaignHero::new("wounded_hero", "crusader", 1, 0, 30.0, 100.0, 20.0, 200.0);
+        // Hero with high stress (afflicted)
+        let afflicted_hero = CampaignHero::new("afflicted_hero", "hellion", 1, 0, 100.0, 100.0, 200.0, 200.0);
+
+        state.campaign.roster.push(wounded_hero);
+        state.campaign.roster.push(afflicted_hero);
+
+        let result = state.town_view_model();
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+
+        let wounded = vm.roster.iter().find(|h| h.id == "wounded_hero").unwrap();
+        assert!(wounded.is_wounded);
+        assert!(!wounded.is_afflicted);
+
+        let afflicted = vm.roster.iter().find(|h| h.id == "afflicted_hero").unwrap();
+        assert!(!afflicted.is_wounded); // 100 == 100, not wounded
+        assert!(afflicted.is_afflicted); // 200 >= 200
+    }
+
+    #[test]
+    fn town_view_model_has_available_activities() {
+        let mut state = load_real_state();
+        state.new_campaign(500);
+        state.campaign.building_states.insert(
+            "stagecoach".to_string(),
+            BuildingUpgradeState::new("stagecoach", Some('a')),
+        );
+        state.campaign.building_states.insert(
+            "guild".to_string(),
+            BuildingUpgradeState::new("guild", Some('b')),
+        );
+
+        let result = state.town_view_model();
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert!(!vm.available_activities.is_empty());
+    }
+
+    #[test]
+    fn result_view_model_victory() {
+        let state = load_real_state();
+        let heirlooms: std::collections::BTreeMap<HeirloomCurrency, u32> = std::collections::BTreeMap::new();
+        let casualties: Vec<(String, String)> = Vec::new();
+
+        let result = state.result_view_model(
+            DungeonType::QingLong,
+            MapSize::Short,
+            8,
+            4,
+            true,
+            500,
+            100,
+            &heirlooms,
+            casualties,
+        );
+
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert_eq!(vm.title, "Dungeon Cleared!");
+        assert!(vm.rewards.is_some());
+        assert_eq!(vm.rewards.as_ref().unwrap().gold, 500);
+        assert!(vm.casualties.is_empty());
+    }
+
+    #[test]
+    fn result_view_model_partial_success() {
+        let state = load_real_state();
+        let heirlooms: std::collections::BTreeMap<HeirloomCurrency, u32> = std::collections::BTreeMap::new();
+        let casualties: Vec<(String, String)> = Vec::new();
+
+        let result = state.result_view_model(
+            DungeonType::QingLong,
+            MapSize::Short,
+            4,
+            2,
+            false,
+            200,
+            50,
+            &heirlooms,
+            casualties,
+        );
+
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert_eq!(vm.title, "Run Complete");
+        assert!(vm.rewards.is_some());
+    }
+
+    #[test]
+    fn result_view_model_failure_with_casualties() {
+        let state = load_real_state();
+        let heirlooms: std::collections::BTreeMap<HeirloomCurrency, u32> = std::collections::BTreeMap::new();
+        let casualties = vec![("hero_1".to_string(), "crusader".to_string())];
+
+        let result = state.result_view_model(
+            DungeonType::BaiHu,
+            MapSize::Medium,
+            2,
+            0,
+            false,
+            0,
+            0,
+            &heirlooms,
+            casualties,
+        );
+
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert_eq!(vm.title, "Run Failed");
+        assert!(vm.rewards.is_none());
+        assert_eq!(vm.casualties.len(), 1);
+        assert_eq!(vm.casualties[0].hero_id, "hero_1");
+    }
+
+    #[test]
+    fn return_flow_view_model_completed() {
+        let state = load_real_state();
+        let heroes = vec![
+            ("hero_1".to_string(), "alchemist".to_string(), 80.0, 100.0, 20.0, 200.0),
+        ];
+        let died_heroes: Vec<(String, String)> = Vec::new();
+
+        let result = state.return_flow_view_model(
+            DungeonType::QingLong,
+            MapSize::Short,
+            8,
+            4,
+            true,
+            500,
+            &heroes,
+            &died_heroes,
+        );
+
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert!(vm.completed);
+        assert_eq!(vm.rooms_cleared, 8);
+        assert_eq!(vm.battles_won, 4);
+        assert_eq!(vm.gold_to_transfer, 500);
+    }
+
+    #[test]
+    fn return_flow_view_model_in_progress() {
+        let state = load_real_state();
+        let heroes = vec![
+            ("hero_1".to_string(), "alchemist".to_string(), 80.0, 100.0, 20.0, 200.0),
+        ];
+        let died_heroes: Vec<(String, String)> = Vec::new();
+
+        let result = state.return_flow_view_model(
+            DungeonType::QingLong,
+            MapSize::Short,
+            4,
+            2,
+            false,
+            200,
+            &heroes,
+            &died_heroes,
+        );
+
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert!(!vm.completed);
+        assert!(!vm.ready_for_town);
+    }
+
+    #[test]
+    fn return_flow_view_model_with_casualties() {
+        let state = load_real_state();
+        let heroes = vec![
+            ("hero_1".to_string(), "alchemist".to_string(), 80.0, 100.0, 20.0, 200.0),
+            ("hero_2".to_string(), "hunter".to_string(), 0.0, 100.0, 250.0, 200.0), // dead
+        ];
+        let died_heroes = vec![("hero_2".to_string(), "hunter".to_string())];
+
+        let result = state.return_flow_view_model(
+            DungeonType::QingLong,
+            MapSize::Short,
+            3,
+            1,
+            false,
+            100,
+            &heroes,
+            &died_heroes,
+        );
+
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert_eq!(vm.heroes.len(), 2);
+        let hero1 = vm.heroes.iter().find(|h| h.id == "hero_1").unwrap();
+        assert!(hero1.survived);
+        assert!(!hero1.died);
+
+        let hero2 = vm.heroes.iter().find(|h| h.id == "hero_2").unwrap();
+        assert!(!hero2.survived);
+        assert!(hero2.died);
     }
 }
