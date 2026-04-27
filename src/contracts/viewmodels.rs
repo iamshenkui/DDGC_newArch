@@ -199,6 +199,8 @@ pub struct TownBuildingViewModel {
 pub struct TownHeroViewModel {
     /// Unique hero identifier.
     pub id: String,
+    /// Hero display name.
+    pub name: String,
     /// Hero class identifier.
     pub class_id: String,
     /// Hero class display name.
@@ -233,16 +235,28 @@ pub struct TownHeroViewModel {
 /// between dungeon runs, with access to various services and activities.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TownViewModel {
+    /// View model kind identifier.
+    pub kind: String,
+    /// Human-readable title for the town surface.
+    pub title: String,
+    /// Campaign name.
+    pub campaign_name: String,
+    /// Campaign summary/description.
+    pub campaign_summary: String,
     /// Current gold.
     pub gold: u32,
     /// Heirloom currency balances.
     pub heirlooms: std::collections::BTreeMap<String, u32>,
     /// Available buildings in town.
     pub buildings: Vec<TownBuildingViewModel>,
-    /// Heroes currently on the roster.
+    /// Heroes currently on the roster (primary field for frontend).
+    pub heroes: Vec<TownHeroViewModel>,
+    /// Heroes currently on the roster (alias for heroes).
     pub roster: Vec<TownHeroViewModel>,
     /// Available activities for this visit.
     pub available_activities: Vec<TownActivityType>,
+    /// Label for the next action (e.g., "Provision Expedition").
+    pub next_action_label: String,
     /// Whether this is a fresh visit (new week) or continuing.
     pub is_fresh_visit: bool,
     /// Error details if town state has issues.
@@ -253,11 +267,17 @@ impl TownViewModel {
     /// Create an empty town view model with default values.
     pub fn empty() -> Self {
         TownViewModel {
+            kind: "town".to_string(),
+            title: String::new(),
+            campaign_name: String::new(),
+            campaign_summary: String::new(),
             gold: 0,
             heirlooms: std::collections::BTreeMap::new(),
             buildings: Vec::new(),
+            heroes: Vec::new(),
             roster: Vec::new(),
             available_activities: Vec::new(),
+            next_action_label: String::new(),
             is_fresh_visit: true,
             error: None,
         }
@@ -277,6 +297,114 @@ impl TownViewModel {
     pub fn recruitment_slots_available(&self) -> usize {
         // Default max roster is 16, configurable via Stagecoach upgrades
         16usize.saturating_sub(self.roster.len())
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Hero Detail View Model
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Hero progression information for detail view.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct HeroProgression {
+    /// Current level.
+    pub level: u32,
+    /// Current experience points.
+    pub experience: String,
+    /// Experience needed for next level.
+    pub experience_to_next: String,
+}
+
+/// Hero resistances for detail view.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct HeroResistances {
+    /// Stun resistance.
+    pub stun: String,
+    /// Bleed resistance.
+    pub bleed: String,
+    /// Disease resistance.
+    pub disease: String,
+    /// Move resistance.
+    pub mov: String,
+    /// Death resistance.
+    pub death: String,
+    /// Trap resistance.
+    pub trap: String,
+    /// Hazard resistance.
+    pub hazard: String,
+}
+
+/// Hero detail view model — full hero inspection for campaign decisions.
+///
+/// This view model represents the detailed state of a single hero,
+/// used when the player inspects a hero from the roster to make
+/// expedition provisioning decisions.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct HeroDetailViewModel {
+    /// View model kind identifier.
+    pub kind: String,
+    /// Unique hero identifier.
+    pub hero_id: String,
+    /// Hero display name.
+    pub name: String,
+    /// Hero class display label.
+    pub class_label: String,
+    /// Current health (formatted string).
+    pub hp: String,
+    /// Maximum health (formatted string).
+    pub max_hp: String,
+    /// Current stress level (formatted string).
+    pub stress: String,
+    /// Resolve level.
+    pub resolve: String,
+    /// Hero progression information.
+    pub progression: HeroProgression,
+    /// Hero resistances.
+    pub resistances: HeroResistances,
+    /// Combat skill IDs.
+    pub combat_skills: Vec<String>,
+    /// Camping skill IDs.
+    pub camping_skills: Vec<String>,
+    /// Weapon description.
+    pub weapon: String,
+    /// Armor description.
+    pub armor: String,
+    /// Camp notes.
+    pub camp_notes: String,
+}
+
+impl HeroDetailViewModel {
+    /// Create an empty hero detail view model.
+    pub fn empty() -> Self {
+        HeroDetailViewModel {
+            kind: "hero-detail".to_string(),
+            hero_id: String::new(),
+            name: String::new(),
+            class_label: String::new(),
+            hp: String::new(),
+            max_hp: String::new(),
+            stress: String::new(),
+            resolve: String::new(),
+            progression: HeroProgression {
+                level: 0,
+                experience: String::new(),
+                experience_to_next: String::new(),
+            },
+            resistances: HeroResistances {
+                stun: String::new(),
+                bleed: String::new(),
+                disease: String::new(),
+                mov: String::new(),
+                death: String::new(),
+                trap: String::new(),
+                hazard: String::new(),
+            },
+            combat_skills: Vec::new(),
+            camping_skills: Vec::new(),
+            weapon: String::new(),
+            armor: String::new(),
+            camp_notes: String::new(),
+        }
     }
 }
 

@@ -32,7 +32,7 @@ use crate::contracts::viewmodels::{
     BootLoadViewModel, CombatHudViewModel, CombatPhase, CombatViewModel, CombatantType,
     CombatantViewModel, CombatPosition, CombatantVitalViewModel, DungeonHeroViewModel, DungeonRoomKind, DungeonRoomViewModel,
     DungeonViewModel, EncounterEntryViewModel, EncounterHeroViewModel, EncounterType,
-    ExplorationHudViewModel, HeroVitalViewModel, InteractionType, RoomMovementViewModel,
+    ExplorationHudViewModel, HeroDetailViewModel, HeroProgression, HeroResistances, HeroVitalViewModel, InteractionType, RoomMovementViewModel,
     ViewModelResult,
 };
 use crate::contracts::{
@@ -92,6 +92,7 @@ pub fn town_from_campaign(
 
             TownHeroViewModel {
                 id: hero.id.clone(),
+                name: hero.id.clone(), // Placeholder: use id as display name
                 class_id: hero.class_id.clone(),
                 class_name: hero.class_id.clone(),
                 health: hero.health,
@@ -147,13 +148,77 @@ pub fn town_from_campaign(
         .collect();
 
     Ok(crate::contracts::viewmodels::TownViewModel {
+        kind: "town".to_string(),
+        title: "Town Surface".to_string(),
+        campaign_name: "Campaign".to_string(),
+        campaign_summary: "Town visit with roster and building access.".to_string(),
         gold: campaign.gold,
         heirlooms,
         buildings,
+        heroes: roster.clone(),
         roster,
         available_activities,
+        next_action_label: "Provision Expedition".to_string(),
         is_fresh_visit: true,
         error: None,
+    })
+}
+
+/// Adapter: Convert `CampaignState` and hero ID to `HeroDetailViewModel`.
+///
+/// Takes the campaign state and a hero ID to produce a detailed hero view model
+/// for inspection by the player when making campaign decisions.
+pub fn hero_detail_from_campaign(
+    campaign: &CampaignState,
+    hero_id: &str,
+) -> ViewModelResult<HeroDetailViewModel> {
+    let hero = campaign
+        .roster
+        .iter()
+        .find(|h| h.id == hero_id)
+        .ok_or_else(|| crate::contracts::viewmodels::ViewModelError::MissingRequiredField {
+            field: "hero_id".to_string(),
+            context: format!("hero '{}' not found in roster", hero_id),
+        })?;
+
+    let hp = format!("{}", hero.health as u32);
+    let max_hp = format!("{}", hero.max_health as u32);
+    let stress = format!("{}", hero.stress as u32);
+    let resolve = format!("{}", hero.level);
+
+    // Calculate experience to next level (placeholder formula)
+    let xp_for_next = hero.level * 200;
+    let experience = format!("{}", hero.xp);
+    let experience_to_next = format!("{}", xp_for_next);
+
+    Ok(HeroDetailViewModel {
+        kind: "hero-detail".to_string(),
+        hero_id: hero.id.clone(),
+        name: hero.id.clone(), // Placeholder: use id as display name
+        class_label: hero.class_id.clone(),
+        hp,
+        max_hp,
+        stress,
+        resolve,
+        progression: HeroProgression {
+            level: hero.level,
+            experience,
+            experience_to_next,
+        },
+        resistances: HeroResistances {
+            stun: "50%".to_string(),
+            bleed: "50%".to_string(),
+            disease: "50%".to_string(),
+            mov: "50%".to_string(),
+            death: "0%".to_string(),
+            trap: "50%".to_string(),
+            hazard: "50%".to_string(),
+        },
+        combat_skills: hero.skills.clone(),
+        camping_skills: Vec::new(), // Placeholder: camping skills not yet implemented
+        weapon: format!("{} (+0)", hero.class_id),
+        armor: format!("{} (+0)", hero.class_id),
+        camp_notes: "Hero detail view - campaign state derived.".to_string(),
     })
 }
 
@@ -910,6 +975,77 @@ mod tests {
         assert!(vm.roster[0].is_afflicted); // 200 >= 200
     }
 
+    // ── hero_detail_from_campaign tests ─────────────────────────────────────
+
+    #[test]
+    fn hero_detail_from_campaign_finds_hero_by_id() {
+        use crate::contracts::{CampaignState, CampaignHero, CampaignHeroQuirks};
+
+        let mut campaign = CampaignState::new(500);
+        let hero = CampaignHero {
+            id: "hero1".to_string(),
+            class_id: "crusader".to_string(),
+            level: 2,
+            xp: 300,
+            health: 80.0,
+            max_health: 100.0,
+            stress: 30.0,
+            max_stress: 200.0,
+            quirks: CampaignHeroQuirks::new(),
+            equipment: Default::default(),
+            skills: vec!["skill1".to_string()],
+            traits: Default::default(),
+        };
+        campaign.roster.push(hero);
+
+        let result = hero_detail_from_campaign(&campaign, "hero1");
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert_eq!(vm.hero_id, "hero1");
+        assert_eq!(vm.kind, "hero-detail");
+        assert_eq!(vm.class_label, "crusader");
+    }
+
+    #[test]
+    fn hero_detail_from_campaign_missing_hero_returns_error() {
+        use crate::contracts::CampaignState;
+
+        let campaign = CampaignState::new(500);
+
+        let result = hero_detail_from_campaign(&campaign, "nonexistent");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn hero_detail_from_campaign_formats_vitals_correctly() {
+        use crate::contracts::{CampaignState, CampaignHero, CampaignHeroQuirks};
+
+        let mut campaign = CampaignState::new(500);
+        let hero = CampaignHero {
+            id: "hero1".to_string(),
+            class_id: "hunter".to_string(),
+            level: 3,
+            xp: 400,
+            health: 42.0,
+            max_health: 42.0,
+            stress: 17.0,
+            max_stress: 200.0,
+            quirks: CampaignHeroQuirks::new(),
+            equipment: Default::default(),
+            skills: Vec::new(),
+            traits: Default::default(),
+        };
+        campaign.roster.push(hero);
+
+        let result = hero_detail_from_campaign(&campaign, "hero1");
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert_eq!(vm.hp, "42");
+        assert_eq!(vm.max_hp, "42");
+        assert_eq!(vm.stress, "17");
+        assert_eq!(vm.resolve, "3");
+    }
+
     // ── result_from_run tests ───────────────────────────────────────────────
 
     #[test]
@@ -1256,6 +1392,31 @@ mod tests {
         ).expect("return_flow_from_state should succeed for valid replay fixture")
     }
 
+    /// Replay fixture for HeroDetailViewModel — represents hero inspection state.
+    fn make_replay_hero_detail_vm() -> crate::contracts::viewmodels::HeroDetailViewModel {
+        use crate::contracts::{CampaignHero, CampaignHeroQuirks, CampaignState};
+
+        let mut campaign = CampaignState::new(1500);
+        let hero = CampaignHero {
+            id: "hero-hunter-01".to_string(),
+            class_id: "hunter".to_string(),
+            level: 2,
+            xp: 240,
+            health: 38.0,
+            max_health: 42.0,
+            stress: 17.0,
+            max_stress: 200.0,
+            quirks: CampaignHeroQuirks::new(),
+            equipment: Default::default(),
+            skills: vec!["hunting_bow".to_string(), "rapid_shot".to_string()],
+            traits: Default::default(),
+        };
+        campaign.roster.push(hero);
+
+        hero_detail_from_campaign(&campaign, "hero-hunter-01")
+            .expect("hero_detail_from_campaign should succeed for valid replay fixture")
+    }
+
     // ── Replay helper functions ───────────────────────────────────────────────
 
     /// Helper: create a HeroState for replay fixtures.
@@ -1473,6 +1634,23 @@ mod tests {
         assert_eq!(vm1, vm2, "ReturnFlow fixture should be deterministic");
     }
 
+    /// Verifies HeroDetailViewModel replay fixture renders without errors.
+    #[test]
+    fn replay_hero_detail_fixture_renders_without_error() {
+        let vm = make_replay_hero_detail_vm();
+        assert_eq!(vm.kind, "hero-detail", "HeroDetail should have kind 'hero-detail'");
+        assert_eq!(vm.hero_id, "hero-hunter-01", "Hero ID should match");
+        assert_eq!(vm.class_label, "hunter", "Class label should be hunter");
+    }
+
+    /// Verifies HeroDetailViewModel replay fixture is deterministic.
+    #[test]
+    fn replay_hero_detail_fixture_deterministic() {
+        let vm1 = make_replay_hero_detail_vm();
+        let vm2 = make_replay_hero_detail_vm();
+        assert_eq!(vm1, vm2, "HeroDetail fixture should be deterministic");
+    }
+
     /// Verifies vertical slice can be rendered end-to-end from replay fixtures.
     ///
     /// This validates that all view models in the representative slice can be
@@ -1507,6 +1685,10 @@ mod tests {
         // Return flow
         let return_vm = make_replay_return_flow_vm();
         assert!(return_vm.error.is_none());
+
+        // Hero detail
+        let hero_detail_vm = make_replay_hero_detail_vm();
+        assert_eq!(hero_detail_vm.kind, "hero-detail");
     }
 
     /// Verifies ViewModelError descriptions are actionable for debugging.
