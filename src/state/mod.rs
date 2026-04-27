@@ -4684,4 +4684,542 @@ mod quest_tests {
         shell.transition_from_intent(FrontendIntent::RetryExpedition).unwrap();
         assert_eq!(shell.current_state(), FlowState::Expedition);
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // US-008-b: Replay-driven end-to-end validation for the state slice
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// Replay fixture: sequence of FlowStates representing the vertical slice.
+    fn make_replay_flow_sequence() -> Vec<FlowState> {
+        vec![
+            FlowState::Boot,
+            FlowState::Load,
+            FlowState::Town,
+            FlowState::Expedition,
+            FlowState::Combat,
+            FlowState::Expedition,
+            FlowState::Result,
+            FlowState::Town,
+        ]
+    }
+
+    /// Replay fixture: BootComplete payload.
+    fn make_replay_boot_payload() -> RuntimePayload {
+        RuntimePayload::BootComplete
+    }
+
+    /// Replay fixture: CampaignLoaded payload.
+    fn make_replay_campaign_loaded_payload() -> RuntimePayload {
+        RuntimePayload::CampaignLoaded
+    }
+
+    /// Replay fixture: NewCampaign intent.
+    fn make_replay_new_campaign_intent() -> FrontendIntent {
+        FrontendIntent::NewCampaign
+    }
+
+    /// Replay fixture: LoadCampaign intent.
+    fn make_replay_load_campaign_intent() -> FrontendIntent {
+        FrontendIntent::LoadCampaign
+    }
+
+    /// Replay fixture: StartExpedition intent.
+    fn make_replay_start_expedition_intent() -> FrontendIntent {
+        FrontendIntent::StartExpedition
+    }
+
+    /// Replay fixture: CombatStarted payload.
+    fn make_replay_combat_started_payload() -> RuntimePayload {
+        RuntimePayload::CombatStarted
+    }
+
+    /// Replay fixture: CombatEnded victory payload.
+    fn make_replay_combat_victory_payload() -> RuntimePayload {
+        RuntimePayload::CombatEnded { victory: true }
+    }
+
+    /// Replay fixture: CombatEnded defeat payload.
+    fn make_replay_combat_defeat_payload() -> RuntimePayload {
+        RuntimePayload::CombatEnded { victory: false }
+    }
+
+    /// Replay fixture: ExpeditionCompleted payload.
+    fn make_replay_expedition_completed_payload() -> RuntimePayload {
+        RuntimePayload::ExpeditionCompleted
+    }
+
+    /// Replay fixture: ExpeditionFailed payload.
+    fn make_replay_expedition_failed_payload() -> RuntimePayload {
+        RuntimePayload::ExpeditionFailed
+    }
+
+    /// Replay fixture: ReturnCompleted payload.
+    fn make_replay_return_completed_payload() -> RuntimePayload {
+        RuntimePayload::ReturnCompleted
+    }
+
+    /// Replay fixture: Continue intent.
+    fn make_replay_continue_intent() -> FrontendIntent {
+        FrontendIntent::Continue
+    }
+
+    /// Replay fixture: RetryExpedition intent.
+    fn make_replay_retry_expedition_intent() -> FrontendIntent {
+        FrontendIntent::RetryExpedition
+    }
+
+    /// Replay fixture: Error payload.
+    fn make_replay_error_payload(msg: &str) -> RuntimePayload {
+        RuntimePayload::Error { message: msg.to_string() }
+    }
+
+    /// Verifies the flow sequence fixture represents the full vertical slice.
+    #[test]
+    fn replay_flow_sequence_represents_vertical_slice() {
+        let sequence = make_replay_flow_sequence();
+        assert_eq!(sequence.len(), 8, "Vertical slice should have 8 states");
+        assert_eq!(sequence[0], FlowState::Boot, "First state should be Boot");
+        assert_eq!(sequence[1], FlowState::Load, "Second state should be Load");
+        assert_eq!(sequence[2], FlowState::Town, "Third state should be Town");
+        assert_eq!(sequence[3], FlowState::Expedition, "Fourth state should be Expedition");
+        assert_eq!(sequence[4], FlowState::Combat, "Fifth state should be Combat");
+        assert_eq!(sequence[5], FlowState::Expedition, "Sixth state should return to Expedition");
+        assert_eq!(sequence[6], FlowState::Result, "Seventh state should be Result");
+        assert_eq!(sequence[7], FlowState::Town, "Eighth state should return to Town");
+    }
+
+    /// Verifies all replay payload fixtures are created correctly.
+    #[test]
+    fn replay_payload_fixtures_are_valid() {
+        // Boot payload
+        let payload = make_replay_boot_payload();
+        assert_eq!(payload.target_state(), Some(FlowState::Load));
+
+        // CampaignLoaded payload
+        let payload = make_replay_campaign_loaded_payload();
+        assert_eq!(payload.target_state(), Some(FlowState::Town));
+
+        // CombatStarted payload
+        let payload = make_replay_combat_started_payload();
+        assert_eq!(payload.target_state(), Some(FlowState::Combat));
+
+        // Combat victory payload
+        let payload = make_replay_combat_victory_payload();
+        assert!(payload.is_success());
+
+        // Combat defeat payload
+        let payload = make_replay_combat_defeat_payload();
+        assert!(!payload.is_success());
+
+        // ExpeditionCompleted payload
+        let payload = make_replay_expedition_completed_payload();
+        assert!(payload.is_success());
+
+        // ExpeditionFailed payload
+        let payload = make_replay_expedition_failed_payload();
+        assert!(!payload.is_success());
+
+        // ReturnCompleted payload
+        let payload = make_replay_return_completed_payload();
+        assert!(payload.is_success());
+
+        // Error payload
+        let payload = make_replay_error_payload("test");
+        assert_eq!(payload.target_state(), Some(FlowState::Return));
+    }
+
+    /// Verifies all replay intent fixtures are created correctly.
+    #[test]
+    fn replay_intent_fixtures_are_valid() {
+        // NewCampaign intent
+        let intent = make_replay_new_campaign_intent();
+        assert_eq!(intent.target_state(), Some(FlowState::Town));
+
+        // LoadCampaign intent
+        let intent = make_replay_load_campaign_intent();
+        assert_eq!(intent.target_state(), Some(FlowState::Town));
+
+        // StartExpedition intent
+        let intent = make_replay_start_expedition_intent();
+        assert_eq!(intent.target_state(), Some(FlowState::Expedition));
+
+        // Continue intent
+        let intent = make_replay_continue_intent();
+        assert_eq!(intent.target_state(), Some(FlowState::Town));
+
+        // RetryExpedition intent
+        let intent = make_replay_retry_expedition_intent();
+        assert_eq!(intent.target_state(), Some(FlowState::Expedition));
+    }
+
+    /// Verifies the full vertical slice can be exercised from replay payloads (success path).
+    ///
+    /// This validates that the representative vertical slice can be traversed
+    /// end-to-end using only replay fixtures, without depending on nondeterministic
+    /// manual setup.
+    #[test]
+    fn replay_vertical_slice_success_path_exercises_without_manual_setup() {
+        let mut shell = NavigationShell::new();
+
+        // Boot -> Load via BootComplete
+        let result = shell.transition_from_payload(make_replay_boot_payload());
+        assert!(result.is_some(), "BootComplete should succeed");
+        assert_eq!(result.unwrap(), FlowState::Load);
+
+        // Load -> Town via NewCampaign
+        let result = shell.transition_from_intent(make_replay_new_campaign_intent());
+        assert!(result.is_some(), "NewCampaign should succeed");
+        assert_eq!(result.unwrap(), FlowState::Town);
+
+        // Town -> Expedition via StartExpedition
+        let result = shell.transition_from_intent(make_replay_start_expedition_intent());
+        assert!(result.is_some(), "StartExpedition should succeed");
+        assert_eq!(result.unwrap(), FlowState::Expedition);
+
+        // Expedition -> Combat via CombatStarted
+        let result = shell.transition_from_payload(make_replay_combat_started_payload());
+        assert!(result.is_some(), "CombatStarted should succeed");
+        assert_eq!(result.unwrap(), FlowState::Combat);
+
+        // Combat -> Expedition via CombatEnded(victory)
+        let result = shell.transition_from_payload(make_replay_combat_victory_payload());
+        assert!(result.is_some(), "CombatEnded(victory) should succeed");
+        assert_eq!(result.unwrap(), FlowState::Expedition);
+
+        // Expedition -> Result via ExpeditionCompleted
+        let result = shell.transition_from_payload(make_replay_expedition_completed_payload());
+        assert!(result.is_some(), "ExpeditionCompleted should succeed");
+        assert_eq!(result.unwrap(), FlowState::Result);
+
+        // Result -> Town via Continue
+        let result = shell.transition_from_intent(make_replay_continue_intent());
+        assert!(result.is_some(), "Continue should succeed");
+        assert_eq!(result.unwrap(), FlowState::Town);
+    }
+
+    /// Verifies the full vertical slice can be exercised from replay payloads (failure path).
+    ///
+    /// This validates that the failure/return path can be traversed end-to-end
+    /// using only replay fixtures.
+    #[test]
+    fn replay_vertical_slice_failure_path_exercises_without_manual_setup() {
+        let mut shell = NavigationShell::new();
+
+        // Set up to Expedition via Boot -> Load -> Town -> Expedition
+        shell.transition_from_payload(make_replay_boot_payload()).unwrap();
+        shell.transition_from_intent(make_replay_new_campaign_intent()).unwrap();
+        shell.transition_from_intent(make_replay_start_expedition_intent()).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Expedition);
+
+        // Expedition -> Combat via CombatStarted
+        let result = shell.transition_from_payload(make_replay_combat_started_payload());
+        assert!(result.is_some(), "CombatStarted should succeed");
+        assert_eq!(result.unwrap(), FlowState::Combat);
+
+        // Combat -> Expedition via CombatEnded(defeat)
+        let result = shell.transition_from_payload(make_replay_combat_defeat_payload());
+        assert!(result.is_some(), "CombatEnded(defeat) should succeed");
+        assert_eq!(result.unwrap(), FlowState::Expedition);
+
+        // Expedition -> Return via ExpeditionFailed
+        let result = shell.transition_from_payload(make_replay_expedition_failed_payload());
+        assert!(result.is_some(), "ExpeditionFailed should succeed");
+        assert_eq!(result.unwrap(), FlowState::Return);
+
+        // Return -> Town via ReturnCompleted
+        let result = shell.transition_from_payload(make_replay_return_completed_payload());
+        assert!(result.is_some(), "ReturnCompleted should succeed");
+        assert_eq!(result.unwrap(), FlowState::Town);
+    }
+
+    /// Verifies replay fixtures are deterministic (produce identical results on repeated creation).
+    #[test]
+    fn replay_fixtures_are_deterministic() {
+        // Payload fixtures
+        assert_eq!(
+            make_replay_boot_payload(),
+            make_replay_boot_payload(),
+            "Boot payload fixture should be deterministic"
+        );
+        assert_eq!(
+            make_replay_combat_victory_payload(),
+            make_replay_combat_victory_payload(),
+            "Combat victory payload fixture should be deterministic"
+        );
+        assert_eq!(
+            make_replay_expedition_completed_payload(),
+            make_replay_expedition_completed_payload(),
+            "ExpeditionCompleted payload fixture should be deterministic"
+        );
+
+        // Intent fixtures
+        assert_eq!(
+            make_replay_new_campaign_intent(),
+            make_replay_new_campaign_intent(),
+            "NewCampaign intent fixture should be deterministic"
+        );
+        assert_eq!(
+            make_replay_continue_intent(),
+            make_replay_continue_intent(),
+            "Continue intent fixture should be deterministic"
+        );
+
+        // Flow sequence fixture
+        assert_eq!(
+            make_replay_flow_sequence(),
+            make_replay_flow_sequence(),
+            "Flow sequence fixture should be deterministic"
+        );
+    }
+
+    /// Verifies replay-driven and live-runtime validation consume the same contract boundary.
+    ///
+    /// Both replay fixtures and live-constructed payloads should produce valid
+    /// transitions when passed through the NavigationShell, proving the contract
+    /// boundary is stable for state transitions.
+    #[test]
+    fn replay_and_live_consume_same_contract_boundary() {
+        // Live mode: construct transitions manually
+        let mut live_shell = NavigationShell::new();
+        live_shell.transition_from_payload(RuntimePayload::BootComplete).unwrap();
+        live_shell.transition_from_intent(FrontendIntent::NewCampaign).unwrap();
+        live_shell.transition_from_intent(FrontendIntent::StartExpedition).unwrap();
+
+        // Replay mode: use the same sequence via replay fixtures
+        let mut replay_shell = NavigationShell::new_replay();
+        replay_shell.transition_from_payload(make_replay_boot_payload()).unwrap();
+        replay_shell.transition_from_intent(make_replay_new_campaign_intent()).unwrap();
+        replay_shell.transition_from_intent(make_replay_start_expedition_intent()).unwrap();
+
+        // Both should be in Expedition state
+        assert_eq!(
+            live_shell.current_state(),
+            FlowState::Expedition,
+            "Live mode should reach Expedition"
+        );
+        assert_eq!(
+            replay_shell.current_state(),
+            FlowState::Expedition,
+            "Replay mode should reach Expedition"
+        );
+
+        // Both should have same state
+        assert_eq!(
+            live_shell.current_state(),
+            replay_shell.current_state(),
+            "Replay and live should produce identical state"
+        );
+    }
+
+    /// Verifies the vertical slice success path is reproducible in replay mode.
+    #[test]
+    fn replay_vertical_slice_success_path_reproducible_in_replay_mode() {
+        let run_result_1 = {
+            let mut shell = NavigationShell::new_replay();
+            shell.transition_from_payload(make_replay_boot_payload()).unwrap();
+            shell.transition_from_intent(make_replay_new_campaign_intent()).unwrap();
+            shell.transition_from_intent(make_replay_start_expedition_intent()).unwrap();
+            shell.transition_from_payload(make_replay_combat_started_payload()).unwrap();
+            shell.transition_from_payload(make_replay_combat_victory_payload()).unwrap();
+            shell.transition_from_payload(make_replay_expedition_completed_payload()).unwrap();
+            shell.transition_from_intent(make_replay_continue_intent()).unwrap();
+            shell.current_state().clone()
+        };
+
+        let run_result_2 = {
+            let mut shell = NavigationShell::new_replay();
+            shell.transition_from_payload(make_replay_boot_payload()).unwrap();
+            shell.transition_from_intent(make_replay_new_campaign_intent()).unwrap();
+            shell.transition_from_intent(make_replay_start_expedition_intent()).unwrap();
+            shell.transition_from_payload(make_replay_combat_started_payload()).unwrap();
+            shell.transition_from_payload(make_replay_combat_victory_payload()).unwrap();
+            shell.transition_from_payload(make_replay_expedition_completed_payload()).unwrap();
+            shell.transition_from_intent(make_replay_continue_intent()).unwrap();
+            shell.current_state().clone()
+        };
+
+        assert_eq!(
+            run_result_1,
+            run_result_2,
+            "Vertical slice success path should be reproducible in replay mode"
+        );
+        assert_eq!(run_result_1, FlowState::Town, "Final state should be Town");
+    }
+
+    /// Verifies the vertical slice failure path is reproducible in replay mode.
+    #[test]
+    fn replay_vertical_slice_failure_path_reproducible_in_replay_mode() {
+        let run_result_1 = {
+            let mut shell = NavigationShell::new_replay();
+            shell.transition_from_payload(make_replay_boot_payload()).unwrap();
+            shell.transition_from_intent(make_replay_new_campaign_intent()).unwrap();
+            shell.transition_from_intent(make_replay_start_expedition_intent()).unwrap();
+            shell.transition_from_payload(make_replay_combat_started_payload()).unwrap();
+            shell.transition_from_payload(make_replay_combat_defeat_payload()).unwrap();
+            shell.transition_from_payload(make_replay_expedition_failed_payload()).unwrap();
+            shell.transition_from_payload(make_replay_return_completed_payload()).unwrap();
+            shell.current_state().clone()
+        };
+
+        let run_result_2 = {
+            let mut shell = NavigationShell::new_replay();
+            shell.transition_from_payload(make_replay_boot_payload()).unwrap();
+            shell.transition_from_intent(make_replay_new_campaign_intent()).unwrap();
+            shell.transition_from_intent(make_replay_start_expedition_intent()).unwrap();
+            shell.transition_from_payload(make_replay_combat_started_payload()).unwrap();
+            shell.transition_from_payload(make_replay_combat_defeat_payload()).unwrap();
+            shell.transition_from_payload(make_replay_expedition_failed_payload()).unwrap();
+            shell.transition_from_payload(make_replay_return_completed_payload()).unwrap();
+            shell.current_state().clone()
+        };
+
+        assert_eq!(
+            run_result_1,
+            run_result_2,
+            "Vertical slice failure path should be reproducible in replay mode"
+        );
+        assert_eq!(run_result_1, FlowState::Town, "Final state should be Town");
+    }
+
+    /// Verifies invalid transitions from replay payloads return None (actionable failure).
+    ///
+    /// When an invalid transition is attempted, the NavigationShell returns None
+    /// rather than silently continuing, providing an actionable signal for debugging.
+    #[test]
+    fn replay_invalid_transition_returns_none_for_debugging() {
+        let mut shell = NavigationShell::new();
+
+        // Attempt invalid transition: Boot -> Expedition (skip Load)
+        let result = shell.transition_from_intent(make_replay_start_expedition_intent());
+        assert!(result.is_none(), "Invalid transition should return None for debugging");
+        assert_eq!(
+            shell.current_state(),
+            FlowState::Boot,
+            "State should remain unchanged after invalid transition"
+        );
+
+        // Attempt another invalid transition: Boot -> Result (skip intermediate states)
+        let result = shell.transition_from_payload(make_replay_expedition_completed_payload());
+        assert!(result.is_none(), "Invalid transition should return None for debugging");
+        assert_eq!(
+            shell.current_state(),
+            FlowState::Boot,
+            "State should remain unchanged after invalid transition"
+        );
+    }
+
+    /// Verifies error payload transitions to Return state (actionable error routing).
+    #[test]
+    fn replay_error_payload_routes_to_return_for_debugging() {
+        let mut shell = NavigationShell::new();
+
+        // Set up to Expedition
+        shell.transition_from_payload(make_replay_boot_payload()).unwrap();
+        shell.transition_from_intent(make_replay_new_campaign_intent()).unwrap();
+        shell.transition_from_intent(make_replay_start_expedition_intent()).unwrap();
+        assert_eq!(shell.current_state(), FlowState::Expedition);
+
+        // Error during expedition should transition to Return
+        let result = shell.transition_from_payload(make_replay_error_payload("Connection lost"));
+        assert!(
+            result.is_some(),
+            "Error payload should succeed from Expedition"
+        );
+        assert_eq!(
+            result.unwrap(),
+            FlowState::Return,
+            "Error should route to Return state for debugging"
+        );
+    }
+
+    /// Verifies the complete vertical slice can be validated end-to-end from replay fixtures.
+    ///
+    /// This is the primary acceptance test for US-008-b: proves that the full
+    /// representative vertical slice can be exercised from replay fixtures
+    /// without any nondeterministic manual setup.
+    #[test]
+    fn replay_vertical_slice_end_to_end_validated() {
+        // Success path
+        {
+            let mut shell = NavigationShell::new_replay();
+            assert_eq!(shell.current_state(), FlowState::Boot);
+
+            // Boot -> Load
+            assert!(
+                shell.transition_from_payload(make_replay_boot_payload()).is_some(),
+                "BootComplete should transition"
+            );
+            assert_eq!(shell.current_state(), FlowState::Load);
+
+            // Load -> Town
+            assert!(
+                shell.transition_from_intent(make_replay_new_campaign_intent()).is_some(),
+                "NewCampaign should transition"
+            );
+            assert_eq!(shell.current_state(), FlowState::Town);
+
+            // Town -> Expedition
+            assert!(
+                shell.transition_from_intent(make_replay_start_expedition_intent()).is_some(),
+                "StartExpedition should transition"
+            );
+            assert_eq!(shell.current_state(), FlowState::Expedition);
+
+            // Expedition -> Combat
+            assert!(
+                shell.transition_from_payload(make_replay_combat_started_payload()).is_some(),
+                "CombatStarted should transition"
+            );
+            assert_eq!(shell.current_state(), FlowState::Combat);
+
+            // Combat -> Expedition
+            assert!(
+                shell.transition_from_payload(make_replay_combat_victory_payload()).is_some(),
+                "CombatEnded(victory) should transition"
+            );
+            assert_eq!(shell.current_state(), FlowState::Expedition);
+
+            // Expedition -> Result
+            assert!(
+                shell.transition_from_payload(make_replay_expedition_completed_payload()).is_some(),
+                "ExpeditionCompleted should transition"
+            );
+            assert_eq!(shell.current_state(), FlowState::Result);
+
+            // Result -> Town (loop closure)
+            assert!(
+                shell.transition_from_intent(make_replay_continue_intent()).is_some(),
+                "Continue should transition"
+            );
+            assert_eq!(shell.current_state(), FlowState::Town);
+        }
+
+        // Failure path
+        {
+            let mut shell = NavigationShell::new_replay();
+            assert_eq!(shell.current_state(), FlowState::Boot);
+
+            // Boot -> Load -> Town -> Expedition
+            shell.transition_from_payload(make_replay_boot_payload()).unwrap();
+            shell.transition_from_intent(make_replay_new_campaign_intent()).unwrap();
+            shell.transition_from_intent(make_replay_start_expedition_intent()).unwrap();
+            assert_eq!(shell.current_state(), FlowState::Expedition);
+
+            // Expedition -> Combat -> Expedition (defeat)
+            shell.transition_from_payload(make_replay_combat_started_payload()).unwrap();
+            shell.transition_from_payload(make_replay_combat_defeat_payload()).unwrap();
+            assert_eq!(shell.current_state(), FlowState::Expedition);
+
+            // Expedition -> Return (failure)
+            shell.transition_from_payload(make_replay_expedition_failed_payload()).unwrap();
+            assert_eq!(shell.current_state(), FlowState::Return);
+
+            // Return -> Town (loop closure)
+            assert!(
+                shell.transition_from_payload(make_replay_return_completed_payload()).is_some(),
+                "ReturnCompleted should transition"
+            );
+            assert_eq!(shell.current_state(), FlowState::Town);
+        }
+    }
 }
