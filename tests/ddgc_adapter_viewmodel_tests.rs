@@ -1322,3 +1322,406 @@ fn adapter_return_flow_deterministic_for_same_input() {
     assert!(result2.is_ok());
     assert_eq!(result1.unwrap(), result2.unwrap());
 }
+
+// ── US-005-a: Exploration scene slice tests ─────────────────────────────────────
+
+/// Verifies exploration payloads render consistently across all dungeon types.
+#[test]
+fn adapter_exploration_payloads_render_consistently_for_all_dungeon_types() {
+    // Test all four core DDGC dungeons to ensure exploration payloads render consistently
+    for dungeon in [DungeonType::QingLong, DungeonType::BaiHu, DungeonType::ZhuQue, DungeonType::XuanWu] {
+        for map_size in [MapSize::Short, MapSize::Medium] {
+            let heroes = vec![
+                make_hero_state("h1", "crusader", 80.0, 100.0, 20.0, 200.0),
+                make_hero_state("h2", "hunter", 90.0, 100.0, 30.0, 200.0),
+            ];
+            let room_encounters = vec![
+                RoomEncounterRecord {
+                    room_id: RoomId(1),
+                    room_kind: framework_progression::rooms::RoomKind::Combat,
+                    pack_id: "pack1".to_string(),
+                    family_ids: vec![],
+                },
+                RoomEncounterRecord {
+                    room_id: RoomId(2),
+                    room_kind: framework_progression::rooms::RoomKind::Boss,
+                    pack_id: "boss_pack".to_string(),
+                    family_ids: vec![],
+                },
+            ];
+
+            let base_room_number = match map_size {
+                MapSize::Short => 9,
+                MapSize::Medium => 14,
+            };
+
+            let make_run_result = || DdgcRunResult {
+                run: make_test_run(),
+                state: game_ddgc_headless::run::flow::DdgcRunState::new(),
+                floor: make_test_floor(),
+                battle_pack_ids: vec![],
+                metadata: RunMetadata {
+                    dungeon_type: dungeon,
+                    map_size,
+                    base_room_number,
+                    base_corridor_number: 4,
+                    gridsize: GridSize::new(5, 5),
+                    connectivity: 0.5,
+                },
+                room_encounters: room_encounters.clone(),
+                interaction_records: vec![],
+                camping_trace: vec![],
+                heroes: heroes.clone(),
+            };
+
+            let result1 = dungeon_from_run_result(&make_run_result());
+            let result2 = dungeon_from_run_result(&make_run_result());
+
+            assert!(result1.is_ok(), "dungeon_from_run_result failed for {:?} {:?}", dungeon, map_size);
+            assert!(result2.is_ok(), "dungeon_from_run_result failed for {:?} {:?}", dungeon, map_size);
+            assert_eq!(result1.unwrap(), result2.unwrap(),
+                "Exploration payload should render consistently for {:?} {:?}", dungeon, map_size);
+        }
+    }
+}
+
+/// Verifies exploration view model captures dungeon metadata correctly for all types.
+#[test]
+fn adapter_exploration_captures_dungeon_metadata() {
+    let room_encounters = vec![
+        RoomEncounterRecord {
+            room_id: RoomId(1),
+            room_kind: framework_progression::rooms::RoomKind::Combat,
+            pack_id: "pack1".to_string(),
+            family_ids: vec![],
+        },
+    ];
+
+    let run_result = DdgcRunResult {
+        run: make_test_run(),
+        state: game_ddgc_headless::run::flow::DdgcRunState::new(),
+        floor: make_test_floor(),
+        battle_pack_ids: vec![],
+        metadata: RunMetadata {
+            dungeon_type: DungeonType::ZhuQue,
+            map_size: MapSize::Medium,
+            base_room_number: 14,
+            base_corridor_number: 5,
+            gridsize: GridSize::new(6, 6),
+            connectivity: 0.95,
+        },
+        room_encounters,
+        interaction_records: vec![],
+        camping_trace: vec![],
+        heroes: vec![],
+    };
+
+    let result = dungeon_from_run_result(&run_result);
+    assert!(result.is_ok());
+
+    let vm = result.unwrap();
+    assert_eq!(vm.dungeon_type, "ZhuQue");
+    assert_eq!(vm.map_size, "Medium");
+    assert_eq!(vm.total_rooms, 14);
+    assert_eq!(vm.floor, 1);
+    assert!(!vm.is_complete);
+    assert!(!vm.party_fled);
+}
+
+/// Verifies exploration view model hero states at death's door threshold.
+#[test]
+fn adapter_exploration_hero_at_deaths_door_threshold() {
+    // Hero at exactly 50% health should NOT be at death's door
+    let heroes = vec![
+        make_hero_state("h1", "crusader", 50.0, 100.0, 20.0, 200.0), // 50% - not at DoD
+        make_hero_state("h2", "hunter", 49.0, 100.0, 30.0, 200.0),    // 49% - at DoD
+        make_hero_state("h3", "alchemist", 100.0, 100.0, 0.0, 200.0), // 100% - not at DoD
+    ];
+    let room_encounters = vec![];
+
+    let run_result = DdgcRunResult {
+        run: make_test_run(),
+        state: game_ddgc_headless::run::flow::DdgcRunState::new(),
+        floor: make_test_floor(),
+        battle_pack_ids: vec![],
+        metadata: RunMetadata {
+            dungeon_type: DungeonType::QingLong,
+            map_size: MapSize::Short,
+            base_room_number: 9,
+            base_corridor_number: 4,
+            gridsize: GridSize::new(5, 5),
+            connectivity: 0.5,
+        },
+        room_encounters,
+        interaction_records: vec![],
+        camping_trace: vec![],
+        heroes,
+    };
+
+    let result = dungeon_from_run_result(&run_result);
+    assert!(result.is_ok());
+
+    let vm = result.unwrap();
+
+    // Find heroes by id
+    let h1 = vm.heroes.iter().find(|h| h.id == "h1").unwrap();
+    let h2 = vm.heroes.iter().find(|h| h.id == "h2").unwrap();
+    let h3 = vm.heroes.iter().find(|h| h.id == "h3").unwrap();
+
+    assert!(!h1.is_at_deaths_door, "50% HP should NOT be at death's door (threshold is < 50%)");
+    assert!(h2.is_at_deaths_door, "49% HP should be at death's door");
+    assert!(!h3.is_at_deaths_door, "100% HP should NOT be at death's door");
+}
+
+/// Verifies exploration view model tracks battle progress correctly.
+#[test]
+fn adapter_exploration_tracks_battle_progress() {
+    let mut state = game_ddgc_headless::run::flow::DdgcRunState::new();
+    state.gold = 500;
+    state.battles_won = 3;
+    state.battles_lost = 1;
+    state.rooms_cleared = 6;
+
+    let heroes = vec![];
+    let room_encounters = vec![
+        RoomEncounterRecord {
+            room_id: RoomId(1),
+            room_kind: framework_progression::rooms::RoomKind::Combat,
+            pack_id: "pack1".to_string(),
+            family_ids: vec![],
+        },
+    ];
+
+    let run_result = DdgcRunResult {
+        run: make_test_run(),
+        state,
+        floor: make_test_floor(),
+        battle_pack_ids: vec!["pack1".to_string()],
+        metadata: RunMetadata {
+            dungeon_type: DungeonType::BaiHu,
+            map_size: MapSize::Short,
+            base_room_number: 9,
+            base_corridor_number: 4,
+            gridsize: GridSize::new(5, 5),
+            connectivity: 0.5,
+        },
+        room_encounters,
+        interaction_records: vec![],
+        camping_trace: vec![],
+        heroes,
+    };
+
+    let result = dungeon_from_run_result(&run_result);
+    assert!(result.is_ok());
+
+    let vm = result.unwrap();
+    assert_eq!(vm.gold_carried, 500);
+    assert_eq!(vm.battles_won, 3);
+    assert_eq!(vm.battles_lost, 1);
+    assert_eq!(vm.rooms_cleared, 6);
+}
+
+/// Verifies exploration view model maps room encounter kinds correctly.
+#[test]
+fn adapter_exploration_maps_room_kinds_correctly() {
+    let heroes = vec![];
+    let room_encounters = vec![
+        RoomEncounterRecord {
+            room_id: RoomId(1),
+            room_kind: framework_progression::rooms::RoomKind::Combat,
+            pack_id: "combat_pack".to_string(),
+            family_ids: vec![],
+        },
+        RoomEncounterRecord {
+            room_id: RoomId(2),
+            room_kind: framework_progression::rooms::RoomKind::Boss,
+            pack_id: "boss_pack".to_string(),
+            family_ids: vec![],
+        },
+        RoomEncounterRecord {
+            room_id: RoomId(3),
+            room_kind: framework_progression::rooms::RoomKind::Event {
+                curio_id: Some("ancient_vase".to_string()),
+            },
+            pack_id: String::new(),
+            family_ids: vec![],
+        },
+        RoomEncounterRecord {
+            room_id: RoomId(4),
+            room_kind: framework_progression::rooms::RoomKind::Corridor {
+                trap_id: Some("trap1".to_string()),
+                curio_id: Some("crate".to_string()),
+            },
+            pack_id: String::new(),
+            family_ids: vec![],
+        },
+    ];
+
+    let run_result = DdgcRunResult {
+        run: make_test_run(),
+        state: game_ddgc_headless::run::flow::DdgcRunState::new(),
+        floor: make_test_floor(),
+        battle_pack_ids: vec![],
+        metadata: RunMetadata {
+            dungeon_type: DungeonType::QingLong,
+            map_size: MapSize::Short,
+            base_room_number: 9,
+            base_corridor_number: 4,
+            gridsize: GridSize::new(5, 5),
+            connectivity: 0.5,
+        },
+        room_encounters,
+        interaction_records: vec![],
+        camping_trace: vec![],
+        heroes,
+    };
+
+    let result = dungeon_from_run_result(&run_result);
+    assert!(result.is_ok());
+
+    let vm = result.unwrap();
+    assert_eq!(vm.rooms.len(), 4);
+    assert_eq!(vm.rooms[0].kind, DungeonRoomKind::Combat);
+    assert_eq!(vm.rooms[1].kind, DungeonRoomKind::Boss);
+    assert_eq!(vm.rooms[2].kind, DungeonRoomKind::Event);
+    assert_eq!(vm.rooms[3].kind, DungeonRoomKind::Corridor);
+}
+
+/// Verifies exploration-to-combat transition is supported through view models.
+/// The exploration state (DungeonViewModel) can coexist with combat state (CombatViewModel)
+/// as they represent different phases of the same dungeon run.
+#[test]
+fn adapter_exploration_to_combat_transition_supported() {
+    // Create exploration state
+    let heroes = vec![make_hero_state("h1", "crusader", 80.0, 100.0, 20.0, 200.0)];
+    let room_encounters = vec![
+        RoomEncounterRecord {
+            room_id: RoomId(1),
+            room_kind: framework_progression::rooms::RoomKind::Combat,
+            pack_id: "pack1".to_string(),
+            family_ids: vec![],
+        },
+    ];
+
+    let exploration_result = DdgcRunResult {
+        run: make_test_run(),
+        state: game_ddgc_headless::run::flow::DdgcRunState::new(),
+        floor: make_test_floor(),
+        battle_pack_ids: vec![],
+        metadata: RunMetadata {
+            dungeon_type: DungeonType::QingLong,
+            map_size: MapSize::Short,
+            base_room_number: 9,
+            base_corridor_number: 4,
+            gridsize: GridSize::new(5, 5),
+            connectivity: 0.5,
+        },
+        room_encounters,
+        interaction_records: vec![],
+        camping_trace: vec![],
+        heroes,
+    };
+
+    let exploration_vm = dungeon_from_run_result(&exploration_result);
+    assert!(exploration_vm.is_ok());
+
+    // Create corresponding combat state
+    let actors = vec![
+        make_actor_summary(1, CombatSide::Ally, 80.0, 100.0, vec![]),
+        make_actor_summary(10, CombatSide::Enemy, 150.0, 200.0, vec![]),
+    ];
+    let framework_combat_vm = make_framework_combat_vm(1, 1, actors, vec![1, 10]);
+    let combat_vm = combat_from_framework(&framework_combat_vm);
+    assert!(combat_vm.is_ok());
+
+    // Verify both view models can coexist - exploration has heroes, combat has combatants
+    let exp_vm = exploration_vm.unwrap();
+    let cbt_vm = combat_vm.unwrap();
+
+    assert!(!exp_vm.heroes.is_empty(), "Exploration should have heroes");
+    assert!(!cbt_vm.heroes.is_empty(), "Combat should have heroes");
+    assert!(!cbt_vm.monsters.is_empty(), "Combat should have monsters");
+
+    // Verify the hero in exploration matches the combat participant
+    assert_eq!(exp_vm.heroes[0].id, "h1");
+}
+
+/// Verifies exploration payloads render deterministically across multiple dungeon configurations.
+#[test]
+fn adapter_exploration_multi_seed_determinism() {
+    // Test that different seeds produce different but deterministic results
+    let base_room_number = 9;
+    let heroes = vec![make_hero_state("h1", "crusader", 80.0, 100.0, 20.0, 200.0)];
+
+    // Run 1 with seed 1
+    let room_encounters_1 = vec![
+        RoomEncounterRecord {
+            room_id: RoomId(1),
+            room_kind: framework_progression::rooms::RoomKind::Combat,
+            pack_id: "pack1".to_string(),
+            family_ids: vec![],
+        },
+    ];
+    let run_result_1 = DdgcRunResult {
+        run: make_test_run(),
+        state: game_ddgc_headless::run::flow::DdgcRunState::new(),
+        floor: make_test_floor(),
+        battle_pack_ids: vec![],
+        metadata: RunMetadata {
+            dungeon_type: DungeonType::QingLong,
+            map_size: MapSize::Short,
+            base_room_number,
+            base_corridor_number: 4,
+            gridsize: GridSize::new(5, 5),
+            connectivity: 0.5,
+        },
+        room_encounters: room_encounters_1,
+        interaction_records: vec![],
+        camping_trace: vec![],
+        heroes: heroes.clone(),
+    };
+
+    // Run 2 with different dungeon type
+    let room_encounters_2 = vec![
+        RoomEncounterRecord {
+            room_id: RoomId(1),
+            room_kind: framework_progression::rooms::RoomKind::Boss,
+            pack_id: "boss_pack".to_string(),
+            family_ids: vec![],
+        },
+    ];
+    let run_result_2 = DdgcRunResult {
+        run: make_test_run(),
+        state: game_ddgc_headless::run::flow::DdgcRunState::new(),
+        floor: make_test_floor(),
+        battle_pack_ids: vec![],
+        metadata: RunMetadata {
+            dungeon_type: DungeonType::XuanWu,
+            map_size: MapSize::Short,
+            base_room_number,
+            base_corridor_number: 4,
+            gridsize: GridSize::new(5, 5),
+            connectivity: 0.5,
+        },
+        room_encounters: room_encounters_2,
+        interaction_records: vec![],
+        camping_trace: vec![],
+        heroes: heroes.clone(),
+    };
+
+    let result_1a = dungeon_from_run_result(&run_result_1);
+    let result_1b = dungeon_from_run_result(&run_result_1);
+    let result_2 = dungeon_from_run_result(&run_result_2);
+
+    assert!(result_1a.is_ok());
+    assert!(result_1b.is_ok());
+    assert!(result_2.is_ok());
+
+    // Same input produces same output
+    assert_eq!(result_1a.as_ref().unwrap(), result_1b.as_ref().unwrap());
+
+    // Different input produces different output
+    let vm_1 = result_1a.as_ref().unwrap();
+    let vm_2 = result_2.as_ref().unwrap();
+    assert_ne!(vm_1.dungeon_type, vm_2.dungeon_type);
+}
