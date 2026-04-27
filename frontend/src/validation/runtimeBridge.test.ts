@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel } from "../bridge/contractTypes";
+import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, ExpeditionResultViewModel, ReturnViewModel } from "../bridge/contractTypes";
 import { LiveRuntimeBridge } from "../bridge/LiveRuntimeBridge";
 import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 
@@ -298,5 +298,83 @@ describe("provisioning and expedition launch flow", () => {
     const launchSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
     expect(launchSnapshot.flowState).toBe("combat");
     expect(launchSnapshot.viewModel.kind).toBe("expedition");
+  });
+});
+
+describe("result and return meta-loop continuation", () => {
+  it("continue-from-result intent returns to town", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "continue-from-result" });
+    expect(snapshot.flowState).toBe("town");
+    expect(snapshot.viewModel.kind).toBe("town");
+  });
+
+  it("resume-from-return intent returns to town", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "resume-from-return" });
+    expect(snapshot.flowState).toBe("town");
+    expect(snapshot.viewModel.kind).toBe("town");
+  });
+
+  it("continue-from-result is handled in live bridge without error", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "continue-from-result" });
+    expect(snapshot.flowState).toBe("town");
+    expect(snapshot.viewModel.kind).toBe("town");
+  });
+
+  it("resume-from-return is handled in live bridge without error", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "resume-from-return" });
+    expect(snapshot.flowState).toBe("town");
+    expect(snapshot.viewModel.kind).toBe("town");
+  });
+
+  it("meta-loop can cycle through result and back to town in replay", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    // Go through expedition flow
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    // Continue from result
+    const resultSnapshot = await bridge.dispatchIntent({ type: "continue-from-result" });
+    expect(resultSnapshot.flowState).toBe("town");
+    expect(resultSnapshot.viewModel.kind).toBe("town");
+
+    // Can restart provisioning after returning
+    const provSnapshot = await bridge.dispatchIntent({ type: "start-provisioning" });
+    expect(provSnapshot.flowState).toBe("provisioning");
+    expect(provSnapshot.viewModel.kind).toBe("provisioning");
+  });
+
+  it("meta-loop can cycle through return and back to town in replay", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    // Go through expedition flow
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    // Resume from return
+    const returnSnapshot = await bridge.dispatchIntent({ type: "resume-from-return" });
+    expect(returnSnapshot.flowState).toBe("town");
+    expect(returnSnapshot.viewModel.kind).toBe("town");
+
+    // Can restart provisioning after returning
+    const provSnapshot = await bridge.dispatchIntent({ type: "start-provisioning" });
+    expect(provSnapshot.flowState).toBe("provisioning");
+    expect(provSnapshot.viewModel.kind).toBe("provisioning");
   });
 });

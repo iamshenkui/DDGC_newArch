@@ -3,6 +3,8 @@ import type {
   BuildingDetailViewModel,
   DdgcFrontendSnapshot,
   ExpeditionSetupViewModel,
+  ExpeditionResultViewModel,
+  ReturnViewModel,
   FatalErrorViewModel,
   HeroDetailViewModel,
   ProvisioningViewModel,
@@ -180,6 +182,63 @@ export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
     "Limited camping opportunities"
   ],
   isLaunchable: true
+};
+
+export const replayResultViewModel: ExpeditionResultViewModel = {
+  kind: "result",
+  title: "Expedition Complete",
+  expeditionName: "The Depths Await",
+  outcome: "success",
+  summary: "Your party has returned victorious from the expedition. The depths have been conquered and valuable treasures have been recovered.",
+  lootAcquired: [
+    "Ancient Gold Coin x3",
+    "Mysterious Gemstone",
+    "Forgotten Relic"
+  ],
+  heroOutcomes: [
+    {
+      heroId: "hero-hunter-01",
+      heroName: "Shen",
+      status: "alive",
+      hpChange: "-4",
+      stressChange: "+12"
+    },
+    {
+      heroId: "hero-white-01",
+      heroName: "Bai Xiu",
+      status: "alive",
+      hpChange: "-8",
+      stressChange: "+8"
+    }
+  ],
+  resourcesGained: {
+    gold: 250,
+    supplies: -50,
+    experience: 180
+  },
+  isContinueAvailable: true
+};
+
+export const replayReturnViewModel: ReturnViewModel = {
+  kind: "return",
+  title: "Returning to Town",
+  expeditionName: "The Depths Await",
+  summary: "The expedition party has returned to town. Review your heroes' conditions and prepare for future expeditions.",
+  returningHeroes: [
+    {
+      heroId: "hero-hunter-01",
+      heroName: "Shen",
+      hp: "34 / 42",
+      stress: "29"
+    },
+    {
+      heroId: "hero-white-01",
+      heroName: "Bai Xiu",
+      hp: "33 / 41",
+      stress: "16"
+    }
+  ],
+  isTownResumeAvailable: true
 };
 
 export const replayReadySnapshot: DdgcFrontendSnapshot = {

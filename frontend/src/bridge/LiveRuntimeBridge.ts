@@ -10,6 +10,8 @@ import type {
   BuildingDetailViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  ExpeditionResultViewModel,
+  ReturnViewModel,
 } from "./contractTypes";
 
 const createLiveTownViewModel = (): TownViewModel => ({
@@ -208,6 +210,59 @@ const createLiveExpeditionViewModel = (): ExpeditionSetupViewModel => ({
   isLaunchable: true
 });
 
+const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
+  kind: "result",
+  title: "Expedition Complete",
+  expeditionName: "The Azure Lantern Expedition",
+  outcome: "success",
+  summary: "Your expedition has returned. Review the outcomes and continue your campaign.",
+  lootAcquired: ["Gold Coin x2", "Ancient Relic"],
+  heroOutcomes: [
+    {
+      heroId: "hero-hunter-live-01",
+      heroName: "Yuan",
+      status: "alive",
+      hpChange: "-2",
+      stressChange: "+5"
+    },
+    {
+      heroId: "hero-white-live-01",
+      heroName: "Mei",
+      status: "alive",
+      hpChange: "-3",
+      stressChange: "+3"
+    }
+  ],
+  resourcesGained: {
+    gold: 150,
+    supplies: -30,
+    experience: 100
+  },
+  isContinueAvailable: true
+});
+
+const createLiveReturnViewModel = (): ReturnViewModel => ({
+  kind: "return",
+  title: "Returning to Town",
+  expeditionName: "The Azure Lantern Expedition",
+  summary: "The expedition party has returned safely. Resume town activities.",
+  returningHeroes: [
+    {
+      heroId: "hero-hunter-live-01",
+      heroName: "Yuan",
+      hp: "40 / 42",
+      stress: "5"
+    },
+    {
+      heroId: "hero-white-live-01",
+      heroName: "Mei",
+      hp: "38 / 41",
+      stress: "3"
+    }
+  ],
+  isTownResumeAvailable: true
+});
+
 export class LiveRuntimeBridge implements RuntimeBridge {
   readonly id = "ddgc-live-bridge";
   readonly mode: RuntimeMode = "live";
@@ -295,6 +350,12 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "return-to-town":
+        this.snapshot = createLiveTownSnapshot();
+        break;
+      case "continue-from-result":
+        this.snapshot = createLiveTownSnapshot();
+        break;
+      case "resume-from-return":
         this.snapshot = createLiveTownSnapshot();
         break;
     }

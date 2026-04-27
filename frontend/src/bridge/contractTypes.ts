@@ -138,6 +138,42 @@ export interface ExpeditionSetupViewModel {
   isLaunchable: boolean;
 }
 
+export interface ExpeditionResultViewModel {
+  kind: "result";
+  title: string;
+  expeditionName: string;
+  outcome: "success" | "failure" | "partial";
+  summary: string;
+  lootAcquired: ReadonlyArray<string>;
+  heroOutcomes: ReadonlyArray<{
+    heroId: string;
+    heroName: string;
+    status: "alive" | "dead" | "stressed";
+    hpChange: string;
+    stressChange: string;
+  }>;
+  resourcesGained: {
+    gold: number;
+    supplies: number;
+    experience: number;
+  };
+  isContinueAvailable: boolean;
+}
+
+export interface ReturnViewModel {
+  kind: "return";
+  title: string;
+  expeditionName: string;
+  summary: string;
+  returningHeroes: ReadonlyArray<{
+    heroId: string;
+    heroName: string;
+    hp: string;
+    stress: string;
+  }>;
+  isTownResumeAvailable: boolean;
+}
+
 export interface UnsupportedViewModel {
   kind: "unsupported";
   title: string;
@@ -157,6 +193,8 @@ export type DdgcViewModel =
   | BuildingDetailViewModel
   | ProvisioningViewModel
   | ExpeditionSetupViewModel
+  | ExpeditionResultViewModel
+  | ReturnViewModel
   | UnsupportedViewModel
   | FatalErrorViewModel;
 
@@ -176,4 +214,6 @@ export type DdgcFrontendIntent =
   | { type: "toggle-hero-selection"; heroId: string }
   | { type: "confirm-provisioning" }
   | { type: "launch-expedition" }
-  | { type: "return-to-town" };
+  | { type: "return-to-town" }
+  | { type: "continue-from-result" }
+  | { type: "resume-from-return" };

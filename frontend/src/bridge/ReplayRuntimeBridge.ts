@@ -12,7 +12,9 @@ import type {
   DdgcFrontendSnapshot,
   TownViewModel,
   ProvisioningViewModel,
-  ExpeditionSetupViewModel
+  ExpeditionSetupViewModel,
+  ExpeditionResultViewModel,
+  ReturnViewModel
 } from "./contractTypes";
 
 export class ReplayRuntimeBridge implements RuntimeBridge {
@@ -115,6 +117,12 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         this.snapshot = replayReadySnapshot;
         break;
       case "boot":
+        this.snapshot = replayReadySnapshot;
+        break;
+      case "continue-from-result":
+        this.snapshot = replayReadySnapshot;
+        break;
+      case "resume-from-return":
         this.snapshot = replayReadySnapshot;
         break;
     }

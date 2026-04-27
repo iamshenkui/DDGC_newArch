@@ -12,6 +12,8 @@ import {
   replayBuildingDetailSnapshot,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
+  replayResultViewModel,
+  replayReturnViewModel,
 } from "../validation/replayFixtures";
 
 describe("FlowController", () => {
@@ -86,11 +88,33 @@ describe("FlowController", () => {
       const screen = resolveScreen(expeditionSnapshot);
       expect(screen).toBe("expedition");
     });
+
+    it("returns result screen for result view model", () => {
+      const resultSnapshot: DdgcFrontendSnapshot = {
+        lifecycle: "ready",
+        flowState: "result",
+        viewModel: replayResultViewModel,
+        debugMessage: "Replay bridge showing result screen."
+      };
+      const screen = resolveScreen(resultSnapshot);
+      expect(screen).toBe("result");
+    });
+
+    it("returns return screen for return view model", () => {
+      const returnSnapshot: DdgcFrontendSnapshot = {
+        lifecycle: "ready",
+        flowState: "return",
+        viewModel: replayReturnViewModel,
+        debugMessage: "Replay bridge showing return screen."
+      };
+      const screen = resolveScreen(returnSnapshot);
+      expect(screen).toBe("return");
+    });
   });
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
 
   const replayProvisioningSnapshot: DdgcFrontendSnapshot = {
     lifecycle: "ready",
@@ -106,6 +130,20 @@ describe("ScreenKey exhaustiveness", () => {
     debugMessage: "Replay bridge showing expedition launch screen."
   };
 
+  const replayResultSnapshot: DdgcFrontendSnapshot = {
+    lifecycle: "ready",
+    flowState: "result",
+    viewModel: replayResultViewModel,
+    debugMessage: "Replay bridge showing expedition result screen."
+  };
+
+  const replayReturnSnapshot: DdgcFrontendSnapshot = {
+    lifecycle: "ready",
+    flowState: "return",
+    viewModel: replayReturnViewModel,
+    debugMessage: "Replay bridge showing return screen."
+  };
+
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
       startup: { lifecycle: "ready", flowState: "boot", viewModel: replayReadySnapshot.viewModel },
@@ -115,6 +153,8 @@ describe("ScreenKey exhaustiveness", () => {
       "building-detail": replayBuildingDetailSnapshot,
       provisioning: replayProvisioningSnapshot,
       expedition: replayExpeditionSnapshot,
+      result: replayResultSnapshot,
+      return: replayReturnSnapshot,
       unsupported: unsupportedSnapshot,
       fatal: fatalSnapshot,
     };

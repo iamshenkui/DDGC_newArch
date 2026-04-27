@@ -9,6 +9,8 @@ import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
   ExpeditionSetupViewModel,
+  ExpeditionResultViewModel,
+  ReturnViewModel,
   FatalErrorViewModel,
   HeroDetailViewModel,
   ProvisioningViewModel,
@@ -40,6 +42,8 @@ import { HeroDetailScreen } from "../screens/town/HeroDetailScreen";
 import { BuildingDetailScreen } from "../screens/town/BuildingDetailScreen";
 import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
+import { ResultScreen } from "../screens/expedition/ResultScreen";
+import { ReturnScreen } from "../screens/expedition/ReturnScreen";
 
 function createBridge(mode: RuntimeMode): RuntimeBridge {
   return mode === "live" ? new LiveRuntimeBridge() : new ReplayRuntimeBridge();
@@ -226,6 +230,22 @@ export function DdgcApp() {
             }}
             onReturnToTown={() => {
               void dispatchIntent(bridge, { type: "return-to-town" });
+            }}
+          />
+        </Match>
+        <Match when={screen === "result" && snapshot.viewModel.kind === "result"}>
+          <ResultScreen
+            viewModel={snapshot.viewModel as ExpeditionResultViewModel}
+            onContinue={() => {
+              void dispatchIntent(bridge, { type: "continue-from-result" });
+            }}
+          />
+        </Match>
+        <Match when={screen === "return" && snapshot.viewModel.kind === "return"}>
+          <ReturnScreen
+            viewModel={snapshot.viewModel as ReturnViewModel}
+            onResumeTown={() => {
+              void dispatchIntent(bridge, { type: "resume-from-return" });
             }}
           />
         </Match>
