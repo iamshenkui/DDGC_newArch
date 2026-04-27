@@ -5,6 +5,9 @@ import { AppFrame } from "../../components/layout/AppFrame";
 interface StartupScreenProps {
   onReplayBoot: () => void;
   onLiveBoot: () => void;
+  onNewCampaign: () => void;
+  onLoadCampaign: () => void;
+  hasSavedCampaign: boolean;
 }
 
 export const StartupScreen: Component<StartupScreenProps> = (props) => {
@@ -16,7 +19,35 @@ export const StartupScreen: Component<StartupScreenProps> = (props) => {
     >
       <section class="grid">
         <div class="panel stack">
-          <h2 class="panel-title">Boot Path</h2>
+          <h2 class="panel-title">Campaign Entry</h2>
+          <div class="surface-card stack">
+            <h3>New Campaign</h3>
+            <p>
+              Start a fresh campaign with default roster and initial town state.
+              Uses stable replay fixtures for development.
+            </p>
+            <button class="action-primary" onClick={props.onNewCampaign}>
+              New Campaign
+            </button>
+          </div>
+          <div class="surface-card stack">
+            <h3>Load Campaign</h3>
+            <p>
+              {props.hasSavedCampaign
+                ? "Continue a saved campaign from local storage."
+                : "No saved campaign found. Start a new campaign to begin."}
+            </p>
+            <button
+              class="action-secondary"
+              onClick={props.onLoadCampaign}
+              disabled={!props.hasSavedCampaign}
+            >
+              Load Campaign
+            </button>
+          </div>
+        </div>
+        <div class="panel stack">
+          <h2 class="panel-title">Runtime Boot Options</h2>
           <div class="surface-card stack">
             <h3>Replay-first shell</h3>
             <p>

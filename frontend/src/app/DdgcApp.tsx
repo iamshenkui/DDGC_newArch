@@ -1,4 +1,4 @@
-import { Match, Switch, createSignal } from "solid-js";
+import { Match, Switch, createSignal, createEffect } from "solid-js";
 
 import { AppProviders } from "./AppProviders";
 import { DEFAULT_RUNTIME_MODE, type RuntimeMode } from "./runtimeMode";
@@ -11,10 +11,22 @@ import type {
   TownViewModel,
   UnsupportedViewModel
 } from "../bridge/contractTypes";
-import { fatalSnapshot } from "../validation/replayFixtures";
+import {
+  fatalSnapshot,
+  replayLoadingSnapshot,
+  liveLoadingSnapshot
+} from "../validation/replayFixtures";
 import { createSessionStore } from "../session/SessionStore";
-import { resolveScreen } from "../session/FlowController";
+import {
+  resolveScreen,
+  type ScreenKey
+} from "../session/FlowController";
 import { dispatchIntent } from "../session/intentDispatch";
+import {
+  createSaveLoadService,
+  createFreshCampaignSnapshot,
+  type SaveLoadService
+} from "../session/SaveLoadService";
 import { FatalErrorScreen } from "../screens/errors/FatalErrorScreen";
 import { LoadingScreen } from "../screens/loading/LoadingScreen";
 import { UnsupportedStateScreen } from "../screens/errors/UnsupportedStateScreen";
@@ -25,25 +37,108 @@ function createBridge(mode: RuntimeMode): RuntimeBridge {
   return mode === "live" ? new LiveRuntimeBridge() : new ReplayRuntimeBridge();
 }
 
+function createLoadingSnapshot(mode: RuntimeMode): typeof replayLoadingSnapshot | typeof liveLoadingSnapshot {
+  return mode === "replay" ? replayLoadingSnapshot : liveLoadingSnapshot;
+}
+
 export function DdgcApp() {
   const session = createSessionStore(fatalSnapshot);
   const [booted, setBooted] = createSignal(false);
   const [activeMode, setActiveMode] = createSignal<RuntimeMode>(DEFAULT_RUNTIME_MODE);
+  const [saveLoadService, setSaveLoadService] = createSignal<SaveLoadService>(
+    createSaveLoadService("replay")
+  );
+
   let bridge = createBridge(DEFAULT_RUNTIME_MODE);
 
   const runBoot = async (mode: RuntimeMode) => {
     setActiveMode(mode);
     bridge = createBridge(mode);
+    const newSaveLoadService = createSaveLoadService(mode);
+    setSaveLoadService(newSaveLoadService);
+
+    // Show loading screen first
+    const loadingSnap = createLoadingSnapshot(mode);
+    session.replace(loadingSnap);
+    setBooted(false);
+
     const unsubscribe = bridge.subscribe((snapshot) => {
       session.replace(snapshot);
     });
 
     try {
       const snapshot = await bridge.boot();
+      // Auto-save the fresh campaign state
+      newSaveLoadService.save(snapshot);
       session.replace(snapshot);
       setBooted(true);
     } catch (error) {
       session.fail(error instanceof Error ? error.message : "boot failed");
+      setBooted(true);
+    }
+
+    unsubscribe();
+  };
+
+  const runNewCampaign = async () => {
+    const mode: RuntimeMode = "replay";
+    setActiveMode(mode);
+    bridge = createBridge(mode);
+    const newSaveLoadService = createSaveLoadService(mode);
+    setSaveLoadService(newSaveLoadService);
+
+    // Show loading screen first
+    session.replace(replayLoadingSnapshot);
+    setBooted(false);
+
+    const unsubscribe = bridge.subscribe((snapshot) => {
+      session.replace(snapshot);
+    });
+
+    try {
+      const snapshot = await bridge.boot();
+      // Auto-save the fresh campaign state
+      newSaveLoadService.save(snapshot);
+      session.replace(snapshot);
+      setBooted(true);
+    } catch (error) {
+      session.fail(error instanceof Error ? error.message : "campaign boot failed");
+      setBooted(true);
+    }
+
+    unsubscribe();
+  };
+
+  const runLoadCampaign = async () => {
+    const mode: RuntimeMode = "replay";
+    setActiveMode(mode);
+    bridge = createBridge(mode);
+    const loadedSaveLoadService = createSaveLoadService(mode);
+    setSaveLoadService(loadedSaveLoadService);
+
+    // Show loading screen first
+    session.replace(replayLoadingSnapshot);
+    setBooted(false);
+
+    const unsubscribe = bridge.subscribe((snapshot) => {
+      session.replace(snapshot);
+    });
+
+    try {
+      // Try to load saved snapshot
+      const savedSnapshot = loadedSaveLoadService.load();
+      if (savedSnapshot) {
+        session.replace(savedSnapshot);
+        setBooted(true);
+      } else {
+        // No saved campaign found, start fresh
+        const snapshot = await bridge.boot();
+        loadedSaveLoadService.save(snapshot);
+        session.replace(snapshot);
+        setBooted(true);
+      }
+    } catch (error) {
+      session.fail(error instanceof Error ? error.message : "load campaign failed");
       setBooted(true);
     }
 
@@ -63,6 +158,9 @@ export function DdgcApp() {
           <StartupScreen
             onReplayBoot={() => runBoot("replay")}
             onLiveBoot={() => runBoot("live")}
+            onNewCampaign={runNewCampaign}
+            onLoadCampaign={runLoadCampaign}
+            hasSavedCampaign={saveLoadService().hasSavedCampaign()}
           />
         </Match>
         <Match when={screen === "town" && snapshot.viewModel.kind === "town"}>
