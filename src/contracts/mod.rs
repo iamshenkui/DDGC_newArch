@@ -20,9 +20,17 @@
 //! This module also provides data models for dungeon interactions including
 //! curios, traps, and obstacles that represent room and corridor interactions
 //! beyond combat.
+//!
+//! # Frontend Host
+//!
+//! The [`host`] module provides [`DdgcHost`], the canonical application host
+//! for the DDGC headless migration. Use it to boot from contract packages
+//! in either replay-driven or live-runtime mode.
 
 use serde::{Deserialize, Serialize};
 use std::path::Path;
+
+pub mod host;
 
 /// Represents a min/max range pair for density and count parameters.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]

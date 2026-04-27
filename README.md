@@ -13,18 +13,61 @@ This project is the DDGC migration container. Unlike the framework's consumer ex
 3. **Every migration blocker is classified** as core-gap, framework-gap, or game-gap
 4. **The game runs headless** — no UI runtime, deterministic traces for regression
 
-## Verification Commands
+## Local Developer Startup
+
+### Prerequisites
+
+- Rust toolchain (stable, 1.70+)
+- `data/` directory with contract JSON/CSV files (Curios.csv, Traps.json, Buildings.json, etc.)
+
+### Running the Application
 
 ```bash
 # Typecheck
-cargo check --manifest-path games/game_ddgc_headless/Cargo.toml
+cargo check
 
-# Run
-cargo run --manifest-path games/game_ddgc_headless/Cargo.toml
+# Run tests
+cargo test
 
-# Test
-cargo test --manifest-path games/game_ddgc_headless/Cargo.toml
+# Run the binary (headless encounter/run slice)
+cargo run
+
+# Run with logging
+RUST_LOG=debug cargo run
 ```
+
+### Using the Frontend Host
+
+The `DdgcHost` in `src/contracts/host.rs` provides the canonical application host for starting the game in either replay-driven or live-runtime mode:
+
+```rust
+use game_ddgc_headless::contracts::host::{DdgcHost, LiveConfig};
+
+// Boot in live-runtime mode
+let host = DdgcHost::boot_live(&LiveConfig::default()).expect("boot failed");
+assert!(host.is_ready());
+
+// Or boot from a saved campaign state (replay-driven)
+let host = DdgcHost::boot_from_campaign(&ReplayConfig {
+    campaign_json: &saved_json,
+    source_path: "savegame.json",
+}).expect("replay failed");
+```
+
+### Error Handling
+
+The host uses explicit error types rather than silent fallbacks:
+
+```rust
+use game_ddgc_headless::contracts::host::DdgcHost;
+
+let result = DdgcHost::boot_live(&LiveConfig::default());
+if let Err(e) = result {
+    eprintln!("Boot error: {}", e.error_message());
+}
+```
+
+## Verification Commands
 
 ## Project Structure
 
