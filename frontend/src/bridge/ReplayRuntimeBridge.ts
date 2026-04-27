@@ -1,7 +1,8 @@
 import type { RuntimeMode } from "../app/runtimeMode";
 import {
   replayReadySnapshot,
-  replayHeroDetailViewModel
+  replayHeroDetailViewModel,
+  replayBuildingDetailViewModel
 } from "../validation/replayFixtures";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
 import type {
@@ -46,10 +47,25 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       }
-      case "open-building":
+      case "open-building": {
+        const townVm = this.snapshot.viewModel as TownViewModel;
+        const building = townVm.buildings.find((b) => b.id === intent.buildingId) ?? townVm.buildings[0];
         this.snapshot = {
           ...this.snapshot,
-          debugMessage: `Open building intent received for ${intent.buildingId}.`
+          flowState: "town",
+          viewModel: {
+            ...replayBuildingDetailViewModel,
+            buildingId: building.id,
+            label: building.label,
+            status: building.status
+          }
+        };
+        break;
+      }
+      case "building-action":
+        this.snapshot = {
+          ...this.snapshot,
+          debugMessage: `Replay: building action intent received for ${intent.actionId}.`
         };
         break;
       case "start-provisioning":

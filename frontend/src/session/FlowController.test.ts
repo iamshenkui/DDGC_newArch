@@ -9,6 +9,7 @@ import {
   liveLoadingSnapshot,
   replayReadySnapshot,
   replayHeroDetailSnapshot,
+  replayBuildingDetailSnapshot,
 } from "../validation/replayFixtures";
 
 describe("FlowController", () => {
@@ -56,11 +57,16 @@ describe("FlowController", () => {
       const screen = resolveScreen(unknownLifecycle);
       expect(screen).toBe("startup");
     });
+
+    it("returns building-detail screen for building detail view model", () => {
+      const screen = resolveScreen(replayBuildingDetailSnapshot);
+      expect(screen).toBe("building-detail");
+    });
   });
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -68,6 +74,7 @@ describe("ScreenKey exhaustiveness", () => {
       loading: replayLoadingSnapshot,
       town: replayReadySnapshot,
       "hero-detail": replayHeroDetailSnapshot,
+      "building-detail": replayBuildingDetailSnapshot,
       unsupported: unsupportedSnapshot,
       fatal: fatalSnapshot,
     };

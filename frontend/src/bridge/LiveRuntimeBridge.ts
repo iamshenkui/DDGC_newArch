@@ -7,6 +7,7 @@ import type {
   TownHeroSummary,
   TownBuildingSummary,
   HeroDetailViewModel,
+  BuildingDetailViewModel,
 } from "./contractTypes";
 
 const createLiveTownViewModel = (): TownViewModel => ({
@@ -87,6 +88,96 @@ const createLiveHeroDetailViewModel = (hero: TownHeroSummary): HeroDetailViewMod
   campNotes: "Hero detail view - live mode placeholder."
 });
 
+const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): BuildingDetailViewModel => {
+  const buildingConfigs: Record<string, {
+    description: string;
+    actions: Array<{
+      id: string;
+      label: string;
+      description: string;
+      cost: string;
+      isAvailable: boolean;
+      isUnsupported: boolean;
+    }>;
+    upgradeRequirement?: string;
+  }> = {
+    stagecoach: {
+      description: "The stagecoach offers new recruits from the surrounding region. Recruit heroes to expand your party roster.",
+      actions: [
+        {
+          id: "recruit-hero",
+          label: "Recruit Hero",
+          description: "Recruit a new hero to your party from available candidates.",
+          cost: "500 Gold",
+          isAvailable: true,
+          isUnsupported: false
+        },
+        {
+          id: "view-candidates",
+          label: "View Candidates",
+          description: "Browse available hero candidates without recruiting.",
+          cost: "Free",
+          isAvailable: true,
+          isUnsupported: false
+        }
+      ]
+    },
+    guild: {
+      description: "The guild provides skill training and party capability review. Upgrade your heroes' abilities.",
+      actions: [
+        {
+          id: "train-skill",
+          label: "Train Skill",
+          description: "Improve a hero's combat or camping skill.",
+          cost: "200 Gold",
+          isAvailable: true,
+          isUnsupported: false
+        },
+        {
+          id: "upgrade-weapon",
+          label: "Upgrade Weapon",
+          description: "Enhance a hero's weapon.",
+          cost: "300 Gold",
+          isAvailable: false,
+          isUnsupported: false
+        },
+        {
+          id: "upgrade-armor",
+          label: "Upgrade Armor",
+          description: "Improve a hero's armor protection.",
+          cost: "300 Gold",
+          isAvailable: false,
+          isUnsupported: false
+        }
+      ]
+    }
+  };
+
+  const config = buildingConfigs[building.id] ?? {
+    description: building.summary,
+    actions: [
+      {
+        id: "interact",
+        label: "Interact",
+        description: "Interact with this building.",
+        cost: "Free",
+        isAvailable: true,
+        isUnsupported: false
+      }
+    ]
+  };
+
+  return {
+    kind: "building-detail",
+    buildingId: building.id,
+    label: building.label,
+    status: building.status,
+    description: config.description,
+    actions: config.actions,
+    upgradeRequirement: config.upgradeRequirement
+  };
+};
+
 export class LiveRuntimeBridge implements RuntimeBridge {
   readonly id = "ddgc-live-bridge";
   readonly mode: RuntimeMode = "live";
@@ -118,10 +209,20 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       }
-      case "open-building":
+      case "open-building": {
+        const townVm = this.snapshot.viewModel as TownViewModel;
+        const building = townVm.buildings.find((b) => b.id === intent.buildingId) ?? townVm.buildings[0];
         this.snapshot = {
           ...this.snapshot,
-          debugMessage: `Live: open building intent received for ${intent.buildingId}.`
+          flowState: "town",
+          viewModel: createLiveBuildingDetailViewModel(building)
+        };
+        break;
+      }
+      case "building-action":
+        this.snapshot = {
+          ...this.snapshot,
+          debugMessage: `Live: building action intent received for ${intent.actionId}.`
         };
         break;
       case "start-provisioning":

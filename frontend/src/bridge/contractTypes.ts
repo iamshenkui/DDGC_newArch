@@ -39,6 +39,25 @@ export interface TownBuildingSummary {
   status: "ready" | "partial" | "locked";
 }
 
+export interface BuildingAction {
+  id: string;
+  label: string;
+  description: string;
+  cost: string;
+  isAvailable: boolean;
+  isUnsupported: boolean;
+}
+
+export interface BuildingDetailViewModel {
+  kind: "building-detail";
+  buildingId: string;
+  label: string;
+  status: "ready" | "partial" | "locked";
+  description: string;
+  actions: ReadonlyArray<BuildingAction>;
+  upgradeRequirement?: string;
+}
+
 export interface HeroProgression {
   level: number;
   experience: string;
@@ -99,6 +118,7 @@ export type DdgcViewModel =
   | BootLoadViewModel
   | TownViewModel
   | HeroDetailViewModel
+  | BuildingDetailViewModel
   | UnsupportedViewModel
   | FatalErrorViewModel;
 
@@ -113,6 +133,7 @@ export type DdgcFrontendIntent =
   | { type: "boot"; mode: RuntimeMode }
   | { type: "open-hero"; heroId: string }
   | { type: "open-building"; buildingId: string }
+  | { type: "building-action"; actionId: string }
   | { type: "start-provisioning" }
   | { type: "launch-expedition" }
   | { type: "return-to-town" };

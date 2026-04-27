@@ -7,6 +7,7 @@ import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 import type { RuntimeBridge } from "../bridge/RuntimeBridge";
 import type {
   BootLoadViewModel,
+  BuildingDetailViewModel,
   FatalErrorViewModel,
   HeroDetailViewModel,
   TownViewModel,
@@ -34,6 +35,7 @@ import { UnsupportedStateScreen } from "../screens/errors/UnsupportedStateScreen
 import { StartupScreen } from "../screens/startup/StartupScreen";
 import { TownShellScreen } from "../screens/town/TownShellScreen";
 import { HeroDetailScreen } from "../screens/town/HeroDetailScreen";
+import { BuildingDetailScreen } from "../screens/town/BuildingDetailScreen";
 
 function createBridge(mode: RuntimeMode): RuntimeBridge {
   return mode === "live" ? new LiveRuntimeBridge() : new ReplayRuntimeBridge();
@@ -184,6 +186,17 @@ export function DdgcApp() {
             viewModel={snapshot.viewModel as HeroDetailViewModel}
             onReturn={() => {
               void dispatchIntent(bridge, { type: "return-to-town" });
+            }}
+          />
+        </Match>
+        <Match when={screen === "building-detail" && snapshot.viewModel.kind === "building-detail"}>
+          <BuildingDetailScreen
+            viewModel={snapshot.viewModel as BuildingDetailViewModel}
+            onReturn={() => {
+              void dispatchIntent(bridge, { type: "return-to-town" });
+            }}
+            onAction={(actionId) => {
+              void dispatchIntent(bridge, { type: "building-action", actionId });
             }}
           />
         </Match>

@@ -1,5 +1,6 @@
 import type {
   BootLoadViewModel,
+  BuildingDetailViewModel,
   DdgcFrontendSnapshot,
   FatalErrorViewModel,
   HeroDetailViewModel,
@@ -92,6 +93,57 @@ export const replayHeroDetailViewModel: HeroDetailViewModel = {
   campNotes: "Excellent sustain healer with strong camp utility. Marked for Death synergy with teammates."
 };
 
+export const replayBuildingDetailViewModel: BuildingDetailViewModel = {
+  kind: "building-detail",
+  buildingId: "guild",
+  label: "Guild",
+  status: "ready",
+  description: "The guild provides skill training and party capability review. Upgrade your heroes' abilities to better face the challenges ahead.",
+  actions: [
+    {
+      id: "train-combat",
+      label: "Train Combat Skill",
+      description: "Improve a hero's combat skill proficiency.",
+      cost: "200 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "train-camping",
+      label: "Train Camping Skill",
+      description: "Enhance a hero's camping skill for better rest and recovery.",
+      cost: "150 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "upgrade-weapon",
+      label: "Upgrade Weapon",
+      description: "Enhance a hero's weapon to deal more damage.",
+      cost: "300 Gold",
+      isAvailable: false,
+      isUnsupported: false
+    },
+    {
+      id: "upgrade-armor",
+      label: "Upgrade Armor",
+      description: "Improve a hero's armor for better protection.",
+      cost: "300 Gold",
+      isAvailable: false,
+      isUnsupported: false
+    },
+    {
+      id: "rare-recruit",
+      label: "Rare Hero Recruitment",
+      description: "Access the rare hero recruitment pool.",
+      cost: "1000 Gold",
+      isAvailable: false,
+      isUnsupported: true
+    }
+  ],
+  upgradeRequirement: "Reach Town Level 2 to unlock weapon and armor upgrades."
+};
+
 export const replayReadySnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
   flowState: "town",
@@ -104,6 +156,13 @@ export const replayHeroDetailSnapshot: DdgcFrontendSnapshot = {
   flowState: "town",
   viewModel: replayHeroDetailViewModel,
   debugMessage: "Replay bridge showing hero detail for inspection."
+};
+
+export const replayBuildingDetailSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "town",
+  viewModel: replayBuildingDetailViewModel,
+  debugMessage: "Replay bridge showing building detail for interaction."
 };
 
 const unsupportedViewModel: UnsupportedViewModel = {
