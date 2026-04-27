@@ -19,6 +19,8 @@
 //! |---|---|---|
 //! | `DdgcHost` + `HostPhase` | `BootLoadViewModel` | [`boot_load_from_host`] |
 //! | `CampaignState` | `TownViewModel` | [`town_from_campaign`] |
+//! | `CampaignState` + hero ID | `HeroDetailViewModel` | [`hero_detail_from_campaign`] |
+//! | `CampaignState` + building ID | `BuildingDetailViewModel` | [`building_detail_from_campaign`] |
 //! | `DdgcRunResult` | `DungeonViewModel` | [`dungeon_from_run_result`] |
 //! | `DdgcRunResult` | `ExplorationHudViewModel` | [`exploration_hud_from_dungeon`] |
 //! | `DdgcRunResult` + room index | `RoomMovementViewModel` | [`room_movement_from_run`] |
@@ -29,11 +31,12 @@
 //! | `DdgcRunState` + heroes | `ReturnFlowViewModel` | [`return_flow_from_state`] |
 
 use crate::contracts::viewmodels::{
-    BootLoadViewModel, CombatHudViewModel, CombatPhase, CombatViewModel, CombatantType,
-    CombatantViewModel, CombatPosition, CombatantVitalViewModel, DungeonHeroViewModel, DungeonRoomKind, DungeonRoomViewModel,
+    BuildingAction, BuildingDetailViewModel, BootLoadViewModel, CombatHudViewModel,
+    CombatPhase, CombatViewModel, CombatantType, CombatantViewModel, CombatPosition,
+    CombatantVitalViewModel, DungeonHeroViewModel, DungeonRoomKind, DungeonRoomViewModel,
     DungeonViewModel, EncounterEntryViewModel, EncounterHeroViewModel, EncounterType,
-    ExplorationHudViewModel, HeroDetailViewModel, HeroProgression, HeroResistances, HeroVitalViewModel, InteractionType, RoomMovementViewModel,
-    ViewModelResult,
+    ExplorationHudViewModel, HeroDetailViewModel, HeroProgression, HeroResistances,
+    HeroVitalViewModel, InteractionType, RoomMovementViewModel, ViewModelResult,
 };
 use crate::contracts::{
     CampaignState, DungeonType, HeirloomCurrency, MapSize,
@@ -220,6 +223,249 @@ pub fn hero_detail_from_campaign(
         armor: format!("{} (+0)", hero.class_id),
         camp_notes: "Hero detail view - campaign state derived.".to_string(),
     })
+}
+
+/// Adapter: Convert `CampaignState` and building ID to `BuildingDetailViewModel`.
+///
+/// Takes the campaign state and a building ID to produce a detailed building view model
+/// for inspection by the player when interacting with town buildings.
+pub fn building_detail_from_campaign(
+    campaign: &CampaignState,
+    building_id: &str,
+) -> ViewModelResult<BuildingDetailViewModel> {
+    use crate::contracts::viewmodels::BuildingStatus;
+
+    // Check if the building exists in the campaign
+    let building_state = campaign
+        .building_states
+        .get(building_id)
+        .ok_or_else(|| crate::contracts::viewmodels::ViewModelError::MissingRequiredField {
+            field: "building_id".to_string(),
+            context: format!("building '{}' not found in campaign state", building_id),
+        })?;
+
+    // Determine building status based on upgrade level
+    let status = match building_state.current_level {
+        Some(level) if level >= 'a' => BuildingStatus::Ready,
+        Some(level) if level > 'a' => BuildingStatus::Partial,
+        _ => BuildingStatus::Locked,
+    };
+
+    // Generate building label and description based on building_id
+    let (label, description) = match building_id {
+        "stagecoach" => (
+            "Stagecoach".to_string(),
+            "The stagecoach offers new recruits from the surrounding region. Recruit heroes to expand your party roster.".to_string(),
+        ),
+        "guild" => (
+            "Guild".to_string(),
+            "The guild provides skill training and party capability review. Upgrade your heroes' abilities.".to_string(),
+        ),
+        "blacksmith" => (
+            "Blacksmith".to_string(),
+            "The blacksmith crafts and repairs weapons and armor. Enhance your party's equipment.".to_string(),
+        ),
+        "sanitarium" => (
+            "Sanitarium".to_string(),
+            "The sanitarium treats hero quirks, diseases, and ailments. Restore heroes to full health.".to_string(),
+        ),
+        "tavern" => (
+            "Tavern".to_string(),
+            "The tavern provides food, drink, and entertainment. Reduce stress and boost morale.".to_string(),
+        ),
+        "abbey" => (
+            "Abbey".to_string(),
+            "The abbey offers spiritual respite. Reduce hero stress through prayer and meditation.".to_string(),
+        ),
+        "campfire" => (
+            "Campfire".to_string(),
+            "The campfire provides a place to rest during expeditions. Camp to heal and buff heroes.".to_string(),
+        ),
+        "inn" => (
+            "Inn".to_string(),
+            "The inn offers lodging and meals. Heroes can rest and recover here.".to_string(),
+        ),
+        _ => (
+            format!("Building: {}", building_id),
+            format!("Town building '{}' - detailed interactions to be implemented.", building_id),
+        ),
+    };
+
+    // Generate actions based on building type
+    let actions = generate_building_actions(building_id, &status, campaign.gold);
+
+    // Determine upgrade requirement
+    let upgrade_requirement = match building_id {
+        "stagecoach" => Some("Upgrade to Level B: 2000 Gold".to_string()),
+        "guild" => Some("Upgrade to Level B: 1500 Gold".to_string()),
+        "blacksmith" => Some("Upgrade to Level B: 1800 Gold".to_string()),
+        _ => None,
+    };
+
+    Ok(BuildingDetailViewModel {
+        kind: "building-detail".to_string(),
+        building_id: building_id.to_string(),
+        label,
+        status,
+        description,
+        actions,
+        upgrade_requirement,
+    })
+}
+
+/// Generate building actions based on building type and status.
+fn generate_building_actions(
+    building_id: &str,
+    status: &crate::contracts::viewmodels::BuildingStatus,
+    current_gold: u32,
+) -> Vec<BuildingAction> {
+    let is_ready = matches!(status, crate::contracts::viewmodels::BuildingStatus::Ready);
+    let is_partial = matches!(status, crate::contracts::viewmodels::BuildingStatus::Partial);
+
+    match building_id {
+        "stagecoach" => vec![
+            BuildingAction {
+                id: "recruit-hero".to_string(),
+                label: "Recruit Hero".to_string(),
+                description: "Recruit a new hero to your party from available candidates.".to_string(),
+                cost: "500 Gold".to_string(),
+                is_available: is_ready && current_gold >= 500,
+                is_unsupported: false,
+            },
+            BuildingAction {
+                id: "view-candidates".to_string(),
+                label: "View Candidates".to_string(),
+                description: "Browse available hero candidates without recruiting.".to_string(),
+                cost: "Free".to_string(),
+                is_available: is_ready,
+                is_unsupported: false,
+            },
+        ],
+        "guild" => vec![
+            BuildingAction {
+                id: "train-skill".to_string(),
+                label: "Train Skill".to_string(),
+                description: "Improve a hero's combat or camping skill.".to_string(),
+                cost: "200 Gold".to_string(),
+                is_available: is_ready && current_gold >= 200,
+                is_unsupported: false,
+            },
+            BuildingAction {
+                id: "upgrade-weapon".to_string(),
+                label: "Upgrade Weapon".to_string(),
+                description: "Enhance a hero's weapon.".to_string(),
+                cost: "300 Gold".to_string(),
+                is_available: is_ready && is_partial && current_gold >= 300,
+                is_unsupported: false,
+            },
+            BuildingAction {
+                id: "upgrade-armor".to_string(),
+                label: "Upgrade Armor".to_string(),
+                description: "Improve a hero's armor protection.".to_string(),
+                cost: "300 Gold".to_string(),
+                is_available: is_ready && is_partial && current_gold >= 300,
+                is_unsupported: false,
+            },
+        ],
+        "blacksmith" => vec![
+            BuildingAction {
+                id: "repair-weapon".to_string(),
+                label: "Repair Weapon".to_string(),
+                description: "Repair and maintain hero weapons.".to_string(),
+                cost: "100 Gold".to_string(),
+                is_available: is_ready && current_gold >= 100,
+                is_unsupported: false,
+            },
+            BuildingAction {
+                id: "repair-armor".to_string(),
+                label: "Repair Armor".to_string(),
+                description: "Repair and maintain hero armor.".to_string(),
+                cost: "100 Gold".to_string(),
+                is_available: is_ready && current_gold >= 100,
+                is_unsupported: false,
+            },
+        ],
+        "sanitarium" => vec![
+            BuildingAction {
+                id: "treat-quirk".to_string(),
+                label: "Treat Quirk".to_string(),
+                description: "Remove a negative quirk from a hero.".to_string(),
+                cost: "250 Gold".to_string(),
+                is_available: is_ready && current_gold >= 250,
+                is_unsupported: false,
+            },
+            BuildingAction {
+                id: "cure-disease".to_string(),
+                label: "Cure Disease".to_string(),
+                description: "Treat a hero's disease.".to_string(),
+                cost: "500 Gold".to_string(),
+                is_available: is_ready && current_gold >= 500,
+                is_unsupported: false,
+            },
+        ],
+        "tavern" => vec![
+            BuildingAction {
+                id: "drink".to_string(),
+                label: "Drink".to_string(),
+                description: "Purchase food and drink at the tavern bar.".to_string(),
+                cost: "50 Gold".to_string(),
+                is_available: is_ready && current_gold >= 50,
+                is_unsupported: false,
+            },
+            BuildingAction {
+                id: "gamble".to_string(),
+                label: "Gamble".to_string(),
+                description: "Try your luck at the tavern games.".to_string(),
+                cost: "100 Gold".to_string(),
+                is_available: is_ready && current_gold >= 100,
+                is_unsupported: false,
+            },
+        ],
+        "abbey" => vec![
+            BuildingAction {
+                id: "pray".to_string(),
+                label: "Pray".to_string(),
+                description: "Reduce hero stress through prayer.".to_string(),
+                cost: "75 Gold".to_string(),
+                is_available: is_ready && current_gold >= 75,
+                is_unsupported: false,
+            },
+            BuildingAction {
+                id: "meditate".to_string(),
+                label: "Meditate".to_string(),
+                description: "Deep meditation to significantly reduce stress.".to_string(),
+                cost: "150 Gold".to_string(),
+                is_available: is_ready && current_gold >= 150,
+                is_unsupported: false,
+            },
+        ],
+        "campfire" => vec![
+            BuildingAction {
+                id: "rest".to_string(),
+                label: "Rest".to_string(),
+                description: "Rest at the campfire to heal and recover.".to_string(),
+                cost: "Free".to_string(),
+                is_available: true,
+                is_unsupported: false,
+            },
+            BuildingAction {
+                id: "camping-skill".to_string(),
+                label: "Use Camping Skill".to_string(),
+                description: "Apply a camping skill for buffs during dungeon runs.".to_string(),
+                cost: "Free".to_string(),
+                is_available: true,
+                is_unsupported: false,
+            },
+        ],
+        _ => vec![BuildingAction {
+            id: "interact".to_string(),
+            label: "Interact".to_string(),
+            description: "Interact with this building.".to_string(),
+            cost: "Free".to_string(),
+            is_available: is_ready,
+            is_unsupported: false,
+        }],
+    }
 }
 
 /// Adapter: Convert `framework_viewmodels::CombatViewModel` to `CombatViewModel`.

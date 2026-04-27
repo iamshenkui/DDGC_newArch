@@ -301,6 +301,87 @@ impl TownViewModel {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Building Detail View Model
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Building action available in a building detail view.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BuildingAction {
+    /// Action identifier.
+    pub id: String,
+    /// Human-readable action label.
+    pub label: String,
+    /// Detailed description of what the action does.
+    pub description: String,
+    /// Cost to perform the action (e.g., "500 Gold").
+    pub cost: String,
+    /// Whether the action is currently available.
+    pub is_available: bool,
+    /// Whether this action is unsupported in the current build.
+    pub is_unsupported: bool,
+}
+
+/// Status of a building in town.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum BuildingStatus {
+    /// Building is available and fully operational.
+    Ready,
+    /// Building is partially available (some features limited).
+    Partial,
+    /// Building is locked and not accessible.
+    Locked,
+}
+
+impl BuildingStatus {
+    /// Parse from a string (e.g., "ready", "partial", "locked").
+    pub fn from_str(s: &str) -> Self {
+        match s.to_lowercase().as_str() {
+            "ready" => BuildingStatus::Ready,
+            "partial" => BuildingStatus::Partial,
+            "locked" => BuildingStatus::Locked,
+            _ => BuildingStatus::Locked,
+        }
+    }
+}
+
+/// Building detail view model — full building inspection for town interactions.
+///
+/// This view model represents the detailed state of a single town building,
+/// used when the player opens a building to see its actions, costs, and status.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BuildingDetailViewModel {
+    /// View model kind identifier.
+    pub kind: String,
+    /// Building identifier.
+    pub building_id: String,
+    /// Human-readable building label.
+    pub label: String,
+    /// Current building status.
+    pub status: BuildingStatus,
+    /// Detailed description of the building.
+    pub description: String,
+    /// Available actions in this building.
+    pub actions: Vec<BuildingAction>,
+    /// Requirement for upgrading this building (if upgradeable).
+    pub upgrade_requirement: Option<String>,
+}
+
+impl BuildingDetailViewModel {
+    /// Create an empty building detail view model.
+    pub fn empty() -> Self {
+        BuildingDetailViewModel {
+            kind: "building-detail".to_string(),
+            building_id: String::new(),
+            label: String::new(),
+            status: BuildingStatus::Locked,
+            description: String::new(),
+            actions: Vec::new(),
+            upgrade_requirement: None,
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Hero Detail View Model
 // ─────────────────────────────────────────────────────────────────────────────
 
