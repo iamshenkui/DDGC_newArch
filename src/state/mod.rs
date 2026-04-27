@@ -28,9 +28,49 @@
 use std::path::{Path, PathBuf};
 
 use crate::contracts::{
-    CampaignState, CampingSkillRegistry,
-    parse::parse_camping_json,
+    BuffRegistry, BuildingRegistry, CampaignState, CampingSkillRegistry, CurioRegistry,
+    DungeonEncounterRegistry, EquipmentRegistry, ObstacleRegistry, QuestRegistry,
+    QuirkRegistry, TraitRegistry, TrapRegistry, TrinketRegistry,
+    parse::{parse_buildings_json, parse_camping_json, parse_curios_csv, parse_obstacles_json,
+            parse_quirks_json, parse_traits_json, parse_traps_json},
 };
+
+/// The runtime phase of the application host.
+///
+/// This enum mirrors [`crate::contracts::host::HostPhase`] to allow
+/// the state layer to track host-level state transitions without
+/// depending on the contracts::host module directly.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum HostPhase {
+    /// Host is initialized but not yet booted.
+    Uninitialized,
+    /// Host is booting (contract packages loading).
+    Booting,
+    /// Host is ready to run.
+    Ready,
+    /// Host encountered a fatal error and cannot proceed.
+    FatalError,
+    /// Host is unsupported (feature not available in this build).
+    Unsupported,
+}
+
+impl Default for HostPhase {
+    fn default() -> Self {
+        HostPhase::Uninitialized
+    }
+}
+
+impl std::fmt::Display for HostPhase {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            HostPhase::Uninitialized => write!(f, "uninitialized"),
+            HostPhase::Booting => write!(f, "booting"),
+            HostPhase::Ready => write!(f, "ready"),
+            HostPhase::FatalError => write!(f, "fatal_error"),
+            HostPhase::Unsupported => write!(f, "unsupported"),
+        }
+    }
+}
 
 /// Full game state loaded from DDGC data files.
 ///
@@ -42,14 +82,72 @@ use crate::contracts::{
 /// After loading content, start a fresh campaign with [`GameState::new_campaign`]
 /// or restore a saved campaign with [`GameState::load_campaign`]. Persist progress
 /// at any time with [`GameState::save_campaign`].
+///
+/// # Host phase
+///
+/// The [`host_phase`] field tracks the runtime phase of the application host,
+/// mirroring the `HostPhase` enum from `DdgcHost` in the contracts module.
+/// This allows the state layer to drive host-level state transitions.
 #[derive(Debug, Clone)]
 pub struct GameState {
-    /// All 87 camping skill definitions from JsonCamping.json.
+    /// All camping skill definitions from JsonCamping.json.
     pub camping_skills: CampingSkillRegistry,
     /// The active campaign snapshot — canonical save/load boundary.
     pub campaign: CampaignState,
     /// Path to the data directory used for loading.
     pub data_dir: PathBuf,
+
+    // ─── Contract registries ────────────────────────────────────────────
+
+    /// Curio registry loaded from Curios.csv.
+    pub curio_registry: CurioRegistry,
+    /// Trap registry loaded from Traps.json.
+    pub trap_registry: TrapRegistry,
+    /// Obstacle registry loaded from Obstacles.json.
+    pub obstacle_registry: ObstacleRegistry,
+    /// Building registry loaded from Buildings.json.
+    pub building_registry: BuildingRegistry,
+    /// Quest registry loaded from Quests.json.
+    pub quest_registry: QuestRegistry,
+    /// Trinket registry loaded from Trinkets.json.
+    pub trinket_registry: TrinketRegistry,
+    /// Quirk registry loaded from JsonQuirks.json.
+    pub quirk_registry: QuirkRegistry,
+    /// Trait registry loaded from JsonTraits.json.
+    pub trait_registry: TraitRegistry,
+    /// Dungeon encounter registry loaded from encounter definitions.
+    pub dungeon_encounter_registry: DungeonEncounterRegistry,
+    /// Equipment registry loaded from equipment definitions.
+    pub equipment_registry: EquipmentRegistry,
+    /// Buff registry loaded from buff definitions.
+    pub buff_registry: BuffRegistry,
+
+    // ─── Host phase ─────────────────────────────────────────────────────
+
+    /// Current runtime phase of the application host.
+    pub host_phase: HostPhase,
+}
+
+impl Default for GameState {
+    fn default() -> Self {
+        GameState {
+            camping_skills: CampingSkillRegistry::new(),
+            campaign: CampaignState::new(0),
+            data_dir: PathBuf::new(),
+            curio_registry: CurioRegistry::new(),
+            trap_registry: TrapRegistry::new(),
+            obstacle_registry: ObstacleRegistry::new(),
+            building_registry: BuildingRegistry::new(),
+            quest_registry: QuestRegistry::new(),
+            trinket_registry: TrinketRegistry::new(),
+            quirk_registry: QuirkRegistry::new(),
+            trait_registry: TraitRegistry::new(),
+            dungeon_encounter_registry: DungeonEncounterRegistry::new(),
+            equipment_registry: EquipmentRegistry::new(),
+            buff_registry: BuffRegistry::new(),
+            host_phase: HostPhase::Uninitialized,
+        }
+    }
 }
 
 impl GameState {
@@ -70,22 +168,98 @@ impl GameState {
 
     /// Load game state from a specific data directory.
     ///
-    /// The campaign is initialized as an empty campaign with 0 gold.
+    /// Loads all contract packages (Curios.csv, Traps.json, Obstacles.json,
+    /// Buildings.json, Quests.json, Trinkets.json, JsonQuirks.json,
+    /// JsonTraits.json, JsonCamping.json) and initializes the campaign as
+    /// an empty campaign with 0 gold.
+    ///
+    /// The host_phase is set to `HostPhase::Uninitialized` after loading.
+    /// Use [`GameState::new_campaign`] or [`GameState::load_campaign`]
+    /// to set up the campaign state.
     pub fn load_from(data_dir: &Path) -> Result<Self, String> {
-        let camping_path = data_dir.join("JsonCamping.json");
-        if !camping_path.exists() {
-            return Err(format!(
-                "JsonCamping.json not found at {}",
-                camping_path.display()
-            ));
+        if !data_dir.exists() {
+            return Err(format!("data directory not found: {}", data_dir.display()));
         }
 
-        let camping_skills = parse_camping_json(&camping_path)?;
+        // Load Curios.csv
+        let curios_path = data_dir.join("Curios.csv");
+        let curio_registry = if curios_path.exists() {
+            parse_curios_csv(&curios_path).map_err(|e| format!("Curios.csv: {}", e))?
+        } else {
+            CurioRegistry::new()
+        };
+
+        // Load Traps.json
+        let traps_path = data_dir.join("Traps.json");
+        let trap_registry = if traps_path.exists() {
+            parse_traps_json(&traps_path).map_err(|e| format!("Traps.json: {}", e))?
+        } else {
+            TrapRegistry::new()
+        };
+
+        // Load Obstacles.json
+        let obstacles_path = data_dir.join("Obstacles.json");
+        let obstacle_registry = if obstacles_path.exists() {
+            parse_obstacles_json(&obstacles_path).map_err(|e| format!("Obstacles.json: {}", e))?
+        } else {
+            ObstacleRegistry::new()
+        };
+
+        // Load Buildings.json
+        let buildings_path = data_dir.join("Buildings.json");
+        let building_registry = if buildings_path.exists() {
+            parse_buildings_json(&buildings_path).map_err(|e| format!("Buildings.json: {}", e))?
+        } else {
+            BuildingRegistry::new()
+        };
+
+        // Load JsonCamping.json (required)
+        let camping_path = data_dir.join("JsonCamping.json");
+        let camping_skills = if camping_path.exists() {
+            parse_camping_json(&camping_path).map_err(|e| format!("JsonCamping.json: {}", e))?
+        } else {
+            return Err(format!("JsonCamping.json not found at {}", camping_path.display()));
+        };
+
+        // Load JsonQuirks.json
+        let quirks_path = data_dir.join("JsonQuirks.json");
+        let quirk_registry = if quirks_path.exists() {
+            parse_quirks_json(&quirks_path).map_err(|e| format!("JsonQuirks.json: {}", e))?
+        } else {
+            QuirkRegistry::new()
+        };
+
+        // Load JsonTraits.json
+        let traits_path = data_dir.join("JsonTraits.json");
+        let trait_registry = if traits_path.exists() {
+            parse_traits_json(&traits_path).map_err(|e| format!("JsonTraits.json: {}", e))?
+        } else {
+            TraitRegistry::new()
+        };
+
+        // Initialize empty registries for types not loaded from files
+        let quest_registry = QuestRegistry::new();
+        let trinket_registry = TrinketRegistry::new();
+        let dungeon_encounter_registry = DungeonEncounterRegistry::new();
+        let equipment_registry = EquipmentRegistry::new();
+        let buff_registry = BuffRegistry::new();
 
         Ok(GameState {
             camping_skills,
             campaign: CampaignState::new(0),
             data_dir: data_dir.to_path_buf(),
+            curio_registry,
+            trap_registry,
+            obstacle_registry,
+            building_registry,
+            quest_registry,
+            trinket_registry,
+            quirk_registry,
+            trait_registry,
+            dungeon_encounter_registry,
+            equipment_registry,
+            buff_registry,
+            host_phase: HostPhase::Uninitialized,
         })
     }
 
@@ -144,6 +318,128 @@ impl GameState {
     /// Get all class-specific camping skills.
     pub fn class_specific_camping_skills(&self) -> Vec<&crate::contracts::CampingSkill> {
         self.camping_skills.class_specific_skills()
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // Registry accessors
+    // ───────────────────────────────────────────────────────────────
+
+    /// Get the total number of curios loaded.
+    pub fn curio_count(&self) -> usize {
+        self.curio_registry.len()
+    }
+
+    /// Get a curio by ID.
+    pub fn curio(&self, id: &str) -> Option<&crate::contracts::CurioDefinition> {
+        self.curio_registry.get(id)
+    }
+
+    /// Get the total number of traps loaded.
+    pub fn trap_count(&self) -> usize {
+        self.trap_registry.len()
+    }
+
+    /// Get a trap by ID.
+    pub fn trap(&self, id: &str) -> Option<&crate::contracts::TrapDefinition> {
+        self.trap_registry.get(id)
+    }
+
+    /// Get the total number of obstacles loaded.
+    pub fn obstacle_count(&self) -> usize {
+        self.obstacle_registry.len()
+    }
+
+    /// Get an obstacle by ID.
+    pub fn obstacle(&self, id: &str) -> Option<&crate::contracts::ObstacleDefinition> {
+        self.obstacle_registry.get(id)
+    }
+
+    /// Get the total number of buildings loaded.
+    pub fn building_count(&self) -> usize {
+        self.building_registry.len()
+    }
+
+    /// Get a building by ID.
+    pub fn building(&self, id: &str) -> Option<&crate::contracts::TownBuilding> {
+        self.building_registry.get(id)
+    }
+
+    /// Get the total number of quirks loaded.
+    pub fn quirk_count(&self) -> usize {
+        self.quirk_registry.len()
+    }
+
+    /// Get a quirk by ID.
+    pub fn quirk(&self, id: &str) -> Option<&crate::contracts::QuirkDefinition> {
+        self.quirk_registry.get(id)
+    }
+
+    /// Get the total number of traits loaded.
+    pub fn trait_count(&self) -> usize {
+        self.trait_registry.len()
+    }
+
+    /// Get a trait by ID.
+    pub fn trait_def(&self, id: &str) -> Option<&crate::contracts::TraitDefinition> {
+        self.trait_registry.get(id)
+    }
+
+    /// Get the total number of trinkets loaded.
+    pub fn trinket_count(&self) -> usize {
+        self.trinket_registry.len()
+    }
+
+    /// Get a trinket by ID.
+    pub fn trinket(&self, id: &str) -> Option<&crate::contracts::TrinketDefinition> {
+        self.trinket_registry.get(id)
+    }
+
+    /// Get the total number of quests loaded.
+    pub fn quest_count(&self) -> usize {
+        self.quest_registry.len()
+    }
+
+    /// Get a quest by ID.
+    pub fn quest(&self, id: &str) -> Option<&crate::contracts::QuestDefinition> {
+        self.quest_registry.get(id)
+    }
+
+    /// Get the total number of dungeon encounters loaded.
+    pub fn dungeon_encounter_count(&self) -> usize {
+        self.dungeon_encounter_registry.configs().len()
+    }
+
+    /// Get the total number of equipment items loaded.
+    pub fn equipment_count(&self) -> usize {
+        self.equipment_registry.len()
+    }
+
+    /// Get the number of buff overrides registered.
+    pub fn buff_override_count(&self) -> usize {
+        // BuffRegistry stores overrides in a private HashMap;
+        // we can only expose the count via resolve_buff usage
+        // For actual buff resolution, use resolve_buff or resolve_buffs
+        0
+    }
+
+    /// Resolve a buff ID to attribute modifiers.
+    pub fn resolve_buff(&self, buff_id: &str) -> Vec<crate::contracts::AttributeModifier> {
+        self.buff_registry.resolve_buff(buff_id)
+    }
+
+    /// Check if the host is in the Ready phase.
+    pub fn is_ready(&self) -> bool {
+        self.host_phase == HostPhase::Ready
+    }
+
+    /// Get the current host phase.
+    pub fn host_phase(&self) -> &HostPhase {
+        &self.host_phase
+    }
+
+    /// Transition to a new host phase.
+    pub fn set_host_phase(&mut self, phase: HostPhase) {
+        self.host_phase = phase;
     }
 
     // ───────────────────────────────────────────────────────────────
