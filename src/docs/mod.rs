@@ -1,6 +1,88 @@
-//! Canonical save/load boundary for the DDGC headless migration.
+//! DDGC frontend application host — documentation and verification layer.
 //!
-//! # The `CampaignState` schema
+//! This module provides canonical documentation and acceptance tests for the
+//! DDGC headless migration's frontend host layer. It verifies that:
+//!
+//! - The [`DdgcHost`] frontend entrypoint exists and is properly documented.
+//! - The host boots from approved contract packages without reading simulation internals.
+//! - Both replay-driven and live-runtime startup paths are explicit and testable.
+//! - Startup, loading, unsupported-state, and fatal-error surfaces are explicit.
+//!
+//! # Frontend Host Architecture
+//!
+//! The [`DdgcHost`] (defined in [`crate::contracts::host`]) is the canonical
+//! application host for the DDGC headless migration. It provides:
+//!
+//! ## Startup modes
+//!
+//! | Mode | Method | Description |
+//! |------|--------|-------------|
+//! | Live-runtime | [`DdgcHost::boot_live`] | Start a fresh campaign with initial config |
+//! | Replay-driven | [`DdgcHost::boot_from_campaign`] | Resume from a saved campaign state |
+//!
+//! ## Explicit phase tracking
+//!
+//! The host transitions through explicit [`HostPhase`] states rather than
+//! implicitly failing:
+//!
+//! | Phase | Meaning |
+//! |-------|---------|
+//! | `Uninitialized` | Host created but not booted |
+//! | `Booting` | Contract packages are being loaded |
+//! | `Ready` | Host is ready to run |
+//! | `FatalError` | A fatal error occurred; see [`HostError`] |
+//! | `Unsupported` | A requested feature is not supported |
+//!
+//! ## Explicit error surfaces
+//!
+//! All boot operations return a dedicated [`HostError`] variant with meaningful
+//! context. Errors are never silent fallbacks or panics:
+//!
+//! | Variant | Trigger |
+//! |---------|--------|
+//! | `DataDirectoryNotFound` | Contract data directory missing or inaccessible |
+//! | `ContractParse` | A contract file failed to parse |
+//! | `CampaignLoadFailed` | Campaign state could not be deserialized |
+//! | `UnsupportedCampaignSchema` | Campaign schema version mismatch |
+//! | `InvalidInitialConfig` | Live startup validation failed |
+//! | `FeatureNotSupported` | Requested feature not available in build |
+//! | `InvalidHostState` | Operation requires a different host phase |
+//!
+//! # No simulation internals
+//!
+//! The host operates exclusively on contracts-layer types (registries, data models,
+//! and [`CampaignState`]). It does not read framework internals like `ActorId`,
+//! `EncounterId`, or `Run` directly. This ensures a clean separation between
+//! the frontend host and the simulation layer.
+//!
+//! # Local developer startup
+//!
+//! ```rust
+//! use game_ddgc_headless::contracts::host::{DdgcHost, LiveConfig};
+//!
+//! // Boot in live-runtime mode
+//! let host = DdgcHost::boot_live(&LiveConfig::default()).expect("boot failed");
+//! assert!(host.is_ready());
+//!
+//! // Check for errors explicitly
+//! if let Some(msg) = host.error_message() {
+//!     eprintln!("Host error: {}", msg);
+//! }
+//! ```
+//!
+//! ```ignore
+//! use game_ddgc_headless::contracts::host::{DdgcHost, ReplayConfig};
+//!
+//! // Boot from a saved campaign state (replay-driven)
+//! // Note: saved_json would be obtained from a previous campaign.save() call
+//! let host = DdgcHost::boot_from_campaign(&ReplayConfig {
+//!     campaign_json: &saved_json,
+//!     source_path: "savegame.json",
+//! }).expect("replay failed");
+//! assert!(host.is_ready());
+//! ```
+//!
+//! # Canonical save/load boundary
 //!
 //! [`CampaignState`] (defined in [`crate::contracts`]) is the **single source of
 //! truth** for campaign persistence. Every gameplay-significant piece of state
