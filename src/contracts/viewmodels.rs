@@ -733,6 +733,300 @@ impl CombatResult {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Combat HUD View Model
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Minimal HUD view model for the combat shell.
+///
+/// This view model presents only the essential combat context needed
+/// for the player to understand their current battle state.
+/// It is a lightweight subset of CombatViewModel optimized for HUD rendering.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CombatHudViewModel {
+    /// Encounter identifier.
+    pub encounter_id: String,
+    /// Current round number.
+    pub round: u32,
+    /// Combat phase.
+    pub phase: CombatPhase,
+    /// Combat result (if combat has ended).
+    pub result: Option<CombatResult>,
+    /// Current turn actor ID.
+    pub current_turn_actor_id: Option<String>,
+    /// Hero vitals for the HUD (minimal combatant state).
+    pub hero_vitals: Vec<CombatantVitalViewModel>,
+    /// Monster vitals for the HUD (minimal combatant state).
+    pub monster_vitals: Vec<CombatantVitalViewModel>,
+    /// Number of heroes alive.
+    pub heroes_alive: u32,
+    /// Number of monsters alive.
+    pub monsters_alive: u32,
+    /// Whether combat is in resolution phase.
+    pub is_resolving: bool,
+    /// Error details if any.
+    pub error: Option<ViewModelError>,
+}
+
+/// Minimal combatant vital statistics for HUD display.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CombatantVitalViewModel {
+    /// Unique combatant identifier.
+    pub id: String,
+    /// Combatant type.
+    pub combatant_type: CombatantType,
+    /// Health fraction (0.0 to 1.0).
+    pub health_fraction: f64,
+    /// Whether this combatant is at death's door.
+    pub is_at_deaths_door: bool,
+    /// Whether this combatant is dead.
+    pub is_dead: bool,
+    /// Active status count.
+    pub status_count: usize,
+}
+
+impl CombatHudViewModel {
+    /// Create an empty combat HUD.
+    pub fn empty() -> Self {
+        CombatHudViewModel {
+            encounter_id: String::new(),
+            round: 0,
+            phase: CombatPhase::Unknown,
+            result: None,
+            current_turn_actor_id: None,
+            hero_vitals: Vec::new(),
+            monster_vitals: Vec::new(),
+            heroes_alive: 0,
+            monsters_alive: 0,
+            is_resolving: false,
+            error: None,
+        }
+    }
+
+    /// Check if combat is active (not ended).
+    pub fn is_combat_active(&self) -> bool {
+        self.result.is_none() && self.phase != CombatPhase::PostBattle
+    }
+
+    /// Check if all heroes are dead.
+    pub fn all_heroes_dead(&self) -> bool {
+        self.heroes_alive == 0
+    }
+
+    /// Check if all monsters are dead.
+    pub fn all_monsters_dead(&self) -> bool {
+        self.monsters_alive == 0
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Combat Action Input Contracts
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Player action input during combat.
+///
+/// These contracts represent the player's intent to perform an action
+/// during combat, which gets translated into framework combat actions.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum CombatActionInput {
+    /// Attack an enemy target.
+    Attack {
+        /// Actor ID of the attacker.
+        attacker_id: String,
+        /// Target position to attack.
+        target_position: CombatPosition,
+    },
+    /// Defend (raise guard).
+    Defend {
+        /// Actor ID of the defender.
+        defender_id: String,
+    },
+    /// Use a skill on a target.
+    UseSkill {
+        /// Actor ID of the skill user.
+        user_id: String,
+        /// Skill identifier.
+        skill_id: String,
+        /// Target position (if applicable).
+        target_position: Option<CombatPosition>,
+    },
+    /// Use an item.
+    UseItem {
+        /// Actor ID of the item user.
+        user_id: String,
+        /// Item identifier.
+        item_id: String,
+        /// Target position (if applicable).
+        target_position: Option<CombatPosition>,
+    },
+    /// Focus fire on a target.
+    FocusFire {
+        /// Actor IDs of the attackers.
+        attacker_ids: Vec<String>,
+        /// Target position to focus.
+        target_position: CombatPosition,
+    },
+    /// Guard redirect - protect an ally.
+    Guard {
+        /// Actor ID of the guard.
+        guard_id: String,
+        /// Actor ID of the ally to protect.
+        ally_id: String,
+    },
+    /// Retreat/flee from combat.
+    Retreat {
+        /// Actor ID of the party member initiating retreat.
+        party_member_id: String,
+    },
+}
+
+impl CombatActionInput {
+    /// Returns the actor ID involved in this action (if any).
+    pub fn actor_id(&self) -> Option<&str> {
+        match self {
+            CombatActionInput::Attack { attacker_id, .. } => Some(attacker_id),
+            CombatActionInput::Defend { defender_id } => Some(defender_id),
+            CombatActionInput::UseSkill { user_id, .. } => Some(user_id),
+            CombatActionInput::UseItem { user_id, .. } => Some(user_id),
+            CombatActionInput::FocusFire { attacker_ids, .. } => attacker_ids.first().map(|s| s.as_str()),
+            CombatActionInput::Guard { guard_id, .. } => Some(guard_id),
+            CombatActionInput::Retreat { party_member_id } => Some(party_member_id),
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Combat Feedback Contracts
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Feedback event from combat resolution.
+///
+/// These contracts represent the outcomes of combat actions
+/// that need to be displayed to the player.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum CombatFeedback {
+    /// Damage was dealt.
+    DamageDealt {
+        /// Target ID that took damage.
+        target_id: String,
+        /// Amount of damage dealt.
+        damage: f64,
+        /// Whether this was fatal.
+        is_fatal: bool,
+        /// Damage type (physical, magic, etc.).
+        damage_type: String,
+    },
+    /// Healing was applied.
+    HealingApplied {
+        /// Target ID that was healed.
+        target_id: String,
+        /// Amount of healing applied.
+        amount: f64,
+    },
+    /// Status was applied.
+    StatusApplied {
+        /// Target ID that received the status.
+        target_id: String,
+        /// Status identifier.
+        status_id: String,
+        /// Duration in turns (if applicable).
+        duration: Option<u32>,
+    },
+    /// Status was removed.
+    StatusRemoved {
+        /// Target ID that lost the status.
+        target_id: String,
+        /// Status identifier.
+        status_id: String,
+    },
+    /// Combatant died.
+    CombatantDied {
+        /// Combatant ID that died.
+        combatant_id: String,
+        /// Combatant type.
+        combatant_type: CombatantType,
+        /// Cause of death.
+        cause: String,
+    },
+    /// Combatant was revived.
+    CombatantRevived {
+        /// Combatant ID that was revived.
+        combatant_id: String,
+        /// Amount of health restored.
+        health_restored: f64,
+    },
+    /// Guard was established.
+    GuardEstablished {
+        /// Guard ID.
+        guard_id: String,
+        /// Protected ally ID.
+        ally_id: String,
+    },
+    /// Guard was broken.
+    GuardBroken {
+        /// Guard ID.
+        guard_id: String,
+        /// Ally ID that was left unprotected.
+        ally_id: String,
+    },
+    /// Combat round ended.
+    RoundEnded {
+        /// Round number.
+        round: u32,
+    },
+    /// Combat ended.
+    CombatEnded {
+        /// Result of the combat.
+        result: CombatResult,
+    },
+}
+
+impl CombatFeedback {
+    /// Human-readable description of this feedback event.
+    pub fn description(&self) -> String {
+        match self {
+            CombatFeedback::DamageDealt { target_id, damage, is_fatal, damage_type } => {
+                if *is_fatal {
+                    format!("{} was fatally wounded by {} {} damage", target_id, damage, damage_type)
+                } else {
+                    format!("{} took {} {} damage", target_id, damage, damage_type)
+                }
+            }
+            CombatFeedback::HealingApplied { target_id, amount } => {
+                format!("{} recovered {} health", target_id, amount)
+            }
+            CombatFeedback::StatusApplied { target_id, status_id, duration } => {
+                if let Some(d) = duration {
+                    format!("{} gained {} for {} turns", target_id, status_id, d)
+                } else {
+                    format!("{} gained {}", target_id, status_id)
+                }
+            }
+            CombatFeedback::StatusRemoved { target_id, status_id } => {
+                format!("{} lost {}", target_id, status_id)
+            }
+            CombatFeedback::CombatantDied { combatant_id, combatant_type, cause } => {
+                format!("{:?} {} died: {}", combatant_type, combatant_id, cause)
+            }
+            CombatFeedback::CombatantRevived { combatant_id, health_restored } => {
+                format!("{} was revived with {} health", combatant_id, health_restored)
+            }
+            CombatFeedback::GuardEstablished { guard_id, ally_id } => {
+                format!("{} is guarding {}", guard_id, ally_id)
+            }
+            CombatFeedback::GuardBroken { guard_id, ally_id } => {
+                format!("{} is no longer guarding {}", guard_id, ally_id)
+            }
+            CombatFeedback::RoundEnded { round } => {
+                format!("Round {} ended", round)
+            }
+            CombatFeedback::CombatEnded { result } => {
+                format!("Combat ended: {:?}", result)
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Result View Model
 // ─────────────────────────────────────────────────────────────────────────────
 

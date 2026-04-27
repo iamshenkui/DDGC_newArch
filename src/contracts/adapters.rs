@@ -24,12 +24,13 @@
 //! | `DdgcRunResult` + room index | `RoomMovementViewModel` | [`room_movement_from_run`] |
 //! | `DdgcRunResult` + room index | `EncounterEntryViewModel` | [`encounter_entry_from_run`] |
 //! | `framework_viewmodels::CombatViewModel` | `CombatViewModel` | [`combat_from_framework`] |
+//! | `CombatViewModel` | `CombatHudViewModel` | [`combat_hud_from_combat`] |
 //! | `RunResult` + rewards | `ResultViewModel` | [`result_from_run`] |
 //! | `DdgcRunState` + heroes | `ReturnFlowViewModel` | [`return_flow_from_state`] |
 
 use crate::contracts::viewmodels::{
-    BootLoadViewModel, CombatPhase, CombatViewModel, CombatantType,
-    CombatantViewModel, CombatPosition, DungeonHeroViewModel, DungeonRoomKind, DungeonRoomViewModel,
+    BootLoadViewModel, CombatHudViewModel, CombatPhase, CombatViewModel, CombatantType,
+    CombatantViewModel, CombatPosition, CombatantVitalViewModel, DungeonHeroViewModel, DungeonRoomKind, DungeonRoomViewModel,
     DungeonViewModel, EncounterEntryViewModel, EncounterHeroViewModel, EncounterType,
     ExplorationHudViewModel, HeroVitalViewModel, InteractionType, RoomMovementViewModel,
     ViewModelResult,
@@ -224,6 +225,65 @@ pub fn combat_from_framework(
         phase,
         result: None, // Result is determined externally
         error: None,
+    })
+}
+
+/// Adapter: Convert `CombatViewModel` to `CombatHudViewModel`.
+///
+/// Takes a DDGC combat view model and produces a minimal HUD view model
+/// for the combat shell, presenting only essential combat context.
+pub fn combat_hud_from_combat(
+    combat: &CombatViewModel,
+) -> ViewModelResult<CombatHudViewModel> {
+    let hero_vitals: Vec<CombatantVitalViewModel> = combat
+        .heroes
+        .iter()
+        .map(|h| CombatantVitalViewModel {
+            id: h.id.clone(),
+            combatant_type: CombatantType::Hero,
+            health_fraction: if h.max_health > 0.0 {
+                h.health / h.max_health
+            } else {
+                0.0
+            },
+            is_at_deaths_door: h.is_at_deaths_door,
+            is_dead: h.is_dead,
+            status_count: h.active_statuses.len(),
+        })
+        .collect();
+
+    let monster_vitals: Vec<CombatantVitalViewModel> = combat
+        .monsters
+        .iter()
+        .map(|m| CombatantVitalViewModel {
+            id: m.id.clone(),
+            combatant_type: CombatantType::Monster,
+            health_fraction: if m.max_health > 0.0 {
+                m.health / m.max_health
+            } else {
+                0.0
+            },
+            is_at_deaths_door: m.is_at_deaths_door,
+            is_dead: m.is_dead,
+            status_count: m.active_statuses.len(),
+        })
+        .collect();
+
+    let heroes_alive = combat.heroes.iter().filter(|h| !h.is_dead).count() as u32;
+    let monsters_alive = combat.monsters.iter().filter(|m| !m.is_dead).count() as u32;
+
+    Ok(CombatHudViewModel {
+        encounter_id: combat.encounter_id.clone(),
+        round: combat.round,
+        phase: combat.phase.clone(),
+        result: combat.result.clone(),
+        current_turn_actor_id: combat.current_turn_actor_id.clone(),
+        hero_vitals,
+        monster_vitals,
+        heroes_alive,
+        monsters_alive,
+        is_resolving: combat.phase == CombatPhase::Resolution,
+        error: combat.error.clone(),
     })
 }
 

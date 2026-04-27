@@ -18,18 +18,18 @@ use framework_progression::run::{Run, RunId};
 use framework_rules::attributes::AttributeValue;
 use framework_viewmodels::combat::{ActorSummary, CombatViewModel as FrameworkCombatViewModel, FormationSummary, FormationSlotSummary, StatusSummary};
 use game_ddgc_headless::contracts::viewmodels::{
-    BootLoadViewModel, CombatPhase, CombatResult, CombatViewModel as DdgcCombatViewModel,
-    CombatantType, DungeonRoomKind, DungeonViewModel, ReturnFlowState, ResultViewModel,
-    TownViewModel, ViewModelError, TownActivityType,
+    BootLoadViewModel, CombatActionInput, CombatFeedback, CombatHudViewModel, CombatPhase, CombatPosition,
+    CombatResult, CombatViewModel as DdgcCombatViewModel, CombatantType, DungeonRoomKind, DungeonViewModel,
+    ReturnFlowState, ResultViewModel, TownViewModel, ViewModelError, TownActivityType,
 };
 use game_ddgc_headless::contracts::{
     DungeonType, HeirloomCurrency, MapSize, GridSize,
 };
 use game_ddgc_headless::run::flow::{DdgcRunResult, HeroState, RunMetadata, RoomEncounterRecord};
 use game_ddgc_headless::contracts::adapters::{
-    boot_load_from_host, combat_from_framework, dungeon_from_run_result, encounter_entry_from_run,
-    exploration_hud_from_dungeon, result_from_run, return_flow_from_state, room_movement_from_run,
-    town_from_campaign,
+    boot_load_from_host, combat_from_framework, combat_hud_from_combat, dungeon_from_run_result,
+    encounter_entry_from_run, exploration_hud_from_dungeon, result_from_run, return_flow_from_state,
+    room_movement_from_run, town_from_campaign,
 };
 use game_ddgc_headless::monsters::families::FamilyId;
 
@@ -2299,4 +2299,277 @@ fn adapter_exploration_to_combat_via_adapters() {
     assert!(!encounter_vm.is_boss);
     assert_eq!(encounter_vm.heroes.len(), 1);
     assert_eq!(encounter_vm.heroes[0].id, "h1");
+}
+
+// ── US-006-a: Combat interaction and resolution slice tests ────────────────────
+
+/// Verifies combat_hud_from_combat produces correct HUD view model.
+#[test]
+fn adapter_combat_hud_maps_basic_context() {
+    let actors = vec![
+        make_actor_summary(1, CombatSide::Ally, 80.0, 100.0, vec![]),
+        make_actor_summary(10, CombatSide::Enemy, 150.0, 200.0, vec![]),
+    ];
+    let framework_vm = make_framework_combat_vm(1, 1, actors, vec![1, 10]);
+
+    let combat_vm = combat_from_framework(&framework_vm).unwrap();
+    let hud_vm = combat_hud_from_combat(&combat_vm);
+
+    assert!(hud_vm.is_ok());
+    let hud = hud_vm.unwrap();
+    assert_eq!(hud.encounter_id, "encounter_EncounterId(1)");
+    assert_eq!(hud.round, 1);
+    assert_eq!(hud.phase, CombatPhase::Unknown);
+    assert!(!hud.is_resolving);
+}
+
+/// Verifies combat_hud_from_combat maps hero and monster vitals correctly.
+#[test]
+fn adapter_combat_hud_maps_vitals() {
+    let actors = vec![
+        make_actor_summary(1, CombatSide::Ally, 80.0, 100.0, vec![]),
+        make_actor_summary(2, CombatSide::Ally, 50.0, 100.0, vec![]), // at death's door: 50%
+        make_actor_summary(10, CombatSide::Enemy, 150.0, 200.0, vec![]),
+        make_actor_summary(11, CombatSide::Enemy, 0.0, 200.0, vec![]), // dead
+    ];
+    let framework_vm = make_framework_combat_vm(1, 1, actors, vec![1, 10]);
+
+    let combat_vm = combat_from_framework(&framework_vm).unwrap();
+    let hud_vm = combat_hud_from_combat(&combat_vm).unwrap();
+
+    assert_eq!(hud_vm.hero_vitals.len(), 2);
+    assert_eq!(hud_vm.monster_vitals.len(), 2);
+    assert_eq!(hud_vm.heroes_alive, 2);
+    assert_eq!(hud_vm.monsters_alive, 1);
+
+    let h1 = hud_vm.hero_vitals.iter().find(|h| h.id == "ActorId(1)").unwrap();
+    assert!((h1.health_fraction - 0.8).abs() < 0.001);
+    assert!(!h1.is_at_deaths_door);
+    assert!(!h1.is_dead);
+
+    let h2 = hud_vm.hero_vitals.iter().find(|h| h.id == "ActorId(2)").unwrap();
+    assert!((h2.health_fraction - 0.5).abs() < 0.001);
+    assert!(!h2.is_at_deaths_door, "50% HP should NOT be at death's door (threshold is < 50%)");
+    assert!(!h2.is_dead);
+
+    let m11 = hud_vm.monster_vitals.iter().find(|m| m.id == "ActorId(11)").unwrap();
+    assert!(m11.is_dead);
+    assert!(m11.health_fraction < 0.001);
+}
+
+/// Verifies combat_hud_from_combat detects death's door correctly.
+#[test]
+fn adapter_combat_hud_detects_deaths_door() {
+    // Hero at 49% health should be at death's door
+    let actors = vec![
+        make_actor_summary(1, CombatSide::Ally, 49.0, 100.0, vec![]),
+        make_actor_summary(10, CombatSide::Enemy, 100.0, 200.0, vec![]),
+    ];
+    let framework_vm = make_framework_combat_vm(1, 1, actors, vec![1, 10]);
+
+    let combat_vm = combat_from_framework(&framework_vm).unwrap();
+    let hud_vm = combat_hud_from_combat(&combat_vm).unwrap();
+
+    let h1 = hud_vm.hero_vitals.iter().find(|h| h.id == "ActorId(1)").unwrap();
+    assert!(h1.is_at_deaths_door, "49% HP should be at death's door");
+}
+
+/// Verifies combat_hud_from_combat marks resolution phase correctly.
+#[test]
+fn adapter_combat_hud_marks_resolution_phase() {
+    let actors = vec![
+        make_actor_summary(1, CombatSide::Ally, 80.0, 100.0, vec![]),
+        make_actor_summary(10, CombatSide::Enemy, 150.0, 200.0, vec![]),
+    ];
+    let framework_vm = make_framework_combat_vm(1, 1, actors, vec![1, 10]);
+
+    let combat_vm = combat_from_framework(&framework_vm).unwrap();
+    let hud_vm = combat_hud_from_combat(&combat_vm).unwrap();
+
+    assert!(!hud_vm.is_resolving);
+    assert!(hud_vm.is_combat_active());
+}
+
+/// Verifies combat_hud_from_combat handles post-battle state.
+#[test]
+fn adapter_combat_hud_post_battle() {
+    let actors = vec![
+        make_actor_summary(1, CombatSide::Ally, 80.0, 100.0, vec![]),
+        make_actor_summary(10, CombatSide::Enemy, 0.0, 200.0, vec![]),
+    ];
+    let framework_vm = make_framework_combat_vm(1, 1, actors, vec![1, 10]);
+
+    let mut combat_vm = combat_from_framework(&framework_vm).unwrap();
+    combat_vm.phase = CombatPhase::PostBattle;
+    combat_vm.result = Some(CombatResult::Victory);
+
+    let hud_vm = combat_hud_from_combat(&combat_vm).unwrap();
+
+    assert!(!hud_vm.is_combat_active());
+    assert_eq!(hud_vm.result, Some(CombatResult::Victory));
+}
+
+/// Verifies combat_hud_from_combat is deterministic for same input.
+#[test]
+fn adapter_combat_hud_deterministic() {
+    let actors = vec![
+        make_actor_summary(1, CombatSide::Ally, 80.0, 100.0, vec![("bleeding", Some(2))]),
+        make_actor_summary(10, CombatSide::Enemy, 150.0, 200.0, vec![]),
+    ];
+    let framework_vm1 = make_framework_combat_vm(1, 3, actors.clone(), vec![1, 10]);
+    let framework_vm2 = make_framework_combat_vm(1, 3, actors, vec![1, 10]);
+
+    let combat_vm1 = combat_from_framework(&framework_vm1).unwrap();
+    let combat_vm2 = combat_from_framework(&framework_vm2).unwrap();
+
+    let hud_vm1 = combat_hud_from_combat(&combat_vm1).unwrap();
+    let hud_vm2 = combat_hud_from_combat(&combat_vm2).unwrap();
+
+    assert_eq!(hud_vm1, hud_vm2);
+}
+
+/// Verifies combat_hud_from_combat tracks alive counts correctly.
+#[test]
+fn adapter_combat_hud_tracks_alive_counts() {
+    // 2 heroes alive, 1 monster alive
+    let actors = vec![
+        make_actor_summary(1, CombatSide::Ally, 80.0, 100.0, vec![]),
+        make_actor_summary(2, CombatSide::Ally, 0.0, 100.0, vec![]), // dead
+        make_actor_summary(10, CombatSide::Enemy, 150.0, 200.0, vec![]),
+        make_actor_summary(11, CombatSide::Enemy, 0.0, 200.0, vec![]), // dead
+    ];
+    let framework_vm = make_framework_combat_vm(1, 1, actors, vec![1, 10]);
+
+    let combat_vm = combat_from_framework(&framework_vm).unwrap();
+    let hud_vm = combat_hud_from_combat(&combat_vm).unwrap();
+
+    assert_eq!(hud_vm.heroes_alive, 1);
+    assert_eq!(hud_vm.monsters_alive, 1);
+    assert!(!hud_vm.all_heroes_dead());
+    assert!(!hud_vm.all_monsters_dead());
+}
+
+/// Verifies combat_hud_from_combat detects all-dead states.
+#[test]
+fn adapter_combat_hud_detects_all_dead() {
+    // All heroes dead
+    let actors = vec![
+        make_actor_summary(1, CombatSide::Ally, 0.0, 100.0, vec![]),
+        make_actor_summary(10, CombatSide::Enemy, 150.0, 200.0, vec![]),
+    ];
+    let framework_vm = make_framework_combat_vm(1, 1, actors, vec![1, 10]);
+
+    let combat_vm = combat_from_framework(&framework_vm).unwrap();
+    let hud_vm = combat_hud_from_combat(&combat_vm).unwrap();
+
+    assert!(hud_vm.all_heroes_dead());
+    assert!(!hud_vm.all_monsters_dead());
+}
+
+/// Verifies CombatHudViewModel empty constructor works.
+#[test]
+fn combat_hud_view_model_empty() {
+    let hud = CombatHudViewModel::empty();
+    assert!(hud.encounter_id.is_empty());
+    assert_eq!(hud.round, 0);
+    assert_eq!(hud.phase, CombatPhase::Unknown);
+    assert!(hud.result.is_none());
+    assert!(hud.hero_vitals.is_empty());
+    assert!(hud.monster_vitals.is_empty());
+    assert_eq!(hud.heroes_alive, 0);
+    assert_eq!(hud.monsters_alive, 0);
+    assert!(!hud.is_resolving);
+}
+
+/// Verifies CombatActionInput actor_id extraction.
+#[test]
+fn combat_action_input_actor_id() {
+    let attack = CombatActionInput::Attack {
+        attacker_id: "hero1".to_string(),
+        target_position: CombatPosition { lane: 0, slot: 1 },
+    };
+    assert_eq!(attack.actor_id(), Some("hero1"));
+
+    let defend = CombatActionInput::Defend {
+        defender_id: "hero2".to_string(),
+    };
+    assert_eq!(defend.actor_id(), Some("hero2"));
+
+    let retreat = CombatActionInput::Retreat {
+        party_member_id: "hero1".to_string(),
+    };
+    assert_eq!(retreat.actor_id(), Some("hero1"));
+}
+
+/// Verifies CombatFeedback description generation.
+#[test]
+fn combat_feedback_description() {
+    let damage = CombatFeedback::DamageDealt {
+        target_id: "monster1".to_string(),
+        damage: 25.0,
+        is_fatal: false,
+        damage_type: "physical".to_string(),
+    };
+    assert!(damage.description().contains("25"));
+    assert!(damage.description().contains("physical"));
+
+    let fatal = CombatFeedback::DamageDealt {
+        target_id: "hero1".to_string(),
+        damage: 50.0,
+        is_fatal: true,
+        damage_type: "magic".to_string(),
+    };
+    assert!(fatal.description().contains("fatally wounded"));
+
+    let status = CombatFeedback::StatusApplied {
+        target_id: "hero1".to_string(),
+        status_id: "bleeding".to_string(),
+        duration: Some(3),
+    };
+    assert!(status.description().contains("bleeding"));
+    assert!(status.description().contains("3"));
+
+    let died = CombatFeedback::CombatantDied {
+        combatant_id: "monster1".to_string(),
+        combatant_type: CombatantType::Monster,
+        cause: "overkill".to_string(),
+    };
+    assert!(died.description().contains("Monster"));
+    assert!(died.description().contains("monster1"));
+    assert!(died.description().contains("overkill"));
+}
+
+/// Verifies combat to combat HUD transition.
+#[test]
+fn adapter_combat_to_combat_hud_transition() {
+    let actors = vec![
+        make_actor_summary(1, CombatSide::Ally, 80.0, 100.0, vec![]),
+        make_actor_summary(10, CombatSide::Enemy, 150.0, 200.0, vec![]),
+    ];
+    let framework_vm = make_framework_combat_vm(42, 3, actors, vec![1, 10]);
+
+    let combat_vm = combat_from_framework(&framework_vm).unwrap();
+    let hud_vm = combat_hud_from_combat(&combat_vm).unwrap();
+
+    assert_eq!(hud_vm.encounter_id, "encounter_EncounterId(42)");
+    assert_eq!(hud_vm.round, 3);
+    assert_eq!(hud_vm.hero_vitals.len(), 1);
+    assert_eq!(hud_vm.monster_vitals.len(), 1);
+    assert!(hud_vm.is_combat_active());
+}
+
+/// Verifies combat HUD status count is mapped correctly.
+#[test]
+fn adapter_combat_hud_status_count() {
+    let actors = vec![
+        make_actor_summary(1, CombatSide::Ally, 80.0, 100.0, vec![("bleeding", Some(2)), ("vulnerable", None)]),
+        make_actor_summary(10, CombatSide::Enemy, 150.0, 200.0, vec![]),
+    ];
+    let framework_vm = make_framework_combat_vm(1, 1, actors, vec![1, 10]);
+
+    let combat_vm = combat_from_framework(&framework_vm).unwrap();
+    let hud_vm = combat_hud_from_combat(&combat_vm).unwrap();
+
+    let h1 = hud_vm.hero_vitals.iter().find(|h| h.id == "ActorId(1)").unwrap();
+    assert_eq!(h1.status_count, 2);
 }
