@@ -1006,3 +1006,190 @@ fn navigation_shell_enter_combat_from_result_returns_none() {
     assert!(result.is_none(), "EnterCombat from Result should return None (invalid transition)");
     assert_eq!(shell.current_state(), FlowState::Result, "State should remain Result");
 }
+
+// ── US-007-c: Multiple consecutive meta-loop cycle tests ───────────────────────
+
+/// Verifies the meta-loop can close through multiple consecutive success cycles.
+///
+/// This proves the loop does not degrade or accumulate dead-end states:
+/// Expedition → Result → Town (repeated three times).
+#[test]
+fn navigation_shell_three_consecutive_result_cycles() {
+    let mut shell = make_live_shell();
+    run_boot_to_town_sequence(&mut shell);
+
+    for cycle in 1..=3 {
+        // Town → Expedition
+        let result = shell.transition_from_intent(FrontendIntent::StartExpedition);
+        assert!(result.is_some(), "Cycle {cycle}: StartExpedition should succeed");
+        assert_eq!(result.unwrap(), FlowState::Expedition);
+        assert_eq!(shell.current_state(), FlowState::Expedition);
+
+        // Expedition → Result via ExpeditionCompleted
+        let result = shell.transition_from_payload(RuntimePayload::ExpeditionCompleted);
+        assert!(result.is_some(), "Cycle {cycle}: ExpeditionCompleted should succeed");
+        assert_eq!(result.unwrap(), FlowState::Result);
+        assert_eq!(shell.current_state(), FlowState::Result);
+
+        // Result → Town via Continue (loop closure)
+        let result = shell.transition_from_intent(FrontendIntent::Continue);
+        assert!(result.is_some(), "Cycle {cycle}: Continue should transition to Town");
+        assert_eq!(result.unwrap(), FlowState::Town);
+        assert_eq!(shell.current_state(), FlowState::Town);
+
+        // After each cycle, verify we can navigate back from town
+        assert!(shell.can_transition(&FlowState::Expedition),
+            "Cycle {cycle}: Town should allow Expedition after loop closure");
+    }
+}
+
+/// Verifies the meta-loop can close through multiple consecutive failure cycles.
+///
+/// This proves the failure/return path does not degrade:
+/// Expedition → Return → Town (repeated three times).
+#[test]
+fn navigation_shell_three_consecutive_return_cycles() {
+    let mut shell = make_live_shell();
+    run_boot_to_town_sequence(&mut shell);
+
+    for cycle in 1..=3 {
+        // Town → Expedition
+        let result = shell.transition_from_intent(FrontendIntent::StartExpedition);
+        assert!(result.is_some(), "Cycle {cycle}: StartExpedition should succeed");
+        assert_eq!(result.unwrap(), FlowState::Expedition);
+        assert_eq!(shell.current_state(), FlowState::Expedition);
+
+        // Expedition → Return via ExpeditionFailed
+        let result = shell.transition_from_payload(RuntimePayload::ExpeditionFailed);
+        assert!(result.is_some(), "Cycle {cycle}: ExpeditionFailed should transition to Return");
+        assert_eq!(result.unwrap(), FlowState::Return);
+        assert_eq!(shell.current_state(), FlowState::Return);
+
+        // Return → Town via ReturnCompleted (loop closure)
+        let result = shell.transition_from_payload(RuntimePayload::ReturnCompleted);
+        assert!(result.is_some(), "Cycle {cycle}: ReturnCompleted should transition to Town");
+        assert_eq!(result.unwrap(), FlowState::Town);
+        assert_eq!(shell.current_state(), FlowState::Town);
+
+        // After each cycle, verify we can navigate back from town
+        assert!(shell.can_transition(&FlowState::Expedition),
+            "Cycle {cycle}: Town should allow Expedition after failure loop closure");
+    }
+}
+
+/// Verifies the meta-loop handles mixed success/failure outcomes across cycles.
+///
+/// Ensures alternating outcome types do not produce dead-end states:
+/// Cycle 1: success (Result → Town)
+/// Cycle 2: failure (Return → Town)
+#[test]
+fn navigation_shell_mixed_outcome_cycles() {
+    let mut shell = make_live_shell();
+    run_boot_to_town_sequence(&mut shell);
+
+    // Cycle 1: Success path (Expedition → Result → Town)
+    let result = shell.transition_from_intent(FrontendIntent::StartExpedition);
+    assert!(result.is_some(), "Cycle 1: StartExpedition should succeed");
+    assert_eq!(shell.current_state(), FlowState::Expedition);
+
+    let result = shell.transition_from_payload(RuntimePayload::ExpeditionCompleted);
+    assert!(result.is_some(), "Cycle 1: ExpeditionCompleted should succeed");
+    assert_eq!(shell.current_state(), FlowState::Result);
+
+    let result = shell.transition_from_intent(FrontendIntent::Continue);
+    assert!(result.is_some(), "Cycle 1: Continue should transition to Town");
+    assert_eq!(shell.current_state(), FlowState::Town);
+
+    // Cycle 2: Failure path (Expedition → Return → Town)
+    let result = shell.transition_from_intent(FrontendIntent::StartExpedition);
+    assert!(result.is_some(), "Cycle 2: StartExpedition should succeed after successful cycle");
+    assert_eq!(shell.current_state(), FlowState::Expedition);
+
+    let result = shell.transition_from_payload(RuntimePayload::ExpeditionFailed);
+    assert!(result.is_some(), "Cycle 2: ExpeditionFailed should transition to Return");
+    assert_eq!(shell.current_state(), FlowState::Return);
+
+    let result = shell.transition_from_payload(RuntimePayload::ReturnCompleted);
+    assert!(result.is_some(), "Cycle 2: ReturnCompleted should transition to Town");
+    assert_eq!(shell.current_state(), FlowState::Town);
+
+    // After mixed cycles, town can still launch expeditions
+    assert!(shell.can_transition(&FlowState::Expedition),
+        "Town should allow Expedition after mixed outcome cycles");
+}
+
+/// Verifies state history is correctly maintained across multiple meta-loop cycles.
+///
+/// The previous_state should accurately reflect the step before the current state,
+/// proving the navigation shell maintains correct history through repeated closures.
+#[test]
+fn navigation_shell_state_history_after_multiple_cycles() {
+    let mut shell = make_live_shell();
+    run_boot_to_town_sequence(&mut shell);
+    assert_eq!(shell.previous_state(), FlowState::Load);
+
+    // Cycle through result path and verify history
+    run_town_to_expedition_sequence(&mut shell);
+    assert_eq!(shell.previous_state(), FlowState::Town);
+
+    let result = shell.transition_from_payload(RuntimePayload::ExpeditionCompleted);
+    assert!(result.is_some());
+    assert_eq!(shell.current_state(), FlowState::Result);
+    assert_eq!(shell.previous_state(), FlowState::Expedition);
+
+    let result = shell.transition_from_intent(FrontendIntent::Continue);
+    assert!(result.is_some());
+    assert_eq!(shell.current_state(), FlowState::Town);
+    assert_eq!(shell.previous_state(), FlowState::Result);
+
+    // Second expedition cycle and verify history is correctly tracking
+    run_town_to_expedition_sequence(&mut shell);
+    assert_eq!(shell.current_state(), FlowState::Expedition);
+    assert_eq!(shell.previous_state(), FlowState::Town);
+
+    // Fail this expedition
+    let result = shell.transition_from_payload(RuntimePayload::ExpeditionFailed);
+    assert!(result.is_some());
+    assert_eq!(shell.current_state(), FlowState::Return);
+    assert_eq!(shell.previous_state(), FlowState::Expedition);
+
+    // Return to town
+    let result = shell.transition_from_payload(RuntimePayload::ReturnCompleted);
+    assert!(result.is_some());
+    assert_eq!(shell.current_state(), FlowState::Town);
+    assert_eq!(shell.previous_state(), FlowState::Return);
+}
+
+/// Verifies the meta-loop can support three full mixed-outcome cycles without dead-end.
+///
+/// Proves the meta loop can continue indefinitely: success → failure → success
+#[test]
+fn navigation_shell_three_mixed_cycles() {
+    let mut shell = make_live_shell();
+    run_boot_to_town_sequence(&mut shell);
+
+    // Cycle 1: success (Result)
+    run_town_to_expedition_sequence(&mut shell);
+    let r = shell.transition_from_payload(RuntimePayload::ExpeditionCompleted);
+    assert!(r.is_some()); assert_eq!(shell.current_state(), FlowState::Result);
+    let r = shell.transition_from_intent(FrontendIntent::Continue);
+    assert!(r.is_some()); assert_eq!(shell.current_state(), FlowState::Town);
+
+    // Cycle 2: failure (Return)
+    run_town_to_expedition_sequence(&mut shell);
+    let r = shell.transition_from_payload(RuntimePayload::ExpeditionFailed);
+    assert!(r.is_some()); assert_eq!(shell.current_state(), FlowState::Return);
+    let r = shell.transition_from_payload(RuntimePayload::ReturnCompleted);
+    assert!(r.is_some()); assert_eq!(shell.current_state(), FlowState::Town);
+
+    // Cycle 3: success (Result)
+    run_town_to_expedition_sequence(&mut shell);
+    let r = shell.transition_from_payload(RuntimePayload::ExpeditionCompleted);
+    assert!(r.is_some()); assert_eq!(shell.current_state(), FlowState::Result);
+    let r = shell.transition_from_intent(FrontendIntent::Continue);
+    assert!(r.is_some()); assert_eq!(shell.current_state(), FlowState::Town);
+
+    // After three mixed cycles, the town is still navigable
+    assert!(shell.can_transition(&FlowState::Expedition),
+        "Town should allow Expedition after three mixed outcome cycles");
+}

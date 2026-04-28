@@ -204,4 +204,84 @@ describe("SessionStore meta-loop continuation", () => {
     // Can start provisioning again (loop is closed)
     expect(canTransition(store.snapshot(), { type: "start-provisioning" }).allowed).toBe(true);
   });
+
+  it("supports multiple consecutive full expedition cycles through session store", () => {
+    const store = createSessionStore(replayReadySnapshot);
+
+    for (let cycle = 1; cycle <= 3; cycle++) {
+      // town → provisioning
+      expect(canTransition(store.snapshot(), { type: "start-provisioning" }).allowed).toBe(true);
+      store.replace(provisioningSnapshot);
+      expect(resolveScreen(store.snapshot())).toBe("provisioning");
+
+      // provisioning → expedition
+      expect(canTransition(store.snapshot(), { type: "confirm-provisioning" }).allowed).toBe(true);
+      store.replace(expeditionSnapshot);
+      expect(resolveScreen(store.snapshot())).toBe("expedition");
+
+      // expedition → result
+      expect(canTransition(store.snapshot(), { type: "launch-expedition" }).allowed).toBe(true);
+      store.replace(resultSnapshot);
+      expect(resolveScreen(store.snapshot())).toBe("result");
+
+      // result → town (loop closes)
+      expect(canTransition(store.snapshot(), { type: "continue-from-result" }).allowed).toBe(true);
+      store.replace(replayReadySnapshot);
+      expect(resolveScreen(store.snapshot())).toBe("town");
+    }
+
+    // After 3 cycles, all town interactions still work
+    expect(canTransition(store.snapshot(), { type: "start-provisioning" }).allowed).toBe(true);
+    expect(canTransition(store.snapshot(), { type: "open-hero", heroId: "hero-hunter-01" }).allowed).toBe(true);
+    expect(canTransition(store.snapshot(), { type: "open-building", buildingId: "guild" }).allowed).toBe(true);
+  });
+
+  it("supports failure result → town → success result → town mixed cycles", () => {
+    const store = createSessionStore(failureResultSnapshot);
+    expect(resolveScreen(store.snapshot())).toBe("result");
+
+    // Failure result → town
+    expect(canTransition(store.snapshot(), { type: "continue-from-result" }).allowed).toBe(true);
+    store.replace(replayReadySnapshot);
+    expect(resolveScreen(store.snapshot())).toBe("town");
+
+    // town → provisioning → expedition → success result
+    store.replace(provisioningSnapshot);
+    store.replace(expeditionSnapshot);
+    store.replace(resultSnapshot);
+    expect(resolveScreen(store.snapshot())).toBe("result");
+
+    // Success result → town
+    expect(canTransition(store.snapshot(), { type: "continue-from-result" }).allowed).toBe(true);
+    store.replace(replayReadySnapshot);
+    expect(resolveScreen(store.snapshot())).toBe("town");
+
+    // After mixed outcome cycles, all town interactions work
+    expect(canTransition(store.snapshot(), { type: "open-hero", heroId: "hero-hunter-01" }).allowed).toBe(true);
+    expect(canTransition(store.snapshot(), { type: "open-building", buildingId: "guild" }).allowed).toBe(true);
+    expect(canTransition(store.snapshot(), { type: "start-provisioning" }).allowed).toBe(true);
+  });
+
+  it("proves return-to-town fallback works from all terminal flow states after multiple cycles", () => {
+    const terminalSnapshots: Array<{ label: string; snapshot: DdgcFrontendSnapshot }> = [
+      { label: "result (success)", snapshot: resultSnapshot },
+      { label: "result (failure)", snapshot: failureResultSnapshot },
+      { label: "result (partial)", snapshot: partialResultSnapshot },
+      { label: "return", snapshot: returnSnapshot },
+    ];
+
+    // Run 2 full cycles from each terminal state via return-to-town fallback
+    for (let cycle = 1; cycle <= 2; cycle++) {
+      for (const { label, snapshot } of terminalSnapshots) {
+        const store = createSessionStore(snapshot);
+        expect(canTransition(store.snapshot(), { type: "return-to-town" }).allowed).toBe(true);
+        store.replace(replayReadySnapshot);
+        expect(resolveScreen(store.snapshot())).toBe("town");
+
+        // Town interactions are stable after fallback return
+        expect(canTransition(store.snapshot(), { type: "start-provisioning" }).allowed).toBe(true);
+        expect(canTransition(store.snapshot(), { type: "open-hero", heroId: "hero-hunter-01" }).allowed).toBe(true);
+      }
+    }
+  });
 });

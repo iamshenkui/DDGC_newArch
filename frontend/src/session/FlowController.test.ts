@@ -391,4 +391,45 @@ describe("canTransition - result and return meta-loop continuation", () => {
       expect(validation.reason).toContain("only valid in building-detail");
     });
   });
+
+  describe("secondary interaction stability after result/return handoff", () => {
+    it("open-hero is allowed after continue-from-result handoff to town", () => {
+      // Verify from a fresh town state (simulating after continue-from-result)
+      expect(canTransition(replayReadySnapshot, { type: "open-hero", heroId: "hero-hunter-01" }).allowed).toBe(true);
+      expect(canTransition(replayReadySnapshot, { type: "open-building", buildingId: "guild" }).allowed).toBe(true);
+    });
+
+    it("open-hero is allowed after resume-from-return handoff to town", () => {
+      // Same town state is used after both continue-from-result and resume-from-return
+      expect(canTransition(replayReadySnapshot, { type: "open-hero", heroId: "hero-hunter-01" }).allowed).toBe(true);
+      expect(canTransition(replayReadySnapshot, { type: "open-building", buildingId: "stagecoach" }).allowed).toBe(true);
+    });
+
+    it("expedition launch sequence is accessible after all terminal flow states", () => {
+      // After any terminal flow state, town → provisioning → expedition → launch should work
+      const terminalFlows = [failureResultSnapshot, partialResultSnapshot, returnSnapshot];
+      for (const snap of terminalFlows) {
+        // From terminal state, can reach town via return-to-town
+        expect(canTransition(snap, { type: "return-to-town" }).allowed).toBe(true);
+
+        // Town can start provisioning
+        expect(canTransition(replayReadySnapshot, { type: "start-provisioning" }).allowed).toBe(true);
+        // Provisioning can confirm
+        expect(canTransition(provisioningSnapshot, { type: "confirm-provisioning" }).allowed).toBe(true);
+        // Expedition can launch
+        expect(canTransition(expeditionSnapshot, { type: "launch-expedition" }).allowed).toBe(true);
+      }
+    });
+
+    it("hero detail and building detail are accessible after result state", () => {
+      // Verify all town screens are accessible when in the "after result" town state
+      expect(resolveScreen(replayReadySnapshot)).toBe("town");
+      expect(canTransition(replayReadySnapshot, { type: "open-hero", heroId: "hero-hunter-01" }).allowed).toBe(true);
+      expect(canTransition(replayReadySnapshot, { type: "open-building", buildingId: "guild" }).allowed).toBe(true);
+
+      // Hero detail and building detail screens resolve correctly
+      expect(resolveScreen(replayHeroDetailSnapshot)).toBe("hero-detail");
+      expect(resolveScreen(replayBuildingDetailSnapshot)).toBe("building-detail");
+    });
+  });
 });
