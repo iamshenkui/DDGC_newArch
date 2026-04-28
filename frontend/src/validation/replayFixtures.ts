@@ -10,7 +10,9 @@ import type {
   ProvisioningViewModel,
   TownHeroSummary,
   TownViewModel,
-  UnsupportedViewModel
+  UnsupportedViewModel,
+  FlowState,
+  FrontendLifecycle
 } from "../bridge/contractTypes";
 
 // Shared roster heroes used by both town, provisioning, and hero-detail fixtures.
@@ -262,6 +264,41 @@ export const replaySanitariumBuildingDetailViewModel: BuildingDetailViewModel = 
   upgradeRequirement: "Reach Town Level 2 to unlock quirk removal."
 };
 
+export const replayStagecoachBuildingDetailViewModel: BuildingDetailViewModel = {
+  kind: "building-detail",
+  buildingId: "stagecoach",
+  label: "Stagecoach",
+  status: "ready",
+  description: "The stagecoach brings new heroes to town. Recruit adventurers to expand your party roster and fill gaps in your expedition team.",
+  actions: [
+    {
+      id: "recruit-hero",
+      label: "Recruit Hero",
+      description: "Recruit a new hero from the available pool to join your roster.",
+      cost: "500 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "dismiss-hero",
+      label: "Dismiss Hero",
+      description: "Release a hero from your roster to make room for new recruits.",
+      cost: "0 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "rare-recruit",
+      label: "Rare Hero Recruitment",
+      description: "Access the rare hero recruitment pool for exceptional adventurers.",
+      cost: "1500 Gold",
+      isAvailable: false,
+      isUnsupported: true
+    }
+  ],
+  upgradeRequirement: "Reach Town Level 2 to unlock rare recruitment."
+};
+
 export const replayProvisioningViewModel: ProvisioningViewModel = {
   kind: "provisioning",
   title: "Provision Expedition",
@@ -460,6 +497,13 @@ export const replaySanitariumBuildingSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing sanitarium building detail."
 };
 
+export const replayStagecoachBuildingSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "town",
+  viewModel: replayStagecoachBuildingDetailViewModel,
+  debugMessage: "Replay bridge showing stagecoach building detail."
+};
+
 const unsupportedViewModel: UnsupportedViewModel = {
   kind: "unsupported",
   title: "Live Runtime Not Wired Yet",
@@ -580,3 +624,194 @@ export const returnSnapshot: DdgcFrontendSnapshot = {
   viewModel: replayReturnViewModel,
   debugMessage: "Replay bridge showing return screen."
 };
+
+// ── Snapshot contract validation ───────────────────────────────────────────────
+
+/**
+ * Validate a DdgcFrontendSnapshot against the contract boundary.
+ * Returns an array of error messages; empty array means valid.
+ * Each error pinpoints a specific contract violation for actionable debugging.
+ */
+export function validateSnapshotContract(snapshot: DdgcFrontendSnapshot): string[] {
+  const errors: string[] = [];
+
+  // Lifecycle must be a valid FrontendLifecycle
+  const validLifecycles: FrontendLifecycle[] = ["booting", "loading", "ready", "unsupported", "fatal"];
+  if (!validLifecycles.includes(snapshot.lifecycle as FrontendLifecycle)) {
+    errors.push(
+      `lifecycle "${String(snapshot.lifecycle)}" is not a valid FrontendLifecycle. ` +
+      `Expected one of: ${validLifecycles.join(", ")}`
+    );
+  }
+
+  // FlowState must be a valid FlowState
+  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "result", "return"];
+  if (!validFlowStates.includes(snapshot.flowState as FlowState)) {
+    errors.push(
+      `flowState "${String(snapshot.flowState)}" is not a valid FlowState. ` +
+      `Expected one of: ${validFlowStates.join(", ")}`
+    );
+  }
+
+  // viewModel must be a non-null object with a kind property
+  const vm: Record<string, unknown> | undefined = snapshot.viewModel as unknown as Record<string, unknown> | undefined;
+  if (!vm || typeof vm !== "object" || Array.isArray(vm)) {
+    errors.push("viewModel is missing, null, or not an object");
+    return errors;
+  }
+  if (typeof vm.kind !== "string" || !vm.kind) {
+    errors.push("viewModel.kind is missing or not a non-empty string");
+    return errors;
+  }
+
+  // Type discrimination: lifecycle/flowState must align with viewModel.kind
+  errors.push(...validateKindDiscrimination(snapshot.lifecycle as string, snapshot.flowState as string, vm.kind));
+
+  // Per-kind required field validation
+  errors.push(...validateRequiredFields(vm.kind, vm));
+
+  return errors;
+}
+
+function validateKindDiscrimination(lifecycle: string, flowState: string, kind: string): string[] {
+  const e: string[] = [];
+
+  // Lifecycle-based rules take precedence over flowState rules.
+  // When lifecycle is fatal/unsupported/loading/booting, flowState is secondary.
+  const lifecycleKindMap: Record<string, string> = {
+    fatal: "fatal",
+    unsupported: "unsupported",
+    loading: "boot-load",
+    booting: "boot-load",
+  };
+  const expectedKind = lifecycleKindMap[lifecycle];
+  if (expectedKind !== undefined) {
+    if (kind !== expectedKind) {
+      e.push(`lifecycle is "${lifecycle}" but viewModel.kind is "${kind}"; expected "${expectedKind}"`);
+    }
+    // Lifecycle determines the kind; skip flowState-based discrimination.
+    return e;
+  }
+
+  // Ready/other lifecycle: flowState determines valid viewModel kinds.
+  const flowStateKindMap: Record<string, string[]> = {
+    boot: ["boot-load"],
+    load: ["boot-load"],
+    town: ["town", "hero-detail", "building-detail"],
+    provisioning: ["provisioning"],
+    expedition: ["expedition"],
+    combat: ["expedition"],
+    result: ["result"],
+    return: ["return"],
+  };
+  const allowedKinds = flowStateKindMap[flowState];
+  if (allowedKinds && !allowedKinds.includes(kind)) {
+    e.push(`flowState is "${flowState}" but viewModel.kind is "${kind}"; expected one of: ${allowedKinds.join(", ")}`);
+  }
+
+  return e;
+}
+
+function validateRequiredFields(kind: string, vm: Record<string, unknown>): string[] {
+  const e: string[] = [];
+
+  switch (kind) {
+    case "boot-load": {
+      if (!vm.title || typeof vm.title !== "string") e.push("BootLoadViewModel: title is missing or not a string");
+      if (!vm.summary || typeof vm.summary !== "string") e.push("BootLoadViewModel: summary is missing or not a string");
+      if (vm.mode !== "replay" && vm.mode !== "live") e.push(`BootLoadViewModel: mode is "${String(vm.mode)}", expected "replay" or "live"`);
+      break;
+    }
+    case "town": {
+      if (!vm.title || typeof vm.title !== "string") e.push("TownViewModel: title is missing");
+      if (!Array.isArray(vm.heroes)) { e.push("TownViewModel: heroes is not an array"); } else if (vm.heroes.length === 0) { e.push("TownViewModel: heroes array is empty"); }
+      if (!Array.isArray(vm.buildings)) { e.push("TownViewModel: buildings is not an array"); } else if (vm.buildings.length === 0) { e.push("TownViewModel: buildings array is empty"); }
+      if (!Array.isArray(vm.roster)) e.push("TownViewModel: roster is not an array");
+      if (typeof vm.gold !== "number") e.push("TownViewModel: gold is not a number");
+      if (typeof vm.isFreshVisit !== "boolean") e.push("TownViewModel: isFreshVisit is not a boolean");
+      if (!vm.campaignName || typeof vm.campaignName !== "string") e.push("TownViewModel: campaignName is missing");
+      if (vm.nextActionLabel === undefined || typeof vm.nextActionLabel !== "string") e.push("TownViewModel: nextActionLabel is missing or not a string");
+      break;
+    }
+    case "hero-detail": {
+      if (!vm.heroId || typeof vm.heroId !== "string") e.push("HeroDetailViewModel: heroId is missing");
+      if (!vm.name || typeof vm.name !== "string") e.push("HeroDetailViewModel: name is missing");
+      if (!vm.classLabel || typeof vm.classLabel !== "string") e.push("HeroDetailViewModel: classLabel is missing");
+      if (!vm.hp || typeof vm.hp !== "string") e.push("HeroDetailViewModel: hp is missing");
+      if (!vm.maxHp || typeof vm.maxHp !== "string") e.push("HeroDetailViewModel: maxHp is missing");
+      if (!vm.stress || typeof vm.stress !== "string") e.push("HeroDetailViewModel: stress is missing");
+      if (!vm.resolve || typeof vm.resolve !== "string") e.push("HeroDetailViewModel: resolve is missing");
+      if (!vm.progression || typeof vm.progression !== "object") e.push("HeroDetailViewModel: progression is missing");
+      if (!vm.resistances || typeof vm.resistances !== "object") e.push("HeroDetailViewModel: resistances is missing");
+      if (!Array.isArray(vm.combatSkills)) e.push("HeroDetailViewModel: combatSkills is not an array");
+      if (!Array.isArray(vm.campingSkills)) e.push("HeroDetailViewModel: campingSkills is not an array");
+      if (!vm.weapon || typeof vm.weapon !== "string") e.push("HeroDetailViewModel: weapon is missing");
+      if (!vm.armor || typeof vm.armor !== "string") e.push("HeroDetailViewModel: armor is missing");
+      break;
+    }
+    case "building-detail": {
+      if (!vm.buildingId || typeof vm.buildingId !== "string") e.push("BuildingDetailViewModel: buildingId is missing");
+      if (!vm.label || typeof vm.label !== "string") e.push("BuildingDetailViewModel: label is missing");
+      if (!["ready", "partial", "locked"].includes(vm.status as string)) e.push(`BuildingDetailViewModel: status is "${String(vm.status)}", expected "ready", "partial", or "locked"`);
+      if (!vm.description || typeof vm.description !== "string") e.push("BuildingDetailViewModel: description is missing");
+      if (!Array.isArray(vm.actions)) { e.push("BuildingDetailViewModel: actions is not an array"); } else if (vm.actions.length === 0) { e.push("BuildingDetailViewModel: actions array is empty"); }
+      break;
+    }
+    case "provisioning": {
+      if (!vm.title || typeof vm.title !== "string") e.push("ProvisioningViewModel: title is missing");
+      if (!Array.isArray(vm.party)) { e.push("ProvisioningViewModel: party is not an array"); } else if (vm.party.length === 0) { e.push("ProvisioningViewModel: party array is empty"); }
+      if (typeof vm.maxPartySize !== "number") e.push("ProvisioningViewModel: maxPartySize is not a number");
+      if (typeof vm.isReadyToLaunch !== "boolean") e.push("ProvisioningViewModel: isReadyToLaunch is not a boolean");
+      if (!vm.supplyLevel || typeof vm.supplyLevel !== "string") e.push("ProvisioningViewModel: supplyLevel is missing");
+      if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ProvisioningViewModel: provisionCost is missing");
+      if (!vm.campaignName || typeof vm.campaignName !== "string") e.push("ProvisioningViewModel: campaignName is missing");
+      if (!vm.expeditionLabel || typeof vm.expeditionLabel !== "string") e.push("ProvisioningViewModel: expeditionLabel is missing");
+      break;
+    }
+    case "expedition": {
+      if (!vm.title || typeof vm.title !== "string") e.push("ExpeditionSetupViewModel: title is missing");
+      if (!vm.expeditionName || typeof vm.expeditionName !== "string") e.push("ExpeditionSetupViewModel: expeditionName is missing");
+      if (typeof vm.partySize !== "number") e.push("ExpeditionSetupViewModel: partySize is not a number");
+      if (!Array.isArray(vm.party)) { e.push("ExpeditionSetupViewModel: party is not an array"); } else if (vm.party.length === 0) { e.push("ExpeditionSetupViewModel: party array is empty"); }
+      if (!vm.difficulty || typeof vm.difficulty !== "string") e.push("ExpeditionSetupViewModel: difficulty is missing");
+      if (!Array.isArray(vm.objectives)) { e.push("ExpeditionSetupViewModel: objectives is not an array"); } else if (vm.objectives.length === 0) { e.push("ExpeditionSetupViewModel: objectives array is empty"); }
+      if (typeof vm.isLaunchable !== "boolean") e.push("ExpeditionSetupViewModel: isLaunchable is not a boolean");
+      if (!vm.supplyLevel || typeof vm.supplyLevel !== "string") e.push("ExpeditionSetupViewModel: supplyLevel is missing");
+      if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ExpeditionSetupViewModel: provisionCost is missing");
+      break;
+    }
+    case "result": {
+      if (!vm.title || typeof vm.title !== "string") e.push("ExpeditionResultViewModel: title is missing");
+      if (vm.outcome !== "success" && vm.outcome !== "failure" && vm.outcome !== "partial") e.push(`ExpeditionResultViewModel: outcome is "${String(vm.outcome)}", expected "success", "failure", or "partial"`);
+      if (!vm.summary || typeof vm.summary !== "string") e.push("ExpeditionResultViewModel: summary is missing");
+      if (!Array.isArray(vm.heroOutcomes)) { e.push("ExpeditionResultViewModel: heroOutcomes is not an array"); } else if (vm.heroOutcomes.length === 0) { e.push("ExpeditionResultViewModel: heroOutcomes array is empty"); }
+      if (!vm.resourcesGained || typeof vm.resourcesGained !== "object") e.push("ExpeditionResultViewModel: resourcesGained is missing");
+      if (typeof vm.isContinueAvailable !== "boolean") e.push("ExpeditionResultViewModel: isContinueAvailable is not a boolean");
+      break;
+    }
+    case "return": {
+      if (!vm.title || typeof vm.title !== "string") e.push("ReturnViewModel: title is missing");
+      if (!vm.expeditionName || typeof vm.expeditionName !== "string") e.push("ReturnViewModel: expeditionName is missing");
+      if (!vm.summary || typeof vm.summary !== "string") e.push("ReturnViewModel: summary is missing");
+      if (!Array.isArray(vm.returningHeroes)) { e.push("ReturnViewModel: returningHeroes is not an array"); } else if (vm.returningHeroes.length === 0) { e.push("ReturnViewModel: returningHeroes array is empty"); }
+      if (typeof vm.isTownResumeAvailable !== "boolean") e.push("ReturnViewModel: isTownResumeAvailable is not a boolean");
+      break;
+    }
+    case "fatal": {
+      if (!vm.title || typeof vm.title !== "string") e.push("FatalErrorViewModel: title is missing");
+      if (!vm.reason || typeof vm.reason !== "string") e.push("FatalErrorViewModel: reason is missing");
+      break;
+    }
+    case "unsupported": {
+      if (!vm.title || typeof vm.title !== "string") e.push("UnsupportedViewModel: title is missing");
+      if (!vm.reason || typeof vm.reason !== "string") e.push("UnsupportedViewModel: reason is missing");
+      break;
+    }
+    default: {
+      e.push(`Unknown viewModel.kind: "${kind}"`);
+      break;
+    }
+  }
+
+  return e;
+}

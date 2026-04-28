@@ -10,6 +10,27 @@ import {
   replayFailureResultViewModel,
   replayPartialResultViewModel,
   replayReturnViewModel,
+  validateSnapshotContract,
+  replayReadySnapshot,
+  replayHeroDetailSnapshot,
+  replayBuildingDetailSnapshot,
+  replayBlacksmithBuildingSnapshot,
+  replaySanitariumBuildingSnapshot,
+  unsupportedSnapshot,
+  fatalSnapshot,
+  replayLoadingSnapshot,
+  liveLoadingSnapshot,
+  startupSnapshot,
+  provisioningSnapshot,
+  expeditionSnapshot,
+  resultSnapshot,
+  failureResultSnapshot,
+  partialResultSnapshot,
+  returnSnapshot,
+  replayBlacksmithBuildingDetailViewModel,
+  replaySanitariumBuildingDetailViewModel,
+  replayStagecoachBuildingDetailViewModel,
+  replayStagecoachBuildingSnapshot,
 } from "./replayFixtures";
 
 describe("replay fixtures — hero and campaign state consistency", () => {
@@ -316,5 +337,291 @@ describe("replay fixtures — hero and campaign state consistency", () => {
     it("has isTownResumeAvailable for meta-loop", () => {
       expect(replayReturnViewModel.isTownResumeAvailable).toBe(true);
     });
+  });
+});
+
+interface NamedSnapshot {
+  name: string;
+  snapshot: import("../bridge/contractTypes").DdgcFrontendSnapshot;
+}
+
+const allSnapshots: NamedSnapshot[] = [
+  { name: "startupSnapshot", snapshot: startupSnapshot },
+  { name: "replayLoadingSnapshot", snapshot: replayLoadingSnapshot },
+  { name: "liveLoadingSnapshot", snapshot: liveLoadingSnapshot },
+  { name: "replayReadySnapshot", snapshot: replayReadySnapshot },
+  { name: "replayHeroDetailSnapshot", snapshot: replayHeroDetailSnapshot },
+  { name: "replayBuildingDetailSnapshot", snapshot: replayBuildingDetailSnapshot },
+  { name: "replayBlacksmithBuildingSnapshot", snapshot: replayBlacksmithBuildingSnapshot },
+  { name: "replaySanitariumBuildingSnapshot", snapshot: replaySanitariumBuildingSnapshot },
+  { name: "replayStagecoachBuildingSnapshot", snapshot: replayStagecoachBuildingSnapshot },
+  { name: "provisioningSnapshot", snapshot: provisioningSnapshot },
+  { name: "expeditionSnapshot", snapshot: expeditionSnapshot },
+  { name: "resultSnapshot", snapshot: resultSnapshot },
+  { name: "failureResultSnapshot", snapshot: failureResultSnapshot },
+  { name: "partialResultSnapshot", snapshot: partialResultSnapshot },
+  { name: "returnSnapshot", snapshot: returnSnapshot },
+  { name: "unsupportedSnapshot", snapshot: unsupportedSnapshot },
+  { name: "fatalSnapshot", snapshot: fatalSnapshot },
+];
+
+// ── Snapshot contract boundary validation ─────────────────────────────────
+
+describe("snapshot contract validation", () => {
+
+  for (const { name, snapshot } of allSnapshots) {
+    it(`"${name}" satisfies the DdgcFrontendSnapshot contract`, () => {
+      const errors = validateSnapshotContract(snapshot);
+      expect(errors, `${name}: ${errors.join("; ")}`).toEqual([]);
+    });
+  }
+
+  it("all snapshots provide a debugMessage for actionable debugging", () => {
+    for (const { name, snapshot } of allSnapshots) {
+      expect(
+        snapshot.debugMessage,
+        `${name} is missing debugMessage`,
+      ).toBeTruthy();
+      expect(
+        typeof snapshot.debugMessage,
+        `${name} debugMessage should be a string, got ${typeof snapshot.debugMessage}`,
+      ).toBe("string");
+    }
+  });
+});
+
+// ── Type discrimination validation ────────────────────────────────────────
+
+describe("type discrimination", () => {
+  it("fatal lifecycle always pairs with fatal view model kind", () => {
+    expect(fatalSnapshot.lifecycle).toBe("fatal");
+    expect(fatalSnapshot.viewModel.kind).toBe("fatal");
+  });
+
+  it("unsupported lifecycle always pairs with unsupported view model kind", () => {
+    expect(unsupportedSnapshot.lifecycle).toBe("unsupported");
+    expect(unsupportedSnapshot.viewModel.kind).toBe("unsupported");
+  });
+
+  it("loading lifecycle always pairs with boot-load view model kind", () => {
+    expect(replayLoadingSnapshot.lifecycle).toBe("loading");
+    expect(replayLoadingSnapshot.viewModel.kind).toBe("boot-load");
+    expect(liveLoadingSnapshot.lifecycle).toBe("loading");
+    expect(liveLoadingSnapshot.viewModel.kind).toBe("boot-load");
+  });
+
+  it("boot flowState pairs with boot-load view model kind", () => {
+    expect(startupSnapshot.flowState).toBe("boot");
+    expect(startupSnapshot.viewModel.kind).toBe("boot-load");
+  });
+
+  it("load flowState pairs with boot-load view model kind", () => {
+    expect(replayLoadingSnapshot.flowState).toBe("load");
+    expect(replayLoadingSnapshot.viewModel.kind).toBe("boot-load");
+    expect(liveLoadingSnapshot.flowState).toBe("load");
+    expect(liveLoadingSnapshot.viewModel.kind).toBe("boot-load");
+  });
+
+  it("ready lifecycle never pairs with fatal or unsupported kind", () => {
+    const readySnapshots = allSnapshots
+      .filter((s) => s.snapshot.lifecycle === "ready")
+      .map((s) => s.snapshot);
+    for (const snap of readySnapshots) {
+      expect(snap.viewModel.kind).not.toBe("fatal");
+      expect(snap.viewModel.kind).not.toBe("unsupported");
+    }
+  });
+
+  it("result snapshots consistently set flowState and kind to result", () => {
+    for (const snap of [resultSnapshot, failureResultSnapshot, partialResultSnapshot]) {
+      expect(snap.flowState).toBe("result");
+      expect(snap.viewModel.kind).toBe("result");
+    }
+  });
+
+  it("provisioning snapshot sets flowState and kind to provisioning", () => {
+    expect(provisioningSnapshot.flowState).toBe("provisioning");
+    expect(provisioningSnapshot.viewModel.kind).toBe("provisioning");
+  });
+
+  it("expedition snapshot sets flowState and kind to expedition", () => {
+    expect(expeditionSnapshot.flowState).toBe("expedition");
+    expect(expeditionSnapshot.viewModel.kind).toBe("expedition");
+  });
+
+  it("return snapshot sets flowState and kind to return", () => {
+    expect(returnSnapshot.flowState).toBe("return");
+    expect(returnSnapshot.viewModel.kind).toBe("return");
+  });
+});
+
+// ── HP string format validation ───────────────────────────────────────────
+
+describe("HP string format consistency across fixtures", () => {
+  function checkHpFormat(hp: string, label: string): void {
+    expect(hp, `${label}: HP "${hp}" should contain "/"`).toContain("/");
+    const parts = hp.split("/").map((s) => s.trim());
+    expect(parts.length, `${label}: HP "${hp}" should split into 2 parts`).toBe(2);
+    const current = Number(parts[0]);
+    const max = Number(parts[1]);
+    expect(Number.isInteger(current), `${label}: HP current "${parts[0]}" is not an integer`).toBe(true);
+    expect(Number.isInteger(max), `${label}: HP max "${parts[1]}" is not an integer`).toBe(true);
+    expect(current, `${label}: HP current ${current} should be > 0`).toBeGreaterThan(0);
+    expect(max, `${label}: HP max ${max} should be > 0`).toBeGreaterThan(0);
+    expect(current, `${label}: HP current ${current} should be ≤ max ${max}`).toBeLessThanOrEqual(max);
+  }
+
+  it("town roster heroes have valid HP strings", () => {
+    for (const hero of replayTownViewModel.heroes) {
+      checkHpFormat(hero.hp, `town hero ${hero.id}`);
+    }
+  });
+
+  it("provisioning heroes have valid HP strings", () => {
+    for (const ph of replayProvisioningViewModel.party) {
+      checkHpFormat(ph.hp, `provisioning hero ${ph.id}`);
+    }
+  });
+
+  it("expedition heroes have valid HP strings", () => {
+    for (const eh of replayExpeditionViewModel.party) {
+      checkHpFormat(eh.hp, `expedition hero ${eh.id}`);
+    }
+  });
+
+  it("returning heroes have valid HP strings", () => {
+    for (const rh of replayReturnViewModel.returningHeroes) {
+      checkHpFormat(rh.hp, `return hero ${rh.heroId}`);
+    }
+  });
+
+  it("hero-detail HP and maxHp match town roster", () => {
+    const detail = replayHeroDetailViewModel;
+    const townHero = replayTownViewModel.heroes.find((h) => h.id === detail.heroId)!;
+    const townHpParts = townHero.hp.split("/").map((s) => s.trim());
+    expect(detail.hp).toBe(townHpParts[0]);
+    expect(detail.maxHp).toBe(townHpParts[1]);
+  });
+});
+
+// ── Cross-fixture building consistency ────────────────────────────────────
+
+describe("building fixture consistency with town roster", () => {
+  const townBuildings = replayTownViewModel.buildings;
+
+  it.each([
+    ["replayBuildingDetailViewModel", replayBuildingDetailViewModel, "guild"],
+    ["replayBlacksmithBuildingDetailViewModel", replayBlacksmithBuildingDetailViewModel, "blacksmith"],
+    ["replaySanitariumBuildingDetailViewModel", replaySanitariumBuildingDetailViewModel, "sanitarium"],
+    ["replayStagecoachBuildingDetailViewModel", replayStagecoachBuildingDetailViewModel, "stagecoach"],
+  ] as const)("%s references an existing town building", (_name, detail, expectedId) => {
+    const townB = townBuildings.find((b) => b.id === expectedId);
+    expect(townB, `town building "${expectedId}" not found in town view model`).toBeDefined();
+    expect(detail.buildingId).toBe(expectedId);
+    expect(detail.label).toBe(townB!.label);
+    expect(detail.status).toBe(townB!.status);
+  });
+
+  it("all town buildings have a corresponding detail fixture", () => {
+    const knownBuildingFixtures = new Set([
+      replayBuildingDetailViewModel.buildingId,
+      replayBlacksmithBuildingDetailViewModel.buildingId,
+      replaySanitariumBuildingDetailViewModel.buildingId,
+      replayStagecoachBuildingDetailViewModel.buildingId,
+    ]);
+    for (const tb of townBuildings) {
+      expect(
+        knownBuildingFixtures.has(tb.id),
+        `town building "${tb.id}" (${tb.label}) has no detail fixture`,
+      ).toBe(true);
+    }
+  });
+
+  it("building detail fixtures have descriptive non-empty descriptions", () => {
+    for (const detail of [
+      replayBuildingDetailViewModel,
+      replayBlacksmithBuildingDetailViewModel,
+      replaySanitariumBuildingDetailViewModel,
+      replayStagecoachBuildingDetailViewModel,
+    ]) {
+      expect(detail.description.length).toBeGreaterThan(20);
+      expect(detail.actions.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("building detail actions have valid cost strings", () => {
+    for (const detail of [
+      replayBuildingDetailViewModel,
+      replayBlacksmithBuildingDetailViewModel,
+      replaySanitariumBuildingDetailViewModel,
+      replayStagecoachBuildingDetailViewModel,
+    ]) {
+      for (const action of detail.actions) {
+        expect(action.cost).toMatch(/^\d+ Gold$/);
+      }
+    }
+  });
+});
+
+// ── Cross-fixture hero consistency ────────────────────────────────────────
+
+describe("hero data consistency across fixtures", () => {
+  it("town roster heroes match provisioning and expedition hero IDs", () => {
+    const townIds = new Set(replayTownViewModel.heroes.map((h) => h.id));
+    for (const ph of replayProvisioningViewModel.party) {
+      expect(townIds.has(ph.id), `provisioning hero ${ph.id} not in town roster`).toBe(true);
+    }
+    for (const eh of replayExpeditionViewModel.party) {
+      expect(townIds.has(eh.id), `expedition hero ${eh.id} not in town roster`).toBe(true);
+    }
+  });
+
+  it("result hero outcomes reference known town heroes", () => {
+    const townIds = new Set(replayTownViewModel.heroes.map((h) => h.id));
+    for (const result of [replayResultViewModel, replayFailureResultViewModel, replayPartialResultViewModel]) {
+      for (const ho of result.heroOutcomes) {
+        expect(townIds.has(ho.heroId), `result hero ${ho.heroId} not in town roster`).toBe(true);
+        const townHero = replayTownViewModel.heroes.find((h) => h.id === ho.heroId)!;
+        expect(ho.heroName).toBe(townHero.name);
+      }
+    }
+  });
+
+  it("result hero outcomes include both selected party heroes", () => {
+    for (const result of [replayResultViewModel, replayFailureResultViewModel, replayPartialResultViewModel]) {
+      const outcomeIds = new Set(result.heroOutcomes.map((h) => h.heroId));
+      for (const eh of replayExpeditionViewModel.party) {
+        expect(
+          outcomeIds.has(eh.id),
+          `result missing outcome for expedition hero ${eh.id}`,
+        ).toBe(true);
+      }
+    }
+  });
+});
+
+// ── HP/health numeric consistency ─────────────────────────────────────────
+
+describe("health and stress numeric consistency", () => {
+  it("hero health field matches parsed HP current value", () => {
+    for (const hero of replayTownViewModel.heroes) {
+      const hpCurrent = Number(hero.hp.split("/")[0].trim());
+      expect(hero.health, `${hero.id}: health ${hero.health} should match parsed HP ${hpCurrent}`).toBe(hpCurrent);
+    }
+  });
+
+  it("hero maxHealth field matches parsed HP max value", () => {
+    for (const hero of replayTownViewModel.heroes) {
+      const hpMax = Number(hero.hp.split("/")[1].trim());
+      expect(hero.maxHealth, `${hero.id}: maxHealth ${hero.maxHealth} should match parsed max HP ${hpMax}`).toBe(hpMax);
+    }
+  });
+
+  it("provisioning hero health matches town hero health", () => {
+    for (const ph of replayProvisioningViewModel.party) {
+      const townHero = replayTownViewModel.heroes.find((h) => h.id === ph.id)!;
+      expect(ph.health).toBe(townHero.health);
+      expect(ph.maxHealth).toBe(townHero.maxHealth);
+    }
   });
 });
