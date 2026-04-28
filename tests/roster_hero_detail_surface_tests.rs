@@ -632,3 +632,255 @@ fn game_state_town_view_model_matches_adapter() {
     let result = state.town_view_model();
     assert!(result.is_ok(), "town_view_model should succeed");
 }
+
+// ── US-004-c: TownViewModel helper method tests ──────────────────────────────
+
+/// Verifies TownViewModel::has_wounded_heroes returns correct values.
+#[test]
+fn town_vm_has_wounded_heroes_helper() {
+    let vm = make_replay_town_vm();
+
+    // All 3 heroes have health < max_health
+    assert!(vm.has_wounded_heroes(), "should detect wounded heroes");
+
+    // Empty roster should not have wounded heroes
+    let mut campaign = make_campaign_with_buildings();
+    let empty_vm = town_from_campaign(&campaign).unwrap();
+    assert!(!empty_vm.has_wounded_heroes(), "empty roster should have no wounded heroes");
+
+    // Full-health hero should not be wounded
+    campaign.roster.push(make_campaign_hero(
+        "full_health_hero", "crusader", 1, 0, 100.0, 100.0, 0.0, 200.0,
+    ));
+    let full_vm = town_from_campaign(&campaign).unwrap();
+    assert!(!full_vm.has_wounded_heroes(), "hero at 100/100 should not be wounded");
+}
+
+/// Verifies TownViewModel::has_afflicted_heroes returns correct values.
+#[test]
+fn town_vm_has_afflicted_heroes_helper() {
+    let vm = make_replay_town_vm();
+
+    // Alchemist has stress == max_stress (afflicted)
+    assert!(vm.has_afflicted_heroes(), "should detect afflicted heroes");
+
+    // Empty roster should not have afflicted heroes
+    let mut campaign = make_campaign_with_buildings();
+    let empty_vm = town_from_campaign(&campaign).unwrap();
+    assert!(!empty_vm.has_afflicted_heroes(), "empty roster should have no afflicted heroes");
+
+    // Low-stress hero should not be afflicted
+    campaign.roster.push(make_campaign_hero(
+        "low_stress_hero", "crusader", 1, 0, 100.0, 100.0, 30.0, 200.0,
+    ));
+    let low_vm = town_from_campaign(&campaign).unwrap();
+    assert!(!low_vm.has_afflicted_heroes(), "hero at 30/200 should not be afflicted");
+}
+
+/// Verifies TownViewModel::recruitment_slots_available returns correct counts.
+#[test]
+fn town_vm_recruitment_slots_available() {
+    let vm = make_replay_town_vm();
+
+    // 3 heroes in roster, max is 16, so 13 slots available
+    assert_eq!(vm.recruitment_slots_available(), 13, "3 heroes → 13 slots available");
+
+    // Empty roster should have 16 slots
+    let campaign = make_campaign_with_buildings();
+    let empty_vm = town_from_campaign(&campaign).unwrap();
+    assert_eq!(empty_vm.recruitment_slots_available(), 16, "empty roster → 16 slots");
+}
+
+/// Verifies full roster produces zero recruitment slots.
+#[test]
+fn town_vm_full_roster_no_recruitment_slots() {
+    let mut campaign = make_campaign_with_buildings();
+    // Add 16 heroes to fill the roster
+    for i in 0..16 {
+        campaign.roster.push(make_campaign_hero(
+            &format!("hero_{}", i),
+            "crusader",
+            1, 0, 100.0, 100.0, 0.0, 200.0,
+        ));
+    }
+
+    let vm = town_from_campaign(&campaign).unwrap();
+    assert_eq!(vm.roster.len(), 16, "roster should have 16 heroes");
+    assert_eq!(vm.recruitment_slots_available(), 0, "full roster → 0 slots available");
+}
+
+// ── US-004-c: TownActivityType parsing tests ─────────────────────────────────
+
+/// Verifies TownActivityType::from_building_type correctly parses building types.
+#[test]
+fn town_activity_type_from_building_type() {
+    use game_ddgc_headless::contracts::viewmodels::TownActivityType;
+
+    assert_eq!(TownActivityType::from_building_type("stagecoach"), TownActivityType::Stagecoach);
+    assert_eq!(TownActivityType::from_building_type("guild"), TownActivityType::Guild);
+    assert_eq!(TownActivityType::from_building_type("blacksmith"), TownActivityType::Blacksmith);
+    assert_eq!(TownActivityType::from_building_type("sanitarium"), TownActivityType::Sanitarium);
+    assert_eq!(TownActivityType::from_building_type("tavern"), TownActivityType::Tavern);
+    assert_eq!(TownActivityType::from_building_type("abbey"), TownActivityType::Abbey);
+    assert_eq!(TownActivityType::from_building_type("campfire"), TownActivityType::Camping);
+
+    // Case insensitive
+    assert_eq!(TownActivityType::from_building_type("Stagecoach"), TownActivityType::Stagecoach);
+    assert_eq!(TownActivityType::from_building_type("GUILD"), TownActivityType::Guild);
+
+    // Unknown type maps to Other
+    let unknown = TownActivityType::from_building_type("unknown_building");
+    assert_eq!(unknown, TownActivityType::Other("unknown_building".to_string()));
+}
+
+// ── US-004-c: Heirloom currency mapping tests ────────────────────────────────
+
+/// Verifies heirloom currencies are surfaced in the town view model.
+#[test]
+fn town_vm_surfaces_heirloom_currencies() {
+    use game_ddgc_headless::contracts::HeirloomCurrency;
+
+    let mut campaign = make_campaign_with_buildings();
+    campaign.heirlooms.insert(HeirloomCurrency::Bones, 100);
+    campaign.heirlooms.insert(HeirloomCurrency::Portraits, 25);
+    campaign.heirlooms.insert(HeirloomCurrency::Tapes, 5);
+
+    let vm = town_from_campaign(&campaign).unwrap();
+
+    // Heirlooms should be present with lowercase keys (adapter mapping)
+    assert_eq!(vm.heirlooms.get("bones"), Some(&100), "Bones should map to 'bones'");
+    assert_eq!(vm.heirlooms.get("portraits"), Some(&25), "Portraits should map to 'portraits'");
+    assert_eq!(vm.heirlooms.get("tapes"), Some(&5), "Tapes should map to 'tapes'");
+}
+
+/// Verifies empty heirlooms produce empty map in town VM.
+#[test]
+fn town_vm_empty_heirlooms() {
+    // CampaignState::new starts with empty heirlooms
+    let campaign = make_campaign_with_buildings();
+    let vm = town_from_campaign(&campaign).unwrap();
+
+    assert!(vm.heirlooms.is_empty(), "campaign with no heirlooms should produce empty map");
+}
+
+// ── US-004-c: Hero detail edge cases ─────────────────────────────────────────
+
+/// Verifies hero detail handles level 0 hero (edge case for resolve/progression).
+#[test]
+fn hero_detail_level_0_edge_case() {
+    let mut campaign = make_campaign_with_buildings();
+    campaign.roster.push(make_campaign_hero(
+        "level_0_hero",
+        "crusader",
+        0,    // level 0
+        0,    // xp
+        100.0, 100.0,
+        0.0, 200.0,
+    ));
+
+    let result = hero_detail_from_campaign(&campaign, "level_0_hero");
+    assert!(result.is_ok());
+    let vm = result.unwrap();
+    assert_eq!(vm.resolve, "0", "resolve should be 0 for level 0 hero");
+    assert_eq!(vm.progression.level, 0, "progression level should be 0");
+    // XP to next at level 0: 0 * 200 = 0
+    assert_eq!(vm.progression.experience_to_next, "0", "XP to next at level 0 should be 0");
+}
+
+/// Verifies hero detail handles stress exceeding max_stress.
+#[test]
+fn hero_detail_stress_above_max_edge_case() {
+    let mut campaign = make_campaign_with_buildings();
+    campaign.roster.push(make_campaign_hero(
+        "overstressed_hero",
+        "crusader",
+        3, 500,
+        100.0, 100.0,
+        250.0, // stress exceeds max_stress
+        200.0, // max_stress
+    ));
+
+    // Check town VM surfaces overstressed hero as afflicted
+    let town_vm = town_from_campaign(&campaign).unwrap();
+    let hero = town_vm.roster.iter().find(|h| h.id == "overstressed_hero").unwrap();
+    assert!(hero.is_afflicted, "stress 250 >= 200 should be afflicted");
+    assert_eq!(hero.stress, 250.0, "stress value should be preserved");
+
+    // Check hero detail formats stress correctly
+    let detail_vm = hero_detail_from_campaign(&campaign, "overstressed_hero").unwrap();
+    assert_eq!(detail_vm.stress, "250", "stress should be formatted as '250'");
+}
+
+/// Verifies hero detail handles zero health edge case.
+#[test]
+fn hero_detail_zero_health_edge_case() {
+    let mut campaign = make_campaign_with_buildings();
+    campaign.roster.push(make_campaign_hero(
+        "zero_hp_hero",
+        "crusader",
+        1, 0,
+        0.0,   // health at 0
+        100.0,
+        0.0, 200.0,
+    ));
+
+    let result = hero_detail_from_campaign(&campaign, "zero_hp_hero");
+    assert!(result.is_ok());
+    let vm = result.unwrap();
+    assert_eq!(vm.hp, "0", "HP should be 0 for zero health hero");
+    assert_eq!(vm.max_hp, "100", "max HP should still be 100");
+
+    // In town VM, hero should be wounded (0 < 100)
+    let town_vm = town_from_campaign(&campaign).unwrap();
+    let hero = town_vm.roster.iter().find(|h| h.id == "zero_hp_hero").unwrap();
+    assert!(hero.is_wounded, "zero HP hero should be wounded");
+}
+
+// ── US-004-c: Representative campaign integration test ───────────────────────
+
+/// Verifies representative campaign produces valid town view model with roster.
+#[test]
+fn town_vm_from_representative_campaign() {
+    let mut state = game_ddgc_headless::state::GameState::default();
+    state.set_host_phase(game_ddgc_headless::state::HostPhase::Ready);
+    state.new_representative_campaign();
+
+    let result = state.town_view_model();
+    assert!(result.is_ok(), "representative campaign should produce valid town VM");
+
+    let vm = result.unwrap();
+    assert!(!vm.roster.is_empty(), "representative campaign should have heroes");
+    assert!(!vm.buildings.is_empty(), "representative campaign should have buildings");
+    assert!(!vm.available_activities.is_empty(), "representative campaign should have activities");
+    assert!(vm.error.is_none(), "representative campaign should have no error");
+}
+
+// ── US-004-c: Hero detail with quirk-only hero ───────────────────────────────
+
+/// Verifies hero detail surfaces quirks correctly.
+#[test]
+fn hero_detail_surfaces_quirks() {
+    use game_ddgc_headless::contracts::CampaignHeroQuirks;
+
+    let mut campaign = make_campaign_with_buildings();
+    campaign.roster.push(make_campaign_hero(
+        "quirky_hero",
+        "hunter",
+        2, 200,
+        100.0, 100.0,
+        0.0, 200.0,
+    ));
+    // Add quirks directly to the campaign hero
+    campaign.roster[0].quirks = CampaignHeroQuirks {
+        positive: vec!["eagle_eye".to_string(), "unyielding".to_string()],
+        negative: vec!["klutz".to_string()],
+        diseases: vec!["syphilis".to_string()],
+    };
+
+    // Verify quirks flow through town VM
+    let town_vm = town_from_campaign(&campaign).unwrap();
+    let hero = &town_vm.roster[0];
+    assert_eq!(hero.positive_quirks, vec!["eagle_eye", "unyielding"]);
+    assert_eq!(hero.negative_quirks, vec!["klutz"]);
+    assert_eq!(hero.diseases, vec!["syphilis"]);
+}
