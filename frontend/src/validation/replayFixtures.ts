@@ -284,6 +284,10 @@ export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
   title: "Expedition Launch",
   expeditionName: "The Depths Await",
   partySize: 2,
+  party: [
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", stress: "17", maxStress: "200" },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "8", maxStress: "200" }
+  ],
   difficulty: "Challenging",
   estimatedDuration: "Medium",
   objectives: [
@@ -295,6 +299,8 @@ export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
     "Elevated enemy presence detected",
     "Limited camping opportunities"
   ],
+  supplyLevel: "Adequate",
+  provisionCost: "150 Gold",
   isLaunchable: true
 };
 

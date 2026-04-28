@@ -266,10 +266,16 @@ const createLiveExpeditionViewModel = (): ExpeditionSetupViewModel => ({
   title: "Expedition Launch",
   expeditionName: "The Azure Lantern Expedition",
   partySize: 2,
+  party: [
+    { id: "hero-hunter-live-01", name: "Yuan", classLabel: "Hunter", hp: "42 / 42", maxHp: "42", stress: "0", maxStress: "200" },
+    { id: "hero-white-live-01", name: "Mei", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "0", maxStress: "200" }
+  ],
   difficulty: "Challenging",
   estimatedDuration: "Medium",
   objectives: ["Explore the dungeon", "Find the treasure", "Return alive"],
   warnings: ["High stress area ahead", "Limited camping spots"],
+  supplyLevel: "Adequate",
+  provisionCost: "100 Gold",
   isLaunchable: true
 });
 

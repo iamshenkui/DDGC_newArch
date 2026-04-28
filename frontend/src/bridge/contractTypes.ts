@@ -148,15 +148,28 @@ export interface ProvisioningViewModel {
   provisionCost: string;
 }
 
+export interface ExpeditionHeroSummary {
+  id: string;
+  name: string;
+  classLabel: string;
+  hp: string;
+  maxHp: string;
+  stress: string;
+  maxStress: string;
+}
+
 export interface ExpeditionSetupViewModel {
   kind: "expedition";
   title: string;
   expeditionName: string;
   partySize: number;
+  party: ReadonlyArray<ExpeditionHeroSummary>;
   difficulty: string;
   estimatedDuration: string;
   objectives: ReadonlyArray<string>;
   warnings: ReadonlyArray<string>;
+  supplyLevel: string;
+  provisionCost: string;
   isLaunchable: boolean;
 }
 
