@@ -1,20 +1,24 @@
-//! Smoke tests for DDGC tests layer (US-009-d).
+//! Smoke tests for DDGC tests layer (P10-US-009-d).
 //!
 //! Validates:
 //! - A deterministic local build/run path exists for the DDGC frontend slice
-//! - The build can run against replay-driven mode and live-runtime mode
-//! - Asset loading, startup flow, and runtime wiring are documented
-//! - A focused smoke-test path exists for verifying the packaged or runnable slice
-//! - Packaging/build choices do not break the stable contract boundary
+//! - The runtime can be started in both replay-driven and live-runtime modes
+//! - Asset loading, startup wiring, and environment assumptions are documented
+//! - A focused smoke-test path exists for validating the rendered runtime after a
+//!   local build/package step
+//! - Packaging/build choices do not break the stable contract boundary between
+//!   Rust runtime and frontend runtime
 //! - Typecheck passes
 //! - Changes are scoped to the tests module
 //!
-//! These tests validate the tests layer itself by verifying:
+//! This file constitutes the P10-US-009-d tests layer, validating:
 //! 1. The test suite compiles correctly and is accessible
-//! 2. All smoke tests are discoverable and runnable via cargo test
+//! 2. All smoke test files (including build_run_smoke) are discoverable
 //! 3. The focused smoke-test path exists and works
 //! 4. Tests are isolated and deterministic
 //! 5. The test infrastructure correctly validates other layers
+//! 6. The build-run smoke path (tests/build_run_smoke.rs) is accessible
+//! 7. The frontend-facing contract boundary (adapters/viewmodels) is verifiable
 
 use game_ddgc_headless::contracts::host::{DdgcHost, LiveConfig, ReplayConfig, HostPhase, StartupMode};
 use game_ddgc_headless::contracts::{CampaignState, CAMPAIGN_SNAPSHOT_VERSION};
@@ -395,4 +399,230 @@ fn smoke_force_transition_in_tests() {
     // Force transition bypasses validation
     shell.force_transition(FlowState::Town);
     assert_eq!(shell.current_state(), FlowState::Town);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Build-run smoke path validation (P10-US-009)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Smoke test: the build_run_smoke test path types are accessible from the
+/// tests layer. This validates that the build-run integration test
+/// (tests/build_run_smoke.rs) shares a consistent type surface.
+#[test]
+fn smoke_build_run_path_types_accessible() {
+    // Adapter types used by build_run_smoke.rs must be accessible here
+    use game_ddgc_headless::contracts::adapters::boot_load_from_host;
+    use game_ddgc_headless::contracts::viewmodels::BootLoadViewModel;
+
+    let vm = boot_load_from_host(&HostPhase::Ready, true, None)
+        .expect("adapter should succeed for Ready phase");
+    assert!(vm.loaded);
+
+    let vm_err = boot_load_from_host(&HostPhase::FatalError, false, None)
+        .expect("adapter should handle FatalError");
+    assert!(!vm_err.loaded);
+
+    let ok_vm = BootLoadViewModel::success("test", vec!["curio", "trap"]);
+    assert!(ok_vm.loaded);
+    assert_eq!(ok_vm.registries_loaded.len(), 2);
+
+    let fail_vm = BootLoadViewModel::failure("something broke");
+    assert!(!fail_vm.loaded);
+    assert_eq!(fail_vm.error.as_deref(), Some("something broke"));
+}
+
+/// Smoke test: the tests layer can exercise both boot modes in a single
+/// test process, as the build_run_smoke integration tests do across
+/// individual test functions.
+#[test]
+fn smoke_build_run_both_modes_single_process() {
+    // Live mode — same pattern as build_run_smoke::smoke_live_boot_host_phase_and_mode
+    let live_config = LiveConfig::default();
+    let live_host = DdgcHost::boot_live(&live_config).expect("live boot");
+    assert_eq!(live_host.phase(), HostPhase::Ready);
+    assert_eq!(live_host.startup_mode(), Some(StartupMode::Live));
+
+    // Replay mode — same pattern as build_run_smoke::smoke_replay_boot_host_phase_and_mode
+    let campaign = CampaignState::new(500);
+    let json = campaign.to_json().expect("serialize");
+    let replay_config = ReplayConfig {
+        campaign_json: &json,
+        source_path: "p10_replay.json",
+    };
+    let replay_host =
+        DdgcHost::boot_from_campaign(&replay_config).expect("replay boot");
+    assert_eq!(replay_host.phase(), HostPhase::Ready);
+    assert_eq!(replay_host.startup_mode(), Some(StartupMode::Replay));
+
+    // JSON contract is consistent across modes
+    let live_json = live_host
+        .campaign()
+        .expect("live campaign")
+        .to_json()
+        .expect("serialize");
+    let replay_json = replay_host
+        .campaign()
+        .expect("replay campaign")
+        .to_json()
+        .expect("serialize");
+    // Both produce valid JSON with the same schema version marker
+    assert!(live_json.contains("\"gold\""));
+    assert!(replay_json.contains("\"gold\""));
+    assert!(live_json.contains(&format!("\"schema_version\":{}", CAMPAIGN_SNAPSHOT_VERSION)));
+    assert!(replay_json.contains(&format!("\"schema_version\":{}", CAMPAIGN_SNAPSHOT_VERSION)));
+}
+
+/// Smoke test: the build_run_smoke test's contract boundary assertions
+/// are consistent with the tests layer.
+#[test]
+fn smoke_build_run_contract_boundary_consistent() {
+    // The build_run_smoke tests verify no framework types leak into JSON.
+    // We verify the same assertion holds from the tests layer.
+    let campaign = CampaignState::new(100);
+    let json = campaign.to_json().expect("serialize");
+
+    assert!(!json.contains("ActorId"), "no framework type leakage");
+    assert!(!json.contains("EncounterId"), "no framework type leakage");
+    assert!(!json.contains("RunId"), "no framework type leakage");
+
+    // JSON round-trips (as performed by build_run_smoke)
+    let restored = CampaignState::from_json(&json).expect("deserialize");
+    assert_eq!(restored.gold, campaign.gold);
+    assert_eq!(restored.schema_version, campaign.schema_version);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Frontend-facing contract boundary validation (P10-US-009)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Smoke test: the adapter surface consumed by the frontend RuntimeBridge is
+/// exercisable from the tests layer. This validates that the frontend smoke
+/// tests (frontend/src/build-run/smoke.test.ts) rely on a contract that is
+/// verifiable from the Rust side.
+#[test]
+fn smoke_frontend_adapter_surface_exercisable() {
+    use game_ddgc_headless::contracts::adapters::boot_load_from_host;
+    use game_ddgc_headless::contracts::viewmodels::BootLoadViewModel;
+
+    // Uninitialized → loaded (no campaign yet)
+    let vm = boot_load_from_host(&HostPhase::Uninitialized, false, None)
+        .expect("Uninitialized adapter");
+    assert!(vm.loaded);
+    assert!(vm.campaign_schema_version.is_none());
+
+    // Ready + loaded → schema version present
+    let vm = boot_load_from_host(&HostPhase::Ready, true, Some(CAMPAIGN_SNAPSHOT_VERSION))
+        .expect("Ready adapter");
+    assert!(vm.loaded);
+    assert_eq!(vm.campaign_schema_version, Some(CAMPAIGN_SNAPSHOT_VERSION));
+
+    // BootLoadViewModel constructors
+    let vm = BootLoadViewModel::success("ready", vec!["curio", "trap", "building"]);
+    assert_eq!(vm.registries_loaded.len(), 3);
+    assert_eq!(vm.status_message, "ready");
+
+    let vm = BootLoadViewModel::failure("boot failed");
+    assert!(vm.error.is_some());
+}
+
+/// Smoke test: both replay and live modes produce view-model-compatible
+/// campaign state, which is what the frontend RuntimeBridge consumes.
+#[test]
+fn smoke_both_modes_produce_compatible_view_model() {
+    use game_ddgc_headless::contracts::adapters::boot_load_from_host;
+
+    // Live host → view model
+    let live_host = DdgcHost::boot_live(&LiveConfig::default()).expect("live boot");
+    let live_vm = boot_load_from_host(
+        &live_host.phase(),
+        live_host.is_ready(),
+        live_host.campaign().map(|c| c.schema_version),
+    )
+    .expect("live adapter");
+    assert!(live_vm.loaded);
+    assert!(live_vm.campaign_schema_version.is_some());
+
+    // Replay host → view model
+    let campaign = CampaignState::new(750);
+    let json = campaign.to_json().expect("serialize");
+    let replay_host = DdgcHost::boot_from_campaign(&ReplayConfig {
+        campaign_json: &json,
+        source_path: "vm_test.json",
+    })
+    .expect("replay boot");
+    let replay_vm = boot_load_from_host(
+        &replay_host.phase(),
+        replay_host.is_ready(),
+        replay_host.campaign().map(|c| c.schema_version),
+    )
+    .expect("replay adapter");
+    assert!(replay_vm.loaded);
+    assert!(replay_vm.campaign_schema_version.is_some());
+
+    // Both modes produce the same schema version in the view model
+    assert_eq!(live_vm.campaign_schema_version, replay_vm.campaign_schema_version);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// End-to-end smoke pipeline validation (P10-US-009)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Smoke test: the smoke-build pipeline contract (npm run build → npm run smoke)
+/// is verifiable from the tests layer. The Rust runtime produces the same
+/// contract JSON that the frontend build consumes.
+#[test]
+fn smoke_smoke_build_pipeline_contract() {
+    // The smoke-build pipeline does: npm run build && vitest run src/validation src/build-run
+    // The Rust side contract is that CampaignState JSON is deterministic and
+    // versioned — the frontend tests consume this through RuntimeBridge.
+    let campaign = CampaignState::new(100);
+    let json_a = campaign.to_json().expect("serialize a");
+    let json_b = campaign.to_json().expect("serialize b");
+
+    // Deterministic JSON (frontend expects stable schema)
+    assert_eq!(json_a, json_b, "identical state must produce identical JSON");
+
+    // All contract fields present (frontend expects these keys)
+    assert!(json_a.contains("\"schema_version\""));
+    assert!(json_a.contains("\"gold\""));
+    assert!(json_a.contains("\"heirlooms\""));
+    assert!(json_a.contains("\"roster\""));
+    assert!(json_a.contains("\"inventory\""));
+    assert!(json_a.contains("\"building_states\""));
+    assert!(json_a.contains("\"run_history\""));
+    assert!(json_a.contains("\"quest_progress\""));
+}
+
+/// Smoke test: the full pipeline (Rust check → test → frontend typecheck → smoke)
+/// can be validated from the tests layer through type compatibility.
+#[test]
+fn smoke_full_pipeline_type_compatibility() {
+    use game_ddgc_headless::contracts::CampaignState;
+
+    // This test validates that the types used across the pipeline (Rust → JSON →
+    // frontend) are consistent. The CampaignState is serialized by Rust and
+    // consumed by the frontend RuntimeBridge.
+    let mut campaign = CampaignState::new(500);
+    let hero = game_ddgc_headless::contracts::CampaignHero::new(
+        "hero_1", "alchemist", 3, 450, 85.0, 100.0, 25.0, 200.0,
+    );
+    campaign.roster.push(hero);
+
+    let json = campaign.to_json().expect("serialize");
+    let parsed: serde_json::Value =
+        serde_json::from_str(&json).expect("valid JSON for frontend");
+
+    // The frontend expects these top-level keys (via RuntimeBridge contract)
+    assert!(parsed.get("gold").and_then(|v| v.as_u64()).is_some());
+    assert!(parsed.get("schema_version").and_then(|v| v.as_u64()).is_some());
+    assert!(parsed.get("roster").and_then(|v| v.as_array()).is_some());
+    assert!(parsed.get("heirlooms").and_then(|v| v.as_object()).is_some());
+
+    // Round-trip (frontend reads JSON, modifies, sends back)
+    let restored = CampaignState::from_json(&json).expect("deserialize");
+    assert_eq!(restored.roster.len(), 1);
+    assert_eq!(restored.roster[0].class_id, "alchemist");
+    assert_eq!(restored.roster[0].level, 3);
+    assert_eq!(restored.roster[0].xp, 450);
+    assert!((restored.roster[0].max_health - 100.0).abs() < f64::EPSILON);
 }
