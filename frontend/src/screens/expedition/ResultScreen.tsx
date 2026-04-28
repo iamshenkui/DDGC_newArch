@@ -6,6 +6,7 @@ import { AppFrame } from "../../components/layout/AppFrame";
 interface ResultScreenProps {
   viewModel: ExpeditionResultViewModel;
   onContinue: () => void;
+  onReturnToTown?: () => void;
 }
 
 export const ResultScreen: Component<ResultScreenProps> = (props) => {
@@ -31,6 +32,38 @@ export const ResultScreen: Component<ResultScreenProps> = (props) => {
     }
   };
 
+  const heroStatusClass = (status: string) => {
+    switch (status) {
+      case "dead":
+        return "text-danger";
+      case "stressed":
+        return "text-warning";
+      default:
+        return "text-good";
+    }
+  };
+
+  const heroStatusLabel = (status: string) => {
+    switch (status) {
+      case "dead":
+        return "DECEASED";
+      case "stressed":
+        return "Stressed";
+      default:
+        return "Alive";
+    }
+  };
+
+  const heroCardClass = (status: string) => {
+    return status === "dead" ? "surface-card dead-hero" : "surface-card";
+  };
+
+  const isFailure = () => props.viewModel.outcome === "failure";
+  const isPartial = () => props.viewModel.outcome === "partial";
+
+  const heroHasCasualties = () =>
+    props.viewModel.heroOutcomes.some((h) => h.status === "dead");
+
   return (
     <AppFrame
       eyebrow="Expedition Complete"
@@ -47,6 +80,21 @@ export const ResultScreen: Component<ResultScreenProps> = (props) => {
             <div class="surface-card stack">
               <h3>{props.viewModel.expeditionName}</h3>
               <p>{props.viewModel.summary}</p>
+              {isFailure() && (
+                <p class="danger" style="margin-top: 4px;">
+                  The expedition has ended in defeat. Prepare your remaining forces before venturing forth again.
+                </p>
+              )}
+              {isPartial() && (
+                <p style="color: #e8a838; margin-top: 4px;">
+                  The expedition achieved partial objectives. Tend to your heroes before the next venture.
+                </p>
+              )}
+              {!isFailure() && !isPartial() && (
+                <p style="color: #5bbd6e; margin-top: 4px;">
+                  The expedition concluded successfully. Your heroes stand ready for the next challenge.
+                </p>
+              )}
             </div>
           </section>
 
@@ -54,16 +102,27 @@ export const ResultScreen: Component<ResultScreenProps> = (props) => {
             <h2 class="panel-title">Hero Outcomes</h2>
             <ul class="list-reset">
               {props.viewModel.heroOutcomes.map((hero) => (
-                <li class="surface-card stack">
+                <li class={heroCardClass(hero.status)}>
                   <div class="row">
                     <strong>{hero.heroName}</strong>
-                    <span class="pill">{hero.status}</span>
+                    <span class={`pill ${heroStatusClass(hero.status)}`}>
+                      {heroStatusLabel(hero.status)}
+                    </span>
+                    {hero.status === "dead" && (
+                      <span class="pill" style="background: rgba(234,119,103,0.25); border-color: #ea7767; color: #ea7767;">
+                        LOST
+                      </span>
+                    )}
                   </div>
                   <div class="row">
                     <span class="stat-label">HP</span>
-                    <span class="stat-value">{hero.hpChange}</span>
+                    <span class={`stat-value ${hero.status === "dead" ? "text-danger" : ""}`}>
+                      {hero.status === "dead" ? "--" : hero.hpChange}
+                    </span>
                     <span class="stat-label">Stress</span>
-                    <span class="stat-value">{hero.stressChange}</span>
+                    <span class={`stat-value ${hero.status === "dead" ? "text-danger" : ""}`}>
+                      {hero.status === "dead" ? "--" : hero.stressChange}
+                    </span>
                   </div>
                 </li>
               ))}
@@ -105,6 +164,13 @@ export const ResultScreen: Component<ResultScreenProps> = (props) => {
 
           <section class="panel stack">
             <div class="stack">
+              {heroHasCasualties() && (
+                <div class="surface-card" style="border-color: rgba(234,119,103,0.3);">
+                  <p class="danger" style="margin: 0;">
+                    <strong>Casualties sustained.</strong> Some heroes did not return. Visit the Stagecoach to recruit new party members.
+                  </p>
+                </div>
+              )}
               <button
                 class="action-primary"
                 onClick={props.onContinue}
@@ -112,6 +178,14 @@ export const ResultScreen: Component<ResultScreenProps> = (props) => {
               >
                 Continue to Town
               </button>
+              {props.onReturnToTown && (
+                <button
+                  class="action-secondary"
+                  onClick={props.onReturnToTown}
+                >
+                  Return to Town (Fallback)
+                </button>
+              )}
             </div>
           </section>
         </div>

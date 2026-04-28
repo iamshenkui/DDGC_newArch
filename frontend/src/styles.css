@@ -283,6 +283,15 @@ button {
   color: #ea7767;
 }
 
+.dead-hero {
+  opacity: 0.75;
+  border-color: rgba(234, 119, 103, 0.3);
+}
+
+.dead-hero strong {
+  color: #ea7767;
+}
+
 .checkbox-label {
   display: flex;
   align-items: center;
