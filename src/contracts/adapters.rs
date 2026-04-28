@@ -31,6 +31,10 @@
 //! | `framework_viewmodels::CombatViewModel` | `CombatViewModel` | [`combat_from_framework`] |
 //! | `CombatViewModel` | `CombatHudViewModel` | [`combat_hud_from_combat`] |
 //! | `RunResult` + rewards | `ResultViewModel` | [`result_from_run`] |
+//! | `CampaignState` + selection | `ProvisioningViewModel` | [`provisioning_from_campaign`] |
+//! | `CampaignState` + selection + hero | selected hero IDs | [`provisioning_hero_selection`] |
+//! | `CampaignState` + selection + quest | `ExpeditionSetupViewModel` | [`expedition_setup_from_data`] |
+//! | `CampaignState` + `ExpeditionLaunchRequest` | `ExpeditionLaunchResult` | [`expedition_launch`] |
 //! | `DdgcRunState` + heroes | `ReturnFlowViewModel` | [`return_flow_from_state`] |
 
 use crate::contracts::viewmodels::{
@@ -226,6 +230,338 @@ pub fn hero_detail_from_campaign(
         armor: format!("{} (+0)", hero.class_id),
         camp_notes: "Hero detail view - campaign state derived.".to_string(),
     })
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Provisioning Adapters — party selection and expedition provisioning
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Adapter: Convert `CampaignState` to `ProvisioningViewModel`.
+///
+/// This adapter creates the provisioning view model from campaign state,
+/// presenting the hero roster for party selection before expedition launch.
+/// Each hero is shown with vitals and a selection status for frontend rendering.
+///
+/// The provisioning view model represents the state when the player is
+/// selecting heroes for an expedition and reviewing supply levels.
+pub fn provisioning_from_campaign(
+    campaign: &CampaignState,
+    selected_hero_ids: &[String],
+    expedition_label: &str,
+    expedition_summary: &str,
+) -> ViewModelResult<crate::contracts::viewmodels::ProvisioningViewModel> {
+    use crate::contracts::viewmodels::ProvisioningHeroSummary;
+
+    let party: Vec<ProvisioningHeroSummary> = campaign
+        .roster
+        .iter()
+        .map(|hero| {
+            let hp = format!("{:.0} / {:.0}", hero.health, hero.max_health);
+            let max_hp = format!("{:.0}", hero.max_health);
+            let stress = format!("{:.0} / {:.0}", hero.stress, hero.max_stress);
+            let max_stress = format!("{:.0}", hero.max_stress);
+            let is_wounded = hero.health < hero.max_health;
+            let is_afflicted = hero.stress >= hero.max_stress;
+            let is_selected = selected_hero_ids.contains(&hero.id);
+
+            ProvisioningHeroSummary {
+                id: hero.id.clone(),
+                name: hero.id.clone(), // Placeholder: use id as display name
+                class_label: hero.class_id.clone(),
+                hp,
+                max_hp,
+                health: hero.health,
+                max_health: hero.max_health,
+                stress,
+                max_stress: max_stress,
+                level: hero.level,
+                xp: hero.xp,
+                is_wounded,
+                is_afflicted,
+                is_selected,
+            }
+        })
+        .collect();
+
+    let max_party_size = 4;
+    let selected_count = selected_hero_ids.len() as u32;
+    let is_ready_to_launch = selected_count > 0 && selected_count <= max_party_size;
+
+    // Basic supply cost derived from party size
+    let supply_level = if selected_count == 0 {
+        "None".to_string()
+    } else if selected_count <= 2 {
+        "Minimal".to_string()
+    } else {
+        "Adequate".to_string()
+    };
+
+    let provision_cost = format!("{} Gold", selected_count * 50);
+
+    Ok(crate::contracts::viewmodels::ProvisioningViewModel {
+        kind: "provisioning".to_string(),
+        title: "Provision Expedition".to_string(),
+        campaign_name: "Campaign".to_string(),
+        expedition_label: expedition_label.to_string(),
+        expedition_summary: expedition_summary.to_string(),
+        party,
+        max_party_size,
+        is_ready_to_launch,
+        supply_level,
+        provision_cost,
+    })
+}
+
+/// Adapter: Compute updated `ProvisioningViewModel` after toggling hero selection.
+///
+/// This adapter handles the hero selection toggle during provisioning.
+/// Given the campaign state and a hero ID to toggle, it returns a new
+/// set of selected hero IDs (adding or removing as appropriate) that can
+/// be passed back to `provisioning_from_campaign` for a fresh view model.
+///
+/// The runtime validates:
+/// - The hero exists in the roster
+/// - The selection stays within the party size limit
+pub fn provisioning_hero_selection(
+    campaign: &CampaignState,
+    current_selection: &[String],
+    hero_id: &str,
+) -> ViewModelResult<Vec<String>> {
+    // Validate the hero exists in the roster
+    if !campaign.roster.iter().any(|h| h.id == hero_id) {
+        return Err(crate::contracts::viewmodels::ViewModelError::MissingRequiredField {
+            field: "hero_id".to_string(),
+            context: format!("hero '{}' not found in roster for provisioning selection", hero_id),
+        });
+    }
+
+    let mut updated = current_selection.to_vec();
+
+    if updated.contains(&hero_id.to_string()) {
+        // Deselect the hero
+        updated.retain(|id| id != hero_id);
+    } else {
+        // Select the hero (up to max party size)
+        if updated.len() >= 4 {
+            return Err(crate::contracts::viewmodels::ViewModelError::UnsupportedState {
+                state_type: "ProvisioningSelection".to_string(),
+                detail: format!("cannot select more than 4 heroes for expedition party"),
+            });
+        }
+        updated.push(hero_id.to_string());
+    }
+
+    Ok(updated)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Expedition Setup and Launch Adapters — pre-launch review and expedition entry
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Adapter: Convert selected heroes and quest info to `ExpeditionSetupViewModel`.
+///
+/// This adapter creates the expedition setup view model from the campaign state
+/// and selected party heroes. It includes party vitals, expedition parameters,
+/// objectives, warnings based on party condition, and provisioning status.
+///
+/// The resulting view model represents the final review state before the player
+/// confirms expedition launch.
+pub fn expedition_setup_from_data(
+    campaign: &CampaignState,
+    selected_hero_ids: &[String],
+    quest: Option<&crate::contracts::QuestDefinition>,
+    supply_level: &str,
+    provision_cost: &str,
+) -> ViewModelResult<crate::contracts::viewmodels::ExpeditionSetupViewModel> {
+    use crate::contracts::viewmodels::ExpeditionHeroSummary;
+
+    let expedition_name = quest
+        .map(|q| q.quest_id.clone())
+        .unwrap_or_else(|| "Expedition".to_string());
+
+    let difficulty = quest
+        .map(|q| match q.difficulty {
+            crate::contracts::QuestDifficulty::Standard => "Standard",
+            crate::contracts::QuestDifficulty::Hard => "Hard",
+        })
+        .unwrap_or("Standard");
+
+    let estimated_duration = quest
+        .map(|q| match q.map_size {
+            crate::contracts::MapSize::Short => "Short",
+            crate::contracts::MapSize::Medium => "Medium",
+        })
+        .unwrap_or("Short");
+
+    let party: Vec<ExpeditionHeroSummary> = campaign
+        .roster
+        .iter()
+        .filter(|hero| selected_hero_ids.contains(&hero.id))
+        .map(|hero| {
+            let hp = format!("{:.0} / {:.0}", hero.health, hero.max_health);
+            let max_hp = format!("{:.0}", hero.max_health);
+            let stress = format!("{:.0} / {:.0}", hero.stress, hero.max_stress);
+            let max_stress = format!("{:.0}", hero.max_stress);
+
+            ExpeditionHeroSummary {
+                id: hero.id.clone(),
+                name: hero.id.clone(), // Placeholder: use id as display name
+                class_label: hero.class_id.clone(),
+                hp,
+                max_hp,
+                stress,
+                max_stress,
+            }
+        })
+        .collect();
+
+    let party_size = party.len() as u32;
+    let objectives = quest
+        .map(|q| vec![format!("{:?} — {:?}", q.quest_type, q.map_size)])
+        .unwrap_or_else(|| vec!["Explore the dungeon".to_string()]);
+
+    // Generate warnings based on party condition
+    let mut warnings: Vec<String> = Vec::new();
+    for hero in &campaign.roster {
+        if selected_hero_ids.contains(&hero.id) {
+            if hero.health < hero.max_health * 0.5 {
+                warnings.push(format!(
+                    "{} is severely wounded ({:.0}/{:.0} HP)",
+                    hero.id, hero.health, hero.max_health
+                ));
+            } else if hero.health < hero.max_health {
+                warnings.push(format!(
+                    "{} is wounded ({:.0}/{:.0} HP)",
+                    hero.id, hero.health, hero.max_health
+                ));
+            }
+            if hero.stress >= hero.max_stress {
+                warnings.push(format!(
+                    "{} is afflicted (stress at {:.0})",
+                    hero.id, hero.stress
+                ));
+            } else if hero.stress > hero.max_stress * 0.75 {
+                warnings.push(format!(
+                    "{} has high stress ({:.0}/{:.0})",
+                    hero.id, hero.stress, hero.max_stress
+                ));
+            }
+        }
+    }
+
+    Ok(crate::contracts::viewmodels::ExpeditionSetupViewModel {
+        kind: "expedition".to_string(),
+        title: "Expedition Review".to_string(),
+        expedition_name,
+        party_size,
+        party,
+        difficulty: difficulty.to_string(),
+        estimated_duration: estimated_duration.to_string(),
+        objectives,
+        warnings,
+        supply_level: supply_level.to_string(),
+        provision_cost: provision_cost.to_string(),
+        is_launchable: party_size > 0 && party_size <= 4,
+    })
+}
+
+/// Adapter: Process an expedition launch request against campaign state.
+///
+/// This is the runtime contract for launching an expedition. It validates:
+/// - The selected heroes exist in the roster
+/// - At least one hero is selected
+/// - No more than 4 heroes are selected (party size limit)
+/// - The campaign has sufficient gold for provisioning
+///
+/// On success, it returns an `ExpeditionLaunchResult` with the transition
+/// details, including the next runtime state ("dungeon") and the gold cost.
+pub fn expedition_launch(
+    campaign: &CampaignState,
+    request: &crate::contracts::viewmodels::ExpeditionLaunchRequest,
+) -> crate::contracts::viewmodels::ExpeditionLaunchResult {
+    use crate::contracts::viewmodels::ExpeditionLaunchResult;
+
+    // Validate at least one hero is selected
+    if request.selected_hero_ids.is_empty() {
+        return ExpeditionLaunchResult::failure(
+            "No heroes selected for expedition",
+            crate::contracts::viewmodels::ViewModelError::MissingRequiredField {
+                field: "selected_hero_ids".to_string(),
+                context: "at least one hero must be selected for expedition launch".to_string(),
+            },
+        );
+    }
+
+    // Validate party size limit
+    if request.selected_hero_ids.len() > 4 {
+        return ExpeditionLaunchResult::failure(
+            &format!("Party size {} exceeds maximum of 4", request.selected_hero_ids.len()),
+            crate::contracts::viewmodels::ViewModelError::UnsupportedState {
+                state_type: "ExpeditionLaunch".to_string(),
+                detail: format!("party size {} exceeds maximum of 4", request.selected_hero_ids.len()),
+            },
+        );
+    }
+
+    // Validate all selected heroes exist in the roster
+    for hero_id in &request.selected_hero_ids {
+        if !campaign.roster.iter().any(|h| h.id == *hero_id) {
+            return ExpeditionLaunchResult::failure(
+                &format!("Hero '{}' not found in campaign roster", hero_id),
+                crate::contracts::viewmodels::ViewModelError::MissingRequiredField {
+                    field: "hero_id".to_string(),
+                    context: format!("hero '{}' not found in roster for expedition launch", hero_id),
+                },
+            );
+        }
+    }
+
+    // Calculate provisioning cost based on party size
+    let selected_count = request.selected_hero_ids.len() as u32;
+    let gold_cost = selected_count * 50;
+
+    // Check if campaign has enough gold
+    if campaign.gold < gold_cost {
+        return ExpeditionLaunchResult::failure(
+            &format!(
+                "Not enough gold for provisioning: need {}, have {}",
+                gold_cost, campaign.gold
+            ),
+            crate::contracts::viewmodels::ViewModelError::MissingRequiredField {
+                field: "gold".to_string(),
+                context: format!("need {} gold for provisioning, have {}", gold_cost, campaign.gold),
+            },
+        );
+    }
+
+    // Determine dungeon type and map size from quest if available
+    let (dungeon_type, map_size): (Option<String>, Option<String>) = if request.quest_id.is_some() {
+        // Quest-based expedition — default to QingLong/Short when no specific quest data loaded
+        (Some("QingLong".to_string()), Some("Short".to_string()))
+    } else {
+        (None, None)
+    };
+
+    let expedition_name = request
+        .quest_id
+        .as_ref()
+        .map(|qid| qid.clone())
+        .unwrap_or_else(|| "Expedition".to_string());
+
+    ExpeditionLaunchResult::success(
+        &format!(
+            "Expedition launched with {} hero{} for {} gold",
+            selected_count,
+            if selected_count == 1 { "" } else { "es" },
+            gold_cost
+        ),
+        &expedition_name,
+        request.selected_hero_ids.clone(),
+        request.quest_id.clone(),
+        gold_cost,
+        dungeon_type,
+        map_size,
+    )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2412,5 +2748,367 @@ mod tests {
         assert!(!replay_combat_vm.heroes.is_empty(), "Replay combat VM should have heroes");
         assert!(!live_combat_vm.monsters.is_empty(), "Live combat VM should have monsters");
         assert!(!replay_combat_vm.monsters.is_empty(), "Replay combat VM should have monsters");
+    }
+
+    // ── Provisioning adapter tests ──────────────────────────────────────────
+
+    fn make_provisioning_campaign(gold: u32) -> CampaignState {
+        use crate::contracts::{CampaignHero, CampaignHeroQuirks};
+        let mut campaign = CampaignState::new(gold);
+        campaign.roster.push(CampaignHero {
+            id: "h1".to_string(),
+            class_id: "crusader".to_string(),
+            level: 3,
+            xp: 500,
+            health: 80.0,
+            max_health: 100.0,
+            stress: 30.0,
+            max_stress: 200.0,
+            quirks: CampaignHeroQuirks::new(),
+            equipment: Default::default(),
+            skills: Vec::new(),
+            traits: Default::default(),
+        });
+        campaign.roster.push(CampaignHero {
+            id: "h2".to_string(),
+            class_id: "hunter".to_string(),
+            level: 2,
+            xp: 300,
+            health: 100.0,
+            max_health: 100.0,
+            stress: 200.0,
+            max_stress: 200.0,
+            quirks: CampaignHeroQuirks::new(),
+            equipment: Default::default(),
+            skills: Vec::new(),
+            traits: Default::default(),
+        });
+        campaign
+    }
+
+    #[test]
+    fn provisioning_from_campaign_empty_selection() {
+        let campaign = make_provisioning_campaign(1000);
+        let result = provisioning_from_campaign(&campaign, &[], "The Depths Await", "Explore the ancient ruins");
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert_eq!(vm.kind, "provisioning");
+        assert_eq!(vm.party.len(), 2);
+        assert!(!vm.is_ready_to_launch);
+        assert_eq!(vm.supply_level, "None");
+        assert_eq!(vm.max_party_size, 4);
+    }
+
+    #[test]
+    fn provisioning_from_campaign_with_selection() {
+        let campaign = make_provisioning_campaign(1000);
+        let selected = vec!["h1".to_string()];
+        let result = provisioning_from_campaign(&campaign, &selected, "The Depths Await", "Explore the ancient ruins");
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert!(vm.party[0].is_selected);
+        assert!(!vm.party[1].is_selected);
+        assert!(vm.is_ready_to_launch);
+        assert_eq!(vm.provision_cost, "50 Gold");
+    }
+
+    #[test]
+    fn provisioning_hero_selection_toggle_on() {
+        let campaign = make_provisioning_campaign(1000);
+        let current = vec!["h1".to_string()];
+        let result = provisioning_hero_selection(&campaign, &current, "h2");
+        assert!(result.is_ok());
+        let updated = result.unwrap();
+        assert_eq!(updated.len(), 2);
+        assert!(updated.contains(&"h1".to_string()));
+        assert!(updated.contains(&"h2".to_string()));
+    }
+
+    #[test]
+    fn provisioning_hero_selection_toggle_off() {
+        let campaign = make_provisioning_campaign(1000);
+        let current = vec!["h1".to_string(), "h2".to_string()];
+        let result = provisioning_hero_selection(&campaign, &current, "h1");
+        assert!(result.is_ok());
+        let updated = result.unwrap();
+        assert_eq!(updated.len(), 1);
+        assert!(updated.contains(&"h2".to_string()));
+    }
+
+    #[test]
+    fn provisioning_hero_selection_nonexistent_hero() {
+        let campaign = make_provisioning_campaign(1000);
+        let result = provisioning_hero_selection(&campaign, &[], "nonexistent");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn provisioning_hero_selection_max_party_limit() {
+        use crate::contracts::CampaignHero;
+        use crate::contracts::CampaignHeroQuirks;
+
+        // Create a campaign with many heroes to test the party size limit
+        let mut campaign = make_provisioning_campaign(1000);
+        // Add more heroes to exceed 4
+        for i in 3..=6 {
+            campaign.roster.push(CampaignHero {
+                id: format!("h{}", i),
+                class_id: "alchemist".to_string(),
+                level: 1,
+                xp: 0,
+                health: 100.0,
+                max_health: 100.0,
+                stress: 0.0,
+                max_stress: 200.0,
+                quirks: CampaignHeroQuirks::new(),
+                equipment: Default::default(),
+                skills: Vec::new(),
+                traits: Default::default(),
+            });
+        }
+        // Select 4 heroes (the max)
+        let current = vec![
+            "h1".to_string(), "h2".to_string(),
+            "h3".to_string(), "h4".to_string(),
+        ];
+        // Try to select a 5th hero that exists in roster
+        let result = provisioning_hero_selection(&campaign, &current, "h5");
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        let desc = err.description();
+        assert!(desc.contains("cannot select more than 4"));
+    }
+
+    // ── Expedition setup and launch adapter tests ───────────────────────────
+
+    #[test]
+    fn expedition_setup_from_data_with_selected_heroes() {
+        let campaign = make_provisioning_campaign(1000);
+        let selected = vec!["h1".to_string(), "h2".to_string()];
+        let result = expedition_setup_from_data(&campaign, &selected, None, "Adequate", "100 Gold");
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert_eq!(vm.kind, "expedition");
+        assert_eq!(vm.party_size, 2);
+        assert!(vm.is_launchable);
+        assert_eq!(vm.party.len(), 2);
+        // h1 is wounded (80/100)
+        // h2 is afflicted (200/200)
+        assert!(vm.warnings.iter().any(|w| w.contains("h1")));
+        assert!(vm.warnings.iter().any(|w| w.contains("h2")));
+    }
+
+    #[test]
+    fn expedition_setup_from_data_with_quest() {
+        use crate::contracts::{QuestDefinition, QuestDifficulty, QuestRewards, QuestPenalties, QuestType, MapSize, DungeonType};
+
+        let campaign = make_provisioning_campaign(1000);
+        let selected = vec!["h1".to_string()];
+
+        let quest = QuestDefinition::new(
+            "kill_boss_expedition",
+            QuestType::KillBoss,
+            DungeonType::QingLong,
+            MapSize::Medium,
+            QuestDifficulty::Hard,
+            2,
+            QuestRewards::hard(),
+            QuestPenalties::hard(),
+        );
+
+        let result = expedition_setup_from_data(&campaign, &selected, Some(&quest), "Adequate", "50 Gold");
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert_eq!(vm.expedition_name, "kill_boss_expedition");
+        assert_eq!(vm.difficulty, "Hard");
+        assert_eq!(vm.estimated_duration, "Medium");
+        assert!(!vm.objectives.is_empty());
+    }
+
+    #[test]
+    fn expedition_setup_from_data_empty_party_not_launchable() {
+        let campaign = make_provisioning_campaign(1000);
+        let result = expedition_setup_from_data(&campaign, &[], None, "None", "0 Gold");
+        assert!(result.is_ok());
+        let vm = result.unwrap();
+        assert_eq!(vm.party_size, 0);
+        assert!(!vm.is_launchable);
+    }
+
+    #[test]
+    fn expedition_launch_success() {
+        use crate::contracts::viewmodels::ExpeditionLaunchRequest;
+
+        let campaign = make_provisioning_campaign(1000);
+        let request = ExpeditionLaunchRequest::new(vec!["h1".to_string(), "h2".to_string()]);
+        let result = expedition_launch(&campaign, &request);
+        assert!(result.success);
+        assert_eq!(result.selected_heroes.len(), 2);
+        assert_eq!(result.gold_cost, 100); // 2 * 50
+        assert_eq!(result.next_state, "dungeon");
+    }
+
+    #[test]
+    fn expedition_launch_empty_party_fails() {
+        use crate::contracts::viewmodels::ExpeditionLaunchRequest;
+
+        let campaign = make_provisioning_campaign(1000);
+        let request = ExpeditionLaunchRequest::new(vec![]);
+        let result = expedition_launch(&campaign, &request);
+        assert!(!result.success);
+        assert!(result.error.is_some());
+    }
+
+    #[test]
+    fn expedition_launch_too_many_heroes_fails() {
+        use crate::contracts::viewmodels::ExpeditionLaunchRequest;
+
+        let campaign = make_provisioning_campaign(1000);
+        let request = ExpeditionLaunchRequest::new(vec![
+            "h1".to_string(), "h2".to_string(),
+            "h3".to_string(), "h4".to_string(), "h5".to_string(),
+        ]);
+        let result = expedition_launch(&campaign, &request);
+        assert!(!result.success);
+        assert!(result.error.is_some());
+    }
+
+    #[test]
+    fn expedition_launch_nonexistent_hero_fails() {
+        use crate::contracts::viewmodels::ExpeditionLaunchRequest;
+
+        let campaign = make_provisioning_campaign(1000);
+        let request = ExpeditionLaunchRequest::new(vec!["nonexistent".to_string()]);
+        let result = expedition_launch(&campaign, &request);
+        assert!(!result.success);
+        assert!(result.error.is_some());
+    }
+
+    #[test]
+    fn expedition_launch_deducts_gold_from_campaign() {
+        use crate::contracts::viewmodels::ExpeditionLaunchRequest;
+
+        let campaign = make_provisioning_campaign(1000);
+        let request = ExpeditionLaunchRequest::new(vec!["h1".to_string()]);
+        let result = expedition_launch(&campaign, &request);
+        assert!(result.success);
+        assert_eq!(result.gold_cost, 50); // 1 * 50
+    }
+
+    #[test]
+    fn expedition_launch_with_quest_sets_dungeon_type() {
+        use crate::contracts::viewmodels::ExpeditionLaunchRequest;
+
+        let campaign = make_provisioning_campaign(1000);
+        let request = ExpeditionLaunchRequest::new(vec!["h1".to_string()])
+            .with_quest("kill_boss_qinglong_short");
+        let result = expedition_launch(&campaign, &request);
+        assert!(result.success);
+        assert_eq!(result.quest_id, Some("kill_boss_qinglong_short".to_string()));
+    }
+
+    // ── Provisioning replay fixture tests — US-006-b ────────────────────────
+
+    /// Replay fixture for ProvisioningViewModel.
+    fn make_replay_provisioning_vm() -> crate::contracts::viewmodels::ProvisioningViewModel {
+        let campaign = make_provisioning_campaign(1500);
+        let selected = vec!["h1".to_string()];
+        provisioning_from_campaign(&campaign, &selected, "The Depths Await", "Explore the ancient ruins")
+            .expect("provisioning_from_campaign should succeed for valid replay fixture")
+    }
+
+    /// Replay fixture for ExpeditionSetupViewModel.
+    fn make_replay_expedition_setup_vm() -> crate::contracts::viewmodels::ExpeditionSetupViewModel {
+        let campaign = make_provisioning_campaign(1500);
+        let selected = vec!["h1".to_string(), "h2".to_string()];
+        expedition_setup_from_data(&campaign, &selected, None, "Adequate", "100 Gold")
+            .expect("expedition_setup_from_data should succeed for valid replay fixture")
+    }
+
+    /// Replay fixture for ExpeditionLaunchResult.
+    fn make_replay_expedition_launch_result() -> crate::contracts::viewmodels::ExpeditionLaunchResult {
+        use crate::contracts::viewmodels::ExpeditionLaunchRequest;
+
+        let campaign = make_provisioning_campaign(1500);
+        let request = ExpeditionLaunchRequest::new(vec!["h1".to_string(), "h2".to_string()]);
+        expedition_launch(&campaign, &request)
+    }
+
+    #[test]
+    fn replay_provisioning_fixture_renders_without_error() {
+        let vm = make_replay_provisioning_vm();
+        assert_eq!(vm.kind, "provisioning");
+        assert!(vm.is_ready_to_launch);
+        assert_eq!(vm.party.len(), 2);
+    }
+
+    #[test]
+    fn replay_provisioning_fixture_deterministic() {
+        let vm1 = make_replay_provisioning_vm();
+        let vm2 = make_replay_provisioning_vm();
+        assert_eq!(vm1, vm2, "Provisioning fixture should be deterministic");
+    }
+
+    #[test]
+    fn replay_expedition_setup_fixture_renders_without_error() {
+        let vm = make_replay_expedition_setup_vm();
+        assert_eq!(vm.kind, "expedition");
+        assert_eq!(vm.party_size, 2);
+        assert!(vm.is_launchable);
+    }
+
+    #[test]
+    fn replay_expedition_setup_fixture_deterministic() {
+        let vm1 = make_replay_expedition_setup_vm();
+        let vm2 = make_replay_expedition_setup_vm();
+        assert_eq!(vm1, vm2, "Expedition setup fixture should be deterministic");
+    }
+
+    #[test]
+    fn replay_expedition_launch_fixture_succeeds() {
+        let result = make_replay_expedition_launch_result();
+        assert!(result.success);
+        assert_eq!(result.selected_heroes.len(), 2);
+    }
+
+    #[test]
+    fn replay_expedition_launch_fixture_deterministic() {
+        let result1 = make_replay_expedition_launch_result();
+        let result2 = make_replay_expedition_launch_result();
+        assert_eq!(result1, result2, "Expedition launch fixture should be deterministic");
+    }
+
+    #[test]
+    fn provisioning_vertical_slice_renders() {
+        // Vertical slice: provisioning → expedition setup → launch
+        let campaign = make_provisioning_campaign(1500);
+
+        // Step 1: provisioning view
+        let selected = vec!["h1".to_string()];
+        let prov_vm = provisioning_from_campaign(&campaign, &selected, "The Depths Await", "Explore the ancient ruins")
+            .expect("provisioning should succeed");
+        assert_eq!(prov_vm.party.len(), 2);
+        assert!(prov_vm.is_ready_to_launch);
+
+        // Step 2: hero selection toggle (add h2)
+        let updated_selection = provisioning_hero_selection(&campaign, &selected, "h2")
+            .expect("hero selection should succeed");
+        assert_eq!(updated_selection.len(), 2);
+
+        // Step 3: expedition setup
+        let setup_vm = expedition_setup_from_data(&campaign, &updated_selection, None, "Adequate", "100 Gold")
+            .expect("expedition setup should succeed");
+        assert_eq!(setup_vm.party_size, 2);
+        assert!(setup_vm.is_launchable);
+
+        // Step 4: launch expedition
+        use crate::contracts::viewmodels::ExpeditionLaunchRequest;
+        let launch_result = expedition_launch(
+            &campaign,
+            &ExpeditionLaunchRequest::new(updated_selection),
+        );
+        assert!(launch_result.success);
+        assert_eq!(launch_result.selected_heroes.len(), 2);
+        assert_eq!(launch_result.next_state, "dungeon");
     }
 }

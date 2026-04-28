@@ -676,6 +676,340 @@ impl HeroDetailViewModel {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Provisioning View Model — party selection and expedition provisioning
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// A hero summary during provisioning — used for party selection and review.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProvisioningHeroSummary {
+    /// Unique hero identifier.
+    pub id: String,
+    /// Hero display name.
+    pub name: String,
+    /// Hero class display label.
+    pub class_label: String,
+    /// Current health (formatted string, e.g., "38 / 42").
+    pub hp: String,
+    /// Maximum health (formatted string).
+    pub max_hp: String,
+    /// Current health as a numeric value.
+    pub health: f64,
+    /// Maximum health as a numeric value.
+    pub max_health: f64,
+    /// Current stress (formatted string).
+    pub stress: String,
+    /// Maximum stress (formatted string).
+    pub max_stress: String,
+    /// Hero level.
+    pub level: u32,
+    /// Experience points.
+    pub xp: u32,
+    /// Whether the hero is wounded (health < max_health).
+    pub is_wounded: bool,
+    /// Whether the hero is afflicted (stress >= max_stress).
+    pub is_afflicted: bool,
+    /// Whether the hero is selected for the expedition party.
+    pub is_selected: bool,
+}
+
+impl ProvisioningHeroSummary {
+    /// Create a new provisioning hero summary.
+    pub fn new(
+        id: &str, name: &str, class_label: &str,
+        hp: &str, max_hp: &str,
+        health: f64, max_health: f64,
+        stress: &str, max_stress: &str,
+        level: u32, xp: u32,
+        is_wounded: bool, is_afflicted: bool, is_selected: bool,
+    ) -> Self {
+        ProvisioningHeroSummary {
+            id: id.to_string(),
+            name: name.to_string(),
+            class_label: class_label.to_string(),
+            hp: hp.to_string(),
+            max_hp: max_hp.to_string(),
+            health,
+            max_health,
+            stress: stress.to_string(),
+            max_stress: max_stress.to_string(),
+            level,
+            xp,
+            is_wounded,
+            is_afflicted,
+            is_selected,
+        }
+    }
+}
+
+/// Provisioning phase view model — party selection for expedition.
+///
+/// This view model represents the state when the player is selecting heroes
+/// and provisioning supplies before launching an expedition.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProvisioningViewModel {
+    /// View model kind identifier.
+    pub kind: String,
+    /// Human-readable title for the provisioning surface.
+    pub title: String,
+    /// Campaign name.
+    pub campaign_name: String,
+    /// Label for the selected expedition (e.g., "The Depths Await").
+    pub expedition_label: String,
+    /// Summary/description of the expedition.
+    pub expedition_summary: String,
+    /// Heroes available for party selection.
+    pub party: Vec<ProvisioningHeroSummary>,
+    /// Maximum number of heroes that can be selected.
+    pub max_party_size: u32,
+    /// Whether the party is ready to launch (selection meets requirements).
+    pub is_ready_to_launch: bool,
+    /// Description of the current supply level (e.g., "Adequate").
+    pub supply_level: String,
+    /// Cost string for provisioning (e.g., "150 Gold").
+    pub provision_cost: String,
+}
+
+impl ProvisioningViewModel {
+    /// Create a provisioning view model with the given parameters.
+    pub fn new(
+        title: &str, campaign_name: &str,
+        expedition_label: &str, expedition_summary: &str,
+        party: Vec<ProvisioningHeroSummary>,
+        max_party_size: u32,
+        is_ready_to_launch: bool,
+        supply_level: &str, provision_cost: &str,
+    ) -> Self {
+        ProvisioningViewModel {
+            kind: "provisioning".to_string(),
+            title: title.to_string(),
+            campaign_name: campaign_name.to_string(),
+            expedition_label: expedition_label.to_string(),
+            expedition_summary: expedition_summary.to_string(),
+            party,
+            max_party_size,
+            is_ready_to_launch,
+            supply_level: supply_level.to_string(),
+            provision_cost: provision_cost.to_string(),
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Expedition Setup View Model — pre-launch expedition review
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// A hero summary for the expedition launch screen.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ExpeditionHeroSummary {
+    /// Unique hero identifier.
+    pub id: String,
+    /// Hero display name.
+    pub name: String,
+    /// Hero class display label.
+    pub class_label: String,
+    /// Current health (formatted string).
+    pub hp: String,
+    /// Maximum health (formatted string).
+    pub max_hp: String,
+    /// Current stress (formatted string).
+    pub stress: String,
+    /// Maximum stress (formatted string).
+    pub max_stress: String,
+}
+
+impl ExpeditionHeroSummary {
+    /// Create a new expedition hero summary.
+    pub fn new(
+        id: &str, name: &str, class_label: &str,
+        hp: &str, max_hp: &str,
+        stress: &str, max_stress: &str,
+    ) -> Self {
+        ExpeditionHeroSummary {
+            id: id.to_string(),
+            name: name.to_string(),
+            class_label: class_label.to_string(),
+            hp: hp.to_string(),
+            max_hp: max_hp.to_string(),
+            stress: stress.to_string(),
+            max_stress: max_stress.to_string(),
+        }
+    }
+}
+
+/// Expedition setup phase view model — pre-launch review and confirmation.
+///
+/// This view model represents the state when the player is reviewing
+/// expedition details before confirming the launch. It shows party vitals,
+/// expedition parameters, objectives, warnings, and provisioning status.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ExpeditionSetupViewModel {
+    /// View model kind identifier.
+    pub kind: String,
+    /// Human-readable title for the expedition launch surface.
+    pub title: String,
+    /// Name of the expedition (derived from the quest).
+    pub expedition_name: String,
+    /// Number of heroes in the party.
+    pub party_size: u32,
+    /// Hero summaries for the expedition party.
+    pub party: Vec<ExpeditionHeroSummary>,
+    /// Difficulty description (e.g., "Challenging", "Hard").
+    pub difficulty: String,
+    /// Estimated duration description (e.g., "Short", "Medium").
+    pub estimated_duration: String,
+    /// Expedition objectives derived from the quest.
+    pub objectives: Vec<String>,
+    /// Warnings based on party condition and expedition difficulty.
+    pub warnings: Vec<String>,
+    /// Description of the current supply level.
+    pub supply_level: String,
+    /// Cost string for provisioning.
+    pub provision_cost: String,
+    /// Whether the expedition is ready to launch.
+    pub is_launchable: bool,
+}
+
+impl ExpeditionSetupViewModel {
+    /// Create an expedition setup view model with the given parameters.
+    pub fn new(
+        title: &str, expedition_name: &str,
+        party_size: u32, party: Vec<ExpeditionHeroSummary>,
+        difficulty: &str, estimated_duration: &str,
+        objectives: Vec<String>, warnings: Vec<String>,
+        supply_level: &str, provision_cost: &str,
+        is_launchable: bool,
+    ) -> Self {
+        ExpeditionSetupViewModel {
+            kind: "expedition".to_string(),
+            title: title.to_string(),
+            expedition_name: expedition_name.to_string(),
+            party_size,
+            party,
+            difficulty: difficulty.to_string(),
+            estimated_duration: estimated_duration.to_string(),
+            objectives,
+            warnings,
+            supply_level: supply_level.to_string(),
+            provision_cost: provision_cost.to_string(),
+            is_launchable,
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Expedition Launch Contracts — frontend → runtime → frontend
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Request from the frontend to launch an expedition.
+///
+/// This is the canonical contract for the screens layer to request
+/// expedition launch after party selection and provisioning review.
+/// The runtime validates the request against current campaign state
+/// and returns an [`ExpeditionLaunchResult`].
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ExpeditionLaunchRequest {
+    /// IDs of the heroes selected for the expedition party.
+    pub selected_hero_ids: Vec<String>,
+    /// Quest ID if a specific quest is being undertaken.
+    pub quest_id: Option<String>,
+    /// Selected supply level (e.g., "minimal", "adequate", "generous").
+    pub supply_level: Option<String>,
+}
+
+impl ExpeditionLaunchRequest {
+    /// Create a new expedition launch request with the given selected heroes.
+    pub fn new(selected_hero_ids: Vec<String>) -> Self {
+        ExpeditionLaunchRequest {
+            selected_hero_ids,
+            quest_id: None,
+            supply_level: None,
+        }
+    }
+
+    /// Set a quest ID for this launch request.
+    pub fn with_quest(mut self, quest_id: &str) -> Self {
+        self.quest_id = Some(quest_id.to_string());
+        self
+    }
+
+    /// Set a supply level for this launch request.
+    pub fn with_supply(mut self, supply: &str) -> Self {
+        self.supply_level = Some(supply.to_string());
+        self
+    }
+}
+
+/// Result of launching an expedition.
+///
+/// This contract captures the outcome of an expedition launch request,
+/// including the selected heroes, quest information, gold cost, and the
+/// next state the runtime transitions to.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ExpeditionLaunchResult {
+    /// Whether the expedition launch was successful.
+    pub success: bool,
+    /// Human-readable result message.
+    pub message: String,
+    /// Name of the expedition (derived from quest or default).
+    pub expedition_name: String,
+    /// IDs of the heroes launched on the expedition.
+    pub selected_heroes: Vec<String>,
+    /// Quest ID if a quest was selected.
+    pub quest_id: Option<String>,
+    /// Gold deducted for provisioning.
+    pub gold_cost: u32,
+    /// The dungeon type for this expedition.
+    pub dungeon_type: Option<String>,
+    /// The map size for this expedition.
+    pub map_size: Option<String>,
+    /// The next runtime state after launch (e.g., "dungeon").
+    pub next_state: String,
+    /// Error details if the launch failed.
+    pub error: Option<ViewModelError>,
+}
+
+impl ExpeditionLaunchResult {
+    /// Create a successful expedition launch result.
+    pub fn success(
+        message: &str, expedition_name: &str,
+        selected_heroes: Vec<String>,
+        quest_id: Option<String>,
+        gold_cost: u32,
+        dungeon_type: Option<String>,
+        map_size: Option<String>,
+    ) -> Self {
+        ExpeditionLaunchResult {
+            success: true,
+            message: message.to_string(),
+            expedition_name: expedition_name.to_string(),
+            selected_heroes,
+            quest_id,
+            gold_cost,
+            dungeon_type,
+            map_size,
+            next_state: "dungeon".to_string(),
+            error: None,
+        }
+    }
+
+    /// Create a failed expedition launch result.
+    pub fn failure(message: &str, error: ViewModelError) -> Self {
+        ExpeditionLaunchResult {
+            success: false,
+            message: message.to_string(),
+            expedition_name: String::new(),
+            selected_heroes: Vec::new(),
+            quest_id: None,
+            gold_cost: 0,
+            dungeon_type: None,
+            map_size: None,
+            next_state: "town".to_string(),
+            error: Some(error),
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Dungeon View Model
 // ─────────────────────────────────────────────────────────────────────────────
 
