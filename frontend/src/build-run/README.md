@@ -11,7 +11,7 @@ asset loading assumptions, startup wiring, and environment contract.
 - Rust toolchain (for the headless runtime)
 - Platform requirements: Linux, macOS, or Windows with WSL2
 
-### Deterministic Build Steps
+### Deterministic Build Steps (Frontend)
 
 ```bash
 # 1. Navigate to frontend workspace
@@ -30,13 +30,52 @@ npm run smoke
 npm run build
 ```
 
+### Deterministic Build Steps (Rust Runtime)
+
+```bash
+# From repository root
+
+# 1. Check compilation (validates Rust contract alignment)
+cargo check
+
+# 2. Run Rust integration tests (validates contracts layer)
+cargo test --test build_run_smoke
+cargo test --test contracts_smoke_tests
+
+# 3. Run all Rust tests (validates full runtime)
+cargo test
+```
+
 ### Development Server
 
 ```bash
+# Frontend dev server (from frontend/ directory)
 cd frontend
 npm run dev
 # Serves on http://localhost:4179
+
+# Rust binary (from repository root, separate terminal)
+cargo run
 ```
+
+### End-to-End Integration Pipeline
+
+```bash
+# Full pipeline: Rust check → Rust tests → Frontend typecheck → Frontend tests → Build
+cargo check && \
+  cargo test --test build_run_smoke && \
+  cargo test --test contracts_smoke_tests && \
+  cd frontend && \
+  npm run typecheck && \
+  npm run smoke && \
+  npm run build
+```
+
+This validates that:
+1. The Rust runtime compiles and its integration tests pass (contract boundary intact)
+2. TypeScript contract types align (no drift in view model shapes)
+3. Runtime bridge contracts are satisfied (both replay and live modes)
+4. The production build artifact is generated from passing tests
 
 ## Asset Loading
 
