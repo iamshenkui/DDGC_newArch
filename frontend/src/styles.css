@@ -185,6 +185,111 @@ button {
   gap: 10px;
 }
 
+/* ── Stat label / value rows ──────────────────────────── */
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--panel-muted);
+}
+
+.stat-value {
+  font-weight: 600;
+}
+
+/* ── Bar indicators (HP, Stress) ─────────────────────── */
+.bar-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.bar-container {
+  flex: 1;
+  min-width: 60px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.bar-fill-health {
+  background: linear-gradient(90deg, #5bbd6e, #82d18f);
+}
+
+.bar-fill-health-warning {
+  background: linear-gradient(90deg, #e8a838, #d4c543);
+}
+
+.bar-fill-health-danger {
+  background: linear-gradient(90deg, #d4553f, #ea7767);
+}
+
+.bar-fill-stress {
+  background: linear-gradient(90deg, #e8a838, #ea7767);
+}
+
+.bar-fill-stress-high {
+  background: linear-gradient(90deg, #d4553f, #c0392b);
+}
+
+/* ── Status colors ───────────────────────────────────── */
+.text-good {
+  color: #5bbd6e;
+}
+
+.text-warning {
+  color: #e8a838;
+}
+
+.text-danger {
+  color: #ea7767;
+}
+
+/* ── Outcome colours ─────────────────────────────────── */
+.outcome-success {
+  background: rgba(91, 189, 110, 0.2);
+  border-color: #5bbd6e;
+  color: #5bbd6e;
+}
+
+.outcome-failure {
+  background: rgba(234, 119, 103, 0.2);
+  border-color: #ea7767;
+  color: #ea7767;
+}
+
+.outcome-partial {
+  background: rgba(232, 168, 56, 0.2);
+  border-color: #e8a838;
+  color: #e8a838;
+}
+
+/* ── Building status colours ─────────────────────────── */
+.status-ready { color: #5bbd6e; }
+.status-partial { color: #e8a838; }
+.status-locked { color: #ea7767; }
+
+/* ── Warning card ────────────────────────────────────── */
+.warning-card {
+  border-color: rgba(234, 119, 103, 0.3);
+}
+
+.warning-text {
+  color: #ea7767;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
 @media (max-width: 920px) {
   .app-shell {
     padding: 16px;

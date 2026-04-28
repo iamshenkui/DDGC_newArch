@@ -8,15 +8,14 @@
     "typecheck": "tsc --noEmit",
     "build": "vite build",
     "test": "vitest run",
-    "smoke": "vitest run src/validation src/build-run",
-    "smoke-build": "npm run build && vitest run src/validation src/build-run"
+    "smoke": "vitest run src/validation"
   },
   "dependencies": {
     "solid-js": "^1.9.5"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
-    "jsdom": "^29.1.0",
+    "jsdom": "^25.0.1",
     "typescript": "^5.7.2",
     "vite": "^5.4.11",
     "vite-plugin-solid": "^2.11.0",
