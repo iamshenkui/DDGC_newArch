@@ -14,12 +14,16 @@
 //! tests module" acceptance criterion.
 
 use game_ddgc_headless::contracts::viewmodels::{
-    BuildingAction, BuildingDetailViewModel, BuildingStatus,
+    BuildingAction, BuildingActionRequest, BuildingActionResult, BuildingDetailViewModel,
+    BuildingStatus, UpgradeLevelDisplay,
 };
 use game_ddgc_headless::contracts::{
     BuildingUpgradeState, CampaignState,
 };
-use game_ddgc_headless::contracts::adapters::building_detail_from_campaign;
+use game_ddgc_headless::contracts::adapters::{
+    all_building_actions_status, building_detail_from_campaign, building_entry_from_campaign,
+    execute_building_action,
+};
 
 // ── Test helpers ───────────────────────────────────────────────────────────────
 
@@ -655,4 +659,479 @@ fn unsupported_actions_are_clearly_surfaced() {
             action.id
         );
     }
+}
+
+// ── US-005-c: Building entry view model tests (US-005-b contracts) ────────────
+
+/// Verifies building entry view model has correct structure.
+#[test]
+fn building_entry_view_model_has_correct_structure() {
+    let campaign = make_campaign_with_buildings();
+    let vm = building_entry_from_campaign(&campaign, "guild", None)
+        .expect("building_entry_from_campaign should succeed for guild");
+
+    assert_eq!(vm.kind, "building-entry", "Entry VM kind should be 'building-entry'");
+    assert_eq!(vm.building_id, "guild", "Building ID should be 'guild'");
+    assert_eq!(vm.label, "Guild", "Label should be 'Guild'");
+    assert_eq!(vm.status, BuildingStatus::Ready, "Guild should be Ready");
+}
+
+/// Verifies building entry view model includes current gold.
+#[test]
+fn building_entry_includes_current_gold() {
+    let campaign = make_campaign_with_buildings();
+    let vm = building_entry_from_campaign(&campaign, "stagecoach", None)
+        .expect("building_entry_from_campaign should succeed");
+
+    assert_eq!(vm.current_gold, 1500, "Entry VM should include campaign gold");
+}
+
+/// Verifies building entry view model includes current upgrade level.
+#[test]
+fn building_entry_includes_current_upgrade_level() {
+    let campaign = make_campaign_with_buildings();
+    let vm = building_entry_from_campaign(&campaign, "guild", None)
+        .expect("building_entry_from_campaign should succeed");
+
+    assert_eq!(vm.current_upgrade_level, Some('b'), "Guild upgrade level should be 'b'");
+}
+
+/// Verifies building entry view model produces empty upgrade_levels when no registry given.
+#[test]
+fn building_entry_upgrade_levels_empty_without_registry() {
+    let campaign = make_campaign_with_buildings();
+    let vm = building_entry_from_campaign(&campaign, "stagecoach", None)
+        .expect("building_entry_from_campaign should succeed");
+
+    assert!(vm.upgrade_levels.is_empty(), "Upgrade levels should be empty when no registry");
+}
+
+/// Verifies locked building entry view model has Locked status.
+#[test]
+fn building_entry_locked_building_has_locked_status() {
+    let campaign = make_campaign_with_locked_buildings();
+    let vm = building_entry_from_campaign(&campaign, "stagecoach", None)
+        .expect("building_entry_from_campaign should succeed for stagecoach");
+
+    assert_eq!(vm.status, BuildingStatus::Locked, "Locked building should be Locked in entry VM");
+}
+
+/// Verifies building entry for missing building returns error.
+#[test]
+fn building_entry_missing_building_returns_error() {
+    let campaign = make_campaign_with_buildings();
+    let result = building_entry_from_campaign(&campaign, "nonexistent", None);
+
+    assert!(result.is_err(), "Entry for missing building should return error");
+    let err_str = format!("{}", result.unwrap_err());
+    assert!(err_str.contains("nonexistent") || err_str.contains("not found"),
+        "Error should mention missing building ID");
+}
+
+/// Verifies building entry view model actions match building detail actions for same building.
+#[test]
+fn building_entry_actions_match_building_detail_actions() {
+    let campaign = make_campaign_with_buildings();
+
+    let entry_vm = building_entry_from_campaign(&campaign, "guild", None)
+        .expect("entry VM should succeed");
+    let detail_vm = building_detail_from_campaign(&campaign, "guild")
+        .expect("detail VM should succeed");
+
+    // Both should produce the same number of actions for the same building/state
+    assert_eq!(entry_vm.actions.len(), detail_vm.actions.len(),
+        "Entry and detail VMs should have same action count for guild");
+
+    // Action IDs should match
+    for (entry_action, detail_action) in entry_vm.actions.iter().zip(detail_vm.actions.iter()) {
+        assert_eq!(entry_action.id, detail_action.id,
+            "Action IDs should match between entry and detail VMs");
+    }
+}
+
+/// Verifies UpgradeLevelDisplay is constructible and accessible.
+#[test]
+fn upgrade_level_display_is_constructible() {
+    let level = UpgradeLevelDisplay {
+        code: 'a',
+        cost: 1000,
+        is_owned: true,
+        effects_summary: "Reduces recruit cost by 20%.".to_string(),
+    };
+
+    assert_eq!(level.code, 'a', "Upgrade level code should be 'a'");
+    assert_eq!(level.cost, 1000, "Upgrade level cost should be 1000");
+    assert!(level.is_owned, "Upgrade level should be owned");
+    assert!(!level.effects_summary.is_empty(), "Effects summary should not be empty");
+}
+
+/// Verifies UpgradeLevelDisplay default is constructible.
+#[test]
+fn upgrade_level_display_default_is_constructible() {
+    let level = UpgradeLevelDisplay::default();
+
+    assert_eq!(level.code, 'a', "Default code should be 'a'");
+    assert_eq!(level.cost, 0, "Default cost should be 0");
+    assert!(!level.is_owned, "Default should not be owned");
+}
+
+// ── US-005-c: Building action execution tests (US-005-b contracts) ────────────
+
+/// Verifies execute_building_action succeeds for valid action with sufficient gold.
+#[test]
+fn execute_building_action_succeeds_with_sufficient_gold() {
+    let campaign = make_campaign_with_buildings();
+    let request = BuildingActionRequest::new("stagecoach", "recruit-hero");
+
+    let result = execute_building_action(&campaign, &request);
+
+    assert!(result.success, "Recruit-hero should succeed with 1500 gold");
+    assert!(!result.message.is_empty(), "Result should have a message");
+    assert!(result.error.is_none(), "Result should have no error");
+}
+
+/// Verifies execute_building_action returns gold_change for successful action.
+#[test]
+fn execute_building_action_returns_gold_change() {
+    let campaign = make_campaign_with_buildings();
+    let request = BuildingActionRequest::new("stagecoach", "recruit-hero");
+
+    let result = execute_building_action(&campaign, &request);
+
+    assert!(result.success, "Action should succeed");
+    assert_eq!(result.gold_change, -500, "Gold change should be -500 for recruit-hero");
+}
+
+/// Verifies execute_building_action fails for locked building.
+#[test]
+fn execute_building_action_fails_for_locked_building() {
+    let campaign = make_campaign_with_locked_buildings();
+    let request = BuildingActionRequest::new("stagecoach", "recruit-hero");
+
+    let result = execute_building_action(&campaign, &request);
+
+    assert!(!result.success, "Action should fail for locked building");
+    assert!(result.error.is_some(), "Result should have error");
+}
+
+/// Verifies execute_building_action fails for missing building.
+#[test]
+fn execute_building_action_fails_for_missing_building() {
+    let campaign = make_campaign_with_buildings();
+    let request = BuildingActionRequest::new("nonexistent", "interact");
+
+    let result = execute_building_action(&campaign, &request);
+
+    assert!(!result.success, "Action should fail for missing building");
+    assert!(result.error.is_some(), "Result should have error");
+}
+
+/// Verifies execute_building_action fails for insufficient gold.
+#[test]
+fn execute_building_action_fails_for_insufficient_gold() {
+    let campaign = make_campaign_with_low_gold();
+    let request = BuildingActionRequest::new("stagecoach", "recruit-hero");
+
+    let result = execute_building_action(&campaign, &request);
+
+    assert!(!result.success, "Recruit-hero should fail with only 100 gold");
+    let err = result.error.as_ref().expect("Should have error");
+    let desc = err.description();
+    assert!(desc.contains("gold") || desc.contains("gold"),
+        "Error should mention gold: {}", desc);
+}
+
+/// Verifies execute_building_action fails for unsupported action.
+#[test]
+fn execute_building_action_fails_for_unsupported_action() {
+    let campaign = make_campaign_with_buildings();
+    let request = BuildingActionRequest::new("stagecoach", "rare-recruit");
+
+    let result = execute_building_action(&campaign, &request);
+
+    assert!(!result.success, "Rare-recruit should be unsupported");
+    assert!(result.error.is_some(), "Should have error");
+}
+
+/// Verifies execute_building_action fails for unknown action.
+#[test]
+fn execute_building_action_fails_for_unknown_action() {
+    let campaign = make_campaign_with_buildings();
+    let request = BuildingActionRequest::new("guild", "nonexistent-action");
+
+    let result = execute_building_action(&campaign, &request);
+
+    assert!(!result.success, "Unknown action should fail");
+    assert!(result.error.is_some(), "Should have error");
+}
+
+/// Verifies execute_building_action succeeds for free actions even with low gold.
+#[test]
+fn execute_building_action_succeeds_for_free_action_with_low_gold() {
+    let campaign = make_campaign_with_low_gold();
+    let request = BuildingActionRequest::new("stagecoach", "view-candidates");
+
+    let result = execute_building_action(&campaign, &request);
+
+    assert!(result.success, "Free action should succeed even with low gold");
+}
+
+// ── US-005-c: All building actions status tests (US-005-b contracts) ──────────
+
+/// Verifies all_building_actions_status returns all buildings.
+#[test]
+fn all_building_actions_status_includes_all_buildings() {
+    let campaign = make_campaign_with_buildings();
+    let status_map = all_building_actions_status(&campaign);
+
+    assert_eq!(status_map.len(), campaign.building_states.len(),
+        "Should return entries for all buildings");
+    assert!(status_map.contains_key("guild"), "Should include guild");
+    assert!(status_map.contains_key("stagecoach"), "Should include stagecoach");
+    assert!(status_map.contains_key("blacksmith"), "Should include blacksmith");
+}
+
+/// Verifies all_building_actions_status returns actions for each building.
+#[test]
+fn all_building_actions_status_each_building_has_actions() {
+    let campaign = make_campaign_with_buildings();
+    let status_map = all_building_actions_status(&campaign);
+
+    for (building_id, actions) in &status_map {
+        assert!(!actions.is_empty(),
+            "Building '{}' should have at least one action", building_id);
+    }
+}
+
+/// Verifies all_building_actions_status returns empty for empty campaign.
+#[test]
+fn all_building_actions_status_empty_for_empty_campaign() {
+    let campaign = CampaignState::new(0);
+    let status_map = all_building_actions_status(&campaign);
+
+    assert!(status_map.is_empty(), "Empty campaign should have no building actions");
+}
+
+// ── US-005-c: Secondary building tests (inn, graveyard, museum, provisioner, sanctuary) ──
+
+/// Helper: create campaign with secondary buildings.
+fn make_campaign_with_secondary_buildings() -> CampaignState {
+    let mut campaign = CampaignState::new(2000);
+    campaign.building_states.insert(
+        "inn".to_string(),
+        BuildingUpgradeState::new("inn", Some('a')),
+    );
+    campaign.building_states.insert(
+        "graveyard".to_string(),
+        BuildingUpgradeState::new("graveyard", Some('a')),
+    );
+    campaign.building_states.insert(
+        "museum".to_string(),
+        BuildingUpgradeState::new("museum", Some('a')),
+    );
+    campaign.building_states.insert(
+        "provisioner".to_string(),
+        BuildingUpgradeState::new("provisioner", Some('a')),
+    );
+    campaign.building_states.insert(
+        "sanctuary".to_string(),
+        BuildingUpgradeState::new("sanctuary", Some('a')),
+    );
+    campaign
+}
+
+/// Verifies inn building has correct detail.
+#[test]
+fn inn_building_has_correct_detail() {
+    let campaign = make_campaign_with_secondary_buildings();
+    let vm = building_detail_from_campaign(&campaign, "inn")
+        .expect("building_detail_from_campaign should succeed for inn");
+
+    assert_eq!(vm.building_id, "inn", "Building ID should be 'inn'");
+    assert_eq!(vm.label, "Inn", "Label should be 'Inn'");
+    assert_eq!(vm.status, BuildingStatus::Ready, "Inn should be Ready");
+    assert!(!vm.description.is_empty(), "Inn should have description");
+}
+
+/// Verifies inn building has rest and dine actions.
+#[test]
+fn inn_has_rest_and_dine_actions() {
+    let campaign = make_campaign_with_secondary_buildings();
+    let vm = building_detail_from_campaign(&campaign, "inn")
+        .expect("building_detail_from_campaign should succeed");
+
+    let has_rest = vm.actions.iter().any(|a| a.id == "rest");
+    let has_dine = vm.actions.iter().any(|a| a.id == "dine");
+    assert!(has_rest, "Inn should have rest action");
+    assert!(has_dine, "Inn should have dine action");
+}
+
+/// Verifies graveyard building has correct detail.
+#[test]
+fn graveyard_building_has_correct_detail() {
+    let campaign = make_campaign_with_secondary_buildings();
+    let vm = building_detail_from_campaign(&campaign, "graveyard")
+        .expect("building_detail_from_campaign should succeed for graveyard");
+
+    assert_eq!(vm.building_id, "graveyard", "Building ID should be 'graveyard'");
+    assert_eq!(vm.label, "Graveyard", "Label should be 'Graveyard'");
+    assert_eq!(vm.status, BuildingStatus::Ready, "Graveyard should be Ready");
+}
+
+/// Verifies graveyard has pay-respects action.
+#[test]
+fn graveyard_has_pay_respects_action() {
+    let campaign = make_campaign_with_secondary_buildings();
+    let vm = building_detail_from_campaign(&campaign, "graveyard")
+        .expect("building_detail_from_campaign should succeed");
+
+    let has_pay_respects = vm.actions.iter().any(|a| a.id == "pay-respects");
+    assert!(has_pay_respects, "Graveyard should have pay-respects action");
+}
+
+/// Verifies museum building has correct detail.
+#[test]
+fn museum_building_has_correct_detail() {
+    let campaign = make_campaign_with_secondary_buildings();
+    let vm = building_detail_from_campaign(&campaign, "museum")
+        .expect("building_detail_from_campaign should succeed for museum");
+
+    assert_eq!(vm.building_id, "museum", "Building ID should be 'museum'");
+    assert_eq!(vm.label, "Museum", "Label should be 'Museum'");
+    assert_eq!(vm.status, BuildingStatus::Ready, "Museum should be Ready");
+}
+
+/// Verifies museum has view-artifacts action.
+#[test]
+fn museum_has_view_artifacts_action() {
+    let campaign = make_campaign_with_secondary_buildings();
+    let vm = building_detail_from_campaign(&campaign, "museum")
+        .expect("building_detail_from_campaign should succeed");
+
+    let has_view = vm.actions.iter().any(|a| a.id == "view-artifacts");
+    assert!(has_view, "Museum should have view-artifacts action");
+}
+
+/// Verifies provisioner building has correct detail.
+#[test]
+fn provisioner_building_has_correct_detail() {
+    let campaign = make_campaign_with_secondary_buildings();
+    let vm = building_detail_from_campaign(&campaign, "provisioner")
+        .expect("building_detail_from_campaign should succeed for provisioner");
+
+    assert_eq!(vm.building_id, "provisioner", "Building ID should be 'provisioner'");
+    assert_eq!(vm.label, "Provisioner", "Label should be 'Provisioner'");
+    assert_eq!(vm.status, BuildingStatus::Ready, "Provisioner should be Ready");
+}
+
+/// Verifies provisioner has buy-supplies action.
+#[test]
+fn provisioner_has_buy_supplies_action() {
+    let campaign = make_campaign_with_secondary_buildings();
+    let vm = building_detail_from_campaign(&campaign, "provisioner")
+        .expect("building_detail_from_campaign should succeed");
+
+    let has_buy = vm.actions.iter().any(|a| a.id == "buy-supplies");
+    assert!(has_buy, "Provisioner should have buy-supplies action");
+}
+
+/// Verifies sanctuary building has correct detail.
+#[test]
+fn sanctuary_building_has_correct_detail() {
+    let campaign = make_campaign_with_secondary_buildings();
+    let vm = building_detail_from_campaign(&campaign, "sanctuary")
+        .expect("building_detail_from_campaign should succeed for sanctuary");
+
+    assert_eq!(vm.building_id, "sanctuary", "Building ID should be 'sanctuary'");
+    assert_eq!(vm.label, "Sanctuary", "Label should be 'Sanctuary'");
+    assert_eq!(vm.status, BuildingStatus::Ready, "Sanctuary should be Ready");
+}
+
+/// Verifies sanctuary has advanced-treatment action.
+#[test]
+fn sanctuary_has_advanced_treatment_action() {
+    let campaign = make_campaign_with_secondary_buildings();
+    let vm = building_detail_from_campaign(&campaign, "sanctuary")
+        .expect("building_detail_from_campaign should succeed");
+
+    let has_treatment = vm.actions.iter().any(|a| a.id == "advanced-treatment");
+    assert!(has_treatment, "Sanctuary should have advanced-treatment action");
+}
+
+// ── US-005-c: BuildingActionRequest and BuildingActionResult contract tests ────
+
+/// Verifies BuildingActionRequest::new constructs correctly.
+#[test]
+fn building_action_request_new_constructs_correctly() {
+    let request = BuildingActionRequest::new("stagecoach", "recruit-hero");
+
+    assert_eq!(request.building_id, "stagecoach", "Building ID should be 'stagecoach'");
+    assert_eq!(request.action_id, "recruit-hero", "Action ID should be 'recruit-hero'");
+    assert!(request.hero_id.is_none(), "Hero ID should be None by default");
+    assert!(request.upgrade_level.is_none(), "Upgrade level should be None by default");
+    assert!(request.slot_index.is_none(), "Slot index should be None by default");
+}
+
+/// Verifies BuildingActionRequest::with_hero sets hero_id.
+#[test]
+fn building_action_request_with_hero_sets_hero_id() {
+    let request = BuildingActionRequest::new("sanitarium", "treat-quirk")
+        .with_hero("hero-crusader-01");
+
+    assert_eq!(request.hero_id, Some("hero-crusader-01".to_string()),
+        "Hero ID should be set");
+}
+
+/// Verifies BuildingActionRequest::with_upgrade sets upgrade_level.
+#[test]
+fn building_action_request_with_upgrade_sets_level() {
+    let request = BuildingActionRequest::new("guild", "train-skill")
+        .with_upgrade('c');
+
+    assert_eq!(request.upgrade_level, Some('c'), "Upgrade level should be 'c'");
+}
+
+/// Verifies BuildingActionRequest::with_slot sets slot_index.
+#[test]
+fn building_action_request_with_slot_sets_index() {
+    let request = BuildingActionRequest::new("guild", "train-skill")
+        .with_slot(0);
+
+    assert_eq!(request.slot_index, Some(0), "Slot index should be 0");
+}
+
+/// Verifies BuildingActionResult success constructor sets fields correctly.
+#[test]
+fn building_action_result_success_constructor() {
+    let result = BuildingActionResult::success(
+        "Hero recruited successfully",
+        -500,
+        -10.0,
+        20.0,
+    );
+
+    assert!(result.success, "Result should be successful");
+    assert_eq!(result.message, "Hero recruited successfully", "Message should be set");
+    assert_eq!(result.gold_change, -500, "Gold change should be -500");
+    assert_eq!(result.stress_change, -10.0, "Stress change should be -10.0");
+    assert_eq!(result.health_change, 20.0, "Health change should be 20.0");
+    assert!(result.side_effect.is_none(), "Side effect should be None");
+    assert!(result.error.is_none(), "Error should be None");
+}
+
+/// Verifies BuildingActionResult failure constructor sets fields correctly.
+#[test]
+fn building_action_result_failure_constructor() {
+    use game_ddgc_headless::contracts::viewmodels::ViewModelError;
+
+    let error = ViewModelError::UnsupportedState {
+        state_type: "BuildingAction".to_string(),
+        detail: "action not available".to_string(),
+    };
+    let result = BuildingActionResult::failure("Action failed", error);
+
+    assert!(!result.success, "Result should be failure");
+    assert_eq!(result.message, "Action failed", "Message should be set");
+    assert_eq!(result.gold_change, 0, "Gold change should be 0");
+    assert!(result.error.is_some(), "Error should be Some");
 }
