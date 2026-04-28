@@ -21,6 +21,9 @@
 //! | `CampaignState` | `TownViewModel` | [`town_from_campaign`] |
 //! | `CampaignState` + hero ID | `HeroDetailViewModel` | [`hero_detail_from_campaign`] |
 //! | `CampaignState` + building ID | `BuildingDetailViewModel` | [`building_detail_from_campaign`] |
+//! | `CampaignState` + building ID + registry | `BuildingEntryViewModel` | [`building_entry_from_campaign`] |
+//! | `CampaignState` + `BuildingActionRequest` | `BuildingActionResult` | [`execute_building_action`] |
+//! | `CampaignState` | building action status map | [`all_building_actions_status`] |
 //! | `DdgcRunResult` | `DungeonViewModel` | [`dungeon_from_run_result`] |
 //! | `DdgcRunResult` | `ExplorationHudViewModel` | [`exploration_hud_from_dungeon`] |
 //! | `DdgcRunResult` + room index | `RoomMovementViewModel` | [`room_movement_from_run`] |
@@ -225,7 +228,241 @@ pub fn hero_detail_from_campaign(
     })
 }
 
-/// Adapter: Convert `CampaignState` and building ID to `BuildingDetailViewModel`.
+// ─────────────────────────────────────────────────────────────────────────────
+// Building Entry and Action Execution Adapters — runtime contracts
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Adapter: Convert `CampaignState` and building ID to `BuildingEntryViewModel`.
+///
+/// This adapter creates the full building entry view model when a player
+/// enters a building. It is a superset of `building_detail_from_campaign` that
+/// includes current gold, current upgrade level, and upgrade level display info.
+///
+/// The resulting view model represents a player-facing building entry event
+/// with all available actions, costs, and state information needed by the
+/// screens layer to render the building interaction surface.
+pub fn building_entry_from_campaign(
+    campaign: &CampaignState,
+    building_id: &str,
+    registry: Option<&crate::contracts::BuildingRegistry>,
+) -> ViewModelResult<crate::contracts::viewmodels::BuildingEntryViewModel> {
+    use crate::contracts::viewmodels::BuildingStatus;
+
+    // Check if the building exists in the campaign
+    let building_state = campaign
+        .building_states
+        .get(building_id)
+        .ok_or_else(|| crate::contracts::viewmodels::ViewModelError::MissingRequiredField {
+            field: "building_id".to_string(),
+            context: format!("building '{}' not found in campaign state for entry", building_id),
+        })?;
+
+    // Determine building status
+    let status = match building_state.current_level {
+        Some(_) => BuildingStatus::Ready,
+        None => BuildingStatus::Locked,
+    };
+
+    // Get building label and description
+    let (label, description) = building_label_and_description(building_id);
+
+    // Generate actions based on building type
+    let actions = generate_building_actions(building_id, &status, campaign.gold, building_state.current_level);
+
+    // Get upgrade requirement hint
+    let upgrade_requirement = building_upgrade_hint(building_id);
+
+    // Build upgrade level display list from registry if available
+    let current_level = building_state.current_level;
+    let upgrade_levels = if let Some(reg) = registry {
+        build_upgrade_level_display(reg, building_id, current_level)
+    } else {
+        Vec::new()
+    };
+
+    Ok(crate::contracts::viewmodels::BuildingEntryViewModel {
+        kind: "building-entry".to_string(),
+        building_id: building_id.to_string(),
+        label,
+        status,
+        description,
+        actions,
+        current_gold: campaign.gold,
+        upgrade_requirement,
+        current_upgrade_level: current_level,
+        upgrade_levels,
+        error: None,
+    })
+}
+
+/// Build upgrade level display info from a building registry.
+///
+/// Iterates all upgrade trees for the given building and produces
+/// a sorted list of upgrade levels with cost and effects info.
+fn build_upgrade_level_display(
+    registry: &crate::contracts::BuildingRegistry,
+    building_id: &str,
+    current_level: Option<char>,
+) -> Vec<crate::contracts::viewmodels::UpgradeLevelDisplay> {
+    use crate::contracts::viewmodels::UpgradeLevelDisplay;
+
+    let levels = match registry.get_upgrade_levels(building_id) {
+        Some(l) => l,
+        None => return Vec::new(),
+    };
+
+    levels
+        .iter()
+        .map(|level| {
+            let is_owned = current_level.map_or(false, |cl| level.code <= cl);
+            let effects_summary = if level.effects.is_empty() {
+                "Free (starting level)".to_string()
+            } else {
+                level
+                    .effects
+                    .iter()
+                    .map(|e| format!("{}: {:.2}", e.effect_id, e.value))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            };
+
+            UpgradeLevelDisplay {
+                code: level.code,
+                cost: level.cost,
+                is_owned,
+                effects_summary,
+            }
+        })
+        .collect()
+}
+
+/// Adapter: Execute a building action request against campaign state.
+///
+/// This is the runtime contract for performing a building action.
+/// It validates the request against current campaign state (gold, building status)
+/// and returns a `BuildingActionResult` with the outcome.
+///
+/// Currently this is a validation-only adapter that checks:
+/// - Building exists and is in Ready state
+/// - Action is defined for this building type
+/// - Player has sufficient gold
+///
+/// Full action execution (stress heal, health recovery, quirk treatment, etc.)
+/// is handled by the `TownVisit` runtime in `crate::town::TownVisit`.
+pub fn execute_building_action(
+    campaign: &CampaignState,
+    request: &crate::contracts::viewmodels::BuildingActionRequest,
+) -> crate::contracts::viewmodels::BuildingActionResult {
+    use crate::contracts::viewmodels::BuildingActionResult;
+
+    // Check if the building exists
+    let building_state = match campaign.building_states.get(&request.building_id) {
+        Some(s) => s,
+        None => {
+            return BuildingActionResult::failure(
+                &format!("Building '{}' not found", request.building_id),
+                crate::contracts::viewmodels::ViewModelError::MissingRequiredField {
+                    field: "building_id".to_string(),
+                    context: format!("building '{}' not found for action '{}'", request.building_id, request.action_id),
+                },
+            );
+        }
+    };
+
+    // Check if the building is unlocked
+    if building_state.current_level.is_none() {
+        return BuildingActionResult::failure(
+            &format!("Building '{}' is locked", request.building_id),
+            crate::contracts::viewmodels::ViewModelError::UnsupportedState {
+                state_type: "BuildingInteraction".to_string(),
+                detail: format!("building '{}' is locked", request.building_id),
+            },
+        );
+    }
+
+    // Get building status for action generation
+    let status = match building_state.current_level {
+        Some(_) => crate::contracts::viewmodels::BuildingStatus::Ready,
+        None => crate::contracts::viewmodels::BuildingStatus::Locked,
+    };
+
+    // Generate actions and find the requested one
+    let actions = generate_building_actions(&request.building_id, &status, campaign.gold, building_state.current_level);
+    let action = match actions.iter().find(|a| a.id == request.action_id) {
+        Some(a) => a,
+        None => {
+            return BuildingActionResult::failure(
+                &format!("Action '{}' not available at '{}'", request.action_id, request.building_id),
+                crate::contracts::viewmodels::ViewModelError::UnsupportedState {
+                    state_type: "BuildingAction".to_string(),
+                    detail: format!("action '{}' not defined for building '{}'", request.action_id, request.building_id),
+                },
+            );
+        }
+    };
+
+    // Check if the action is unsupported
+    if action.is_unsupported {
+        return BuildingActionResult::failure(
+            &format!("Action '{}' is not supported in the current build", action.label),
+            crate::contracts::viewmodels::ViewModelError::UnsupportedState {
+                state_type: "BuildingAction".to_string(),
+                detail: format!("action '{}' at '{}' is unsupported", request.action_id, request.building_id),
+            },
+        );
+    }
+
+    // Check if player has enough gold
+    let cost_numeric: u32 = action
+        .cost
+        .split_whitespace()
+        .next()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0);
+
+    if cost_numeric > 0 && campaign.gold < cost_numeric {
+        return BuildingActionResult::failure(
+            &format!("Not enough gold for '{}': need {} gold, have {}", action.label, cost_numeric, campaign.gold),
+            crate::contracts::viewmodels::ViewModelError::MissingRequiredField {
+                field: "gold".to_string(),
+                context: format!("need {} gold for '{}', have {}", cost_numeric, action.label, campaign.gold),
+            },
+        );
+    }
+
+    // Success — action is validated
+    BuildingActionResult::success(
+        &format!("Action '{}' completed successfully", action.label),
+        -(cost_numeric as i32),
+        0.0,
+        0.0,
+    )
+}
+
+/// Adapter: Convert `CampaignState` to a list of `BuildingAction` validation statuses.
+///
+/// This provides a quick overview of all actions across all buildings,
+/// indicating which are available and which have prerequisites or are unsupported.
+/// Useful for the frontend to show building summaries on the town map.
+pub fn all_building_actions_status(
+    campaign: &CampaignState,
+) -> std::collections::BTreeMap<String, Vec<crate::contracts::viewmodels::BuildingAction>> {
+    let mut result: std::collections::BTreeMap<String, Vec<crate::contracts::viewmodels::BuildingAction>> =
+        std::collections::BTreeMap::new();
+
+    for (building_id, building_state) in &campaign.building_states {
+        let status = match building_state.current_level {
+            Some(_) => crate::contracts::viewmodels::BuildingStatus::Ready,
+            None => crate::contracts::viewmodels::BuildingStatus::Locked,
+        };
+        let actions = generate_building_actions(building_id, &status, campaign.gold, building_state.current_level);
+        result.insert(building_id.clone(), actions);
+    }
+
+    result
+}
+
+/// Adapter: Convert `CampaignState` to `BuildingDetailViewModel`.
 ///
 /// Takes the campaign state and a building ID to produce a detailed building view model
 /// for inspection by the player when interacting with town buildings.
@@ -245,14 +482,37 @@ pub fn building_detail_from_campaign(
         })?;
 
     // Determine building status based on upgrade level
+    // Level >= 'a' means Ready (building is accessible)
+    // Level 'a' or higher means the building has been initialized
+    // Locked only when level is None
     let status = match building_state.current_level {
-        Some(level) if level >= 'a' => BuildingStatus::Ready,
-        Some(level) if level > 'a' => BuildingStatus::Partial,
-        _ => BuildingStatus::Locked,
+        Some(_) => BuildingStatus::Ready,
+        None => BuildingStatus::Locked,
     };
 
     // Generate building label and description based on building_id
-    let (label, description) = match building_id {
+    let (label, description) = building_label_and_description(building_id);
+
+    // Generate actions based on building type
+    let actions = generate_building_actions(building_id, &status, campaign.gold, building_state.current_level);
+
+    // Determine upgrade requirement
+    let upgrade_requirement = building_upgrade_hint(building_id);
+
+    Ok(BuildingDetailViewModel {
+        kind: "building-detail".to_string(),
+        building_id: building_id.to_string(),
+        label,
+        status,
+        description,
+        actions,
+        upgrade_requirement,
+    })
+}
+
+/// Get the label and description for a building by ID.
+fn building_label_and_description(building_id: &str) -> (String, String) {
+    match building_id {
         "stagecoach" => (
             "Stagecoach".to_string(),
             "The stagecoach offers new recruits from the surrounding region. Recruit heroes to expand your party roster.".to_string(),
@@ -277,50 +537,72 @@ pub fn building_detail_from_campaign(
             "Abbey".to_string(),
             "The abbey offers spiritual respite. Reduce hero stress through prayer and meditation.".to_string(),
         ),
-        "campfire" => (
-            "Campfire".to_string(),
-            "The campfire provides a place to rest during expeditions. Camp to heal and buff heroes.".to_string(),
-        ),
         "inn" => (
             "Inn".to_string(),
             "The inn offers lodging and meals. Heroes can rest and recover here.".to_string(),
+        ),
+        "graveyard" => (
+            "Graveyard".to_string(),
+            "The graveyard honors fallen heroes. Pay respects and manage deceased roster members.".to_string(),
+        ),
+        "museum" => (
+            "Museum".to_string(),
+            "The museum displays rare artifacts and trinkets collected from expeditions. Catalogue your discoveries.".to_string(),
+        ),
+        "provisioner" => (
+            "Provisioner".to_string(),
+            "The provisioner stocks supplies for expeditions. Purchase food, torches, and medicinal herbs.".to_string(),
+        ),
+        "sanctuary" => (
+            "Sanctuary".to_string(),
+            "The sanctuary offers advanced treatment for hero ailments beyond the sanitarium's capabilities.".to_string(),
+        ),
+        "campfire" => (
+            "Campfire".to_string(),
+            "The campfire provides a place to rest during expeditions. Camp to heal and buff heroes.".to_string(),
         ),
         _ => (
             format!("Building: {}", building_id),
             format!("Town building '{}' - detailed interactions to be implemented.", building_id),
         ),
-    };
+    }
+}
 
-    // Generate actions based on building type
-    let actions = generate_building_actions(building_id, &status, campaign.gold);
-
-    // Determine upgrade requirement
-    let upgrade_requirement = match building_id {
-        "stagecoach" => Some("Upgrade to Level B: 2000 Gold".to_string()),
-        "guild" => Some("Upgrade to Level B: 1500 Gold".to_string()),
-        "blacksmith" => Some("Upgrade to Level B: 1800 Gold".to_string()),
+/// Get a hint string about the next upgrade for a building.
+fn building_upgrade_hint(building_id: &str) -> Option<String> {
+    match building_id {
+        "stagecoach" => Some("Upgrade to expand recruit pool and reduce costs.".to_string()),
+        "guild" => Some("Upgrade to unlock advanced training and skill upgrades.".to_string()),
+        "blacksmith" => Some("Upgrade to improve equipment discounts and repair efficiency.".to_string()),
+        "sanitarium" => Some("Upgrade to unlock additional treatment slots and reduce costs.".to_string()),
+        "tavern" => Some("Upgrade to improve stress healing and unlock new activities.".to_string()),
+        "abbey" => Some("Upgrade to deepen spiritual healing and unlock meditation.".to_string()),
+        "inn" => Some("Upgrade to improve rest quality and food options.".to_string()),
+        "graveyard" => Some("Upgrade to unlock memorial ceremonies and hero recovery.".to_string()),
+        "museum" => Some("Upgrade to expand display capacity and artifact appraisal.".to_string()),
+        "provisioner" => Some("Upgrade to expand supply stock and reduce expedition costs.".to_string()),
+        "sanctuary" => Some("Upgrade to unlock advanced quirk and disease treatment.".to_string()),
         _ => None,
-    };
-
-    Ok(BuildingDetailViewModel {
-        kind: "building-detail".to_string(),
-        building_id: building_id.to_string(),
-        label,
-        status,
-        description,
-        actions,
-        upgrade_requirement,
-    })
+    }
 }
 
 /// Generate building actions based on building type and status.
+///
+/// This function produces player-facing action affordances for each building type.
+/// Actions include costs, availability (based on gold and building status), and
+/// unsupported flags for features not yet implemented in the current build.
+///
+/// Currently covered building types (11 total from registry):
+/// - Primary: stagecoach, guild, blacksmith, sanitarium, tavern, abbey
+/// - Secondary: inn, graveyard, museum, provisioner, sanctuary
+/// - Special: campfire
 fn generate_building_actions(
     building_id: &str,
     status: &crate::contracts::viewmodels::BuildingStatus,
     current_gold: u32,
+    current_level: Option<char>,
 ) -> Vec<BuildingAction> {
     let is_ready = matches!(status, crate::contracts::viewmodels::BuildingStatus::Ready);
-    let is_partial = matches!(status, crate::contracts::viewmodels::BuildingStatus::Partial);
 
     match building_id {
         "stagecoach" => vec![
@@ -340,33 +622,44 @@ fn generate_building_actions(
                 is_available: is_ready,
                 is_unsupported: false,
             },
-        ],
-        "guild" => vec![
             BuildingAction {
-                id: "train-skill".to_string(),
-                label: "Train Skill".to_string(),
-                description: "Improve a hero's combat or camping skill.".to_string(),
-                cost: "200 Gold".to_string(),
-                is_available: is_ready && current_gold >= 200,
-                is_unsupported: false,
-            },
-            BuildingAction {
-                id: "upgrade-weapon".to_string(),
-                label: "Upgrade Weapon".to_string(),
-                description: "Enhance a hero's weapon.".to_string(),
-                cost: "300 Gold".to_string(),
-                is_available: is_ready && is_partial && current_gold >= 300,
-                is_unsupported: false,
-            },
-            BuildingAction {
-                id: "upgrade-armor".to_string(),
-                label: "Upgrade Armor".to_string(),
-                description: "Improve a hero's armor protection.".to_string(),
-                cost: "300 Gold".to_string(),
-                is_available: is_ready && is_partial && current_gold >= 300,
-                is_unsupported: false,
+                id: "rare-recruit".to_string(),
+                label: "Rare Recruit".to_string(),
+                description: "Recruit a rare hero class from the stagecoach.".to_string(),
+                cost: "1500 Gold".to_string(),
+                is_available: is_ready && current_gold >= 1500,
+                is_unsupported: true,
             },
         ],
+        "guild" => {
+            let can_upgrade_equipment = current_level.map_or(false, |l| l >= 'c');
+            vec![
+                BuildingAction {
+                    id: "train-skill".to_string(),
+                    label: "Train Skill".to_string(),
+                    description: "Improve a hero's combat or camping skill.".to_string(),
+                    cost: "200 Gold".to_string(),
+                    is_available: is_ready && current_gold >= 200,
+                    is_unsupported: false,
+                },
+                BuildingAction {
+                    id: "upgrade-weapon".to_string(),
+                    label: "Upgrade Weapon".to_string(),
+                    description: "Enhance a hero's weapon. Requires higher guild level.".to_string(),
+                    cost: "300 Gold".to_string(),
+                    is_available: is_ready && can_upgrade_equipment && current_gold >= 300,
+                    is_unsupported: false,
+                },
+                BuildingAction {
+                    id: "upgrade-armor".to_string(),
+                    label: "Upgrade Armor".to_string(),
+                    description: "Improve a hero's armor protection. Requires higher guild level.".to_string(),
+                    cost: "300 Gold".to_string(),
+                    is_available: is_ready && can_upgrade_equipment && current_gold >= 300,
+                    is_unsupported: false,
+                },
+            ]
+        },
         "blacksmith" => vec![
             BuildingAction {
                 id: "repair-weapon".to_string(),
@@ -382,6 +675,14 @@ fn generate_building_actions(
                 description: "Repair and maintain hero armor.".to_string(),
                 cost: "100 Gold".to_string(),
                 is_available: is_ready && current_gold >= 100,
+                is_unsupported: false,
+            },
+            BuildingAction {
+                id: "upgrade-weapon".to_string(),
+                label: "Upgrade Weapon Tier".to_string(),
+                description: "Upgrade a hero's weapon to the next tier (blacksmith upgrade).".to_string(),
+                cost: "500 Gold".to_string(),
+                is_available: is_ready && current_gold >= 500,
                 is_unsupported: false,
             },
         ],
@@ -402,6 +703,14 @@ fn generate_building_actions(
                 is_available: is_ready && current_gold >= 500,
                 is_unsupported: false,
             },
+            BuildingAction {
+                id: "lock-positive-quirk".to_string(),
+                label: "Lock Positive Quirk".to_string(),
+                description: "Lock a positive quirk to prevent its loss (unsupported in current build).".to_string(),
+                cost: "2500 Gold".to_string(),
+                is_available: false,
+                is_unsupported: true,
+            },
         ],
         "tavern" => vec![
             BuildingAction {
@@ -418,6 +727,14 @@ fn generate_building_actions(
                 description: "Try your luck at the tavern games.".to_string(),
                 cost: "100 Gold".to_string(),
                 is_available: is_ready && current_gold >= 100,
+                is_unsupported: false,
+            },
+            BuildingAction {
+                id: "brothel".to_string(),
+                label: "Visit Brothel".to_string(),
+                description: "Visit the tavern's other services for stress relief.".to_string(),
+                cost: "150 Gold".to_string(),
+                is_available: is_ready && current_gold >= 150,
                 is_unsupported: false,
             },
         ],
@@ -437,6 +754,96 @@ fn generate_building_actions(
                 cost: "150 Gold".to_string(),
                 is_available: is_ready && current_gold >= 150,
                 is_unsupported: false,
+            },
+        ],
+        "inn" => vec![
+            BuildingAction {
+                id: "rest".to_string(),
+                label: "Rest".to_string(),
+                description: "Rest at the inn to recover health and reduce fatigue.".to_string(),
+                cost: "100 Gold".to_string(),
+                is_available: is_ready && current_gold >= 100,
+                is_unsupported: false,
+            },
+            BuildingAction {
+                id: "dine".to_string(),
+                label: "Dine".to_string(),
+                description: "Purchase a meal to boost hero morale.".to_string(),
+                cost: "50 Gold".to_string(),
+                is_available: is_ready && current_gold >= 50,
+                is_unsupported: false,
+            },
+        ],
+        "graveyard" => vec![
+            BuildingAction {
+                id: "pay-respects".to_string(),
+                label: "Pay Respects".to_string(),
+                description: "Pay respects to fallen heroes to reduce party stress.".to_string(),
+                cost: "Free".to_string(),
+                is_available: is_ready,
+                is_unsupported: false,
+            },
+            BuildingAction {
+                id: "epitaph".to_string(),
+                label: "Inscribe Epitaph".to_string(),
+                description: "Inscribe an epitaph for a fallen hero (unsupported in current build).".to_string(),
+                cost: "200 Gold".to_string(),
+                is_available: false,
+                is_unsupported: true,
+            },
+        ],
+        "museum" => vec![
+            BuildingAction {
+                id: "view-artifacts".to_string(),
+                label: "View Artifacts".to_string(),
+                description: "Browse collected artifacts and trinkets from expeditions.".to_string(),
+                cost: "Free".to_string(),
+                is_available: is_ready,
+                is_unsupported: false,
+            },
+            BuildingAction {
+                id: "appraise-artifact".to_string(),
+                label: "Appraise Artifact".to_string(),
+                description: "Appraise an unidentified artifact for its true value.".to_string(),
+                cost: "100 Gold".to_string(),
+                is_available: is_ready && current_gold >= 100,
+                is_unsupported: true,
+            },
+        ],
+        "provisioner" => vec![
+            BuildingAction {
+                id: "buy-supplies".to_string(),
+                label: "Buy Supplies".to_string(),
+                description: "Purchase expedition supplies (food, torches, medicine).".to_string(),
+                cost: "200 Gold".to_string(),
+                is_available: is_ready && current_gold >= 200,
+                is_unsupported: false,
+            },
+            BuildingAction {
+                id: "buy-provisions".to_string(),
+                label: "Buy Provisions".to_string(),
+                description: "Stock up on extra provisions for longer expeditions.".to_string(),
+                cost: "500 Gold".to_string(),
+                is_available: is_ready && current_gold >= 500,
+                is_unsupported: false,
+            },
+        ],
+        "sanctuary" => vec![
+            BuildingAction {
+                id: "advanced-treatment".to_string(),
+                label: "Advanced Treatment".to_string(),
+                description: "Advanced medical treatment for severe hero ailments.".to_string(),
+                cost: "1000 Gold".to_string(),
+                is_available: is_ready && current_gold >= 1000,
+                is_unsupported: false,
+            },
+            BuildingAction {
+                id: "hero-revival".to_string(),
+                label: "Hero Revival".to_string(),
+                description: "Attempt to revive a fallen hero (unsupported in current build).".to_string(),
+                cost: "5000 Gold".to_string(),
+                is_available: false,
+                is_unsupported: true,
             },
         ],
         "campfire" => vec![

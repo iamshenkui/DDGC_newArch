@@ -382,6 +382,192 @@ impl BuildingDetailViewModel {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Building Action Contracts — frontend ↔ runtime interaction boundary
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Request from the frontend to perform a building action.
+///
+/// This is the canonical contract for the screens layer to request
+/// action execution at a town building. The runtime validates the
+/// request against current state and returns a [`BuildingActionResult`].
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BuildingActionRequest {
+    /// Building ID where the action is performed.
+    pub building_id: String,
+    /// Action ID to perform (must match a `BuildingAction::id`).
+    pub action_id: String,
+    /// Hero ID if the action targets a specific hero (e.g., stress heal, quirk treatment).
+    pub hero_id: Option<String>,
+    /// Upgrade level to use (defaults to the building's current level if omitted).
+    pub upgrade_level: Option<char>,
+    /// Index of the activity slot (for slot-based services like guild training).
+    pub slot_index: Option<usize>,
+}
+
+impl BuildingActionRequest {
+    /// Create a new action request.
+    pub fn new(building_id: &str, action_id: &str) -> Self {
+        BuildingActionRequest {
+            building_id: building_id.to_string(),
+            action_id: action_id.to_string(),
+            hero_id: None,
+            upgrade_level: None,
+            slot_index: None,
+        }
+    }
+
+    /// Set a hero ID for this request.
+    pub fn with_hero(mut self, hero_id: &str) -> Self {
+        self.hero_id = Some(hero_id.to_string());
+        self
+    }
+
+    /// Set an upgrade level for this request.
+    pub fn with_upgrade(mut self, level: char) -> Self {
+        self.upgrade_level = Some(level);
+        self
+    }
+
+    /// Set a slot index for this request.
+    pub fn with_slot(mut self, index: usize) -> Self {
+        self.slot_index = Some(index);
+        self
+    }
+}
+
+/// Result of performing a building action.
+///
+/// This contract captures the outcome of a building action execution,
+/// including costs, effects, and any side effects or errors.
+/// The frontend uses this to display action results to the player.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BuildingActionResult {
+    /// Whether the action was successfully performed.
+    pub success: bool,
+    /// Human-readable result message for display.
+    pub message: String,
+    /// Gold spent (or earned, if negative) by this action.
+    pub gold_change: i32,
+    /// Stress change applied (negative = reduction).
+    pub stress_change: f64,
+    /// Health change applied (positive = recovery).
+    pub health_change: f64,
+    /// Side effect description (if any), e.g., from tavern activities.
+    pub side_effect: Option<String>,
+    /// Error details if the action failed due to a contract violation.
+    pub error: Option<ViewModelError>,
+}
+
+impl BuildingActionResult {
+    /// Create a successful result.
+    pub fn success(
+        message: &str,
+        gold_change: i32,
+        stress_change: f64,
+        health_change: f64,
+    ) -> Self {
+        BuildingActionResult {
+            success: true,
+            message: message.to_string(),
+            gold_change,
+            stress_change,
+            health_change,
+            side_effect: None,
+            error: None,
+        }
+    }
+
+    /// Create a failure result.
+    pub fn failure(message: &str, error: ViewModelError) -> Self {
+        BuildingActionResult {
+            success: false,
+            message: message.to_string(),
+            gold_change: 0,
+            stress_change: 0.0,
+            health_change: 0.0,
+            side_effect: None,
+            error: Some(error),
+        }
+    }
+}
+
+/// Building entry view model — complete state when entering a building.
+///
+/// This view model is a superset of `BuildingDetailViewModel` that includes
+/// additional runtime context: current gold, current upgrade level, and a
+/// list of available action requests the player can execute.
+/// It represents the moment of entering/interacting with a building as a
+/// player-facing event in the runtime.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BuildingEntryViewModel {
+    /// View model kind identifier.
+    pub kind: String,
+    /// Building identifier.
+    pub building_id: String,
+    /// Human-readable building label.
+    pub label: String,
+    /// Current building status.
+    pub status: BuildingStatus,
+    /// Detailed description of the building.
+    pub description: String,
+    /// Available actions in this building.
+    pub actions: Vec<BuildingAction>,
+    /// Current gold the player has when entering this building.
+    pub current_gold: u32,
+    /// Requirement for upgrading this building (if upgradeable).
+    pub upgrade_requirement: Option<String>,
+    /// Current upgrade level code, or None if not yet unlocked.
+    pub current_upgrade_level: Option<char>,
+    /// Full upgrade history for display (levels, costs, effects).
+    pub upgrade_levels: Vec<UpgradeLevelDisplay>,
+    /// Error details if building state has issues.
+    pub error: Option<ViewModelError>,
+}
+
+/// Upgrade level display info for the frontend.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct UpgradeLevelDisplay {
+    /// Level code (a-g).
+    pub code: char,
+    /// Gold cost for this level.
+    pub cost: u32,
+    /// Whether this level is currently owned.
+    pub is_owned: bool,
+    /// Human-readable summary of effects at this level.
+    pub effects_summary: String,
+}
+
+impl Default for UpgradeLevelDisplay {
+    fn default() -> Self {
+        UpgradeLevelDisplay {
+            code: 'a',
+            cost: 0,
+            is_owned: false,
+            effects_summary: String::new(),
+        }
+    }
+}
+
+impl BuildingEntryViewModel {
+    /// Create an empty building entry view model.
+    pub fn empty() -> Self {
+        BuildingEntryViewModel {
+            kind: "building-entry".to_string(),
+            building_id: String::new(),
+            label: String::new(),
+            status: BuildingStatus::Locked,
+            description: String::new(),
+            actions: Vec::new(),
+            current_gold: 0,
+            upgrade_requirement: None,
+            current_upgrade_level: None,
+            upgrade_levels: Vec::new(),
+            error: None,
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Hero Detail View Model
 // ─────────────────────────────────────────────────────────────────────────────
 
