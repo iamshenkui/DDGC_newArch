@@ -29,8 +29,18 @@ export interface TownHeroSummary {
   name: string;
   classLabel: string;
   hp: string;
+  maxHp: string;
+  health: number;
+  maxHealth: number;
   stress: string;
+  maxStress: string;
   level: number;
+  xp: number;
+  isWounded: boolean;
+  isAfflicted: boolean;
+  positiveQuirks: ReadonlyArray<string>;
+  negativeQuirks: ReadonlyArray<string>;
+  diseases: ReadonlyArray<string>;
 }
 
 export interface TownBuildingSummary {
@@ -99,7 +109,10 @@ export interface TownViewModel {
   campaignName: string;
   campaignSummary: string;
   heroes: ReadonlyArray<TownHeroSummary>;
+  roster: ReadonlyArray<TownHeroSummary>;
   buildings: ReadonlyArray<TownBuildingSummary>;
+  gold: number;
+  isFreshVisit: boolean;
   nextActionLabel: string;
 }
 
@@ -108,8 +121,15 @@ export interface ProvisioningHeroSummary {
   name: string;
   classLabel: string;
   hp: string;
+  maxHp: string;
+  health: number;
+  maxHealth: number;
   stress: string;
+  maxStress: string;
   level: number;
+  xp: number;
+  isWounded: boolean;
+  isAfflicted: boolean;
   isSelected: boolean;
 }
 

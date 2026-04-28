@@ -26,16 +26,36 @@ const createLiveTownViewModel = (): TownViewModel => ({
       name: "Yuan",
       classLabel: "Hunter",
       hp: "42 / 42",
+      maxHp: "42",
+      health: 42,
+      maxHealth: 42,
       stress: "0",
-      level: 1
+      maxStress: "200",
+      level: 1,
+      xp: 0,
+      isWounded: false,
+      isAfflicted: false,
+      positiveQuirks: [],
+      negativeQuirks: [],
+      diseases: []
     },
     {
       id: "hero-white-live-01",
       name: "Mei",
       classLabel: "White",
       hp: "41 / 41",
+      maxHp: "41",
+      health: 41,
+      maxHealth: 41,
       stress: "0",
-      level: 1
+      maxStress: "200",
+      level: 1,
+      xp: 0,
+      isWounded: false,
+      isAfflicted: false,
+      positiveQuirks: [],
+      negativeQuirks: [],
+      diseases: []
     }
   ] as ReadonlyArray<TownHeroSummary>,
   buildings: [
@@ -52,6 +72,46 @@ const createLiveTownViewModel = (): TownViewModel => ({
       status: "ready"
     }
   ] as ReadonlyArray<TownBuildingSummary>,
+  roster: [
+    {
+      id: "hero-hunter-live-01",
+      name: "Yuan",
+      classLabel: "Hunter",
+      hp: "42 / 42",
+      maxHp: "42",
+      health: 42,
+      maxHealth: 42,
+      stress: "0",
+      maxStress: "200",
+      level: 1,
+      xp: 0,
+      isWounded: false,
+      isAfflicted: false,
+      positiveQuirks: [],
+      negativeQuirks: [],
+      diseases: []
+    },
+    {
+      id: "hero-white-live-01",
+      name: "Mei",
+      classLabel: "White",
+      hp: "41 / 41",
+      maxHp: "41",
+      health: 41,
+      maxHealth: 41,
+      stress: "0",
+      maxStress: "200",
+      level: 1,
+      xp: 0,
+      isWounded: false,
+      isAfflicted: false,
+      positiveQuirks: [],
+      negativeQuirks: [],
+      diseases: []
+    }
+  ] as ReadonlyArray<TownHeroSummary>,
+  gold: 500,
+  isFreshVisit: true,
   nextActionLabel: "Launch Expedition"
 });
 
@@ -189,8 +249,8 @@ const createLiveProvisioningViewModel = (): ProvisioningViewModel => ({
   expeditionLabel: "The Azure Lantern Expedition",
   expeditionSummary: "Deploy your party into the dungeon. Manage supplies and party composition carefully.",
   party: [
-    { id: "hero-hunter-live-01", name: "Yuan", classLabel: "Hunter", hp: "42 / 42", stress: "0", level: 1, isSelected: true },
-    { id: "hero-white-live-01", name: "Mei", classLabel: "White", hp: "41 / 41", stress: "0", level: 1, isSelected: true }
+    { id: "hero-hunter-live-01", name: "Yuan", classLabel: "Hunter", hp: "42 / 42", maxHp: "42", health: 42, maxHealth: 42, stress: "0", maxStress: "200", level: 1, xp: 0, isWounded: false, isAfflicted: false, isSelected: true },
+    { id: "hero-white-live-01", name: "Mei", classLabel: "White", hp: "41 / 41", maxHp: "41", health: 41, maxHealth: 41, stress: "0", maxStress: "200", level: 1, xp: 0, isWounded: false, isAfflicted: false, isSelected: true }
   ],
   maxPartySize: 4,
   isReadyToLaunch: true,

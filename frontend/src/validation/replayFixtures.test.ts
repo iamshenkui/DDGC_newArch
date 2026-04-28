@@ -53,6 +53,111 @@ describe("replay fixtures — hero and campaign state consistency", () => {
       const hp = shen!.hp.split("/").map((s) => Number(s.trim()));
       expect(hp[0]).toBeLessThan(hp[1]); // Shen has 38/42 — damaged
     });
+
+    it("exposes numeric health and maxHealth fields", () => {
+      for (const hero of replayTownViewModel.heroes) {
+        expect(hero.health).toBeGreaterThan(0);
+        expect(hero.maxHealth).toBeGreaterThan(0);
+        expect(hero.health).toBeLessThanOrEqual(hero.maxHealth);
+      }
+    });
+
+    it("exposes maxHp string for direct display", () => {
+      for (const hero of replayTownViewModel.heroes) {
+        expect(hero.maxHp).toBeTruthy();
+        expect(Number(hero.maxHp)).toBeGreaterThan(0);
+      }
+    });
+
+    it("exposes maxStress for stress bar context", () => {
+      for (const hero of replayTownViewModel.heroes) {
+        expect(hero.maxStress).toBeTruthy();
+        expect(Number(hero.maxStress)).toBeGreaterThan(0);
+      }
+    });
+
+    it("has correct wounded and afflicted flags", () => {
+      const shen = replayTownViewModel.heroes.find((h) => h.id === "hero-hunter-01")!;
+      expect(shen.isWounded).toBe(true); // 38/42
+      expect(shen.isAfflicted).toBe(false); // 17/200
+
+      const baiXiu = replayTownViewModel.heroes.find((h) => h.id === "hero-white-01")!;
+      expect(baiXiu.isWounded).toBe(false); // 41/41 — full health
+      expect(baiXiu.isAfflicted).toBe(false);
+    });
+
+    it("has XP for progression signal in roster view", () => {
+      for (const hero of replayTownViewModel.heroes) {
+        expect(hero.xp).toBeGreaterThanOrEqual(0);
+      }
+    });
+
+    it("has quirk and disease lists for pre-expedition triage", () => {
+      for (const hero of replayTownViewModel.heroes) {
+        expect(Array.isArray(hero.positiveQuirks)).toBe(true);
+        expect(Array.isArray(hero.negativeQuirks)).toBe(true);
+        expect(Array.isArray(hero.diseases)).toBe(true);
+      }
+    });
+
+    it("hero-hunter-01 has expected quirks and diseases", () => {
+      const shen = replayTownViewModel.heroes.find((h) => h.id === "hero-hunter-01")!;
+      expect(shen.positiveQuirks.length).toBeGreaterThan(0);
+      expect(shen.negativeQuirks.length).toBeGreaterThan(0);
+      expect(shen.diseases.length).toBe(0);
+    });
+
+    it("hero-black-01 has disease for triage signal", () => {
+      const heiZhen = replayTownViewModel.heroes.find((h) => h.id === "hero-black-01")!;
+      expect(heiZhen.diseases.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("town view model enrichment", () => {
+    it("has gold and fresh visit flag", () => {
+      expect(replayTownViewModel.gold).toBeGreaterThan(0);
+      expect(replayTownViewModel.isFreshVisit).toBe(true);
+    });
+
+    it("has roster field matching heroes", () => {
+      expect(replayTownViewModel.roster.length).toBe(replayTownViewModel.heroes.length);
+      expect(replayTownViewModel.roster[0].id).toBe("hero-hunter-01");
+    });
+
+    it("roster heroes have same health fields as heroes", () => {
+      for (const hero of replayTownViewModel.roster) {
+        expect(hero.health).toBeGreaterThan(0);
+        expect(hero.maxHealth).toBeGreaterThan(0);
+        expect(typeof hero.isWounded).toBe("boolean");
+        expect(typeof hero.isAfflicted).toBe("boolean");
+      }
+    });
+  });
+
+  describe("provisioning hero enrichment", () => {
+    it("provisioning heroes have health and status fields", () => {
+      for (const ph of replayProvisioningViewModel.party) {
+        expect(ph.health).toBeGreaterThan(0);
+        expect(ph.maxHealth).toBeGreaterThan(0);
+        expect(ph.maxHp).toBeTruthy();
+        expect(ph.maxStress).toBeTruthy();
+        expect(typeof ph.isWounded).toBe("boolean");
+        expect(typeof ph.isAfflicted).toBe("boolean");
+        expect(ph.xp).toBeGreaterThanOrEqual(0);
+      }
+    });
+
+    it("provisioning hero field values are consistent with town roster", () => {
+      for (const ph of replayProvisioningViewModel.party) {
+        const townHero = replayTownViewModel.heroes.find((h) => h.id === ph.id);
+        expect(townHero).toBeDefined();
+        expect(ph.health).toBe(townHero!.health);
+        expect(ph.maxHealth).toBe(townHero!.maxHealth);
+        expect(ph.isWounded).toBe(townHero!.isWounded);
+        expect(ph.isAfflicted).toBe(townHero!.isAfflicted);
+        expect(ph.xp).toBe(townHero!.xp);
+      }
+    });
   });
 
   describe("hero-detail fixture", () => {

@@ -64,6 +64,10 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
           <section class="panel stack">
             <div class="row">
               <span class="pill">Flow: town</span>
+              <span class="pill">Gold: {props.viewModel.gold}</span>
+              {props.viewModel.isFreshVisit && (
+                <span class="pill" style="color: #c6d46a;">Fresh Visit</span>
+              )}
               <span class="pill">Next: {props.viewModel.nextActionLabel}</span>
             </div>
             <div class="row">
@@ -91,6 +95,12 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                       <strong>{hero.name}</strong>
                       <span class="pill">{hero.classLabel}</span>
                       <span class="pill">Lv {hero.level}</span>
+                      {hero.isWounded && (
+                        <span class="pill" style="color: #e8a838; border-color: rgba(232,168,56,0.3);">Wounded</span>
+                      )}
+                      {hero.isAfflicted && (
+                        <span class="pill" style="color: #ea7767; border-color: rgba(234,119,103,0.3);">Afflicted</span>
+                      )}
                     </div>
                     <div class="stack">
                       <div class="bar-row">
@@ -108,15 +118,27 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                       <div class="bar-row">
                         <span class="stat-label">Stress</span>
                         <span class={`stat-value ${stressLevelClass(hero.stress)}`}>
-                          {hero.stress}
+                          {hero.stress} / {hero.maxStress}
                         </span>
                         <div class="bar-container">
                           <div
                             class={stressBarClass(hero.stress)}
-                            style={{ width: `${Math.min(stressNum, 100)}%` }}
+                            style={{ width: `${Math.min((stressNum / Number(hero.maxStress || 200)) * 100, 100)}%` }}
                           />
                         </div>
                       </div>
+                    </div>
+                    <div class="row" style="gap: 6px; font-size: 0.82rem; color: var(--panel-muted);">
+                      <span>XP: {hero.xp}</span>
+                      {hero.positiveQuirks.length > 0 && (
+                        <span>+{hero.positiveQuirks.length} quirk{hero.positiveQuirks.length !== 1 ? "s" : ""}</span>
+                      )}
+                      {hero.negativeQuirks.length > 0 && (
+                        <span style="color: #ea7767;">-{hero.negativeQuirks.length} quirk{hero.negativeQuirks.length !== 1 ? "s" : ""}</span>
+                      )}
+                      {hero.diseases.length > 0 && (
+                        <span style="color: #ea7767;">{hero.diseases.length} disease{hero.diseases.length !== 1 ? "s" : ""}</span>
+                      )}
                     </div>
                     <div class="row">
                       <button

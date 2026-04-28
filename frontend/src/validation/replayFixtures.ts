@@ -8,9 +8,68 @@ import type {
   FatalErrorViewModel,
   HeroDetailViewModel,
   ProvisioningViewModel,
+  TownHeroSummary,
   TownViewModel,
   UnsupportedViewModel
 } from "../bridge/contractTypes";
+
+// Shared roster heroes used by both town, provisioning, and hero-detail fixtures.
+const townHeroes: ReadonlyArray<TownHeroSummary> = [
+  {
+    id: "hero-hunter-01",
+    name: "Shen",
+    classLabel: "Hunter",
+    hp: "38 / 42",
+    maxHp: "42",
+    health: 38,
+    maxHealth: 42,
+    stress: "17",
+    maxStress: "200",
+    level: 2,
+    xp: 240,
+    isWounded: true,
+    isAfflicted: false,
+    positiveQuirks: ["steady", "sharp_eyes"],
+    negativeQuirks: ["paranoid"],
+    diseases: []
+  },
+  {
+    id: "hero-white-01",
+    name: "Bai Xiu",
+    classLabel: "White",
+    hp: "41 / 41",
+    maxHp: "41",
+    health: 41,
+    maxHealth: 41,
+    stress: "8",
+    maxStress: "200",
+    level: 2,
+    xp: 180,
+    isWounded: false,
+    isAfflicted: false,
+    positiveQuirks: ["blessed"],
+    negativeQuirks: ["fragile"],
+    diseases: []
+  },
+  {
+    id: "hero-black-01",
+    name: "Hei Zhen",
+    classLabel: "Black",
+    hp: "34 / 40",
+    maxHp: "40",
+    health: 34,
+    maxHealth: 40,
+    stress: "24",
+    maxStress: "200",
+    level: 1,
+    xp: 60,
+    isWounded: true,
+    isAfflicted: false,
+    positiveQuirks: [],
+    negativeQuirks: ["clumsy", "fearful"],
+    diseases: ["red_plague"]
+  }
+];
 
 export const replayTownViewModel: TownViewModel = {
   kind: "town",
@@ -18,32 +77,7 @@ export const replayTownViewModel: TownViewModel = {
   campaignName: "The Azure Lantern",
   campaignSummary:
     "Representative Phase 10 replay snapshot for roster, building, and provisioning work.",
-  heroes: [
-    {
-      id: "hero-hunter-01",
-      name: "Shen",
-      classLabel: "Hunter",
-      hp: "38 / 42",
-      stress: "17",
-      level: 2
-    },
-    {
-      id: "hero-white-01",
-      name: "Bai Xiu",
-      classLabel: "White",
-      hp: "41 / 41",
-      stress: "8",
-      level: 2
-    },
-    {
-      id: "hero-black-01",
-      name: "Hei Zhen",
-      classLabel: "Black",
-      hp: "34 / 40",
-      stress: "24",
-      level: 1
-    }
-  ],
+  heroes: townHeroes,
   buildings: [
     {
       id: "guild",
@@ -64,6 +98,9 @@ export const replayTownViewModel: TownViewModel = {
       status: "partial"
     }
   ],
+  roster: townHeroes,
+  gold: 1250,
+  isFreshVisit: true,
   nextActionLabel: "Provision Expedition"
 };
 
@@ -155,9 +192,9 @@ export const replayProvisioningViewModel: ProvisioningViewModel = {
   expeditionLabel: "The Depths Await",
   expeditionSummary: "Assemble your party and provision wisely. The expedition awaits those who dare enter.",
   party: [
-    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", stress: "17", level: 2, isSelected: true },
-    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", stress: "8", level: 2, isSelected: true },
-    { id: "hero-black-01", name: "Hei Zhen", classLabel: "Black", hp: "34 / 40", stress: "24", level: 1, isSelected: false }
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", health: 38, maxHealth: 42, stress: "17", maxStress: "200", level: 2, xp: 240, isWounded: true, isAfflicted: false, isSelected: true },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", health: 41, maxHealth: 41, stress: "8", maxStress: "200", level: 2, xp: 180, isWounded: false, isAfflicted: false, isSelected: true },
+    { id: "hero-black-01", name: "Hei Zhen", classLabel: "Black", hp: "34 / 40", maxHp: "40", health: 34, maxHealth: 40, stress: "24", maxStress: "200", level: 1, xp: 60, isWounded: true, isAfflicted: false, isSelected: false }
   ],
   maxPartySize: 4,
   isReadyToLaunch: true,
