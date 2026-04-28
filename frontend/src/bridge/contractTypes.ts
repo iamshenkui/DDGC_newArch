@@ -48,6 +48,7 @@ export interface TownBuildingSummary {
   label: string;
   summary: string;
   status: "ready" | "partial" | "locked";
+  currentUpgrade?: string;
 }
 
 export interface BuildingAction {
@@ -66,6 +67,7 @@ export interface BuildingDetailViewModel {
   status: "ready" | "partial" | "locked";
   description: string;
   actions: ReadonlyArray<BuildingAction>;
+  currentUpgrade?: string;
   upgradeRequirement?: string;
 }
 

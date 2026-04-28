@@ -26,7 +26,7 @@ import { UnsupportedStateScreen } from "../screens/errors/UnsupportedStateScreen
 import { StartupScreen } from "../screens/startup/StartupScreen";
 import { TownShellScreen } from "../screens/town/TownShellScreen";
 import { HeroDetailScreen } from "../screens/town/HeroDetailScreen";
-import { BuildingDetailScreen } from "../screens/town/BuildingDetailScreen";
+import { BuildingScreenRouter } from "../screens/town/BuildingScreenRouter";
 import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
@@ -120,7 +120,7 @@ export function DdgcApp() {
         <Match
           when={screen() === "building-detail" && snapshot().viewModel.kind === "building-detail"}
         >
-          <BuildingDetailScreen
+          <BuildingScreenRouter
             viewModel={snapshot().viewModel as BuildingDetailViewModel}
             onReturn={() => {
               void dispatchIntent(bridge, { type: "return-to-town" });

@@ -80,6 +80,12 @@ export const replayTownViewModel: TownViewModel = {
   heroes: townHeroes,
   buildings: [
     {
+      id: "stagecoach",
+      label: "Stagecoach",
+      summary: "Recruit new heroes to expand your party roster.",
+      status: "ready"
+    },
+    {
       id: "guild",
       label: "Guild",
       summary: "Skill training and party capability review.",
@@ -183,6 +189,77 @@ export const replayBuildingDetailViewModel: BuildingDetailViewModel = {
     }
   ],
   upgradeRequirement: "Reach Town Level 2 to unlock weapon and armor upgrades."
+};
+
+export const replayBlacksmithBuildingDetailViewModel: BuildingDetailViewModel = {
+  kind: "building-detail",
+  buildingId: "blacksmith",
+  label: "Blacksmith",
+  status: "partial",
+  description: "The blacksmith forges and upgrades weapons and armor. Enhance your heroes' equipment to improve their combat effectiveness.",
+  actions: [
+    {
+      id: "upgrade-weapon",
+      label: "Upgrade Weapon",
+      description: "Enhance a hero's weapon to deal more damage in combat.",
+      cost: "400 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "upgrade-armor",
+      label: "Upgrade Armor",
+      description: "Improve a hero's armor for better protection against enemy attacks.",
+      cost: "350 Gold",
+      isAvailable: false,
+      isUnsupported: false
+    },
+    {
+      id: "masterwork-forge",
+      label: "Masterwork Forge",
+      description: "Commission a masterwork quality weapon for a hero.",
+      cost: "1500 Gold",
+      isAvailable: false,
+      isUnsupported: true
+    }
+  ],
+  currentUpgrade: "Forge Level 2",
+  upgradeRequirement: "Reach Town Level 3 to unlock armor upgrades."
+};
+
+export const replaySanitariumBuildingDetailViewModel: BuildingDetailViewModel = {
+  kind: "building-detail",
+  buildingId: "sanitarium",
+  label: "Sanitarium",
+  status: "partial",
+  description: "The sanitarium provides treatment for physical and mental afflictions. Cure diseases, reduce stress, and remove negative quirks.",
+  actions: [
+    {
+      id: "cure-disease",
+      label: "Cure Disease",
+      description: "Treat a hero's diseases and restore their health.",
+      cost: "250 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "reduce-stress",
+      label: "Stress Treatment",
+      description: "Provide therapy to reduce a hero's stress level.",
+      cost: "300 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "remove-quirk",
+      label: "Remove Negative Quirk",
+      description: "Remove a negative quirk from a hero's profile.",
+      cost: "500 Gold",
+      isAvailable: false,
+      isUnsupported: false
+    }
+  ],
+  upgradeRequirement: "Reach Town Level 2 to unlock quirk removal."
 };
 
 export const replayProvisioningViewModel: ProvisioningViewModel = {
@@ -361,6 +438,20 @@ export const replayBuildingDetailSnapshot: DdgcFrontendSnapshot = {
   flowState: "town",
   viewModel: replayBuildingDetailViewModel,
   debugMessage: "Replay bridge showing building detail for interaction."
+};
+
+export const replayBlacksmithBuildingSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "town",
+  viewModel: replayBlacksmithBuildingDetailViewModel,
+  debugMessage: "Replay bridge showing blacksmith building detail."
+};
+
+export const replaySanitariumBuildingSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "town",
+  viewModel: replaySanitariumBuildingDetailViewModel,
+  debugMessage: "Replay bridge showing sanitarium building detail."
 };
 
 const unsupportedViewModel: UnsupportedViewModel = {

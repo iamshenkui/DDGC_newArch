@@ -163,6 +163,7 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
       isAvailable: boolean;
       isUnsupported: boolean;
     }>;
+    currentUpgrade?: string;
     upgradeRequirement?: string;
   }> = {
     stagecoach: {
@@ -188,6 +189,7 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
     },
     guild: {
       description: "The guild provides skill training and party capability review. Upgrade your heroes' abilities.",
+      currentUpgrade: "Training Hall Level 1",
       actions: [
         {
           id: "train-skill",
@@ -238,6 +240,7 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
     status: building.status,
     description: config.description,
     actions: config.actions,
+    currentUpgrade: config.currentUpgrade,
     upgradeRequirement: config.upgradeRequirement
   };
 };
