@@ -42,11 +42,18 @@ export function DdgcApp() {
   const [activeMode, setActiveMode] = createSignal<RuntimeMode>(DEFAULT_RUNTIME_MODE);
   const saveLoad = createSaveLoadService(activeMode());
   let bridge = createBridge(DEFAULT_RUNTIME_MODE);
+  let unsubscribeBridge: (() => void) | null = null;
 
   const runBoot = async (mode: RuntimeMode) => {
+    // Clean up previous bridge subscription before replacing the bridge
+    if (unsubscribeBridge) {
+      unsubscribeBridge();
+      unsubscribeBridge = null;
+    }
+
     setActiveMode(mode);
     bridge = createBridge(mode);
-    const unsubscribe = bridge.subscribe((snapshot) => {
+    unsubscribeBridge = bridge.subscribe((snapshot) => {
       session.replace(snapshot);
     });
 
@@ -58,8 +65,8 @@ export function DdgcApp() {
       session.fail(error instanceof Error ? error.message : "boot failed");
       setBooted(true);
     }
-
-    unsubscribe();
+    // Keep subscription alive so subsequent dispatchIntent calls propagate
+    // to the session store and trigger re-renders.
   };
 
   const handleNewCampaign = () => {
@@ -167,6 +174,9 @@ export function DdgcApp() {
             onContinue={() => {
               void dispatchIntent(bridge, { type: "continue-from-result" });
             }}
+            onReturnToTown={() => {
+              void dispatchIntent(bridge, { type: "return-to-town" });
+            }}
           />
         </Match>
         <Match
@@ -176,6 +186,9 @@ export function DdgcApp() {
             viewModel={snapshot().viewModel as ReturnViewModel}
             onResumeTown={() => {
               void dispatchIntent(bridge, { type: "resume-from-return" });
+            }}
+            onReturnToTown={() => {
+              void dispatchIntent(bridge, { type: "return-to-town" });
             }}
           />
         </Match>
