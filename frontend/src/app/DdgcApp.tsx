@@ -174,9 +174,6 @@ export function DdgcApp() {
             onContinue={() => {
               void dispatchIntent(bridge, { type: "continue-from-result" });
             }}
-            onReturnToTown={() => {
-              void dispatchIntent(bridge, { type: "return-to-town" });
-            }}
           />
         </Match>
         <Match
@@ -186,9 +183,6 @@ export function DdgcApp() {
             viewModel={snapshot().viewModel as ReturnViewModel}
             onResumeTown={() => {
               void dispatchIntent(bridge, { type: "resume-from-return" });
-            }}
-            onReturnToTown={() => {
-              void dispatchIntent(bridge, { type: "return-to-town" });
             }}
           />
         </Match>

@@ -1,7 +1,6 @@
-import type { Component } from "solid-js";
+import { For, type Component } from "solid-js";
 
 import type { ProvisioningViewModel } from "../../bridge/contractTypes";
-import { AppFrame } from "../../components/layout/AppFrame";
 
 interface ProvisioningScreenProps {
   viewModel: ProvisioningViewModel;
@@ -24,39 +23,40 @@ function healthPercent(hp: string): number {
   return Math.round((current / max) * 100);
 }
 
-function healthBarClass(hp: string): string {
+function healthBarColor(hp: string): string {
   const pct = healthPercent(hp);
-  if (pct >= 80) return "bar-fill bar-fill-health";
-  if (pct >= 40) return "bar-fill bar-fill-health-warning";
-  return "bar-fill bar-fill-health-danger";
-}
-
-function healthTextClass(hp: string): string {
-  const pct = healthPercent(hp);
-  if (pct >= 80) return "text-good";
-  if (pct >= 40) return "text-warning";
-  return "text-danger";
+  if (pct >= 80) return "#5bbd6e";
+  if (pct >= 40) return "#e8a838";
+  return "#ea7767";
 }
 
 function stressPercent(stress: string, maxStress: string): number {
   const s = Number(stress);
-  const m = Number(maxStress) || 200;
+  const m = Number(maxStress || 200);
   return Math.min(Math.round((s / m) * 100), 100);
 }
 
-function stressBarClass(stress: string): string {
+function stressBarColor(stress: string): string {
   const s = Number(stress);
-  if (s <= 40) return "bar-fill bar-fill-stress";
-  return "bar-fill bar-fill-stress-high";
+  if (s <= 20) return "#5bbd6e";
+  if (s <= 40) return "#e8a838";
+  return "#ea7767";
 }
 
-function stressTextClass(stress: string): string {
-  const s = Number(stress);
-  if (s <= 20) return "text-good";
-  if (s <= 40) return "text-warning";
-  return "text-danger";
-}
-
+/**
+ * Provisioning screen — landscape viewport layout.
+ *
+ * Mirrors the party/loadout preparation feel from original Unity prefabs:
+ *   Assets/Prefabs/UI/PartyInventorySlot.prefab
+ *   Assets/Prefabs/UI/PartyInventorySlotInDungeon.prefab
+ *
+ * Supply icon references:
+ *   data-asset-path="Assets/Resources/Sprites/inv_supply+rattle_drum.png"
+ *   data-guid="e401bf9b9275ede4aa2ff50d13cc6207"
+ *
+ * Gold icon reference:
+ *   data-asset-path="Assets/Resources/Sprites/gold.png"
+ */
 export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) => {
   const selectedCount = () =>
     props.viewModel.party.filter((h) => h.isSelected).length;
@@ -67,172 +67,290 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
   const afflictedCount = () =>
     props.viewModel.party.filter((h) => h.isSelected && h.isAfflicted).length;
 
+  const selectedHeroes = () =>
+    props.viewModel.party.filter((h) => h.isSelected);
+
+  const unselectedHeroes = () =>
+    props.viewModel.party.filter((h) => !h.isSelected);
+
+  // Build party formation: selected heroes + empty slots
+  const partyFormation = () => {
+    const slots = [...selectedHeroes()];
+    while (slots.length < props.viewModel.maxPartySize) {
+      slots.push(null as unknown as typeof props.viewModel.party[number]);
+    }
+    return slots;
+  };
+
+  const isFull = () => selectedCount() >= props.viewModel.maxPartySize;
+
   return (
-    <AppFrame
-      eyebrow="Provisioning"
-      title={props.viewModel.title}
-      subtitle={`Expedition: ${props.viewModel.expeditionLabel}`}
-    >
-      <section class="grid">
-        <div class="stack">
-          <section class="panel stack">
-            <div class="row">
-              <span class="pill">Flow: provisioning</span>
-              <span class="pill">
-                Party: {selectedCount()} / {props.viewModel.maxPartySize}
-              </span>
-              {woundedCount() > 0 && (
-                <span class="pill" style="color: #e8a838; border-color: rgba(232,168,56,0.3);">
-                  {woundedCount()} wounded
-                </span>
-              )}
-              {afflictedCount() > 0 && (
-                <span class="pill" style="color: #ea7767; border-color: rgba(234,119,103,0.3);">
-                  {afflictedCount()} afflicted
-                </span>
-              )}
-            </div>
-            <div class="surface-card stack">
-              <h3>Party Selection</h3>
-              <p>
-                Select heroes to join the expedition. Review their status before
-                departing.
-              </p>
-            </div>
-            <ul class="list-reset">
-              {props.viewModel.party.map((hero) => {
+    <div class="expedition-viewport">
+      {/* ── Top HUD ─────────────────────────────────────── */}
+      <header class="expedition-hud">
+        <span class="expedition-hud-left">
+          <span class="eyebrow">Provisioning</span>
+          <h1 class="expedition-title">{props.viewModel.title}</h1>
+        </span>
+        <span class="expedition-hud-center">
+          <span class="hud-pill">
+            Party: {selectedCount()} / {props.viewModel.maxPartySize}
+          </span>
+          <span class="hud-pill">
+            {props.viewModel.expeditionLabel}
+          </span>
+          <span
+            class="hud-pill"
+            data-asset-path="Assets/Resources/Sprites/inv_supply+rattle_drum.png"
+            data-guid="e401bf9b9275ede4aa2ff50d13cc6207"
+          >
+            Supply: {props.viewModel.supplyLevel}
+          </span>
+          <span
+            class="hud-pill"
+            data-asset-path="Assets/Resources/Sprites/gold.png"
+          >
+            Cost: {props.viewModel.provisionCost}
+          </span>
+        </span>
+      </header>
+
+      {/* ── Game Surface ─────────────────────────────────── */}
+      <div class="expedition-surface">
+        <div class="expedition-surface-bg" />
+        <div class="expedition-surface-mist" />
+
+        <div class="expedition-content">
+          {/* Party formation slots */}
+          <div class="party-formation">
+            <For each={partyFormation()}>
+              {(hero) => {
+                if (hero === null) {
+                  return (
+                    <div class="party-slot party-slot--empty">
+                      <div class="party-slot-empty-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                          <circle cx="12" cy="8" r="4" />
+                          <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                        </svg>
+                      </div>
+                      <span class="party-slot-empty-label">Empty</span>
+                    </div>
+                  );
+                }
+
                 const hpInfo = parseHp(hero.hp);
                 const stressNum = Number(hero.stress);
                 const stressMax = Number(hero.maxStress || 200);
+                const showStatus = hero.isWounded || hero.isAfflicted;
+
                 return (
-                  <li class="surface-card stack">
-                    <div class="row">
-                      <label class="checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={hero.isSelected}
-                          onChange={() => props.onToggleHeroSelection(hero.id)}
-                          disabled={
-                            !hero.isSelected &&
-                            selectedCount() >= props.viewModel.maxPartySize
-                          }
-                        />
-                        <strong>{hero.name}</strong>
-                      </label>
-                      <span class="pill">{hero.classLabel}</span>
-                      <span class="pill">Lv {hero.level}</span>
-                      {hero.isWounded && (
-                        <span class="pill" style="color: #e8a838; border-color: rgba(232,168,56,0.3);">Wounded</span>
-                      )}
-                      {hero.isAfflicted && (
-                        <span class="pill" style="color: #ea7767; border-color: rgba(234,119,103,0.3);">Afflicted</span>
-                      )}
+                  <button
+                    class="party-slot party-slot--selected"
+                    onClick={() => props.onToggleHeroSelection(hero.id)}
+                    title={`Remove ${hero.name} from party`}
+                  >
+                    {/* Status badge */}
+                    {showStatus && (
+                      <span
+                        class={`party-slot-status ${
+                          hero.isAfflicted
+                            ? "party-slot-status--afflicted"
+                            : "party-slot-status--wounded"
+                        }`}
+                      >
+                        {hero.isAfflicted ? "A" : "W"}
+                      </span>
+                    )}
+                    {/* Level badge */}
+                    <span class="party-slot-level">Lv{hero.level}</span>
+                    {/* Portrait */}
+                    <div class="party-slot-portrait">
+                      <span class="party-slot-initial">{hero.classLabel[0]}</span>
                     </div>
-                    <div class="stack">
-                      <div class="bar-row">
-                        <span class="stat-label">HP</span>
-                        <span class={`stat-value ${healthTextClass(hero.hp)}`}>
-                          {hpInfo.current} / {hpInfo.max}
-                        </span>
-                        <div class="bar-container">
+                    {/* Name */}
+                    <span class="party-slot-name">{hero.name}</span>
+                    <span class="party-slot-class">{hero.classLabel}</span>
+                    {/* Bars */}
+                    <div class="party-slot-bars">
+                      <div class="party-slot-bar-row">
+                        <div class="party-slot-bar-label">HP</div>
+                        <div class="party-slot-bar-track">
                           <div
-                            class={healthBarClass(hero.hp)}
-                            style={{ width: `${healthPercent(hero.hp)}%` }}
+                            class="party-slot-bar-fill"
+                            style={{
+                              width: `${healthPercent(hero.hp)}%`,
+                              background: healthBarColor(hero.hp),
+                            }}
                           />
                         </div>
                       </div>
-                      <div class="bar-row">
-                        <span class="stat-label">Stress</span>
-                        <span class={`stat-value ${stressTextClass(hero.stress)}`}>
-                          {hero.stress} / {stressMax}
-                        </span>
-                        <div class="bar-container">
+                      <div class="party-slot-bar-row">
+                        <div class="party-slot-bar-label">ST</div>
+                        <div class="party-slot-bar-track">
                           <div
-                            class={stressBarClass(hero.stress)}
-                            style={{ width: `${stressPercent(hero.stress, hero.maxStress)}%` }}
+                            class="party-slot-bar-fill"
+                            style={{
+                              width: `${stressPercent(hero.stress, hero.maxStress)}%`,
+                              background: stressBarColor(hero.stress),
+                            }}
                           />
                         </div>
                       </div>
                     </div>
-                    <div class="row" style="gap: 6px; font-size: 0.82rem; color: var(--panel-muted);">
-                      <span>XP: {hero.xp}</span>
-                    </div>
-                  </li>
+                  </button>
                 );
-              })}
-            </ul>
-          </section>
-        </div>
+              }}
+            </For>
+          </div>
 
-        <div class="stack">
-          <section class="panel stack">
-            <h2 class="panel-title">Expedition Details</h2>
-            <div class="surface-card stack">
-              <div class="row">
-                <span class="stat-label">Expedition</span>
-                <span class="stat-value">{props.viewModel.expeditionLabel}</span>
-              </div>
-              <div class="row">
-                <span class="stat-label">Supply Level</span>
-                <span class="stat-value">{props.viewModel.supplyLevel}</span>
-              </div>
-              <div class="row">
-                <span class="stat-label">Provision Cost</span>
-                <span class="stat-value">{props.viewModel.provisionCost}</span>
-              </div>
-            </div>
-          </section>
-
-          <section class="panel stack">
-            <h2 class="panel-title">Summary</h2>
-            <div class="surface-card">
-              <p>{props.viewModel.expeditionSummary}</p>
-            </div>
-          </section>
-
-          <section class="panel stack">
-            <div class="surface-card stack">
-              <h3>Party Readiness</h3>
-              <div class="row">
-                <span class="stat-label">Selected</span>
-                <span class="stat-value">{selectedCount()} / {props.viewModel.maxPartySize}</span>
+          {/* Readiness state */}
+          {selectedCount() > 0 && (
+            <div class="readiness-panel">
+              <div class="readiness-stat">
+                <span class="readiness-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 12H4M12 4v16" />
+                  </svg>
+                </span>
+                <span class="readiness-label">Selected</span>
+                <span class="readiness-value">{selectedCount()} / {props.viewModel.maxPartySize}</span>
               </div>
               {woundedCount() > 0 && (
-                <div class="row">
-                  <span class="stat-label" style="color: #e8a838;">Wounded</span>
-                  <span class="stat-value" style="color: #e8a838;">{woundedCount()}</span>
+                <div class="readiness-stat">
+                  <span class="readiness-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M12 8v8M8 12h8" />
+                    </svg>
+                  </span>
+                  <span class="readiness-label">Wounded</span>
+                  <span class="readiness-value readiness-warning">{woundedCount()}</span>
                 </div>
               )}
               {afflictedCount() > 0 && (
-                <div class="row">
-                  <span class="stat-label" style="color: #ea7767;">Afflicted</span>
-                  <span class="stat-value" style="color: #ea7767;">{afflictedCount()}</span>
+                <div class="readiness-stat">
+                  <span class="readiness-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </span>
+                  <span class="readiness-label">Afflicted</span>
+                  <span class="readiness-value readiness-danger">{afflictedCount()}</span>
+                </div>
+              )}
+              {woundedCount() === 0 && afflictedCount() === 0 && selectedCount() > 0 && (
+                <div class="readiness-stat">
+                  <span class="readiness-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <path d="M22 4L12 14.01l-3-3" />
+                    </svg>
+                  </span>
+                  <span class="readiness-label">Ready</span>
+                  <span class="readiness-value readiness-ready">Party Fit</span>
                 </div>
               )}
             </div>
-          </section>
+          )}
 
-          <section class="panel stack">
-            <div class="row">
-              <button
-                class="action-secondary"
-                onClick={props.onReturnToTown}
-              >
-                Return to Town
-              </button>
-              <button
-                class="action-primary"
-                onClick={props.onConfirmProvisioning}
-                disabled={!props.viewModel.isReadyToLaunch}
-              >
-                {props.viewModel.isReadyToLaunch
-                  ? "Confirm & Launch Expedition"
-                  : "Select Party Members"}
-              </button>
+          {/* Available heroes (roster) */}
+          {unselectedHeroes().length > 0 && (
+            <div class="readiness-panel" style="flex-direction: column; gap: 8px; padding: 12px;">
+              <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--panel-muted); align-self: flex-start;">
+                Available Heroes
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
+                <For each={unselectedHeroes()}>
+                  {(hero) => {
+                    const hpInfo = parseHp(hero.hp);
+                    const stressNum = Number(hero.stress);
+                    const stressMax = Number(hero.maxStress || 200);
+                    const showStatus = hero.isWounded || hero.isAfflicted;
+
+                    return (
+                      <button
+                        class="party-slot"
+                        style="min-height: 140px; width: 120px;"
+                        onClick={() => props.onToggleHeroSelection(hero.id)}
+                        disabled={!hero.isSelected && isFull()}
+                        title={isFull() ? "Party is full" : `Add ${hero.name} to party`}
+                      >
+                        {/* Status badge */}
+                        {showStatus && (
+                          <span
+                            class={`party-slot-status ${
+                              hero.isAfflicted
+                                ? "party-slot-status--afflicted"
+                                : "party-slot-status--wounded"
+                            }`}
+                          >
+                            {hero.isAfflicted ? "A" : "W"}
+                          </span>
+                        )}
+                        <span class="party-slot-level">Lv{hero.level}</span>
+                        <div class="party-slot-portrait">
+                          <span class="party-slot-initial">{hero.classLabel[0]}</span>
+                        </div>
+                        <span class="party-slot-name">{hero.name}</span>
+                        <span class="party-slot-class">{hero.classLabel}</span>
+                        <div class="party-slot-bars">
+                          <div class="party-slot-bar-row">
+                            <div class="party-slot-bar-label">HP</div>
+                            <div class="party-slot-bar-track">
+                              <div
+                                class="party-slot-bar-fill"
+                                style={{
+                                  width: `${healthPercent(hero.hp)}%`,
+                                  background: healthBarColor(hero.hp),
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <div class="party-slot-bar-row">
+                            <div class="party-slot-bar-label">ST</div>
+                            <div class="party-slot-bar-track">
+                              <div
+                                class="party-slot-bar-fill"
+                                style={{
+                                  width: `${stressPercent(hero.stress, hero.maxStress)}%`,
+                                  background: stressBarColor(hero.stress),
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  }}
+                </For>
+              </div>
             </div>
-          </section>
+          )}
         </div>
-      </section>
-    </AppFrame>
+      </div>
+
+      {/* ── Bottom Controls ───────────────────────────────── */}
+      <footer class="expedition-controls">
+        <div class="expedition-controls-left">
+          <span class="hud-pill" style="font-size: 0.72rem;">
+            {props.viewModel.expeditionSummary}
+          </span>
+        </div>
+        <div class="expedition-controls-right">
+          <button class="action-secondary" onClick={props.onReturnToTown}>
+            Return to Town
+          </button>
+          <button
+            class="action-primary"
+            onClick={props.onConfirmProvisioning}
+            disabled={!props.viewModel.isReadyToLaunch}
+          >
+            {props.viewModel.isReadyToLaunch
+              ? "Confirm & Launch Expedition"
+              : "Select Party Members"}
+          </button>
+        </div>
+      </footer>
+    </div>
   );
 };

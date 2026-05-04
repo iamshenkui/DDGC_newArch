@@ -1,14 +1,19 @@
-import type { Component } from "solid-js";
+import { For, type Component } from "solid-js";
 
 import type { ExpeditionResultViewModel } from "../../bridge/contractTypes";
-import { AppFrame } from "../../components/layout/AppFrame";
 
 interface ResultScreenProps {
   viewModel: ExpeditionResultViewModel;
   onContinue: () => void;
-  onReturnToTown?: () => void;
 }
 
+/**
+ * Expedition result screen — landscape viewport layout.
+ *
+ * Displays expedition outcome with hero outcomes, loot, and resources gained.
+ * References original Unity prefab structure from:
+ *   Assets/Prefabs/UI/ExpeditionResultWindow.prefab (estimated)
+ */
 export const ResultScreen: Component<ResultScreenProps> = (props) => {
   const outcomeLabel = () => {
     switch (props.viewModel.outcome) {
@@ -21,32 +26,32 @@ export const ResultScreen: Component<ResultScreenProps> = (props) => {
     }
   };
 
-  const outcomeClass = () => {
+  const outcomeBannerClass = () => {
     switch (props.viewModel.outcome) {
       case "success":
-        return "outcome-success";
+        return "outcome-banner outcome-banner--success";
       case "failure":
-        return "outcome-failure";
+        return "outcome-banner outcome-banner--failure";
       case "partial":
-        return "outcome-partial";
+        return "outcome-banner outcome-banner--partial";
     }
   };
 
-  const heroStatusClass = (status: string) => {
+  const heroOutcomeStatusClass = (status: string) => {
     switch (status) {
       case "dead":
-        return "text-danger";
+        return "hero-outcome-status--dead";
       case "stressed":
-        return "text-warning";
+        return "hero-outcome-status--stressed";
       default:
-        return "text-good";
+        return "hero-outcome-status--alive";
     }
   };
 
-  const heroStatusLabel = (status: string) => {
+  const heroOutcomeStatusLabel = (status: string) => {
     switch (status) {
       case "dead":
-        return "DECEASED";
+        return "Deceased";
       case "stressed":
         return "Stressed";
       default:
@@ -54,142 +59,144 @@ export const ResultScreen: Component<ResultScreenProps> = (props) => {
     }
   };
 
-  const heroCardClass = (status: string) => {
-    return status === "dead" ? "surface-card dead-hero" : "surface-card";
+  const heroCardExtraClass = (status: string) => {
+    return status === "dead" ? "hero-outcome-card hero-outcome-card--dead" : "hero-outcome-card";
   };
-
-  const isFailure = () => props.viewModel.outcome === "failure";
-  const isPartial = () => props.viewModel.outcome === "partial";
 
   const heroHasCasualties = () =>
     props.viewModel.heroOutcomes.some((h) => h.status === "dead");
 
+  const isFailure = () => props.viewModel.outcome === "failure";
+  const isPartial = () => props.viewModel.outcome === "partial";
+
   return (
-    <AppFrame
-      eyebrow="Expedition Complete"
-      title={props.viewModel.title}
-      subtitle={`Outcome: ${outcomeLabel()}`}
-    >
-      <section class="grid">
-        <div class="stack">
-          <section class="panel stack">
-            <div class="row">
-              <span class="pill">Flow: result</span>
-              <span class={`pill ${outcomeClass()}`}>{outcomeLabel()}</span>
-            </div>
-            <div class="surface-card stack">
-              <h3>{props.viewModel.expeditionName}</h3>
-              <p>{props.viewModel.summary}</p>
-              {isFailure() && (
-                <p class="danger" style="margin-top: 4px;">
-                  The expedition has ended in defeat. Prepare your remaining forces before venturing forth again.
-                </p>
-              )}
-              {isPartial() && (
-                <p style="color: #e8a838; margin-top: 4px;">
-                  The expedition achieved partial objectives. Tend to your heroes before the next venture.
-                </p>
-              )}
-              {!isFailure() && !isPartial() && (
-                <p style="color: #5bbd6e; margin-top: 4px;">
-                  The expedition concluded successfully. Your heroes stand ready for the next challenge.
-                </p>
-              )}
-            </div>
-          </section>
+    <div class="expedition-viewport">
+      {/* ── Top HUD ─────────────────────────────────────── */}
+      <header class="expedition-hud">
+        <span class="expedition-hud-left">
+          <span class="eyebrow">Expedition Complete</span>
+          <h1 class="expedition-title">{props.viewModel.title}</h1>
+        </span>
+        <span class="expedition-hud-center">
+          <span class="hud-pill hud-pill-accent">{props.viewModel.expeditionName}</span>
+        </span>
+      </header>
 
-          <section class="panel stack">
-            <h2 class="panel-title">Hero Outcomes</h2>
-            <ul class="list-reset">
-              {props.viewModel.heroOutcomes.map((hero) => (
-                <li class={heroCardClass(hero.status)}>
-                  <div class="row">
-                    <strong>{hero.heroName}</strong>
-                    <span class={`pill ${heroStatusClass(hero.status)}`}>
-                      {heroStatusLabel(hero.status)}
-                    </span>
-                    {hero.status === "dead" && (
-                      <span class="pill" style="background: rgba(234,119,103,0.25); border-color: #ea7767; color: #ea7767;">
-                        LOST
-                      </span>
-                    )}
-                  </div>
-                  <div class="row">
-                    <span class="stat-label">HP</span>
-                    <span class={`stat-value ${hero.status === "dead" ? "text-danger" : ""}`}>
-                      {hero.status === "dead" ? "--" : hero.hpChange}
-                    </span>
-                    <span class="stat-label">Stress</span>
-                    <span class={`stat-value ${hero.status === "dead" ? "text-danger" : ""}`}>
-                      {hero.status === "dead" ? "--" : hero.stressChange}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
+      {/* ── Game Surface ─────────────────────────────────── */}
+      <div class="expedition-surface">
+        <div class="expedition-surface-bg" />
+        <div class="expedition-surface-mist" />
 
-          {props.viewModel.lootAcquired.length > 0 && (
-            <section class="panel stack">
-              <h2 class="panel-title">Loot Acquired</h2>
-              <ul class="list-reset">
-                {props.viewModel.lootAcquired.map((item) => (
-                  <li class="surface-card">
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-        </div>
+        <div class="expedition-content">
+          {/* Outcome banner */}
+          <div class={outcomeBannerClass()}>
+            <h2 class="outcome-banner-title">{outcomeLabel()}</h2>
+            <p class="outcome-banner-subtitle">{props.viewModel.summary}</p>
+            {isFailure() && (
+              <p class="outcome-banner-summary" style="color: #ea7767;">
+                The expedition has ended in defeat. Prepare your remaining forces before venturing forth again.
+              </p>
+            )}
+            {isPartial() && (
+              <p class="outcome-banner-summary" style="color: #e8a838;">
+                The expedition achieved partial objectives. Tend to your heroes before the next venture.
+              </p>
+            )}
+            {!isFailure() && !isPartial() && (
+              <p class="outcome-banner-summary" style="color: #5bbd6e;">
+                The expedition concluded successfully. Your heroes stand ready for the next challenge.
+              </p>
+            )}
+          </div>
 
-        <div class="stack">
-          <section class="panel stack">
-            <h2 class="panel-title">Resources Gained</h2>
-            <div class="surface-card stack">
-              <div class="row">
-                <span class="stat-label">Gold</span>
-                <span class="stat-value">+{props.viewModel.resourcesGained.gold}</span>
-              </div>
-              <div class="row">
-                <span class="stat-label">Supplies</span>
-                <span class="stat-value">+{props.viewModel.resourcesGained.supplies}</span>
-              </div>
-              <div class="row">
-                <span class="stat-label">Experience</span>
-                <span class="stat-value">+{props.viewModel.resourcesGained.experience}</span>
-              </div>
-            </div>
-          </section>
-
-          <section class="panel stack">
-            <div class="stack">
-              {heroHasCasualties() && (
-                <div class="surface-card" style="border-color: rgba(234,119,103,0.3);">
-                  <p class="danger" style="margin: 0;">
-                    <strong>Casualties sustained.</strong> Some heroes did not return. Visit the Stagecoach to recruit new party members.
-                  </p>
+          {/* Hero outcomes */}
+          <div class="hero-outcome-row">
+            <For each={props.viewModel.heroOutcomes}>
+              {(hero) => (
+                <div class={heroCardExtraClass(hero.status)}>
+                  <div class="hero-outcome-name">{hero.heroName}</div>
+                  <span class={`hero-outcome-status ${heroOutcomeStatusClass(hero.status)}`}>
+                    {heroOutcomeStatusLabel(hero.status)}
+                  </span>
+                  {hero.status !== "dead" && (
+                    <div class="hero-outcome-changes">
+                      <div class="hero-outcome-change">
+                        <span class="hero-outcome-change-label">HP</span>
+                        <span style={hero.hpChange.startsWith("-") ? "color: #ea7767;" : "color: #5bbd6e;"}>
+                          {hero.hpChange}
+                        </span>
+                      </div>
+                      <div class="hero-outcome-change">
+                        <span class="hero-outcome-change-label">Stress</span>
+                        <span style={hero.stressChange.startsWith("+") ? "color: #e8a838;" : "color: #5bbd6e;"}>
+                          {hero.stressChange}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
-              <button
-                class="action-primary"
-                onClick={props.onContinue}
-                disabled={!props.viewModel.isContinueAvailable}
-              >
-                Continue to Town
-              </button>
-              {props.onReturnToTown && (
-                <button
-                  class="action-secondary"
-                  onClick={props.onReturnToTown}
-                >
-                  Return to Town (Fallback)
-                </button>
-              )}
+            </For>
+          </div>
+
+          {/* Resources gained */}
+          <div class="resources-panel">
+            <div class="resource-item">
+              <span class="resource-label">Gold</span>
+              <span class="resource-value resource-value--positive">
+                +{props.viewModel.resourcesGained.gold}
+              </span>
             </div>
-          </section>
+            <div class="resource-item">
+              <span class="resource-label">Supplies</span>
+              <span class={`resource-value ${props.viewModel.resourcesGained.supplies >= 0 ? "resource-value--positive" : "resource-value--negative"}`}>
+                {props.viewModel.resourcesGained.supplies >= 0 ? "+" : ""}{props.viewModel.resourcesGained.supplies}
+              </span>
+            </div>
+            <div class="resource-item">
+              <span class="resource-label">Experience</span>
+              <span class="resource-value resource-value--positive">
+                +{props.viewModel.resourcesGained.experience}
+              </span>
+            </div>
+          </div>
+
+          {/* Loot */}
+          {props.viewModel.lootAcquired.length > 0 && (
+            <div class="loot-panel">
+              <div class="loot-title">Loot Acquired</div>
+              <For each={props.viewModel.lootAcquired}>
+                {(item) => (
+                  <div class="loot-item">{item}</div>
+                )}
+              </For>
+            </div>
+          )}
+
+          {/* Casualty warning */}
+          {heroHasCasualties() && (
+            <div class="details-overlay" style="border-color: rgba(234, 119, 103, 0.3);">
+              <p style="margin: 0; color: #ea7767; font-size: 0.78rem;">
+                <strong>Casualties sustained.</strong> Some heroes did not return. Visit the Stagecoach to recruit new party members.
+              </p>
+            </div>
+          )}
         </div>
-      </section>
-    </AppFrame>
+      </div>
+
+      {/* ── Bottom Controls ───────────────────────────────── */}
+      <footer class="expedition-controls">
+        <div class="expedition-controls-left" />
+        <div class="expedition-controls-right">
+          <button
+            class="action-primary"
+            onClick={props.onContinue}
+            disabled={!props.viewModel.isContinueAvailable}
+          >
+            Continue to Town
+          </button>
+        </div>
+      </footer>
+    </div>
   );
 };
