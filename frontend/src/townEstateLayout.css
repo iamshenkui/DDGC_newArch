@@ -319,9 +319,28 @@
   margin-top: 0.18rem;
 }
 
+.estate-roster-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.estate-roster-bar-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: rgba(219, 206, 180, 0.7);
+  letter-spacing: 0.04em;
+  min-width: 1.1rem;
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.estate-roster-bar-label--stress {
+  color: rgba(232, 168, 56, 0.6);
+}
+
 .estate-mini-bar {
-  position: relative;
-  display: block;
+  flex: 1;
   height: 0.35rem;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.08);

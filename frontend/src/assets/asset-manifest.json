@@ -1,8 +1,8 @@
 {
   "manifest_version": "1.0.0",
-  "task": "UIR-004",
+  "task": "UIR-006",
   "title": "DDGC Unity Original Asset Manifest",
-  "description": "Maps original Unity assets and GUIDs to frontend usage for DDGC heroes, buildings, items, provisions, icons, and UI chrome.",
+  "description": "Maps original Unity assets and GUIDs to frontend usage for DDGC heroes, buildings, items, provisions, icons, and UI chrome. Updated for UIR-006: CharacterWindow prefab hierarchy now annotated on HeroDetailScreen; HeroSlot prefab hierarchy annotated on TownShellScreen roster.",
   "source_root": "DreamDeveloperGame-Crossover/Assets",
   "inventory_anchor": "fixtures/ui_inventory/index.json",
   "inventory_targets": 28,
@@ -400,13 +400,13 @@
           "asset_path": "Assets/Sprites/ui/hero_slot_bg.png",
           "guid": "49065c5846da2b748b14239778162e06",
           "frontend_usage": "Hero roster display in TownShellScreen, HeroDetailScreen",
-          "inventory_status": "confirmed"
+          "frontend_status": "CSS estate-roster-hero background; original PNG not in repository (BLOCKER-001)"
         },
         "hero_slot_background_highlight": {
           "asset_path": "Assets/Resources/Sprites/hero_slot.backgroundhightlight.png",
-          "guid": null,
-          "frontend_usage": "Hero slot selection highlight",
-          "inventory_status": "confirmed"
+          "guid": "cb4b27e020186bf48bb8127e497c402e",
+          "frontend_usage": "HeroSlot Frame child background (TownShellScreen roster)",
+          "frontend_status": "Referenced via data-source-sprite attribute; original PNG not in repository (BLOCKER-001)"
         },
         "hero_slot_locked_icon": {
           "asset_path": "Assets/Resources/Sprites/hero_slot.locked_icon.png",
@@ -501,7 +501,14 @@
         "head_frame02": {
           "asset_path": "Assets/Sprites/ui/head_frame02.png",
           "guid": null,
-          "inventory_status": "confirmed"
+          "frontend_usage": "CharacterWindow portrait frame decoration (HeroDetailScreen)",
+          "frontend_status": "CSS hero-portrait-frame border used instead; original PNG not in repository"
+        },
+        "item_slot": {
+          "asset_path": "Assets/Sprites/ui/item_slot.png",
+          "guid": null,
+          "frontend_usage": "EquipmentPanel weapon/armor/trinket slot backgrounds (HeroDetailScreen)",
+          "frontend_status": "CSS equipment-slot border used instead; original PNG not in repository"
         },
         "lowwindow_bg": {
           "asset_path": "Assets/Sprites/lowwindow_bg.png",
@@ -732,7 +739,12 @@
       "items": [
         {
           "item": "hero_portrait_full_enumeration",
-          "reason": "Each of 5 hero families x 3 variants has a portrait sprite. Path pattern is known: Assets/Resources/Data/Heroes/Sprites/{class}/{variant}/{class}_portrait_roster.png. Full extraction deferred.",
+          "reason": "Each of 5 hero families x 3 variants has a portrait sprite. Path pattern is known: Assets/Resources/Data/Heroes/Sprites/{class}/{variant}/{class}_portrait_roster.png. Hunters extracted and used via resolveHeroPortrait(); alchemist, diviner, shaman, tank families deferred (BLOCKER-001).",
+          "blocker": false
+        },
+        {
+          "item": "stress_pip_sprites",
+          "reason": "Three stress pip sprites (stress.normal.png GUID 3dc25943c0f55ea419840972b6121378, stress.stressed.png GUID 1a507a3513cc72c459c9ebd1b534a1e0, stress.overstressed.png GUID bc794be09ac80f04e812cdc62375b076) are referenced by CharacterWindow StressPanel. HeroDetailScreen uses CSS pip fallback. Extraction deferred pending PNG sprite availability.",
           "blocker": false
         },
         {
@@ -807,6 +819,43 @@
         "result": "screens/expedition/ResultScreen.tsx",
         "return": "screens/expedition/ReturnScreen.tsx"
       }
+    },
+    "uir_006_completed": {
+      "description": "UIR-006: Roster and hero detail UI migrated to use Unity prefab hierarchy references and game-style panels.",
+      "changes": [
+        {
+          "target": "screens/town/HeroDetailScreen.tsx",
+          "change": "Added data-source-prefab/data-source-component/data-source-hierarchy annotations mirroring CharacterWindow.prefab structure (StressPanel, ModelDisplayPanel, EquipmentPanel, CombatSkillsPanel, InfoPanel, CampingSkillsPanel, CloseButton). Restructured tabs to match Unity order: Equip, Combat Skills, State, Info, Camping Skills. Added data-source-component mappings for all child components.",
+          "prefab_source": "Assets/Prefabs/UI/Windows/CharacterWindow.prefab"
+        },
+        {
+          "target": "screens/town/TownShellScreen.tsx",
+          "change": "Added data-source-hierarchy annotations mirroring HeroSlot.prefab child hierarchy (Frame, HeroLabel). Added HP/ST labels to roster mini-bars. Added data-source-component=TownHeroSlot and data-source-sprite references for hero_slot.backgroundhightlight.png.",
+          "prefab_source": "Assets/Prefabs/UI/HeroSlot.prefab"
+        },
+        {
+          "target": "frontend/src/styles.css",
+          "change": "Enhanced hero detail styles with CharacterWindow-aligned panel decorations (hero-portrait-frame::after border, equipment slot variants for weapon/armor/trinket, enhanced stress pip shadows, improved layout documentation comments)."
+        },
+        {
+          "target": "frontend/src/townEstateLayout.css",
+          "change": "Added estate-roster-bar-row and estate-roster-bar-label classes for HP/ST labels alongside roster mini-bars."
+        },
+        {
+          "target": "frontend/src/assets/asset-manifest.json",
+          "change": "Documented hero portrait extraction status (hunter=present, others=deferred), stress pip sprite deferral, item_slot.png and head_frame02.png as deferred. Added ui_chrome frontend_status fields."
+        }
+      ],
+      "available_assets": {
+        "hunter_portraits": "3 variants (base/white/black) extracted and used by resolveHeroPortrait()",
+        "building_sprites": "All 6 scoped building sprites extracted and used"
+      },
+      "deferred_assets": {
+        "non_hunter_portraits": "Alchemist, Diviner, Shaman, Tank families (12 PNGs) — deferred per BLOCKER-001",
+        "stress_pip_sprites": "3 stress.normal/stressed/overstressed PNGs — CSS fallback used",
+        "hero_slot_bg": "hero_slot.backgroundhightlight.png — CSS fallback used",
+        "item_slot_png": "item_slot.png for equipment backgrounds — CSS fallback used"
+      }
     }
   },
 
@@ -831,9 +880,10 @@
       "BLOCKER-003: GUID-to-asset-path resolution requires Unity source project",
       "BLOCKER-004: Menu background and button PNG sprites not extracted (new)"
     ],
-    "deferred_items": 8,
+    "deferred_items": 9,
     "deferred_topics": [
       "hero_portrait_full_enumeration (non-hunter families)",
+      "stress_pip_sprites (3 PNGs — CSS fallback on HeroDetailScreen)",
       "trinket_icon_full_enumeration",
       "provision_icon_full_enumeration",
       "camping_skill_icons",
@@ -843,6 +893,7 @@
       "original_font_extraction"
     ],
     "blocker_summary": "Original Unity .png/.asset files are not in repository. Spine runtime integration is not configured. GUID resolution requires manual path mapping. Menu background and button art sprites are not extracted (BLOCKER-004).",
-    "next_action": "Extract required .png sprites from DreamDeveloperGame-Crossover project into frontend/public/original/. Configure Spine web runtime for hero character rendering. Prioritize menu background/button sprites for StartupScreen parity."
+    "next_action": "Extract required .png sprites from DreamDeveloperGame-Crossover project into frontend/public/original/. Configure Spine web runtime for hero character rendering. Prioritize menu background/button sprites for StartupScreen parity.",
+    "uir_006_complete": "Roster and hero detail screens now have full prefab hierarchy annotations (HeroSlot/CharacterWindow), game-style panel styling with HP/ST labels, 5-tab layout matching Unity tab order, and documented missing asset paths."
   }
 }

@@ -287,9 +287,11 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                   class="roster-hero estate-roster-hero"
                   onClick={() => props.onOpenHero(hero.id)}
                   data-source-prefab="Assets/Prefabs/UI/HeroSlot.prefab"
+                  data-source-hierarchy="HeroSlot"
+                  data-source-component="TownHeroSlot"
                 >
-                  <div class="roster-hero-portrait estate-roster-portrait">
-                    <div class="roster-portrait-frame estate-roster-frame" />
+                  <div class="roster-hero-portrait estate-roster-portrait" data-source-hierarchy="HeroSlot/Frame">
+                    <div class="roster-portrait-frame estate-roster-frame" data-source-sprite="Assets/Resources/Sprites/hero_slot.backgroundhightlight.png" />
                     {portraitSrc ? (
                       <img
                         class="roster-portrait-image"
@@ -307,16 +309,22 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                       <span class="roster-portrait-status">{hero.isAfflicted ? "A" : "W"}</span>
                     )}
                   </div>
-                  <div class="estate-roster-meta">
+                  <div class="estate-roster-meta" data-source-hierarchy="HeroSlot/HeroLabel">
                     <span class="roster-hero-name">{hero.name}</span>
                     <span class="roster-hero-class">{hero.classLabel}</span>
                     <div class="estate-roster-bars">
-                      <span class="estate-mini-bar">
-                        <span class="estate-mini-bar-fill" style={{ width: `${healthPercent(hero)}%`, background: healthBarColor(hero) }} />
-                      </span>
-                      <span class="estate-mini-bar estate-mini-bar-stress">
-                        <span class="estate-mini-bar-fill" style={{ width: `${stressPercent(hero)}%`, background: stressBarColor(hero) }} />
-                      </span>
+                      <div class="estate-roster-bar-row">
+                        <span class="estate-roster-bar-label">HP</span>
+                        <span class="estate-mini-bar">
+                          <span class="estate-mini-bar-fill" style={{ width: `${healthPercent(hero)}%`, background: healthBarColor(hero) }} />
+                        </span>
+                      </div>
+                      <div class="estate-roster-bar-row">
+                        <span class="estate-roster-bar-label estate-roster-bar-label--stress">ST</span>
+                        <span class="estate-mini-bar estate-mini-bar-stress">
+                          <span class="estate-mini-bar-fill" style={{ width: `${stressPercent(hero)}%`, background: stressBarColor(hero) }} />
+                        </span>
+                      </div>
                     </div>
                     <span class="estate-roster-stats">HP {hp.current}/{hp.max} · ST {hero.stress}/{hero.maxStress}</span>
                   </div>
