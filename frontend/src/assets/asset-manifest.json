@@ -894,6 +894,49 @@
     ],
     "blocker_summary": "Original Unity .png/.asset files are not in repository. Spine runtime integration is not configured. GUID resolution requires manual path mapping. Menu background and button art sprites are not extracted (BLOCKER-004).",
     "next_action": "Extract required .png sprites from DreamDeveloperGame-Crossover project into frontend/public/original/. Configure Spine web runtime for hero character rendering. Prioritize menu background/button sprites for StartupScreen parity.",
-    "uir_006_complete": "Roster and hero detail screens now have full prefab hierarchy annotations (HeroSlot/CharacterWindow), game-style panel styling with HP/ST labels, 5-tab layout matching Unity tab order, and documented missing asset paths."
+    "uir_006_complete": "Roster and hero detail screens now have full prefab hierarchy annotations (HeroSlot/CharacterWindow), game-style panel styling with HP/ST labels, 5-tab layout matching Unity tab order, and documented missing asset paths.",
+    "uir_007_complete": {
+      "description": "UIR-007: Town building UI migrated with original building sprites and Unity prefab hierarchy references.",
+      "changes": [
+        {
+          "target": "frontend/src/screens/town/buildings/BuildingDetailHeader.tsx",
+          "change": "New shared building detail header component that renders the original building sprite at 8rem size with building name, status badge, and description. Annotated with data-source-prefab/data-source-hierarchy/data-source-component/data-source-sprite/data-source-guid attributes mirroring Unity {Building}Window/LeftPanel/Icon + Title hierarchy."
+        },
+        {
+          "target": "frontend/src/screens/town/BuildingDetailScreen.tsx",
+          "change": "Rewritten from generic AppFrame cards to building-detail layout with BuildingDetailHeader, info cards in left panel, action sections in right panel, and building-return-row footer. Includes prefab mappings for market, graveyard, abbey, and tavern with their sprite paths and GUIDs."
+        },
+        {
+          "target": "frontend/src/screens/town/buildings/StagecoachBuildingScreen.tsx",
+          "change": "Rewritten with BuildingDetailHeader (StageCoachWindow prefab ref), left info card showing status/level/requirements, right panel with Recruitment and Upgrades action sections. All actions preserve cost/availability/unsupported handling."
+        },
+        {
+          "target": "frontend/src/screens/town/buildings/GuildBuildingScreen.tsx",
+          "change": "Rewritten with BuildingDetailHeader (GuildWindow prefab ref), left info card, right panel with Skill Training (SkillUpgradeSlot prefab ref), Equipment Upgrades (UpgradeSlot prefab ref), and Other Services sections."
+        },
+        {
+          "target": "frontend/src/screens/town/buildings/BlacksmithBuildingScreen.tsx",
+          "change": "Rewritten with BuildingDetailHeader (BlacksmithWindow prefab ref), left info card, right panel with Weapon Upgrades and Armor Upgrades (EquipmentUpgradeSlot prefab refs), and Other Services sections."
+        },
+        {
+          "target": "frontend/src/screens/town/buildings/SanitariumBuildingScreen.tsx",
+          "change": "Rewritten with BuildingDetailHeader (SanitariumWindow prefab ref), left info card, right panel with Quirk Treatment (TreatmentHeroSlot prefab ref), Disease Treatment, and Facility Upgrades sections."
+        },
+        {
+          "target": "frontend/src/townEstateLayout.css",
+          "change": "Added complete building detail CSS module: building-detail-header/sprite/name/status/desc styles, building-detail-content grid (1fr 1.2fr), building-action-section/card/header/footer, action buttons (primary/secondary/disabled), action pills (unsupported/unavailable/info), building-return-row/btn, and building-info-card/row styles. Responsive breakpoint at 920px collapses to single column."
+        },
+        {
+          "target": "frontend/src/assets/asset-manifest.json",
+          "change": "Documented UIR-007 building screen changes, prefab references, and sprite paths."
+        }
+      ],
+      "available_assets": {
+        "building_sprites": "All 6 scoped building sprites in frontend/public/original/buildings/ — used by BuildingDetailHeader in all building detail screens."
+      },
+      "deferred_assets": {
+        "non_scoped_buildings": "Market, graveyard, museum, provisioner, sanctuary, inn — have no dedicated building screen components; fall through to generic BuildingDetailScreen which shows placeholder icon for missing sprites."
+      }
+    }
   }
 }

@@ -1,7 +1,7 @@
-import type { Component } from "solid-js";
+import { For, type Component } from "solid-js";
 
 import type { BuildingDetailViewModel } from "../../../bridge/contractTypes";
-import { AppFrame } from "../../../components/layout/AppFrame";
+import { BuildingDetailHeader } from "./BuildingDetailHeader";
 
 interface BlacksmithBuildingScreenProps {
   viewModel: BuildingDetailViewModel;
@@ -9,210 +9,256 @@ interface BlacksmithBuildingScreenProps {
   onAction: (actionId: string) => void;
 }
 
-const statusLabel: Record<string, string> = {
-  ready: "Operational",
-  partial: "Partially Available",
-  locked: "Locked",
-};
-
-const statusClass: Record<string, string> = {
-  ready: "status-ready",
-  partial: "status-partial",
-  locked: "status-locked",
-};
-
+/**
+ * Blacksmith (锻造舱) building screen.
+ *
+ * Mirrors Unity prefab:
+ *   Assets/Prefabs/UI/Estate/Buildings/Blacksmith/BlacksmithWindow.prefab
+ *
+ * Original sprite: Assets/Sprites/town/buildings/building_forging.png
+ * GUID: 23e01c10f262ddc4ba9977b91314b031
+ *
+ * Related prefabs:
+ *   Assets/Prefabs/UI/EquipmentUpgradeSlot.prefab  — weapon/armor upgrade slots
+ *   Assets/Prefabs/UI/UpgradeSlot.prefab           — general upgrade slots
+ *
+ * Building data (data/Buildings.json):
+ *   blacksmith_weapon  — weapon upgrade tree
+ *   blacksmith_armor   — armor upgrade tree
+ */
 export const BlacksmithBuildingScreen: Component<BlacksmithBuildingScreenProps> = (props) => {
   const vm = () => props.viewModel;
+
   const weaponActions = () => vm().actions.filter((a) => a.id.includes("weapon"));
   const armorActions = () => vm().actions.filter((a) => a.id.includes("armor"));
-  const otherActions = () => vm().actions.filter(
-    (a) => !a.id.includes("weapon") && !a.id.includes("armor")
-  );
+  const otherActions = () =>
+    vm().actions.filter((a) => !a.id.includes("weapon") && !a.id.includes("armor"));
 
   return (
-    <AppFrame
-      eyebrow="Building — Blacksmith"
-      title={vm().label}
-      subtitle="Forge and upgrade weapons and armor for your heroes"
-    >
-      <div class="grid">
-        <div class="stack">
-          <section class="panel stack">
-            <h2 class="panel-title">Building Status</h2>
-            <div class="surface-card stack">
-              <div class="row">
-                <span class="stat-label">Status</span>
-                <span class={`stat-value ${statusClass[vm().status]}`}>
-                  {statusLabel[vm().status]}
-                </span>
-              </div>
-              {vm().currentUpgrade && (
-                <div class="row">
-                  <span class="stat-label">Forge Level</span>
-                  <span class="stat-value">{vm().currentUpgrade}</span>
-                </div>
-              )}
-            </div>
-          </section>
+    <div class="app-frame" data-source-scene="Assets/Scenes/EstateManagement.unity">
+      {/* ── Building Header — mirrors BlacksmithWindow/LeftPanel/Icon + Title ── */}
+      <BuildingDetailHeader
+        buildingId="blacksmith"
+        label={vm().label}
+        status={vm().status}
+        description={vm().description}
+        sourcePrefabPath="Assets/Prefabs/UI/Estate/Buildings/Blacksmith/BlacksmithWindow.prefab"
+        sourceSpritePath="Assets/Sprites/town/buildings/building_forging.png"
+        sourceGuid="23e01c10f262ddc4ba9977b91314b031"
+      />
 
-          <section class="panel stack">
-            <h2 class="panel-title">Description</h2>
-            <div class="surface-card">
-              <p>{vm().description}</p>
+      {/* ── Content — mirrors BlacksmithWindow LeftPanel + RightPanel ── */}
+      <div class="building-detail-content">
+        {/* Left Panel — mirrors BlacksmithWindow/LeftPanel */}
+        <div
+          class="building-detail-left"
+          data-source-hierarchy="BlacksmithWindow/LeftPanel"
+        >
+          <div class="building-info-card">
+            <h3 class="building-info-card-title">Building Status</h3>
+            <div class="building-info-row">
+              <span class="building-info-label">Status</span>
+              <span class="building-info-value">{vm().status === "ready" ? "Operational" : vm().status === "partial" ? "Partially Available" : "Locked"}</span>
             </div>
-          </section>
+            {vm().currentUpgrade && (
+              <div class="building-info-row">
+                <span class="building-info-label">Forge Level</span>
+                <span class="building-info-value">{vm().currentUpgrade}</span>
+              </div>
+            )}
+            {vm().upgradeRequirement && (
+              <div class="building-info-row">
+                <span class="building-info-label">Requirement</span>
+                <span class="building-info-value">{vm().upgradeRequirement}</span>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div class="stack">
+        {/* Right Panel / Actions — mirrors BlacksmithWindow/RightPanel/UpgradeWindow */}
+        <div
+          class="building-detail-right"
+          data-source-hierarchy="BlacksmithWindow/RightPanel/UpgradeWindow"
+        >
+          {/* Weapon Upgrades — mirrors EquipmentUpgradeSlot */}
           {weaponActions().length > 0 && (
-            <section class="panel stack">
-              <h2 class="panel-title">Weapon Upgrades</h2>
-              <ul class="list-reset">
-                {weaponActions().map((action) => (
-                  <li class="surface-card stack">
-                    <div class="row">
-                      <strong class="action-label">{action.label}</strong>
+            <div class="building-action-section">
+              <h3 class="building-action-section-title">Weapon Upgrades</h3>
+              <For each={weaponActions()}>
+                {(action) => (
+                  <div
+                    class="building-action-card"
+                    data-source-prefab="Assets/Prefabs/UI/EquipmentUpgradeSlot.prefab"
+                    data-source-component="EquipmentUpgradeSlot"
+                  >
+                    <div class="building-action-card-header">
+                      <span class="building-action-label">{action.label}</span>
                       {action.isUnsupported && (
-                        <span class="pill pill-error">Unsupported</span>
+                        <span class="building-action-pill building-action-pill--unsupported">
+                          Unsupported
+                        </span>
                       )}
                       {!action.isAvailable && !action.isUnsupported && (
-                        <span class="pill pill-warning">Unavailable</span>
+                        <span class="building-action-pill building-action-pill--unavailable">
+                          Unavailable
+                        </span>
                       )}
                     </div>
-                    <p>{action.description}</p>
-                    <div class="row">
-                      <span class="stat-label">Cost</span>
-                      <span class="stat-value action-cost">{action.cost}</span>
-                    </div>
-                    <div class="row">
+                    <p class="building-action-desc">{action.description}</p>
+                    <div class="building-action-footer">
+                      <span class={`building-action-cost ${!action.isAvailable ? "building-action-cost-unavailable" : ""}`}>
+                        Cost: <strong>{action.cost}</strong>
+                      </span>
                       {action.isUnsupported ? (
-                        <button class="action-secondary" disabled>
+                        <button class="building-action-btn building-action-btn--disabled" disabled>
                           Not Available
                         </button>
                       ) : action.isAvailable ? (
                         <button
-                          class="action-primary"
+                          class="building-action-btn building-action-btn--primary"
                           onClick={() => props.onAction(action.id)}
                         >
                           {action.label}
                         </button>
                       ) : (
-                        <div class="stack">
-                          <button class="action-secondary" disabled>
+                        <div style="display:flex;gap:0.5rem;align-items:center;">
+                          <button class="building-action-btn building-action-btn--disabled" disabled>
                             Prerequisites Not Met
                           </button>
                           {vm().upgradeRequirement && (
-                            <span class="pill pill-info">{vm().upgradeRequirement}</span>
+                            <span class="building-action-pill building-action-pill--info">
+                              {vm().upgradeRequirement}
+                            </span>
                           )}
                         </div>
                       )}
                     </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
+                  </div>
+                )}
+              </For>
+            </div>
           )}
 
+          {/* Armor Upgrades — mirrors EquipmentUpgradeSlot */}
           {armorActions().length > 0 && (
-            <section class="panel stack">
-              <h2 class="panel-title">Armor Upgrades</h2>
-              <ul class="list-reset">
-                {armorActions().map((action) => (
-                  <li class="surface-card stack">
-                    <div class="row">
-                      <strong class="action-label">{action.label}</strong>
+            <div class="building-action-section">
+              <h3 class="building-action-section-title">Armor Upgrades</h3>
+              <For each={armorActions()}>
+                {(action) => (
+                  <div
+                    class="building-action-card"
+                    data-source-prefab="Assets/Prefabs/UI/EquipmentUpgradeSlot.prefab"
+                    data-source-component="EquipmentUpgradeSlot"
+                  >
+                    <div class="building-action-card-header">
+                      <span class="building-action-label">{action.label}</span>
                       {action.isUnsupported && (
-                        <span class="pill pill-error">Unsupported</span>
+                        <span class="building-action-pill building-action-pill--unsupported">
+                          Unsupported
+                        </span>
                       )}
                       {!action.isAvailable && !action.isUnsupported && (
-                        <span class="pill pill-warning">Unavailable</span>
+                        <span class="building-action-pill building-action-pill--unavailable">
+                          Unavailable
+                        </span>
                       )}
                     </div>
-                    <p>{action.description}</p>
-                    <div class="row">
-                      <span class="stat-label">Cost</span>
-                      <span class="stat-value action-cost">{action.cost}</span>
-                    </div>
-                    <div class="row">
+                    <p class="building-action-desc">{action.description}</p>
+                    <div class="building-action-footer">
+                      <span class={`building-action-cost ${!action.isAvailable ? "building-action-cost-unavailable" : ""}`}>
+                        Cost: <strong>{action.cost}</strong>
+                      </span>
                       {action.isUnsupported ? (
-                        <button class="action-secondary" disabled>
+                        <button class="building-action-btn building-action-btn--disabled" disabled>
                           Not Available
                         </button>
                       ) : action.isAvailable ? (
                         <button
-                          class="action-primary"
+                          class="building-action-btn building-action-btn--primary"
                           onClick={() => props.onAction(action.id)}
                         >
                           {action.label}
                         </button>
                       ) : (
-                        <div class="stack">
-                          <button class="action-secondary" disabled>
+                        <div style="display:flex;gap:0.5rem;align-items:center;">
+                          <button class="building-action-btn building-action-btn--disabled" disabled>
                             Prerequisites Not Met
                           </button>
                           {vm().upgradeRequirement && (
-                            <span class="pill pill-info">{vm().upgradeRequirement}</span>
+                            <span class="building-action-pill building-action-pill--info">
+                              {vm().upgradeRequirement}
+                            </span>
                           )}
                         </div>
                       )}
                     </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
+                  </div>
+                )}
+              </For>
+            </div>
           )}
 
+          {/* Other Services */}
           {otherActions().length > 0 && (
-            <section class="panel stack">
-              <h2 class="panel-title">Other Services</h2>
-              <ul class="list-reset">
-                {otherActions().map((action) => (
-                  <li class="surface-card stack">
-                    <div class="row">
-                      <strong class="action-label">{action.label}</strong>
+            <div class="building-action-section">
+              <h3 class="building-action-section-title">Other Services</h3>
+              <For each={otherActions()}>
+                {(action) => (
+                  <div class="building-action-card">
+                    <div class="building-action-card-header">
+                      <span class="building-action-label">{action.label}</span>
                       {action.isUnsupported && (
-                        <span class="pill pill-error">Unsupported</span>
+                        <span class="building-action-pill building-action-pill--unsupported">
+                          Unsupported
+                        </span>
                       )}
                       {!action.isAvailable && !action.isUnsupported && (
-                        <span class="pill pill-warning">Unavailable</span>
+                        <span class="building-action-pill building-action-pill--unavailable">
+                          Unavailable
+                        </span>
                       )}
                     </div>
-                    <p>{action.description}</p>
-                    <div class="row">
-                      <span class="stat-label">Cost</span>
-                      <span class="stat-value action-cost">{action.cost}</span>
-                    </div>
-                    <div class="row">
+                    <p class="building-action-desc">{action.description}</p>
+                    <div class="building-action-footer">
+                      <span class={`building-action-cost ${!action.isAvailable ? "building-action-cost-unavailable" : ""}`}>
+                        Cost: <strong>{action.cost}</strong>
+                      </span>
                       {action.isUnsupported ? (
-                        <button class="action-secondary" disabled>
+                        <button class="building-action-btn building-action-btn--disabled" disabled>
                           Not Available
                         </button>
                       ) : action.isAvailable ? (
                         <button
-                          class="action-primary"
+                          class="building-action-btn building-action-btn--primary"
                           onClick={() => props.onAction(action.id)}
                         >
                           {action.label}
                         </button>
                       ) : (
-                        <button class="action-secondary" disabled>
+                        <button class="building-action-btn building-action-btn--disabled" disabled>
                           Prerequisites Not Met
                         </button>
                       )}
                     </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
+                  </div>
+                )}
+              </For>
+            </div>
           )}
         </div>
       </div>
 
-      <div class="row">
-        <button class="action-secondary" onClick={props.onReturn}>
+      {/* ── Return to Town — mirrors BlacksmithWindow/CloseButton ── */}
+      <div class="building-return-row">
+        <button
+          class="building-return-btn"
+          onClick={props.onReturn}
+          data-source-component="CloseButton"
+          data-source-sprite="Assets/Sprites/ui/btn_close.png"
+        >
           Return to Town
         </button>
       </div>
-    </AppFrame>
+    </div>
   );
 };

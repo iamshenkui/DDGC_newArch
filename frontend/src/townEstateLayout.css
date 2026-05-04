@@ -425,3 +425,383 @@
     font-size: 0.55rem;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Building Detail Screens
+ *
+ * Mirrors the Unity building window pattern from EstateManagement.unity:
+ *   UI_Shared/UI_LowWindows/{Building}Window/
+ *     LeftPanel/   → title, icon, description, talk button
+ *     RightPanel/  → upgrade button, upgrade tree, action slots
+ *     CloseButton  → Return to Town
+ *
+ * Source prefabs:
+ *   StageCoach → Assets/Prefabs/UI/Estate/Buildings/StageCoach/StageCoachWindow.prefab
+ *   Guild      → Assets/Prefabs/UI/Estate/Buildings/Guild/GuildWindow.prefab
+ *   Blacksmith → Assets/Prefabs/UI/Estate/Buildings/Blacksmith/BlacksmithWindow.prefab
+ *   Sanitarium → Assets/Prefabs/UI/Estate/Buildings/Sanitarium/SanitariumWindow.prefab
+ *
+ * Original building sprite references (see asset-manifest.json building_sprites):
+ *   stagecoach → building_perception_tower.png  GUID 87a55679f12a1e6489ecdb1d6e6f6b93
+ *   guild      → building_train_field.png       GUID 67a5e7aed8029d84dbf9c9e497a944d2
+ *   blacksmith → building_forging.png           GUID 23e01c10f262ddc4ba9977b91314b031
+ *   sanitarium → building_cell_repair.png       GUID 55375034893560044a266e905926e8ff
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Building Detail Header (mirrors {Building}Window/LeftPanel/Icon + Title) ── */
+.building-detail-header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid rgba(184, 152, 103, 0.28);
+  background: linear-gradient(180deg, rgba(27, 20, 20, 0.96), rgba(17, 13, 14, 0.92));
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
+  margin-bottom: 1.25rem;
+}
+
+.building-detail-sprite {
+  width: 8rem;
+  height: 8rem;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18% 18% 12% 12% / 22% 22% 14% 14%;
+  background:
+    radial-gradient(ellipse 80% 70% at 50% 45%, rgba(198, 212, 106, 0.06), transparent 60%),
+    rgba(12, 10, 14, 0.5);
+  border: 1px solid rgba(198, 212, 106, 0.15);
+  overflow: hidden;
+}
+
+.building-detail-sprite-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.5));
+}
+
+.building-detail-sprite-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--heading-font);
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+  opacity: 0.4;
+}
+
+.building-detail-title-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  justify-content: center;
+}
+
+.building-detail-eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--panel-accent);
+  opacity: 0.8;
+}
+
+.building-detail-name {
+  margin: 0;
+  font-family: var(--heading-font);
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  line-height: 1.1;
+  color: #efe3c9;
+  letter-spacing: 0.04em;
+}
+
+.building-detail-status {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 999px;
+}
+
+.building-detail-status.status-ready {
+  background: rgba(93, 134, 83, 0.24);
+  color: #afd5a5;
+}
+
+.building-detail-status.status-partial {
+  background: rgba(161, 118, 58, 0.24);
+  color: #d9b476;
+}
+
+.building-detail-status.status-locked {
+  background: rgba(112, 86, 88, 0.24);
+  color: #d4b7b8;
+}
+
+.building-detail-desc {
+  margin: 0.35rem 0 0;
+  color: rgba(218, 198, 168, 0.72);
+  font-size: 0.88rem;
+  line-height: 1.45;
+  max-width: 70ch;
+}
+
+/* ── Building Detail Content Layout (mirrors {Building}Window/LeftPanel + RightPanel) ── */
+.building-detail-content {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 920px) {
+  .building-detail-header {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .building-detail-sprite {
+    margin: 0 auto;
+  }
+
+  .building-detail-status {
+    align-self: center;
+  }
+
+  .building-detail-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Building Action Section (mirrors {Building}Window/RightPanel/UpgradeWindow + slots) ── */
+.building-action-section {
+  margin-bottom: 1rem;
+}
+
+.building-action-section:last-child {
+  margin-bottom: 0;
+}
+
+.building-action-section-title {
+  margin: 0 0 0.6rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--panel-accent);
+  font-family: var(--heading-font);
+  border-bottom: 1px solid rgba(184, 152, 103, 0.15);
+  padding-bottom: 0.35rem;
+}
+
+/* ── Action card — mirrors UpgradeSlot / EquipmentUpgradeSlot prefab style ── */
+.building-action-card {
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  background: linear-gradient(180deg, rgba(20, 16, 17, 0.94), rgba(12, 11, 13, 0.98));
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  margin-bottom: 0.6rem;
+}
+
+.building-action-card:last-child {
+  margin-bottom: 0;
+}
+
+.building-action-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.building-action-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #efe3c9;
+}
+
+.building-action-desc {
+  margin: 0 0 0.5rem;
+  color: rgba(218, 198, 168, 0.65);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.building-action-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.building-action-cost {
+  font-size: 0.78rem;
+  color: var(--panel-muted);
+  letter-spacing: 0.04em;
+}
+
+.building-action-cost strong {
+  color: #d4ba71;
+  font-weight: 700;
+}
+
+.building-action-cost-unavailable {
+  opacity: 0.5;
+}
+
+/* ── Action buttons ── */
+.building-action-btn {
+  padding: 0.48rem 1rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  border: 0;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.building-action-btn:active {
+  transform: translateY(0);
+}
+
+.building-action-btn--primary {
+  background: linear-gradient(135deg, var(--panel-accent), var(--panel-accent-strong));
+  color: #15200b;
+}
+
+.building-action-btn--primary:hover {
+  filter: brightness(1.1);
+}
+
+.building-action-btn--secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--panel-muted);
+}
+
+.building-action-btn--secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.building-action-btn--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.building-action-btn--disabled:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Pill badges for action states ── */
+.building-action-pill {
+  display: inline-flex;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.building-action-pill--unsupported {
+  color: #ea7767;
+  border: 1px solid rgba(234, 119, 103, 0.3);
+  background: rgba(234, 119, 103, 0.1);
+}
+
+.building-action-pill--unavailable {
+  color: #e8a838;
+  border: 1px solid rgba(232, 168, 56, 0.3);
+  background: rgba(232, 168, 56, 0.1);
+}
+
+.building-action-pill--info {
+  color: #82aaff;
+  border: 1px solid rgba(130, 170, 255, 0.3);
+  background: rgba(130, 170, 255, 0.08);
+}
+
+/* ── Return to Town (mirrors CloseButton) ── */
+.building-return-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(184, 152, 103, 0.12);
+}
+
+.building-return-btn {
+  padding: 0.6rem 1.8rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--panel-text);
+  border: 1px solid rgba(160, 204, 188, 0.2);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.building-return-btn:hover {
+  background: rgba(198, 212, 106, 0.1);
+  border-color: rgba(198, 212, 106, 0.3);
+}
+
+.building-return-btn:active {
+  background: rgba(198, 212, 106, 0.15);
+}
+
+/* ── Left panel info cards (mirrors {Building}Window/LeftPanel sections) ── */
+.building-info-card {
+  padding: 1rem 1.25rem;
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  background: linear-gradient(180deg, rgba(20, 16, 17, 0.94), rgba(12, 11, 13, 0.98));
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  margin-bottom: 0.75rem;
+}
+
+.building-info-card:last-child {
+  margin-bottom: 0;
+}
+
+.building-info-card-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--panel-muted);
+  font-family: var(--heading-font);
+}
+
+.building-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.building-info-row:last-child {
+  border-bottom: 0;
+}
+
+.building-info-label {
+  font-size: 0.78rem;
+  color: rgba(218, 198, 168, 0.6);
+}
+
+.building-info-value {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #efe3c9;
+}
