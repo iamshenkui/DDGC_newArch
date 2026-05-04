@@ -84,7 +84,171 @@ button {
   color: var(--panel-muted);
 }
 
-/* ── Menu Frame (mirrors MainMenuWindow.prefab hierarchy) ─────── */
+/* ── Title Page (rewritten from MainMenuWindow.prefab hierarchy) ────
+ * Layout: title-page (root canvas) → backdrop → dialog → header + menu
+ * Source assets:
+ *   menu_bg.png        GUID 4e780ea66a89c2f4b8bdc4f4b76c290d
+ *   btn_menu_primary.png GUID b14c9d4fa66bc4d45897fba8c866125a
+ *   Deutsch.ttf         GUID f930c4496e27b454ebc744aa4b25236e
+ */
+.title-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Mirrors MainMenuWindow root Image component (menu_bg.png) */
+.title-page-backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(27, 50, 44, 0.45), transparent 70%),
+    radial-gradient(ellipse 50% 50% at 25% 30%, rgba(27, 50, 44, 0.2), transparent 60%),
+    radial-gradient(circle at top left, rgba(198, 212, 106, 0.1), transparent 35%),
+    linear-gradient(180deg, #0a0f12 0%, #101a20 35%, #0e171c 65%, #0b1016 100%);
+  z-index: 0;
+}
+
+/* Mirrors MainMenuWindow centered dialog canvas (1023x740) */
+.title-page-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(640px, 90vw);
+  padding: 44px 40px 36px;
+  border-radius: var(--radius-lg);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  box-shadow:
+    var(--panel-shadow),
+    0 0 80px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(198, 212, 106, 0.06);
+  display: grid;
+  gap: 28px;
+  justify-items: center;
+}
+
+.title-page-header {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+}
+
+/* Decorative ornament strip above the title */
+.title-page-ornament {
+  width: 120px;
+  height: 3px;
+  margin-bottom: 10px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(198, 212, 106, 0.5) 20%,
+    rgba(198, 212, 106, 0.7) 50%,
+    rgba(198, 212, 106, 0.5) 80%,
+    transparent 100%
+  );
+  border-radius: 2px;
+}
+
+.title-page-game-title {
+  margin: 0;
+  font-family: var(--heading-font);
+  font-size: clamp(2.8rem, 6vw, 4rem);
+  line-height: 1;
+  color: var(--panel-accent);
+  letter-spacing: 0.06em;
+  text-shadow:
+    0 0 50px rgba(198, 212, 106, 0.18),
+    0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.title-page-game-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--panel-muted);
+  letter-spacing: 0.16em;
+}
+
+/* Decorative divider between header and menu */
+.title-page-divider {
+  width: 60%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(160, 204, 188, 0.25) 15%,
+    rgba(160, 204, 188, 0.4) 50%,
+    rgba(160, 204, 188, 0.25) 85%,
+    transparent
+  );
+}
+
+/* Mirrors MainMenuWindow → MenuOptions LayoutGroup (466x486) */
+.title-page-menu {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.title-page-menu-label {
+  font-size: 0.7rem;
+  color: var(--panel-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  text-align: center;
+  margin-bottom: 2px;
+  opacity: 0.7;
+}
+
+/* Buttons mirroring btn_menu_primary.png sprite styling */
+.title-page-button {
+  width: 100%;
+  padding: 15px 20px;
+  border-radius: var(--radius-sm);
+  background: rgba(20, 30, 38, 0.7);
+  border: 1px solid rgba(160, 204, 188, 0.14);
+  color: var(--panel-text);
+  font-family: var(--heading-font);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.12s ease,
+    box-shadow 0.18s ease;
+}
+
+.title-page-button:hover:not(:disabled) {
+  background: rgba(198, 212, 106, 0.1);
+  border-color: rgba(198, 212, 106, 0.3);
+  transform: translateY(-1px);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(198, 212, 106, 0.08);
+}
+
+.title-page-button:active:not(:disabled) {
+  transform: translateY(0);
+  background: rgba(198, 212, 106, 0.14);
+}
+
+.title-page-button:focus-visible {
+  outline: 2px solid rgba(198, 212, 106, 0.5);
+  outline-offset: 2px;
+}
+
+.title-page-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ── Menu Frame (reusable dialog for secondary menus) ──────── */
 .menu-frame {
   min-height: 100vh;
   display: flex;
@@ -146,6 +310,16 @@ button {
   gap: 10px;
   width: 100%;
   max-width: 420px;
+}
+
+.menu-options-label {
+  font-size: 0.7rem;
+  color: var(--panel-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  text-align: center;
+  margin-bottom: 2px;
+  opacity: 0.7;
 }
 
 .menu-button {
@@ -414,10 +588,14 @@ button {
   cursor: pointer;
 }
 
-/* ── Landscape Town Game Viewport ──────────────────────── */
+/* ── Landscape Town Game Viewport ────────────────────────
+ * Mirrors EstateManagement.unity single-camera viewport:
+ * three horizontally-stacked zones (top panel, central estate,
+ * bottom panel) with absolute positioning — never a scrolling
+ * web page.
+ */
 .town-viewport {
-  display: flex;
-  flex-direction: column;
+  position: relative;
   height: 100vh;
   overflow: hidden;
   background: #0b0f14;
@@ -478,6 +656,8 @@ button {
   background: rgba(198, 212, 106, 0.08);
 }
 
+/* ── Estate Top Panel styles — see townEstateLayout.css for authoritative rules ── */
+
 /* ── Game Surface (PixiStage) ─────────────────────────── */
 .game-surface {
   flex: 1 1 auto;
@@ -527,6 +707,8 @@ button {
   position: absolute;
   inset: 0;
 }
+
+/* ── Estate Stage Shell — see townEstateLayout.css for authoritative rules ── */
 
 /* ── Building Icons (on game surface) ─────────────────── */
 .building-icon {
@@ -606,6 +788,8 @@ button {
   font-weight: 600;
 }
 
+/* ── Estate Building Node / Banner — see townEstateLayout.css for authoritative rules ── */
+
 /* ── Roster Bar (HeroSlot style) ──────────────────────── */
 .viewport-roster {
   flex: 0 0 auto;
@@ -657,6 +841,8 @@ button {
 .roster-hero:active {
   transform: translateY(0);
 }
+
+/* ── Estate Bottom Panel / Embark / Roster — see townEstateLayout.css for authoritative rules ── */
 
 /* Portrait area — mirrors HeroSlot Frame + Image */
 .roster-hero-portrait {

@@ -17,6 +17,7 @@ interface EstateBuildingLayout {
   width: number;
   height: number;
   sourceLabel: string;
+  sourcePrefabPath: string;
   labelOffsetX: number;
   labelOffsetY: number;
 }
@@ -31,6 +32,7 @@ const ESTATE_BUILDING_LAYOUT: Record<string, EstateBuildingLayout> = {
     width: 384,
     height: 384,
     sourceLabel: "次元感知塔",
+    sourcePrefabPath: "Assets/Prefabs/UI/Estate/Buildings/StageCoach/StageCoachWindow.prefab",
     labelOffsetX: -26,
     labelOffsetY: -150
   },
@@ -40,6 +42,7 @@ const ESTATE_BUILDING_LAYOUT: Record<string, EstateBuildingLayout> = {
     width: 397,
     height: 397,
     sourceLabel: "试炼场",
+    sourcePrefabPath: "Assets/Prefabs/UI/Estate/Buildings/Guild/GuildWindow.prefab",
     labelOffsetX: 30,
     labelOffsetY: -50
   },
@@ -49,6 +52,7 @@ const ESTATE_BUILDING_LAYOUT: Record<string, EstateBuildingLayout> = {
     width: 482,
     height: 482,
     sourceLabel: "锻造舱",
+    sourcePrefabPath: "Assets/Prefabs/UI/Estate/Buildings/Blacksmith/BlacksmithWindow.prefab",
     labelOffsetX: 0,
     labelOffsetY: -168
   },
@@ -58,6 +62,7 @@ const ESTATE_BUILDING_LAYOUT: Record<string, EstateBuildingLayout> = {
     width: 339,
     height: 339,
     sourceLabel: "细胞修复站",
+    sourcePrefabPath: "Assets/Prefabs/UI/Estate/Buildings/Sanitarium/SanitariumWindow.prefab",
     labelOffsetX: 50,
     labelOffsetY: -100
   },
@@ -67,6 +72,7 @@ const ESTATE_BUILDING_LAYOUT: Record<string, EstateBuildingLayout> = {
     width: 519,
     height: 519,
     sourceLabel: "信仰祭坛",
+    sourcePrefabPath: "Assets/Prefabs/UI/Estate/Buildings/Abbey/AbbeyWindow.prefab",
     labelOffsetX: -10,
     labelOffsetY: 153
   },
@@ -76,6 +82,7 @@ const ESTATE_BUILDING_LAYOUT: Record<string, EstateBuildingLayout> = {
     width: 519,
     height: 519,
     sourceLabel: "迷情乐园",
+    sourcePrefabPath: "Assets/Prefabs/UI/Estate/Buildings/Tavern/TavernWindow.prefab",
     labelOffsetX: -6,
     labelOffsetY: 160
   },
@@ -85,6 +92,7 @@ const ESTATE_BUILDING_LAYOUT: Record<string, EstateBuildingLayout> = {
     width: 344,
     height: 344,
     sourceLabel: "英雄档案馆",
+    sourcePrefabPath: "Assets/Prefabs/UI/Estate/Buildings/Graveyard/GraveyardWindow.prefab",
     labelOffsetX: 100,
     labelOffsetY: -100
   }
@@ -151,6 +159,7 @@ function buildingLayout(buildingId: string): EstateBuildingLayout {
     width: 360,
     height: 360,
     sourceLabel: buildingId,
+    sourcePrefabPath: `Assets/Prefabs/UI/Estate/Buildings/${buildingId}.prefab`,
     labelOffsetX: 0,
     labelOffsetY: 120
   };
@@ -162,21 +171,43 @@ function rosterHeroes(viewModel: TownViewModel): ReadonlyArray<TownHeroSummary> 
 
 export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
   return (
-    <div class="town-viewport estate-town-screen">
-      <header class="viewport-hud estate-top-panel">
-        <div class="estate-name-card">
-          <span class="eyebrow">Town / Meta Surface</span>
+    <div
+      class="town-viewport estate-town-screen"
+      data-source-scene="Assets/Scenes/EstateManagement.unity"
+      data-source-manager="EstateSceneManager"
+      data-source-hierarchy="UI_Estate | UI_Shared"
+    >
+      {/*── Top Panel — mirrors UI_Shared/UI_Panels/EstateNameplate + UI_TopWindows/CurrencyPanel ──*/}
+      <header
+        class="viewport-hud estate-top-panel"
+        data-source-hierarchy="UI_Shared/UI_Panels/EstateNameplate | UI_Shared/UI_TopWindows/CurrencyPanel"
+      >
+        <div class="estate-name-card"
+          data-source-component="EstateNameplate"
+          data-source-sprite="Assets/Sprites/ui/building_title_bg.png"
+        >
+          <span class="eyebrow">Estate</span>
           <h1 class="estate-campaign-name">{props.viewModel.campaignName}</h1>
           <p class="estate-campaign-summary">{props.viewModel.campaignSummary}</p>
         </div>
-        <div class="estate-status-stack">
+        <div class="estate-status-stack" data-source-component="CurrencyPanel">
           <span class="estate-status-pill">Gold {props.viewModel.gold}</span>
           {props.viewModel.isFreshVisit && <span class="estate-status-pill estate-status-pill-accent">Fresh Visit</span>}
         </div>
       </header>
 
-      <section class="estate-stage-shell" aria-label="Town estate">
-        <div class="estate-stage-backdrop" />
+      {/*── Central Estate Surface — mirrors UI_Estate building collection ──*/}
+      <section
+        class="estate-stage-shell"
+        aria-label="Town estate"
+        data-source-hierarchy="UI_Estate/UI_Estate"
+      >
+        <div class="estate-stage-sky" />
+        <div
+          class="estate-stage-landscape"
+          data-source-layer="EstateBackground"
+          data-source-sprite="Assets/Sprites/EstateBackground/estate_bg.png"
+        />
         <div class="estate-stage-grid" />
         <For each={props.viewModel.buildings}>
           {(building) => {
@@ -193,8 +224,13 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                 onClick={() => props.onOpenBuilding(building.id)}
                 title={building.summary}
                 data-building-id={building.id}
+                data-source-prefab={layout.sourcePrefabPath}
+                data-source-component={building.label}
               >
-                <span class="building-icon-marker estate-building-art">
+                <span class="building-icon-marker estate-building-art"
+                  data-source-sprite="Assets/Sprites/ui/building_icon_bg.png"
+                  data-source-guid="366866d49b92bc7489d973717eabaa58"
+                >
                   <BuildingIcon buildingId={building.id} size={layout.width} />
                 </span>
                 <span
@@ -203,9 +239,19 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                     left: `${50 + (layout.labelOffsetX / layout.width) * 100}%`,
                     top: `${50 - (layout.labelOffsetY / layout.height) * 100}%`
                   }}
+                  data-source-component="BuildingLabel"
+                  data-source-sprite="Assets/Sprites/town/building_label_bg01.png"
+                  data-source-title-bg="Assets/Sprites/ui/building_title_bg.png"
+                  data-source-info-bg="Assets/Sprites/ui/building_info_bg.png"
                 >
-                  <span class="estate-building-source-label">{layout.sourceLabel}</span>
-                  <span class="estate-building-contract-label">{building.label}</span>
+                  <span class="estate-building-source-label"
+                    data-source-sprite="Assets/Sprites/ui/building_title_bg.png"
+                    data-source-guid="f25ac3da7d687e34e89e1443ea12c9a3"
+                  >{layout.sourceLabel}</span>
+                  <span class="estate-building-contract-label"
+                    data-source-sprite="Assets/Sprites/ui/building_info_bg.png"
+                    data-source-guid="1005dba8c66f9694895fbcfbc9fa59a1"
+                  >{building.label}</span>
                   <span class={`estate-building-status estate-building-status-${building.status}`}>
                     {BUILDING_STATUS_LABEL[building.status]}
                   </span>
@@ -216,19 +262,32 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
         </For>
       </section>
 
-      <section class="viewport-roster estate-bottom-panel">
-        <button class="action-primary estate-embark-button" onClick={props.onStartProvisioning}>
+      {/*── Bottom Panel — mirrors UI_Shared/UI_Panels/BottomPanel/{EmbarkButton,SideButtons} + UI_Roster/RosterPanel ──*/}
+      <section
+        class="viewport-roster estate-bottom-panel"
+        data-source-hierarchy="UI_Shared/UI_Panels/BottomPanel | UI_Shared/UI_Roster/RosterPanel"
+      >
+        <button
+          class="estate-embark-button"
+          onClick={props.onStartProvisioning}
+          data-source-component="EmbarkButton"
+          data-source-prefab="Assets/Prefabs/UI/Estate/PanelWindows/EstateBottomPanel.prefab"
+        >
           <span class="estate-embark-title">位面探索</span>
           <span class="estate-embark-subtitle">{props.viewModel.nextActionLabel}</span>
         </button>
 
-        <div class="roster-scroll estate-roster-strip">
+        <div class="roster-scroll estate-roster-strip" data-source-component="RosterPanel">
           <For each={rosterHeroes(props.viewModel)}>
             {(hero) => {
               const portraitSrc = resolveHeroPortrait({ heroId: hero.id, classLabel: hero.classLabel });
               const hp = parseHp(hero.hp);
               return (
-                <button class="roster-hero estate-roster-hero" onClick={() => props.onOpenHero(hero.id)}>
+                <button
+                  class="roster-hero estate-roster-hero"
+                  onClick={() => props.onOpenHero(hero.id)}
+                  data-source-prefab="Assets/Prefabs/UI/HeroSlot.prefab"
+                >
                   <div class="roster-hero-portrait estate-roster-portrait">
                     <div class="roster-portrait-frame estate-roster-frame" />
                     {portraitSrc ? (

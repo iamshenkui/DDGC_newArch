@@ -153,8 +153,8 @@ test.describe("browser smoke: fidelity gates", () => {
 
     // Verify town content from replay fixtures
     await expect(
-      page.getByText("Town / Meta Surface"),
-      "Town eyebrow must be visible"
+      page.getByText("Estate"),
+      "Estate label must be visible"
     ).toBeVisible();
     await expect(
       page.getByText("The Azure Lantern"),
@@ -379,7 +379,7 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page);
 
     await expect(
-      page.getByText("Town / Meta Surface"),
+      page.getByText("Estate"),
       "Must be back at town after resume"
     ).toBeVisible();
     await expect(
