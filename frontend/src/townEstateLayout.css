@@ -21,12 +21,12 @@
   position: absolute;
   top: 1.25rem;
   left: 1.5rem;
-  right: auto;
+  right: 1.5rem;
   z-index: 4;
   display: flex;
   align-items: flex-start;
+  justify-content: space-between;
   gap: 1rem;
-  width: min(36rem, calc(100vw - 3rem));
   padding: 0;
   border: 0;
   background: transparent;
@@ -234,17 +234,20 @@
 
 .estate-bottom-panel {
   position: absolute;
-  left: 1.25rem;
-  right: 1.25rem;
-  bottom: 1rem;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 5;
   display: grid;
   grid-template-columns: minmax(14rem, 18rem) 1fr;
   align-items: end;
   gap: 1rem;
-  padding: 0;
-  background: transparent;
-  border: 0;
+  padding: 0.75rem 1.25rem 1rem;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.55) 70%, transparent 100%);
+  border-top: 1px solid rgba(160, 204, 188, 0.08);
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
   box-shadow: none;
 }
 

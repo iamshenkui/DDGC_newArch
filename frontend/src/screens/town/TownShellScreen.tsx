@@ -179,7 +179,7 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
     >
       {/*── Top Panel — mirrors UI_Shared/UI_Panels/EstateNameplate + UI_TopWindows/CurrencyPanel ──*/}
       <header
-        class="viewport-hud estate-top-panel"
+        class="estate-top-panel"
         data-source-hierarchy="UI_Shared/UI_Panels/EstateNameplate | UI_Shared/UI_TopWindows/CurrencyPanel"
       >
         <div class="estate-name-card"
@@ -264,7 +264,7 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
 
       {/*── Bottom Panel — mirrors UI_Shared/UI_Panels/BottomPanel/{EmbarkButton,SideButtons} + UI_Roster/RosterPanel ──*/}
       <section
-        class="viewport-roster estate-bottom-panel"
+        class="estate-bottom-panel"
         data-source-hierarchy="UI_Shared/UI_Panels/BottomPanel | UI_Shared/UI_Roster/RosterPanel"
       >
         <button
