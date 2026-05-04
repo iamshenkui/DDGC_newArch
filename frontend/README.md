@@ -69,12 +69,26 @@ the frontend and the Rust runtime:
 - `ReplayRuntimeBridge` — Replay-driven implementation using fixture data
 - `LiveRuntimeBridge` — Live-runtime implementation wired to `DdgcHost` contracts
 
-## Initial Scope
+## Current Scope (UIR series complete)
 
-The initial scaffold supports:
+The rendered frontend now supports the full town → provisioning → expedition → result → return meta-loop. See the [UIR-011 outcome document](../docs/UIR-011-UI-REDO-RECOVERY-OUTCOME.md) for the complete asset and layout parity summary.
 
-- replay-mode boot into a rendered town shell,
-- live-mode boot into the same rendered town shell,
-- explicit startup, unsupported, and fatal surfaces,
-- a runtime bridge seam for replay/live modes,
-- screen/module boundaries aligned to Phase 10 documentation.
+### Screens Implemented
+
+| Screen | Route | Unity Precedent |
+|--------|-------|----------------|
+| StartupScreen | Boot selector | MainMenuWindow.prefab |
+| TownShellScreen | Town viewport | EstateManagement.unity UI_Estate |
+| HeroDetailScreen | Hero inspection | CharacterWindow.prefab |
+| BuildingScreenRouter | Building detail | UpgradableBuildingWindow |
+| StagecoachBuildingScreen | Stagecoach | StageCoachWindow.cs |
+| GuildBuildingScreen | Guild | GuildHeroWindow.cs |
+| BlacksmithBuildingScreen | Blacksmith | BlacksmithHeroWindow.cs |
+| ProvisioningScreen | Provisioning | UI_Provision |
+| ExpeditionScreen | Expedition launch | SelectedQuestPanel |
+| ResultScreen | Expedition result | RaidResultWindow |
+| ReturnScreen | Return to town | ResultHeroWindow |
+
+### Runtime Modes
+
+The frontend supports two runtime modes:

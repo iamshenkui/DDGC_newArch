@@ -465,3 +465,15 @@ Every building window decomposes into isomorphic frontend panels:
 - No sidebar-navigation-as-primary-layout (no admin-dashboard frame).
 - Town viewport must present a building grid that fits at 1280×720 without vertical scroll.
 - Building windows must use a two-column split; single-column is acceptable only for hero detail info tabs.
+
+---
+
+## Post-Migration Outcome
+
+The completed UI Redo (UIR-005 through UIR-011) implements all screens described in this brief. See the **[UIR-011 outcome document](../UIR-011-UI-REDO-RECOVERY-OUTCOME.md)** for:
+
+- The full inventory of scenes, prefabs, and assets inspected and mapped
+- Asset blockers and deferred work (original `.png` sprites not in repo, Spine runtime not configured)
+- Local run, smoke, and browser acceptance commands
+- Why the final frontend is frame-based game UI, not a generic web layout
+- Screen completion status with fidelity gate results
