@@ -1,0 +1,726 @@
+{
+  "source_file": "Assets/Scenes/Intro.unity",
+  "file_kind": "unity",
+  "hierarchy": [
+    {
+      "file_id": "120461736",
+      "name": "EventSystem",
+      "tag": "Untagged",
+      "active": true,
+      "rect_transform": {
+        "anchor_min": null,
+        "anchor_max": null,
+        "anchored_position": null,
+        "size_delta": null,
+        "pivot": null,
+        "local_scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "components": [
+        {
+          "file_id": "120461737",
+          "kind": "MonoBehaviour",
+          "script": {
+            "file_id": "11500000",
+            "guid": "2d49b7c1bcd2e07499844da127be038d",
+            "type": 3,
+            "asset_path": "<unresolved:2d49b7c1bcd2e07499844da127be038d>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "2d49b7c1bcd2e07499844da127be038d",
+              "type": 3,
+              "asset_path": "<unresolved:2d49b7c1bcd2e07499844da127be038d>"
+            }
+          }
+        },
+        {
+          "file_id": "120461738",
+          "kind": "MonoBehaviour",
+          "script": {
+            "file_id": "11500000",
+            "guid": "4f231c4fb786f3946a6b90b886c48677",
+            "type": 3,
+            "asset_path": "<unresolved:4f231c4fb786f3946a6b90b886c48677>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "4f231c4fb786f3946a6b90b886c48677",
+              "type": 3,
+              "asset_path": "<unresolved:4f231c4fb786f3946a6b90b886c48677>"
+            }
+          }
+        },
+        {
+          "file_id": "120461739",
+          "kind": "MonoBehaviour",
+          "script": {
+            "file_id": "11500000",
+            "guid": "76c392e42b5098c458856cdf6ecaaaa1",
+            "type": 3,
+            "asset_path": "<unresolved:76c392e42b5098c458856cdf6ecaaaa1>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "76c392e42b5098c458856cdf6ecaaaa1",
+              "type": 3,
+              "asset_path": "<unresolved:76c392e42b5098c458856cdf6ecaaaa1>"
+            }
+          }
+        }
+      ],
+      "children": []
+    },
+    {
+      "file_id": "183105484",
+      "name": "GameSetup",
+      "tag": "Untagged",
+      "active": true,
+      "rect_transform": {
+        "anchor_min": null,
+        "anchor_max": null,
+        "anchored_position": null,
+        "size_delta": null,
+        "pivot": null,
+        "local_scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "components": [
+        {
+          "file_id": "183105485",
+          "kind": "GameSetup",
+          "script": {
+            "file_id": "11500000",
+            "guid": "95b3cc1a91a89ab43a0a3bde812bfd9c",
+            "type": 3,
+            "asset_path": "Assets/Scripts/Setup/ContentLoading/GameSetup.cs"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "95b3cc1a91a89ab43a0a3bde812bfd9c",
+              "type": 3,
+              "asset_path": "Assets/Scripts/Setup/ContentLoading/GameSetup.cs"
+            },
+            "arrowTexture": {
+              "file_id": "2800000",
+              "guid": "f55ab39a3073fcc48bcfdb8ec25e815e",
+              "type": 3,
+              "asset_path": "Assets/Cursors/arrow.png"
+            }
+          }
+        }
+      ],
+      "children": []
+    },
+    {
+      "file_id": "719767457",
+      "name": "Main Camera",
+      "tag": "MainCamera",
+      "active": true,
+      "rect_transform": {
+        "anchor_min": null,
+        "anchor_max": null,
+        "anchored_position": null,
+        "size_delta": null,
+        "pivot": null,
+        "local_scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "components": [
+        {
+          "file_id": "719767463",
+          "kind": "StudioListener",
+          "script": {
+            "file_id": "11500000",
+            "guid": "86c6556701af9e04380698b89f691b6e",
+            "type": 3,
+            "asset_path": "Assets/Plugins/FMOD/StudioListener.cs"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "86c6556701af9e04380698b89f691b6e",
+              "type": 3,
+              "asset_path": "Assets/Plugins/FMOD/StudioListener.cs"
+            }
+          }
+        }
+      ],
+      "children": []
+    },
+    {
+      "file_id": "1613112846",
+      "name": "Canvas",
+      "tag": "Untagged",
+      "active": true,
+      "rect_transform": {
+        "anchor_min": {
+          "x": 0,
+          "y": 0
+        },
+        "anchor_max": {
+          "x": 0,
+          "y": 0
+        },
+        "anchored_position": {
+          "x": 0,
+          "y": 0
+        },
+        "size_delta": {
+          "x": 0,
+          "y": 0
+        },
+        "pivot": {
+          "x": 0,
+          "y": 0
+        },
+        "local_scale": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "components": [
+        {
+          "file_id": "1613112848",
+          "kind": "MonoBehaviour",
+          "script": {
+            "file_id": "11500000",
+            "guid": "dc42784cf147c0c48a680349fa168899",
+            "type": 3,
+            "asset_path": "<unresolved:dc42784cf147c0c48a680349fa168899>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "dc42784cf147c0c48a680349fa168899",
+              "type": 3,
+              "asset_path": "<unresolved:dc42784cf147c0c48a680349fa168899>"
+            }
+          }
+        },
+        {
+          "file_id": "1613112849",
+          "kind": "MonoBehaviour",
+          "script": {
+            "file_id": "11500000",
+            "guid": "0cd44c1031e13a943bb63640046fad76",
+            "type": 3,
+            "asset_path": "<unresolved:0cd44c1031e13a943bb63640046fad76>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "0cd44c1031e13a943bb63640046fad76",
+              "type": 3,
+              "asset_path": "<unresolved:0cd44c1031e13a943bb63640046fad76>"
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "file_id": "223723515",
+          "name": "GameIntro",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": null,
+            "anchor_max": null,
+            "anchored_position": null,
+            "size_delta": null,
+            "pivot": null,
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "223723516",
+              "kind": "GameIntro",
+              "script": {
+                "file_id": "11500000",
+                "guid": "d7935047cf99d924ea2f8bcd2601d86d",
+                "type": 3,
+                "asset_path": "Assets/Scripts/Setup/ContentLoading/GameIntro.cs"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "d7935047cf99d924ea2f8bcd2601d86d",
+                  "type": 3,
+                  "asset_path": "Assets/Scripts/Setup/ContentLoading/GameIntro.cs"
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "file_id": "682881491",
+              "name": "MovieImage",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 1920,
+                  "y": 1080
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "682881493",
+                  "kind": "MonoBehaviour",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "1344c3c82d62a2a41a3576d8abb8e3ea",
+                    "type": 3,
+                    "asset_path": "<unresolved:1344c3c82d62a2a41a3576d8abb8e3ea>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "1344c3c82d62a2a41a3576d8abb8e3ea",
+                      "type": 3,
+                      "asset_path": "<unresolved:1344c3c82d62a2a41a3576d8abb8e3ea>"
+                    },
+                    "m_Texture": {
+                      "file_id": "15200000",
+                      "guid": "b9f0e53d8b8d3a24b8ef1e5bf5298bfa",
+                      "type": 3,
+                      "asset_path": "<unresolved:b9f0e53d8b8d3a24b8ef1e5bf5298bfa>"
+                    }
+                  }
+                },
+                {
+                  "file_id": "682881495",
+                  "kind": "MoviePlayer",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "4d9a3f89ba3bcbf44b6bfdcfd3c2d186",
+                    "type": 3,
+                    "asset_path": "Assets/Scripts/Setup/ContentLoading/MoviePlayer.cs"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "4d9a3f89ba3bcbf44b6bfdcfd3c2d186",
+                      "type": 3,
+                      "asset_path": "Assets/Scripts/Setup/ContentLoading/MoviePlayer.cs"
+                    },
+                    "movie": {
+                      "file_id": "15200000",
+                      "guid": "b9f0e53d8b8d3a24b8ef1e5bf5298bfa",
+                      "type": 3,
+                      "asset_path": "<unresolved:b9f0e53d8b8d3a24b8ef1e5bf5298bfa>"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            },
+            {
+              "file_id": "1131012694",
+              "name": "RedHookLogo",
+              "tag": "Untagged",
+              "active": false,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 1920,
+                  "y": 1080
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "1131012697",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "5acbfead2b746c949acc123a989bdf78",
+                      "type": 3,
+                      "asset_path": "<unresolved:5acbfead2b746c949acc123a989bdf78>"
+                    }
+                  }
+                },
+                {
+                  "file_id": "1131012699",
+                  "kind": "GameLogo",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "1d10b764122916547974ae263376f8a4",
+                    "type": 3,
+                    "asset_path": "Assets/Scripts/Setup/ContentLoading/GameLogo.cs"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "1d10b764122916547974ae263376f8a4",
+                      "type": 3,
+                      "asset_path": "Assets/Scripts/Setup/ContentLoading/GameLogo.cs"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "1696523811",
+                  "name": "Notice",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchor_max": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchored_position": {
+                      "x": 0,
+                      "y": -386
+                    },
+                    "size_delta": {
+                      "x": 943,
+                      "y": 218
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "1696523813",
+                      "kind": "Text",
+                      "script": {
+                        "file_id": "11500000",
+                        "guid": "5f7201a12d95ffc409449d95f23cf332",
+                        "type": 3,
+                        "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                      },
+                      "text": "This is not an official Red Hook Studios product or product modification,",
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "11500000",
+                          "guid": "5f7201a12d95ffc409449d95f23cf332",
+                          "type": 3,
+                          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                        },
+                        "m_Font": {
+                          "file_id": "12800000",
+                          "guid": "b601d2a4d5d34414aa0b143ce082e654",
+                          "type": 3,
+                          "asset_path": "Assets/Fonts/Bak/DwarvenAxe BB W00 Regular.ttf"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "prefab_instances": [],
+  "text_nodes": [
+    {
+      "game_object_file_id": "1696523811",
+      "component_file_id": "1696523813",
+      "component_kind": "Text",
+      "text": "This is not an official Red Hook Studios product or product modification,"
+    }
+  ],
+  "asset_references": [
+    {
+      "game_object_file_id": "120461736",
+      "component_file_id": "120461737",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "2d49b7c1bcd2e07499844da127be038d",
+          "type": 3,
+          "asset_path": "<unresolved:2d49b7c1bcd2e07499844da127be038d>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "120461736",
+      "component_file_id": "120461738",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "4f231c4fb786f3946a6b90b886c48677",
+          "type": 3,
+          "asset_path": "<unresolved:4f231c4fb786f3946a6b90b886c48677>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "120461736",
+      "component_file_id": "120461739",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "76c392e42b5098c458856cdf6ecaaaa1",
+          "type": 3,
+          "asset_path": "<unresolved:76c392e42b5098c458856cdf6ecaaaa1>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "183105484",
+      "component_file_id": "183105485",
+      "component_kind": "GameSetup",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "95b3cc1a91a89ab43a0a3bde812bfd9c",
+          "type": 3,
+          "asset_path": "Assets/Scripts/Setup/ContentLoading/GameSetup.cs"
+        },
+        "arrowTexture": {
+          "file_id": "2800000",
+          "guid": "f55ab39a3073fcc48bcfdb8ec25e815e",
+          "type": 3,
+          "asset_path": "Assets/Cursors/arrow.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "223723515",
+      "component_file_id": "223723516",
+      "component_kind": "GameIntro",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "d7935047cf99d924ea2f8bcd2601d86d",
+          "type": 3,
+          "asset_path": "Assets/Scripts/Setup/ContentLoading/GameIntro.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "682881491",
+      "component_file_id": "682881493",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "1344c3c82d62a2a41a3576d8abb8e3ea",
+          "type": 3,
+          "asset_path": "<unresolved:1344c3c82d62a2a41a3576d8abb8e3ea>"
+        },
+        "m_Texture": {
+          "file_id": "15200000",
+          "guid": "b9f0e53d8b8d3a24b8ef1e5bf5298bfa",
+          "type": 3,
+          "asset_path": "<unresolved:b9f0e53d8b8d3a24b8ef1e5bf5298bfa>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "682881491",
+      "component_file_id": "682881495",
+      "component_kind": "MoviePlayer",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "4d9a3f89ba3bcbf44b6bfdcfd3c2d186",
+          "type": 3,
+          "asset_path": "Assets/Scripts/Setup/ContentLoading/MoviePlayer.cs"
+        },
+        "movie": {
+          "file_id": "15200000",
+          "guid": "b9f0e53d8b8d3a24b8ef1e5bf5298bfa",
+          "type": 3,
+          "asset_path": "<unresolved:b9f0e53d8b8d3a24b8ef1e5bf5298bfa>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "719767457",
+      "component_file_id": "719767463",
+      "component_kind": "StudioListener",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "86c6556701af9e04380698b89f691b6e",
+          "type": 3,
+          "asset_path": "Assets/Plugins/FMOD/StudioListener.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1131012694",
+      "component_file_id": "1131012697",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "5acbfead2b746c949acc123a989bdf78",
+          "type": 3,
+          "asset_path": "<unresolved:5acbfead2b746c949acc123a989bdf78>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1131012694",
+      "component_file_id": "1131012699",
+      "component_kind": "GameLogo",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "1d10b764122916547974ae263376f8a4",
+          "type": 3,
+          "asset_path": "Assets/Scripts/Setup/ContentLoading/GameLogo.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1613112846",
+      "component_file_id": "1613112848",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "dc42784cf147c0c48a680349fa168899",
+          "type": 3,
+          "asset_path": "<unresolved:dc42784cf147c0c48a680349fa168899>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1613112846",
+      "component_file_id": "1613112849",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "0cd44c1031e13a943bb63640046fad76",
+          "type": 3,
+          "asset_path": "<unresolved:0cd44c1031e13a943bb63640046fad76>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1696523811",
+      "component_file_id": "1696523813",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "b601d2a4d5d34414aa0b143ce082e654",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/DwarvenAxe BB W00 Regular.ttf"
+        }
+      }
+    }
+  ],
+  "native_game_object_count": 8,
+  "prefab_instance_count": 0
+}

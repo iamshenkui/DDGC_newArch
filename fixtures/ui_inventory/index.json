@@ -2,6 +2,13 @@
   "source_root": "DreamDeveloperGame-Crossover/Assets",
   "targets": [
     {
+      "source_file": "Assets/Scenes/Intro.unity",
+      "output_file": "fixtures/ui_inventory/Assets/Scenes/Intro.unity.json",
+      "text_node_count": 1,
+      "asset_reference_count": 13,
+      "prefab_instance_count": 0
+    },
+    {
       "source_file": "Assets/Scenes/EstateManagement.unity",
       "output_file": "fixtures/ui_inventory/Assets/Scenes/EstateManagement.unity.json",
       "text_node_count": 424,
@@ -9,17 +16,17 @@
       "prefab_instance_count": 364
     },
     {
-      "source_file": "Assets/Prefabs/UI/Windows/CharacterWindow.prefab",
-      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Windows/CharacterWindow.prefab.json",
-      "text_node_count": 95,
-      "asset_reference_count": 442,
-      "prefab_instance_count": 0
-    },
-    {
       "source_file": "Assets/Prefabs/UI/Windows/MainMenuWindow.prefab",
       "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Windows/MainMenuWindow.prefab.json",
       "text_node_count": 5,
       "asset_reference_count": 25,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/Windows/CharacterWindow.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Windows/CharacterWindow.prefab.json",
+      "text_node_count": 95,
+      "asset_reference_count": 442,
       "prefab_instance_count": 0
     },
     {
@@ -153,48 +160,6 @@
       "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Estate/PanelWindows/Glossary/GlossaryRecord.prefab.json",
       "text_node_count": 0,
       "asset_reference_count": 5,
-      "prefab_instance_count": 0
-    },
-    {
-      "source_file": "Assets/Prefabs/UI/Raid/HeroResultSlot.prefab",
-      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Raid/HeroResultSlot.prefab.json",
-      "text_node_count": 7,
-      "asset_reference_count": 41,
-      "prefab_instance_count": 0
-    },
-    {
-      "source_file": "Assets/Prefabs/UI/Raid/LootSlot.prefab",
-      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Raid/LootSlot.prefab.json",
-      "text_node_count": 1,
-      "asset_reference_count": 6,
-      "prefab_instance_count": 0
-    },
-    {
-      "source_file": "Assets/Prefabs/UI/Raid/OverlaySlot.prefab",
-      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Raid/OverlaySlot.prefab.json",
-      "text_node_count": 2,
-      "asset_reference_count": 138,
-      "prefab_instance_count": 0
-    },
-    {
-      "source_file": "Assets/Prefabs/UI/Raid/Map/HallSectorSlot.prefab",
-      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Raid/Map/HallSectorSlot.prefab.json",
-      "text_node_count": 0,
-      "asset_reference_count": 4,
-      "prefab_instance_count": 0
-    },
-    {
-      "source_file": "Assets/Prefabs/UI/Raid/Map/HallwaySlot.prefab",
-      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Raid/Map/HallwaySlot.prefab.json",
-      "text_node_count": 0,
-      "asset_reference_count": 2,
-      "prefab_instance_count": 0
-    },
-    {
-      "source_file": "Assets/Prefabs/UI/Raid/Map/RoomSlot.prefab",
-      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Raid/Map/RoomSlot.prefab.json",
-      "text_node_count": 0,
-      "asset_reference_count": 6,
       "prefab_instance_count": 0
     }
   ]
