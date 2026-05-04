@@ -436,15 +436,19 @@ export class LiveRuntimeBridge implements RuntimeBridge {
       case "launch-expedition":
         this.snapshot = {
           ...this.snapshot,
-          flowState: "combat",
-          viewModel: createLiveExpeditionViewModel()
+          flowState: "result",
+          viewModel: createLiveResultViewModel()
         };
         break;
       case "return-to-town":
         this.snapshot = createLiveTownSnapshot();
         break;
       case "continue-from-result":
-        this.snapshot = createLiveTownSnapshot();
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "return",
+          viewModel: createLiveReturnViewModel()
+        };
         break;
       case "resume-from-return":
         this.snapshot = createLiveTownSnapshot();

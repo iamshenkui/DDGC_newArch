@@ -200,7 +200,7 @@ describe("provisioning and expedition launch flow", () => {
     expect(expVm.isLaunchable).toBe(true);
   });
 
-  it("replay launch-expedition transitions to combat state", async () => {
+  it("replay launch-expedition transitions to result state", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
@@ -208,8 +208,11 @@ describe("provisioning and expedition launch flow", () => {
 
     const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
 
-    expect(snapshot.flowState).toBe("combat");
-    expect(snapshot.viewModel.kind).toBe("expedition");
+    expect(snapshot.flowState).toBe("result");
+    expect(snapshot.viewModel.kind).toBe("result");
+    const resultVm = snapshot.viewModel as ExpeditionResultViewModel;
+    expect(resultVm.kind).toBe("result");
+    expect(["success", "failure", "partial"]).toContain(resultVm.outcome);
   });
 
   it("replay return-to-town from provisioning returns to town", async () => {
@@ -246,7 +249,7 @@ describe("provisioning and expedition launch flow", () => {
     expect(snapshot.viewModel.kind).toBe("expedition");
   });
 
-  it("live launch-expedition transitions to combat state", async () => {
+  it("live launch-expedition transitions to result state", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
@@ -254,8 +257,10 @@ describe("provisioning and expedition launch flow", () => {
 
     const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
 
-    expect(snapshot.flowState).toBe("combat");
-    expect(snapshot.viewModel.kind).toBe("expedition");
+    expect(snapshot.flowState).toBe("result");
+    expect(snapshot.viewModel.kind).toBe("result");
+    const resultVm = snapshot.viewModel as ExpeditionResultViewModel;
+    expect(resultVm.outcome).toBe("success");
   });
 
   it("town -> provision -> launch path is reproducible in replay", async () => {
@@ -275,8 +280,8 @@ describe("provisioning and expedition launch flow", () => {
     expect(expSnapshot.viewModel.kind).toBe("expedition");
 
     const launchSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
-    expect(launchSnapshot.flowState).toBe("combat");
-    expect(launchSnapshot.viewModel.kind).toBe("expedition");
+    expect(launchSnapshot.flowState).toBe("result");
+    expect(launchSnapshot.viewModel.kind).toBe("result");
   });
 
   it("town -> provision -> launch path is reproducible in live", async () => {
@@ -296,19 +301,21 @@ describe("provisioning and expedition launch flow", () => {
     expect(expSnapshot.viewModel.kind).toBe("expedition");
 
     const launchSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
-    expect(launchSnapshot.flowState).toBe("combat");
-    expect(launchSnapshot.viewModel.kind).toBe("expedition");
+    expect(launchSnapshot.flowState).toBe("result");
+    expect(launchSnapshot.viewModel.kind).toBe("result");
   });
 });
 
 describe("result and return meta-loop continuation", () => {
-  it("continue-from-result intent returns to town", async () => {
+  it("continue-from-result transitions to return state", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
 
     const snapshot = await bridge.dispatchIntent({ type: "continue-from-result" });
-    expect(snapshot.flowState).toBe("town");
-    expect(snapshot.viewModel.kind).toBe("town");
+    expect(snapshot.flowState).toBe("return");
+    expect(snapshot.viewModel.kind).toBe("return");
+    const returnVm = snapshot.viewModel as ReturnViewModel;
+    expect(returnVm.isTownResumeAvailable).toBe(true);
   });
 
   it("resume-from-return intent returns to town", async () => {
@@ -325,8 +332,10 @@ describe("result and return meta-loop continuation", () => {
     await bridge.boot();
 
     const snapshot = await bridge.dispatchIntent({ type: "continue-from-result" });
-    expect(snapshot.flowState).toBe("town");
-    expect(snapshot.viewModel.kind).toBe("town");
+    expect(snapshot.flowState).toBe("return");
+    expect(snapshot.viewModel.kind).toBe("return");
+    const returnVm = snapshot.viewModel as ReturnViewModel;
+    expect(returnVm.isTownResumeAvailable).toBe(true);
   });
 
   it("resume-from-return is handled in live bridge without error", async () => {
@@ -347,10 +356,15 @@ describe("result and return meta-loop continuation", () => {
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
     await bridge.dispatchIntent({ type: "launch-expedition" });
 
-    // Continue from result
-    const resultSnapshot = await bridge.dispatchIntent({ type: "continue-from-result" });
-    expect(resultSnapshot.flowState).toBe("town");
-    expect(resultSnapshot.viewModel.kind).toBe("town");
+    // Continue from result — transitions to return screen
+    const returnSnap = await bridge.dispatchIntent({ type: "continue-from-result" });
+    expect(returnSnap.flowState).toBe("return");
+    expect(returnSnap.viewModel.kind).toBe("return");
+
+    // Resume from return — back to town
+    const townSnap = await bridge.dispatchIntent({ type: "resume-from-return" });
+    expect(townSnap.flowState).toBe("town");
+    expect(townSnap.viewModel.kind).toBe("town");
 
     // Can restart provisioning after returning
     const provSnapshot = await bridge.dispatchIntent({ type: "start-provisioning" });
