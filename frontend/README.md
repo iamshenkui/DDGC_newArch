@@ -51,11 +51,11 @@ The frontend supports two runtime modes:
 
 1. **Replay Mode** — Boots using stable fixture data and view-model placeholders.
    This allows the rendered UI to evolve without touching gameplay truth.
-   Click "Boot Replay Shell" on the startup screen.
+   Click "Boot Replay" on the startup screen.
 
 2. **Live Mode** — Boots through `DdgcHost::boot_live()` contract boundary,
    initializing a fresh campaign state. Currently uses placeholder data
-   pending real runtime wiring. Click "Boot Live Shell" on the startup screen.
+   pending real runtime wiring. Click "Boot Live" on the startup screen.
 
 Both modes render the same town shell application, using the same
 `TownShellScreen` component and `AppFrame` layout.

@@ -84,6 +84,102 @@ button {
   color: var(--panel-muted);
 }
 
+/* ── Menu Frame (mirrors MainMenuWindow.prefab hierarchy) ─────── */
+.menu-frame {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.menu-backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(27, 50, 44, 0.4), transparent 70%),
+    radial-gradient(circle at top left, rgba(198, 212, 106, 0.08), transparent 35%),
+    linear-gradient(180deg, #0e1117 0%, #131e26 52%, #0f1116 100%);
+  z-index: 0;
+}
+
+.menu-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(640px, 90vw);
+  padding: 48px 40px 40px;
+  border-radius: var(--radius-lg);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  box-shadow: var(--panel-shadow), 0 0 60px rgba(0, 0, 0, 0.3);
+  display: grid;
+  gap: 36px;
+  justify-items: center;
+}
+
+.menu-header {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+}
+
+.menu-game-title {
+  margin: 0;
+  font-family: var(--heading-font);
+  font-size: clamp(2.8rem, 6vw, 4rem);
+  line-height: 1;
+  color: var(--panel-accent);
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 40px rgba(198, 212, 106, 0.15);
+}
+
+.menu-game-subtitle {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--panel-muted);
+  letter-spacing: 0.12em;
+}
+
+.menu-options {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.menu-button {
+  width: 100%;
+  padding: 16px 20px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  color: var(--panel-text);
+  font-family: var(--heading-font);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease,
+    box-shadow 0.15s ease;
+}
+
+.menu-button:hover:not(:disabled) {
+  background: rgba(198, 212, 106, 0.08);
+  border-color: rgba(198, 212, 106, 0.25);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.menu-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.menu-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .grid {
   display: grid;
   gap: 18px;

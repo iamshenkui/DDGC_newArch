@@ -120,26 +120,32 @@ test.describe("browser smoke: fidelity gates", () => {
 
     // ── Phase 1: Startup screen ────────────────────────────
     await expect(
-      page.getByText("DDGC Rendered Frontend"),
+      page.getByRole("heading", { name: "DDGC" }),
       "Startup title must be visible"
     ).toBeVisible();
 
     await expect(
-      page.getByRole("button", { name: "Boot Replay Shell" }),
+      page.getByRole("button", { name: "New Campaign" }),
+      "New Campaign button must be present"
+    ).toBeVisible();
+
+    await expect(
+      page.getByRole("button", { name: "Load Campaign" }),
+      "Load Campaign button must be present"
+    ).toBeVisible();
+
+    await expect(
+      page.getByRole("button", { name: "Boot Replay" }),
       "Replay boot button must be present"
     ).toBeVisible();
 
     await expect(
-      page.getByRole("button", { name: "Boot Live Shell" }),
+      page.getByRole("button", { name: "Boot Live" }),
       "Live boot button must be present"
     ).toBeVisible();
 
-    // Note: startup screen intentionally shows "Phase 10 Frontend Skeleton"
-    // eyebrow text.  This is NOT a completed product surface, so we do NOT
-    // run the fidelity blocklist check here.
-
     // ── Phase 2: Replay boot → Town shell ──────────────────
-    await page.getByRole("button", { name: "Boot Replay Shell" }).click();
+    await page.getByRole("button", { name: "Boot Replay" }).click();
 
     // Wait for landscape town viewport to mount
     await page.waitForSelector(".town-viewport", { timeout: 8_000 });
@@ -394,11 +400,11 @@ test.describe("browser smoke: fidelity gates", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(
-      page.getByRole("button", { name: "Boot Live Shell" }),
+      page.getByRole("button", { name: "Boot Live" }),
       "Live boot button must be present"
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Boot Live Shell" }).click();
+    await page.getByRole("button", { name: "Boot Live" }).click();
 
     // Wait for landscape town viewport (live bridge boots to town)
     await page.waitForSelector(".town-viewport", { timeout: 8_000 });

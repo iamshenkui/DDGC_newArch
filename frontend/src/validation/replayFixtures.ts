@@ -593,8 +593,8 @@ export const liveLoadingSnapshot: DdgcFrontendSnapshot = {
 // as a placeholder in the snapshot structure (the viewModel is not consumed by StartupScreen).
 const startupViewModel: BootLoadViewModel = {
   kind: "boot-load",
-  title: "DDGC Rendered Frontend",
-  summary: "Boot the product-owned frontend shell through replay mode first.",
+  title: "DDGC",
+  summary: "暗黑地牢: 降龙",
   mode: "replay"
 };
 
