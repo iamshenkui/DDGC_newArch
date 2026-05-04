@@ -1,0 +1,652 @@
+{
+  "manifest_version": "1.0.0",
+  "task": "UIR-004",
+  "title": "DDGC Unity Original Asset Manifest",
+  "description": "Maps original Unity assets and GUIDs to frontend usage for DDGC heroes, buildings, items, provisions, icons, and UI chrome.",
+  "source_root": "DreamDeveloperGame-Crossover/Assets",
+  "inventory_anchor": "fixtures/ui_inventory/index.json",
+  "inventory_targets": 28,
+  "generated": "2026-05-04",
+
+  "sections": {
+    "building_sprites": {
+      "description": "Town building sprites referenced by EstateManagement.unity scene. Used by frontend screens in screens/town/ and screens/town/buildings/.",
+      "scoped_buildings": {
+        "description": "The 6 scoped buildings targeted by the current UI redo",
+        "stagecoach": {
+          "asset_path": "Assets/Sprites/town/buildings/building_perception_tower.png",
+          "guid": "87a55679f12a1e6489ecdb1d6e6f6b93",
+          "frontend_usage": "screens/town/buildings/StagecoachBuildingScreen.tsx",
+          "frontend_routes": "app.frontend.route('stagecoach') / BuildingScreenRouter Match when buildingId === 'stagecoach'",
+          "inventory_status": "confirmed"
+        },
+        "guild": {
+          "asset_path": "Assets/Sprites/town/buildings/building_train_field.png",
+          "guid": "67a5e7aed8029d84dbf9c9e497a944d2",
+          "frontend_usage": "screens/town/buildings/GuildBuildingScreen.tsx",
+          "frontend_routes": "app.frontend.route('guild') / BuildingScreenRouter Match when buildingId === 'guild'",
+          "inventory_status": "confirmed"
+        },
+        "blacksmith": {
+          "asset_path": "Assets/Sprites/town/buildings/building_forging.png",
+          "guid": "23e01c10f262ddc4ba9977b91314b031",
+          "frontend_usage": "screens/town/buildings/BlacksmithBuildingScreen.tsx",
+          "frontend_routes": "app.frontend.route('blacksmith') / BuildingScreenRouter Match when buildingId === 'blacksmith'",
+          "inventory_status": "confirmed"
+        },
+        "sanitarium": {
+          "asset_path": "Assets/Sprites/town/buildings/building_cell_repair.png",
+          "guid": "55375034893560044a266e905926e8ff",
+          "frontend_usage": "screens/town/BuildingScreenRouter.tsx (generic BuildingDetailScreen)",
+          "frontend_routes": "app.frontend.route('sanitarium') / BuildingScreenRouter Match when true (fallback detail)",
+          "inventory_status": "confirmed"
+        },
+        "abbey": {
+          "asset_path": "Assets/Sprites/town/buildings/building_faith_altar.png",
+          "guid": "311540f167839cf4da00305566192b4a",
+          "frontend_usage": "screens/town/BuildingScreenRouter.tsx (generic BuildingDetailScreen)",
+          "frontend_routes": "app.frontend.route('abbey') / BuildingScreenRouter Match when true (fallback detail)",
+          "inventory_status": "confirmed"
+        },
+        "tavern": {
+          "asset_path": "Assets/Sprites/town/buildings/building_paradise.png",
+          "guid": "c0ea280d2704bdb4a9621d6e181e0316",
+          "frontend_usage": "screens/town/BuildingScreenRouter.tsx (generic BuildingDetailScreen)",
+          "frontend_routes": "app.frontend.route('tavern') / BuildingScreenRouter Match when true (fallback detail)",
+          "inventory_status": "confirmed"
+        }
+      },
+      "deferred_buildings": {
+        "description": "Additional buildings in EstateManagement.unity with no frontend screen implementation yet",
+        "market": {
+          "asset_path": "Assets/Sprites/town/buildings/building_market.png",
+          "guid": "8c3505ec8c7e25b42aacdcaece82f821"
+        },
+        "graveyard": {
+          "asset_path": null,
+          "notes": "Graveyard prefab exists at Assets/Prefabs/UI/Estate/Buildings/Graveyard/DeathRecord.prefab"
+        },
+        "museum": {
+          "asset_path": "Assets/Sprites/town/buildings/building_legacy_tower.png",
+          "guid": "ebd56d507c80af54986327ac7cb16661"
+        },
+        "provisioner": {
+          "asset_path": null,
+          "notes": "Provisioner building exists in data/Buildings.json but no distinct sprite identified"
+        },
+        "sanctuary": {
+          "asset_path": "Assets/Sprites/town/buildings/building_space_analysis.png",
+          "guid": null
+        },
+        "inn": {
+          "asset_path": "Assets/Sprites/town/buildings/building_garden.png",
+          "guid": "c34c4012911d41c4bbed2328d7025138"
+        }
+      },
+      "supporting_sprites": {
+        "building_label_bg": {
+          "asset_path": "Assets/Sprites/town/building_label_bg01.png",
+          "guid": "0beef34e329073f43bc2a495a740b0b4"
+        },
+        "building_icon_bg": {
+          "asset_path": "Assets/Sprites/ui/building_icon_bg.png",
+          "guid": "366866d49b92bc7489d973717eabaa58"
+        },
+        "building_title_bg": {
+          "asset_path": "Assets/Sprites/ui/building_title_bg.png",
+          "guid": "f25ac3da7d687e34e89e1443ea12c9a3"
+        },
+        "building_info_bg": {
+          "asset_path": "Assets/Sprites/ui/building_info_bg.png",
+          "guid": "72d195261b2d2994c81fbbf372235b7a"
+        },
+        "npc_market": {
+          "asset_path": "Assets/Sprites/town/npc/npc_market.png",
+          "guid": null
+        },
+        "icon_market": {
+          "asset_path": "Assets/Sprites/town/icons/icon.market.png",
+          "guid": null
+        }
+      }
+    },
+
+    "hero_assets": {
+      "description": "Hero-facing Spine skeletal animations and character UI sources for all 5 recruitable families.",
+      "spine_skeleton_data": {
+        "description": "Spine .SkeletonData.asset files referenced by CharacterWindow.prefab for hero inspection UI. Each family has base, white (+1/bai), and black (+2/hei) variants.",
+        "hunter": {
+          "base_spine_path": "Assets/Spines/Heroes/hunter/lieren_SkeletonData.asset",
+          "base_guid": "1193cdd9a277e0440ba4ce83bfbad0a9",
+          "white_spine_path": null,
+          "white_guid": null,
+          "black_spine_path": null,
+          "black_guid": null,
+          "frontend_usage": "screens/town/HeroDetailScreen.tsx, contractTypes HeroDetailViewModel",
+          "inventory_status": "confirmed"
+        },
+        "alchemist": {
+          "base_spine_path": "Assets/Spines/Heroes/alchemist/yaoshi_SkeletonData.asset",
+          "base_guid": null,
+          "white_spine_path": "Assets/Spines/Heroes/alchemist1/yaoshi-bai_SkeletonData.asset",
+          "white_guid": "3388b8382fabaa84cbc553e2815e8d1e",
+          "black_spine_path": "Assets/Spines/Heroes/alchemist2/yaoshi-hei_SkeletonData.asset",
+          "black_guid": "2ba5dcae10f3d944e811abb48b14d5c1",
+          "frontend_usage": "screens/town/HeroDetailScreen.tsx",
+          "inventory_status": "confirmed"
+        },
+        "diviner": {
+          "base_spine_path": "Assets/Spines/Heroes/diviner/wenzhenren_SkeletonData.asset",
+          "base_guid": null,
+          "white_spine_path": "Assets/Spines/Heroes/diviner1/wenzhenren-bai_SkeletonData.asset",
+          "white_guid": null,
+          "black_spine_path": "Assets/Spines/Heroes/diviner2/wenzhenren-hei_SkeletonData.asset",
+          "black_guid": "31b060a9cde770f41a328b76de19ca42",
+          "frontend_usage": "screens/town/HeroDetailScreen.tsx",
+          "inventory_status": "confirmed"
+        },
+        "shaman": {
+          "base_spine_path": "Assets/Spines/Heroes/shaman/wuzhu_SkeletonData.asset",
+          "base_guid": null,
+          "white_spine_path": "Assets/Spines/Heroes/shaman1/wuzhu-bai_SkeletonData.asset",
+          "white_guid": null,
+          "black_spine_path": "Assets/Spines/Heroes/shaman2/wuzhu-hei_SkeletonData.asset",
+          "black_guid": null,
+          "frontend_usage": "screens/town/HeroDetailScreen.tsx",
+          "inventory_status": "confirmed"
+        },
+        "tank": {
+          "base_spine_path": "Assets/Spines/Heroes/tank/yukanguan_SkeletonData.asset",
+          "base_guid": "a78eb2e5e4461a444a6d97f46faf9728",
+          "white_spine_path": null,
+          "white_guid": null,
+          "black_spine_path": "Assets/Spines/Heroes/tank2/yukanguan-hei_SkeletonData.asset",
+          "black_guid": "921a0507934217147aeea2c8fa9b36dc",
+          "frontend_usage": "screens/town/HeroDetailScreen.tsx",
+          "inventory_status": "confirmed"
+        }
+      },
+      "hero_portraits": {
+        "description": "Roster portrait sprites used in HeroSlot.prefab and related UI elements",
+        "portrait_root": "Assets/Resources/Data/Heroes/Sprites",
+        "example_portrait": {
+          "asset_path": "Assets/Resources/Data/Heroes/Sprites/alchemist/A/alchemist_portrait_roster.png",
+          "guid": "e28d45be6740af2489cc42479de9a066",
+          "inventory_status": "confirmed"
+        },
+        "notes": "Each hero class has portraits in subdirectories: {class}/A/{class}_portrait_roster.png. Full portrait inventory requires scanning all 5 families x 3 variants. Marked as deferred enumeration."
+      }
+    },
+
+    "item_equipment_icons": {
+      "description": "Sprite icons for items, equipment, trinkets, and provisions required by the scoped UI screens.",
+      "trinket_icons": {
+        "description": "Trinket/inventory icons referenced in MarketSlot.prefab and other shop/equipment UI",
+        "phase_shift_device": {
+          "asset_path": "Assets/Resources/Sprites/inv_trinket+phase_shift_device.png",
+          "guid": null,
+          "frontend_usage": "MarketSlot UI, equipment display in HeroDetailScreen",
+          "inventory_status": "confirmed"
+        },
+        "icon_root": "Assets/Resources/Sprites/",
+        "notes": "Full trinket icon inventory requires scanning all registered trinkets from data/JsonTrinkets.json (ancesthetic_charm, hunter_badge, diviners_focus, alchemist_catalyst, battle_horn, shaman_totem, shadowstep_cloak, ironwill_tome, dragon_slayer_medallion, etc.). Marked as deferred enumeration."
+      },
+      "provision_icons": {
+        "description": "Provisioning/supply icons referenced in PartyInventorySlot, PartyInventorySlotInDungeon prefabs",
+        "rattle_drum": {
+          "asset_path": "Assets/Resources/Sprites/inv_supply+rattle_drum.png",
+          "guid": "e401bf9b9275ede4aa2ff50d13cc6207",
+          "frontend_usage": "ProvisioningScreen.tsx, expedition inventory",
+          "inventory_status": "confirmed"
+        },
+        "dark_water": {
+          "asset_path": "Assets/Resources/Sprites/inv_supply+dark_water.png",
+          "guid": null,
+          "frontend_usage": "PartyInventorySlotInDungeon",
+          "inventory_status": "confirmed"
+        },
+        "icon_root": "Assets/Resources/Sprites/",
+        "notes": "Full provision icon inventory requires enumerating all provision items. Marked as deferred enumeration."
+      },
+      "rarity_icons": {
+        "rarity_common": {
+          "asset_path": "Assets/Resources/Sprites/rarity_common.png",
+          "guid": null,
+          "inventory_status": "confirmed"
+        },
+        "notes": "Additional rarity sprites (rarity_uncommon, rarity_rare, rarity_epic, rarity_legendary) expected but not confirmed in inventory scan."
+      },
+      "currency_icons": {
+        "gold": {
+          "asset_path": "Assets/Resources/Sprites/gold.png",
+          "guid": null,
+          "frontend_usage": "TownShellScreen gold display, shop costs",
+          "inventory_status": "confirmed"
+        }
+      }
+    },
+
+    "ui_chrome": {
+      "description": "UI chrome and decorative elements from the original Unity UI, referenced across multiple prefabs and the EstateManagement scene.",
+      "hero_slot_assets": {
+        "hero_slot_bg": {
+          "asset_path": "Assets/Sprites/ui/hero_slot_bg.png",
+          "guid": "49065c5846da2b748b14239778162e06",
+          "frontend_usage": "Hero roster display in TownShellScreen, HeroDetailScreen",
+          "inventory_status": "confirmed"
+        },
+        "hero_slot_background_highlight": {
+          "asset_path": "Assets/Resources/Sprites/hero_slot.backgroundhightlight.png",
+          "guid": null,
+          "frontend_usage": "Hero slot selection highlight",
+          "inventory_status": "confirmed"
+        },
+        "hero_slot_locked_icon": {
+          "asset_path": "Assets/Resources/Sprites/hero_slot.locked_icon.png",
+          "guid": null,
+          "frontend_usage": "Locked hero slots",
+          "inventory_status": "confirmed"
+        },
+        "hero_activity_confirm_button": {
+          "asset_path": "Assets/Resources/Sprites/hero_activity.confirm_button.png",
+          "guid": null,
+          "inventory_status": "confirmed"
+        }
+      },
+      "slot_backgrounds": {
+        "item_slot": {
+          "asset_path": "Assets/Sprites/ui/item_slot.png",
+          "guid": null,
+          "frontend_usage": "MarketSlot, PartyInventorySlot, PartyInventorySlotInDungeon",
+          "inventory_status": "confirmed"
+        },
+        "upgrade_slot": {
+          "asset_path": "Assets/Sprites/ui/upgrade_slot.png",
+          "guid": null,
+          "frontend_usage": "SkillUpgradeSlot, Building upgrade displays",
+          "inventory_status": "confirmed"
+        },
+        "upgrade_locked": {
+          "asset_path": "Assets/Sprites/ui/upgrade_locked.png",
+          "guid": null,
+          "frontend_usage": "Locked upgrade indicators",
+          "inventory_status": "confirmed"
+        }
+      },
+      "button_sprites": {
+        "btn_talk": {
+          "asset_path": "Assets/Sprites/ui/btn_talk.png",
+          "guid": "6f69c769246bdb543aeaea728e58986b",
+          "inventory_status": "confirmed"
+        },
+        "btn_close": {
+          "asset_path": "Assets/Sprites/ui/btn_close.png",
+          "guid": null,
+          "inventory_status": "confirmed"
+        },
+        "btn_save_01": {
+          "asset_path": "Assets/Sprites/ui/btn_save_01.png",
+          "guid": null,
+          "inventory_status": "confirmed"
+        },
+        "btn_save_02": {
+          "asset_path": "Assets/Sprites/ui/btn_save_02.png",
+          "guid": null,
+          "inventory_status": "confirmed"
+        },
+        "btn_white": {
+          "asset_path": "Assets/Sprites/ui/btn_white.png",
+          "guid": null,
+          "inventory_status": "confirmed"
+        },
+        "btn_gray": {
+          "asset_path": "Assets/Sprites/ui/btn_gray.png",
+          "guid": null,
+          "inventory_status": "confirmed"
+        },
+        "btn_up": {
+          "asset_path": "Assets/Sprites/ui/btn_up.png",
+          "guid": null,
+          "inventory_status": "confirmed"
+        },
+        "btn_sliding": {
+          "asset_path": "Assets/Sprites/ui/btn_sliding.png",
+          "guid": null,
+          "inventory_status": "confirmed"
+        },
+        "btn_play": {
+          "asset_path": "Assets/Sprites/town/btn_play.png",
+          "guid": null,
+          "inventory_status": "confirmed"
+        }
+      },
+      "panel_backgrounds": {
+        "char_bg": {
+          "asset_path": "Assets/Sprites/ui/char_bg.png",
+          "guid": null,
+          "inventory_status": "confirmed"
+        },
+        "char_icon": {
+          "asset_path": "Assets/Sprites/ui/char_icon.png",
+          "guid": null,
+          "inventory_status": "confirmed"
+        },
+        "head_frame02": {
+          "asset_path": "Assets/Sprites/ui/head_frame02.png",
+          "guid": null,
+          "inventory_status": "confirmed"
+        },
+        "lowwindow_bg": {
+          "asset_path": "Assets/Sprites/lowwindow_bg.png",
+          "guid": "5cfc80e2005935a4b93c2a60082699c7",
+          "inventory_status": "confirmed"
+        },
+        "scene_bg": {
+          "asset_path": "Assets/Sprites/scene_bg.png",
+          "guid": null,
+          "inventory_status": "confirmed"
+        },
+        "estate_icon_frame": {
+          "asset_path": "Assets/Sprites/ui/estate_icon_frame.png",
+          "guid": null,
+          "inventory_status": "confirmed"
+        },
+        "save_name_bg": {
+          "asset_path": "Assets/Sprites/ui/save_name_bg.png",
+          "guid": null,
+          "inventory_status": "confirmed"
+        },
+        "dialog02": {
+          "asset_path": "Assets/Sprites/ui/dialog02.png",
+          "guid": "5a6621bfc0a3bb343b792676faf64255",
+          "inventory_status": "confirmed"
+        },
+        "dialog07": {
+          "asset_path": "Assets/Sprites/ui/dialog07.png",
+          "guid": "8dfa4edfbf2a545439cddbacc05d7830",
+          "inventory_status": "confirmed"
+        },
+        "scrollbar": {
+          "asset_path": "Assets/Sprites/ui/scrollbar.png",
+          "guid": null,
+          "inventory_status": "confirmed"
+        }
+      },
+      "stress_pips": {
+        "normal": {
+          "asset_path": "Assets/Sprites/ui/stress.normal.png",
+          "guid": "3dc25943c0f55ea419840972b6121378",
+          "inventory_status": "confirmed"
+        },
+        "stressed": {
+          "asset_path": "Assets/Sprites/ui/stress.stressed.png",
+          "guid": "1a507a3513cc72c459c9ebd1b534a1e0",
+          "inventory_status": "confirmed"
+        },
+        "overstressed": {
+          "asset_path": "Assets/Sprites/ui/stress.overstressed.png",
+          "guid": "bc794be09ac80f04e812cdc62375b076",
+          "inventory_status": "confirmed"
+        }
+      }
+    },
+
+    "prefab_hierarchy_references": {
+      "description": "The 28 Unity prefab/scene files inventoried in fixtures/ui_inventory/Assets/. Each maps to a frontend screen or component.",
+      "inventory": [
+        {
+          "source_file": "Assets/Scenes/EstateManagement.unity",
+          "target_output": "fixtures/ui_inventory/Assets/Scenes/EstateManagement.unity.json",
+          "asset_ref_count": 2693,
+          "maps_to_frontend": [
+            "screens/town/TownShellScreen.tsx",
+            "screens/town/BuildingScreenRouter.tsx",
+            "screens/town/buildings/StagecoachBuildingScreen.tsx",
+            "screens/town/buildings/GuildBuildingScreen.tsx",
+            "screens/town/buildings/BlacksmithBuildingScreen.tsx",
+            "screens/town/HeroDetailScreen.tsx"
+          ]
+        },
+        {
+          "source_file": "Assets/Prefabs/UI/Windows/CharacterWindow.prefab",
+          "target_output": "fixtures/ui_inventory/Assets/Prefabs/UI/Windows/CharacterWindow.prefab.json",
+          "asset_ref_count": 442,
+          "maps_to_frontend": [
+            "screens/town/HeroDetailScreen.tsx"
+          ]
+        },
+        {
+          "source_file": "Assets/Prefabs/UI/Windows/MainMenuWindow.prefab",
+          "target_output": "fixtures/ui_inventory/Assets/Prefabs/UI/Windows/MainMenuWindow.prefab.json",
+          "asset_ref_count": 25,
+          "maps_to_frontend": [
+            "screens/startup/StartupScreen.tsx"
+          ]
+        },
+        {
+          "source_file": "Assets/Prefabs/UI/HeroSlot.prefab",
+          "target_output": "fixtures/ui_inventory/Assets/Prefabs/UI/HeroSlot.prefab.json",
+          "asset_ref_count": 12,
+          "maps_to_frontend": [
+            "screens/town/TownShellScreen.tsx (roster list)"
+          ]
+        },
+        {
+          "source_file": "Assets/Prefabs/UI/MarketSlot.prefab",
+          "target_output": "fixtures/ui_inventory/Assets/Prefabs/UI/MarketSlot.prefab.json",
+          "asset_ref_count": 8,
+          "maps_to_frontend": [
+            "BuildingScreenRouter generic screens"
+          ]
+        },
+        {
+          "source_file": "Assets/Prefabs/UI/ShopSlot.prefab",
+          "target_output": "fixtures/ui_inventory/Assets/Prefabs/UI/ShopSlot.prefab.json",
+          "asset_ref_count": 8,
+          "maps_to_frontend": [
+            "BuildingScreenRouter generic screens"
+          ]
+        },
+        {
+          "source_file": "Assets/Prefabs/UI/PartyInventorySlot.prefab",
+          "target_output": "fixtures/ui_inventory/Assets/Prefabs/UI/PartyInventorySlot.prefab.json",
+          "asset_ref_count": 8,
+          "maps_to_frontend": [
+            "screens/expedition/ProvisioningScreen.tsx"
+          ]
+        },
+        {
+          "source_file": "Assets/Prefabs/UI/PartyInventorySlotInDungeon.prefab",
+          "target_output": "fixtures/ui_inventory/Assets/Prefabs/UI/PartyInventorySlotInDungeon.prefab.json",
+          "asset_ref_count": 7,
+          "maps_to_frontend": [
+            "screens/expedition/ExpeditionScreen.tsx"
+          ]
+        },
+        {
+          "source_file": "Assets/Prefabs/UI/SkillUpgradeSlot.prefab",
+          "target_output": "fixtures/ui_inventory/Assets/Prefabs/UI/SkillUpgradeSlot.prefab.json",
+          "asset_ref_count": 8,
+          "maps_to_frontend": [
+            "screens/town/buildings/GuildBuildingScreen.tsx"
+          ]
+        },
+        {
+          "source_file": "Assets/Prefabs/UI/UpgradeSlot.prefab",
+          "target_output": "fixtures/ui_inventory/Assets/Prefabs/UI/UpgradeSlot.prefab.json",
+          "asset_ref_count": 11,
+          "maps_to_frontend": [
+            "screens/town/buildings/GuildBuildingScreen.tsx",
+            "screens/town/buildings/BlacksmithBuildingScreen.tsx"
+          ]
+        },
+        {
+          "source_file": "Assets/Prefabs/UI/EquipmentUpgradeSlot.prefab",
+          "target_output": "fixtures/ui_inventory/Assets/Prefabs/UI/EquipmentUpgradeSlot.prefab.json",
+          "asset_ref_count": 9,
+          "maps_to_frontend": [
+            "screens/town/buildings/BlacksmithBuildingScreen.tsx"
+          ]
+        },
+        {
+          "source_file": "Assets/Prefabs/UI/Raid/HeroResultSlot.prefab",
+          "target_output": "fixtures/ui_inventory/Assets/Prefabs/UI/Raid/HeroResultSlot.prefab.json",
+          "asset_ref_count": 41,
+          "maps_to_frontend": [
+            "screens/expedition/ResultScreen.tsx"
+          ]
+        },
+        {
+          "source_file": "Assets/Prefabs/UI/Raid/LootSlot.prefab",
+          "target_output": "fixtures/ui_inventory/Assets/Prefabs/UI/Raid/LootSlot.prefab.json",
+          "asset_ref_count": 6,
+          "maps_to_frontend": [
+            "screens/expedition/ResultScreen.tsx"
+          ]
+        },
+        {
+          "source_file": "Assets/Prefabs/UI/Controls/HeroSlot.prefab",
+          "target_output": "fixtures/ui_inventory/Assets/Prefabs/UI/Controls/HeroSlot.prefab.json",
+          "asset_ref_count": 53,
+          "maps_to_frontend": [
+            "screens/town/TownShellScreen.tsx"
+          ]
+        },
+        {
+          "source_file": "Assets/Prefabs/UI/Controls/PartyHeroSlot.prefab",
+          "target_output": "fixtures/ui_inventory/Assets/Prefabs/UI/Controls/PartyHeroSlot.prefab.json",
+          "asset_ref_count": 23,
+          "maps_to_frontend": [
+            "screens/expedition/ProvisioningScreen.tsx"
+          ]
+        },
+        {
+          "source_file": "Assets/Prefabs/UI/Controls/TrinketRow.prefab",
+          "target_output": "fixtures/ui_inventory/Assets/Prefabs/UI/Controls/TrinketRow.prefab.json",
+          "asset_ref_count": 30,
+          "maps_to_frontend": [
+            "screens/town/HeroDetailScreen.tsx"
+          ]
+        },
+        {
+          "source_file": "Assets/Prefabs/UI/Raid/OverlaySlot.prefab",
+          "target_output": "fixtures/ui_inventory/Assets/Prefabs/UI/Raid/OverlaySlot.prefab.json",
+          "asset_ref_count": 138,
+          "maps_to_frontend": [
+            "screens/expedition/ExpeditionScreen.tsx"
+          ]
+        }
+      ],
+      "remaining_inventory": [
+        "Assets/Prefabs/UI/TreatmentHeroSlot.prefab (9 refs)",
+        "Assets/Prefabs/UI/Estate/Buildings/Graveyard/DeathRecord.prefab (13 refs)",
+        "Assets/Prefabs/UI/Estate/Exchange/Exchange.prefab (9 refs)",
+        "Assets/Prefabs/UI/Estate/PanelWindows/ActivityLog/ActivityRecord.prefab (9 refs)",
+        "Assets/Prefabs/UI/Estate/PanelWindows/ActivityLog/Goal.prefab (5 refs)",
+        "Assets/Prefabs/UI/Estate/PanelWindows/ActivityLog/WeekBlock.prefab (246 refs)",
+        "Assets/Prefabs/UI/Estate/PanelWindows/Glossary/GlossaryRecord.prefab (5 refs)",
+        "Assets/Prefabs/UI/Raid/Map/HallSectorSlot.prefab (4 refs)",
+        "Assets/Prefabs/UI/Raid/Map/HallwaySlot.prefab (2 refs)",
+        "Assets/Prefabs/UI/Raid/Map/RoomSlot.prefab (6 refs)",
+        "Assets/Prefabs/UI/Controls/GameSetup.prefab (1 ref)"
+      ]
+    },
+
+    "deferred_work": {
+      "description": "Assets that are referenced in inventory but whose full enumeration is deferred — not blockers for the scoped UI.",
+      "items": [
+        {
+          "item": "hero_portrait_full_enumeration",
+          "reason": "Each of 5 hero families x 3 variants has a portrait sprite. Path pattern is known: Assets/Resources/Data/Heroes/Sprites/{class}/{variant}/{class}_portrait_roster.png. Full extraction deferred.",
+          "blocker": false
+        },
+        {
+          "item": "trinket_icon_full_enumeration",
+          "reason": "~10 trinkets registered in data/JsonTrinkets.json. Each needs an inv_trinket+{id}.png sprite. Full extraction deferred until trinket UI is scoped.",
+          "blocker": false
+        },
+        {
+          "item": "provision_icon_full_enumeration",
+          "reason": "Provision icons follow pattern inv_supply+{id}.png. Full enumeration deferred until provisioning UI details are designed.",
+          "blocker": false
+        },
+        {
+          "item": "camping_skill_icons",
+          "reason": "Camping skills from data/JsonCamping.json reference hero classes but no icon sprites are scoped yet.",
+          "blocker": false
+        },
+        {
+          "item": "dungeon_map_assets",
+          "reason": "Raid map prefabs (HallSectorSlot, HallwaySlot, RoomSlot) expose 12 asset references. Not needed until expedition map UI is designed.",
+          "blocker": false
+        }
+      ]
+    },
+
+    "blockers": {
+      "description": "Missing required assets that block progress and should not be marked placeholder-complete.",
+      "items": [
+        {
+          "id": "BLOCKER-001",
+          "title": "Original Unity sprite/texture assets not present in repository",
+          "severity": "critical",
+          "description": "The repository contains only parsed fixture JSON (metadata, GUIDs, hierarchy) from Unity prefabs and scenes. The actual .png sprite files, Spine .skel/.atlas files, and .asset files referenced by the manifest are NOT included in the repository. These reside in the external DreamDeveloperGame-Crossover Unity project.",
+          "impact": "Frontend currently uses CSS-only dark theme styling with no raster sprites. Building sprite rendering, hero portraits, and item icons all require the original PNG/Spine assets. Cannot implement visual parity without sourcing these files.",
+          "resolution": "Extract required .png sprites from DreamDeveloperGame-Crossover/Assets/Sprites/ and Spine data from Assets/Spines/Heroes/. Copy into frontend/src/assets/ as build inputs.",
+          "resolved": false
+        },
+        {
+          "id": "BLOCKER-002",
+          "title": "Spine runtime integration not configured for web",
+          "severity": "high",
+          "description": "The frontend declares a spine-bridge.ts contract (ISpineBridge interface) but has no actual Spine WebGL runtime integration configured. The SkeletonData.asset files are Unity-native .asset format, incompatible with web Spine runtimes.",
+          "impact": "Hero character rendering in HeroDetailScreen cannot use the original Spine animations until Spine runtime is integrated and asset format conversion is addressed.",
+          "resolution": "1) Add spine-player or @esotericsoftware/spine-webgl npm package. 2) Configure asset pipeline to export Spine data from Unity in .json/.skel format. 3) Wire ISpineBridge to actual Spine renderer.",
+          "resolved": false
+        },
+        {
+          "id": "BLOCKER-003",
+          "title": "GUID-to-asset-path resolution requires Unity source project",
+          "severity": "high",
+          "description": "GUIDs extracted from prefab JSON (e.g., '87a55679f12a1e6489ecdb1d6e6f6b93' for building_perception_tower.png) are Unity-internal identifiers. These map to asset paths within the Unity project's .meta files. Without the Unity source project available at build time, GUIDs serve as documentation cross-references only — the actual asset files must be identified by path.",
+          "impact": "Asset pipeline cannot resolve GUID → file path automatically. Manual path-based asset extraction from the Unity project is required.",
+          "resolution": "Maintain the path-based references in this manifest. The actual asset extraction is a manual/copy step from the original Unity project, not an automated resolution.",
+          "resolved": false
+        }
+      ]
+    },
+
+    "migration_references": {
+      "rust_backend": {
+        "hero_families": "src/heroes/families.rs — HeroFamilyRegistry defines 5 families (alchemist, diviner, hunter, shaman, tank) with base/white/black variants",
+        "building_data": "data/Buildings.json — 11 building definitions (stagecoach, abbey, sanitarium, tavern, guild, blacksmith, inn, graveyard, museum, provisioner, sanctuary)",
+        "asset_audit_cli": "src/cli.rs — generate_asset_audit() produces ASSET_GAP_INVENTORY.md tables",
+        "spine_contract": "frontend/src/contracts/spine-bridge.ts — ISpineBridge interface for future Spine integration"
+      },
+      "frontend_screens": {
+        "town_shell": "screens/town/TownShellScreen.tsx",
+        "hero_detail": "screens/town/HeroDetailScreen.tsx",
+        "buildings": "screens/town/BuildingScreenRouter.tsx + Stagecoach/Guild/Blacksmith screen components",
+        "provisioning": "screens/expedition/ProvisioningScreen.tsx",
+        "expedition": "screens/expedition/ExpeditionScreen.tsx",
+        "result": "screens/expedition/ResultScreen.tsx",
+        "return": "screens/expedition/ReturnScreen.tsx"
+      }
+    }
+  },
+
+  "summary": {
+    "total_asset_references_catalogued": 75,
+    "scoped_buildings": 6,
+    "confirmed_building_sprites": 6,
+    "confirmed_spine_sources": 5,
+    "confirmed_ui_chrome_assets": 24,
+    "confirmed_item_icons": 4,
+    "confirmed_stress_pips": 3,
+    "total_inventoried_prefabs": 28,
+    "blockers": 3,
+    "deferred_items": 5,
+    "blocker_summary": "Original Unity .png/.asset files are not in repository. Spine runtime integration is not configured. GUID resolution requires manual path mapping.",
+    "next_action": "Extract required .png sprites from DreamDeveloperGame-Crossover project into frontend/src/assets/. Configure Spine web runtime for hero character rendering."
+  }
+}
