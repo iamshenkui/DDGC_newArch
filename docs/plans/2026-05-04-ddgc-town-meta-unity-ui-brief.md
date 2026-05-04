@@ -7,11 +7,13 @@
 ## 1. Assets Inspected
 
 ### Unity Scenes
+- `Assets/Scenes/Intro.unity` — boot/title scene; initial loading, intro video, Red Hook logo splash, disclaimer notice, and main menu (New Game, Load Game, Settings, QuitGame). 8 native GameObjects, 0 prefab instances, 1 text node.
 - `Assets/Scenes/EstateManagement.unity` — the single town/meta scene; houses every estate building, provisioning, roster, quest select, and shared overlay surface. 1769 native GameObjects, 364 prefab instances, 424 text nodes.
 
 ### Prefabs
 - `Assets/Prefabs/UI/Windows/CharacterWindow.prefab` — hero detail overlay (stress panel, hero info, model display, equipment, combat/camping skills, stats, resistances, roster scroll)
-- `Assets/Prefabs/UI/Windows/MainMenuWindow.prefab` — main menu
+- `Assets/Prefabs/UI/Windows/MainMenuWindow.prefab` — in-game pause/options menu (Return To Game, Controls, Options, Return To Main Menu, Return To Desktop); active=false, instantiated under UI_Shared/MidWindows in EstateManagement. 13 native GameObjects, 5 text nodes.
+- `Assets/Prefabs/UI/Controls/GameSetup.prefab` — cursor and content-loading bootstrap, linked from Intro.unity GameSetup component.
 - `Assets/Prefabs/UI/HeroSlot.prefab` — roster hero entry
 - `Assets/Prefabs/UI/TreatmentHeroSlot.prefab` — sanitarium treatment slot
 - `Assets/Prefabs/UI/MarketSlot.prefab` — market item slot
@@ -29,8 +31,9 @@
 - `Assets/Prefabs/UI/Raid/Map/*.prefab` (hall sector, hallway, room)
 
 ### C# Scripts (key ones)
+- **Setup/Intro:** `GameSetup.cs` (content loading bootstrap, cursor), `GameIntro.cs` (title scene sequence controller — video→logo→menu), `MoviePlayer.cs` (intro video playback), `GameLogo.cs` (logo fade-in animation)
 - **Managers:** `EstateSceneManager.cs`, `TownManager.cs`, `RaidSceneManager.cs`, `RaidPreparationManager.cs`, `PartyFormationManager.cs`, `ShopManager.cs`, `LocalizationManager.cs`, `SettingsManager.cs`, `ToolTipManager.cs`
-- **UI/Windows:** `CharacterWindow.cs`, `RaidResultWindow.cs`, `ResultHeroWindow.cs`, `ResultItemWindow.cs`, `QuestCompletionWindow.cs`, `ReviveHeroWindow.cs`, `RealmInventoryWindow.cs`, `SettingsWindow.cs`, `ActivityLogWindow.cs`, `GlossaryWindow.cs`, `DialogueWindow.cs`, `TownEventWindow.cs`
+- **UI/Windows:** `MainMenuWindow.cs` (in-game pause menu), `CharacterWindow.cs`, `RaidResultWindow.cs`, `ResultHeroWindow.cs`, `ResultItemWindow.cs`, `QuestCompletionWindow.cs`, `ReviveHeroWindow.cs`, `RealmInventoryWindow.cs`, `SettingsWindow.cs`, `ActivityLogWindow.cs`, `GlossaryWindow.cs`, `DialogueWindow.cs`, `TownEventWindow.cs`
 - **UI/Windows/Buildings:** `BuildingWindow.cs`, `UpgradableBuildingWindow.cs`, `UpgradableHeroBuildingWindow.cs`, `StageCoachWindow.cs`, `GuildHeroWindow.cs`, `BlacksmithHeroWindow.cs`, `TavernWindow.cs`, `AbbeyWindow.cs`, `SanitariumWindow.cs` (+ quirk/disease sub-windows), `GardenWindow.cs`, `GraveyardWindow.cs`, `LegacyTowerWindow.cs`, `NomadWagonWindow.cs`, `CampingTrainerHeroWindow.cs`, `StatueWindow.cs`, `HeroOverviewWindow.cs`, `UpgradeWindow.cs`
 - **UI/Panels:** `HeroRosterPanel.cs`, `EstateBottomPanel.cs`, `EstateTopPanel.cs`, `EstateCurrencyPanel.cs`, `SelectedQuestPanel.cs`, `RaidPartyPanel.cs`, `RaidQuestPanel.cs`, `RaidInventoryPanel.cs`, `StressPanel.cs`, `ResistancesPanel.cs`, `QuirksPanel.cs`, `CharStatsPanel.cs`, `CharEquipmentPanel.cs`, `CharCombatSkillPanel.cs`, `CharCampingSkillPanel.cs`, `RecruitPanel.cs`, `DungeonPanel.cs`, `HeroDiscardPanel.cs`, `DiseasePanel.cs`, `DialoguePanel.cs`, `RaidBannerPanel.cs`, `RaidHeroPanel.cs`, `RaidCharStatsPanel.cs`, `RaidCombatSkillsPanel.cs`, `RaidMapPanel.cs`, `RaidPanel.cs`, `QuestRewardPanel.cs`, `PartyCompositionPanel.cs`, `HeirloomExchangePanel.cs`, `ItemSellbackPanel.cs`, `TrayPanel.cs`, `StressOverlayPanel.cs`, `HeroDisplayPanel.cs`
 
@@ -42,6 +45,7 @@
 - `Assets/Sprites/ui/upgrade_locked.png` — locked upgrade state
 - `Assets/Sprites/Formation/` — combat formation sprites
 - `Assets/Resources/Screen/` — loading screen images per dungeon biome
+- Intro scene textures: Red Hook logo sprite (GUID `5acbfead2b746c949acc123a989bdf78`), intro video texture (GUID `b9f0e53d8b8d3a24b8ef1e5bf5298bfa`), MainMenuWindow background sprite (GUID `4e780ea66a89c2f4b8bdc4f4b76c290d`), menu button sprite (GUID `b14c9d4fa66bc4d45897fba8c866125a`), close button sprite (GUID `769d8277be4c51447a1cb51c5cb91749`)
 
 ### Spine Assets
 - `Assets/Spine/Runtime/` — spine-csharp + spine-unity runtime; character model display (ModelDisplayPanel references 16 hero class model variants: tank, hunter, alchemist, shaman, diviner × 2 each)
@@ -58,7 +62,12 @@
 - `Assets/Resources/Data/Dungeons/` — dungeon configuration
 
 ### Fonts
-- `Assets/Fonts/ZhiYiSongTi-Regular.ttf` — primary Chinese UI font
+- `Assets/Fonts/ZhiYiSongTi-Regular.ttf` — primary Chinese UI font (town/building UI)
+- `Assets/Fonts/Bak/Deutsch.ttf` (GUID `f930c4496e27b454ebc744aa4b25236e`) — MainMenuWindow button text font (title/pause menu)
+- `Assets/Fonts/Bak/DwarvenAxe BB W00 Regular.ttf` (GUID `b601d2a4d5d34414aa0b143ce082e654`) — Intro.unity disclaimer notice font
+
+### Other Assets
+- `Assets/Cursors/arrow.png` (GUID `f55ab39a3073fcc48bcfdb8ec25e815e`) — game cursor, set by GameSetup.cs in Intro.unity
 
 ---
 
