@@ -2527,43 +2527,7 @@ button {
   color: #ea7767;
 }
 
-/* ── Returning heroes row ───────────────────────────────── */
-.returning-hero-row {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.returning-hero-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 12px 16px;
-  border-radius: var(--radius-md);
-  background: rgba(10, 18, 14, 0.7);
-  border: 1px solid rgba(160, 204, 188, 0.12);
-  min-width: 120px;
-}
-
-.returning-hero-card-name {
-  font-weight: 600;
-  font-size: 0.82rem;
-  color: var(--panel-text);
-}
-
-.returning-hero-card-stats {
-  display: flex;
-  gap: 10px;
-  font-size: 0.7rem;
-}
-
-.returning-hero-stat {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
+/* ── Returning heroes row (moved after result/return game-style update) ── */
 
 /* ── Loot list ────────────────────────────────────────────── */
 .loot-panel {
@@ -2587,6 +2551,209 @@ button {
   font-size: 0.78rem;
   color: var(--panel-text);
   padding: 2px 0;
+}
+
+/* ── Outcome banner ornament ────────────────────────────── */
+.outcome-banner-ornament {
+  width: 80px;
+  height: 2px;
+  margin-bottom: 4px;
+  border-radius: 2px;
+}
+
+.outcome-banner--success .outcome-banner-ornament {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(91, 189, 110, 0.6) 50%,
+    transparent 100%
+  );
+}
+
+.outcome-banner--failure .outcome-banner-ornament {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(234, 119, 103, 0.6) 50%,
+    transparent 100%
+  );
+}
+
+.outcome-banner--partial .outcome-banner-ornament {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(232, 168, 56, 0.6) 50%,
+    transparent 100%
+  );
+}
+
+/* ── Outcome banner detail text (game-style status message) ── */
+.outcome-banner-detail {
+  font-size: 0.78rem;
+  margin: 2px 0 0;
+  max-width: 52ch;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+.outcome-detail--success {
+  color: #5bbd6e;
+}
+
+.outcome-detail--failure {
+  color: #ea7767;
+}
+
+.outcome-detail--partial {
+  color: #e8a838;
+}
+
+/* ── Hero outcome portrait (from original assets or fallback) ── */
+.hero-outcome-portrait {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(160, 204, 188, 0.15);
+  margin-bottom: 2px;
+  flex: 0 0 auto;
+  transition: border-color 0.15s ease;
+}
+
+.hero-outcome-portrait--fallback {
+  background: radial-gradient(circle, rgba(198, 212, 106, 0.12), rgba(0, 0, 0, 0.3));
+  border: 2px solid rgba(198, 212, 106, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-outcome-portrait-letter {
+  font-family: var(--heading-font);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+  text-shadow: 0 0 8px rgba(198, 212, 106, 0.2);
+}
+
+.hero-outcome-card--dead .hero-outcome-portrait {
+  border-color: rgba(234, 119, 103, 0.3);
+  opacity: 0.7;
+  filter: grayscale(0.6);
+}
+
+/* ── Hero outcome change icons ──────────────────────────── */
+.hero-outcome-change-icon {
+  display: inline-block;
+  width: 12px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.hero-outcome-change-icon--down {
+  color: #ea7767;
+}
+
+.hero-outcome-change-icon--up {
+  color: #5bbd6e;
+}
+
+/* ── Casualty warning ───────────────────────────────────── */
+.casualty-message {
+  margin: 0;
+  color: #ea7767;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.casualty-message strong {
+  color: #ea7767;
+  letter-spacing: 0.03em;
+}
+
+/* ── Returning hero portrait (from original assets or fallback) ── */
+.returning-hero-portrait {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(160, 204, 188, 0.15);
+  margin-bottom: 4px;
+  flex: 0 0 auto;
+}
+
+.returning-hero-portrait--fallback {
+  background: radial-gradient(circle, rgba(198, 212, 106, 0.12), rgba(0, 0, 0, 0.3));
+  border: 2px solid rgba(198, 212, 106, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.returning-hero-portrait-letter {
+  font-family: var(--heading-font);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+  text-shadow: 0 0 8px rgba(198, 212, 106, 0.2);
+}
+
+/* ── Return summary text ────────────────────────────────── */
+.return-summary-text {
+  font-size: 0.75rem;
+  color: var(--panel-muted);
+  margin: 2px 0 0;
+  max-width: 52ch;
+  line-height: 1.4;
+  opacity: 0.8;
+}
+
+/* ── Returning hero row — tighter wrap ──────────────────── */
+.returning-hero-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.returning-hero-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  background: rgba(10, 18, 14, 0.7);
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  min-width: 130px;
+  transition: border-color 0.15s ease, transform 0.12s ease;
+}
+
+.returning-hero-card:hover {
+  border-color: rgba(160, 204, 188, 0.3);
+  transform: translateY(-2px);
+}
+
+.returning-hero-card-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--panel-text);
+}
+
+.returning-hero-card-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.returning-hero-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* ── Responsive: collapse to portrait on narrow screens ─ */

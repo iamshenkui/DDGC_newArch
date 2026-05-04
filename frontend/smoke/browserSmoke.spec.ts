@@ -351,7 +351,7 @@ test.describe("browser smoke: fidelity gates", () => {
     );
 
     // 5e. Result → Return
-    await page.getByRole("button", { name: "Continue to Town" }).click();
+    await page.getByRole("button", { name: "Proceed to Return" }).click();
     await settle(page);
 
     await expect(
@@ -491,7 +491,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Live result screen heading must be visible"
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Continue to Town" }).click();
+    await page.getByRole("button", { name: "Proceed to Return" }).click();
     await settle(page);
 
     await expect(
@@ -501,6 +501,10 @@ test.describe("browser smoke: fidelity gates", () => {
     await expect(
       page.getByRole("heading", { name: "Expedition Concluded" }),
       "Live return screen heading must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("Resume Town Activities"),
+      "Resume button must be visible on live return screen"
     ).toBeVisible();
 
     await expectFidelity(
@@ -513,6 +517,19 @@ test.describe("browser smoke: fidelity gates", () => {
       page.locator(".expedition-viewport"),
       "Live expedition screens must use .expedition-viewport"
     ).toBeVisible();
+
+    // Return to Town — complete the live meta-loop
+    await page.getByRole("button", { name: "Resume Town Activities" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("Estate"),
+      "Must be back at town after resume in live path"
+    ).toBeVisible();
+
+    // Final fidelity check after live meta-loop
+    await expectFidelity(page.locator(".town-viewport"), "Town after live meta-loop");
 
     expectNoErrors(pageErrors, consoleErrors, "Live boot flow");
   });

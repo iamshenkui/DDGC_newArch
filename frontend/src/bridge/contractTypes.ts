@@ -225,6 +225,7 @@ export interface ExpeditionResultViewModel {
   heroOutcomes: ReadonlyArray<{
     heroId: string;
     heroName: string;
+    classLabel: string;
     status: "alive" | "dead" | "stressed";
     hpChange: string;
     stressChange: string;
@@ -245,6 +246,7 @@ export interface ReturnViewModel {
   returningHeroes: ReadonlyArray<{
     heroId: string;
     heroName: string;
+    classLabel: string;
     hp: string;
     stress: string;
   }>;

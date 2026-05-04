@@ -382,6 +382,7 @@ export const replayResultViewModel: ExpeditionResultViewModel = {
     {
       heroId: "hero-hunter-01",
       heroName: "Shen",
+      classLabel: "Hunter",
       status: "alive",
       hpChange: "-4",
       stressChange: "+12"
@@ -389,6 +390,7 @@ export const replayResultViewModel: ExpeditionResultViewModel = {
     {
       heroId: "hero-white-01",
       heroName: "Bai Xiu",
+      classLabel: "White",
       status: "alive",
       hpChange: "-8",
       stressChange: "+8"
@@ -413,6 +415,7 @@ export const replayFailureResultViewModel: ExpeditionResultViewModel = {
     {
       heroId: "hero-hunter-01",
       heroName: "Shen",
+      classLabel: "Hunter",
       status: "alive",
       hpChange: "-18",
       stressChange: "+25"
@@ -420,6 +423,7 @@ export const replayFailureResultViewModel: ExpeditionResultViewModel = {
     {
       heroId: "hero-white-01",
       heroName: "Bai Xiu",
+      classLabel: "White",
       status: "dead",
       hpChange: "-41",
       stressChange: "+40"
@@ -446,6 +450,7 @@ export const replayPartialResultViewModel: ExpeditionResultViewModel = {
     {
       heroId: "hero-hunter-01",
       heroName: "Shen",
+      classLabel: "Hunter",
       status: "alive",
       hpChange: "-12",
       stressChange: "+18"
@@ -453,6 +458,7 @@ export const replayPartialResultViewModel: ExpeditionResultViewModel = {
     {
       heroId: "hero-white-01",
       heroName: "Bai Xiu",
+      classLabel: "White",
       status: "stressed",
       hpChange: "-15",
       stressChange: "+22"
@@ -475,12 +481,14 @@ export const replayReturnViewModel: ReturnViewModel = {
     {
       heroId: "hero-hunter-01",
       heroName: "Shen",
+      classLabel: "Hunter",
       hp: "34 / 42",
       stress: "29"
     },
     {
       heroId: "hero-white-01",
       heroName: "Bai Xiu",
+      classLabel: "White",
       hp: "33 / 41",
       stress: "16"
     }

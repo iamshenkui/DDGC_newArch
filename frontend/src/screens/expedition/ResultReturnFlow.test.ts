@@ -58,6 +58,7 @@ describe("Result screen view model contract validation", () => {
     for (const hero of vm.heroOutcomes) {
       expect(hero).toHaveProperty("heroId");
       expect(hero).toHaveProperty("heroName");
+      expect(hero).toHaveProperty("classLabel");
       expect(hero).toHaveProperty("status");
       expect(["alive", "dead", "stressed"]).toContain(hero.status);
       expect(hero).toHaveProperty("hpChange");
@@ -100,6 +101,7 @@ describe("Return screen view model contract validation", () => {
     for (const hero of vm.returningHeroes) {
       expect(hero).toHaveProperty("heroId");
       expect(hero).toHaveProperty("heroName");
+      expect(hero).toHaveProperty("classLabel");
       expect(hero).toHaveProperty("hp");
       expect(hero).toHaveProperty("stress");
     }

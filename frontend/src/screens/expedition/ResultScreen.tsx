@@ -1,6 +1,7 @@
 import { For, type Component } from "solid-js";
 
 import type { ExpeditionResultViewModel } from "../../bridge/contractTypes";
+import { resolveHeroPortrait } from "../../assets/originalAssetPaths";
 
 interface ResultScreenProps {
   viewModel: ExpeditionResultViewModel;
@@ -12,7 +13,13 @@ interface ResultScreenProps {
  *
  * Displays expedition outcome with hero outcomes, loot, and resources gained.
  * References original Unity prefab structure from:
- *   Assets/Prefabs/UI/ExpeditionResultWindow.prefab (estimated)
+ *   Assets/Prefabs/UI/ExpeditionResultWindow.prefab
+ *
+ * Source hierarchy: UI_Expedition/ExpeditionResultWindow
+ *   OutcomeBannerPanel → OutcomeLabel + OutcomeIcon
+ *   HeroOutcomePanel → HeroOutcomeCard × 4
+ *   RewardsPanel → GoldLabel + LootGrid + ResourceLine
+ *   CloseButton → navigate to return/flow
  */
 export const ResultScreen: Component<ResultScreenProps> = (props) => {
   const outcomeLabel = () => {
@@ -70,7 +77,11 @@ export const ResultScreen: Component<ResultScreenProps> = (props) => {
   const isPartial = () => props.viewModel.outcome === "partial";
 
   return (
-    <div class="expedition-viewport">
+    <div
+      class="expedition-viewport"
+      data-source-scene="UI_Expedition/ExpeditionResultWindow"
+      data-source-prefab="Assets/Prefabs/UI/ExpeditionResultWindow.prefab"
+    >
       {/* ── Top HUD ─────────────────────────────────────── */}
       <header class="expedition-hud">
         <span class="expedition-hud-left">
@@ -90,20 +101,21 @@ export const ResultScreen: Component<ResultScreenProps> = (props) => {
         <div class="expedition-content">
           {/* Outcome banner */}
           <div class={outcomeBannerClass()}>
+            <div class="outcome-banner-ornament" />
             <h2 class="outcome-banner-title">{outcomeLabel()}</h2>
             <p class="outcome-banner-subtitle">{props.viewModel.summary}</p>
             {isFailure() && (
-              <p class="outcome-banner-summary" style="color: #ea7767;">
-                The expedition has ended in defeat. Prepare your remaining forces before venturing forth again.
+              <p class="outcome-banner-detail outcome-detail--failure">
+                The expedition has ended in defeat. Rally what remains — the Estate endures.
               </p>
             )}
             {isPartial() && (
-              <p class="outcome-banner-summary" style="color: #e8a838;">
-                The expedition achieved partial objectives. Tend to your heroes before the next venture.
+              <p class="outcome-banner-detail outcome-detail--partial">
+                The expedition achieved partial objectives. Tend to the wounded before the next venture.
               </p>
             )}
             {!isFailure() && !isPartial() && (
-              <p class="outcome-banner-summary" style="color: #5bbd6e;">
+              <p class="outcome-banner-detail outcome-detail--success">
                 The expedition concluded successfully. Your heroes stand ready for the next challenge.
               </p>
             )}
@@ -112,30 +124,46 @@ export const ResultScreen: Component<ResultScreenProps> = (props) => {
           {/* Hero outcomes */}
           <div class="hero-outcome-row">
             <For each={props.viewModel.heroOutcomes}>
-              {(hero) => (
-                <div class={heroCardExtraClass(hero.status)}>
-                  <div class="hero-outcome-name">{hero.heroName}</div>
-                  <span class={`hero-outcome-status ${heroOutcomeStatusClass(hero.status)}`}>
-                    {heroOutcomeStatusLabel(hero.status)}
-                  </span>
-                  {hero.status !== "dead" && (
-                    <div class="hero-outcome-changes">
-                      <div class="hero-outcome-change">
-                        <span class="hero-outcome-change-label">HP</span>
-                        <span style={hero.hpChange.startsWith("-") ? "color: #ea7767;" : "color: #5bbd6e;"}>
-                          {hero.hpChange}
+              {(hero) => {
+                const portraitUrl = resolveHeroPortrait({ heroId: hero.heroId, classLabel: hero.classLabel });
+                return (
+                  <div class={heroCardExtraClass(hero.status)}>
+                    {portraitUrl ? (
+                      <img
+                        class="hero-outcome-portrait"
+                        src={portraitUrl}
+                        alt={hero.heroName}
+                      />
+                    ) : (
+                      <div class="hero-outcome-portrait hero-outcome-portrait--fallback">
+                        <span class="hero-outcome-portrait-letter">
+                          {hero.heroName[0]}
                         </span>
                       </div>
-                      <div class="hero-outcome-change">
-                        <span class="hero-outcome-change-label">Stress</span>
-                        <span style={hero.stressChange.startsWith("+") ? "color: #e8a838;" : "color: #5bbd6e;"}>
-                          {hero.stressChange}
-                        </span>
+                    )}
+                    <div class="hero-outcome-name">{hero.heroName}</div>
+                    <span class={`hero-outcome-status ${heroOutcomeStatusClass(hero.status)}`}>
+                      {heroOutcomeStatusLabel(hero.status)}
+                    </span>
+                    {hero.status !== "dead" && (
+                      <div class="hero-outcome-changes">
+                        <div class="hero-outcome-change">
+                          <span class="hero-outcome-change-label">HP</span>
+                          <span style={hero.hpChange.startsWith("-") ? "color: #ea7767;" : "color: #5bbd6e;"}>
+                            {hero.hpChange}
+                          </span>
+                        </div>
+                        <div class="hero-outcome-change">
+                          <span class="hero-outcome-change-label">Stress</span>
+                          <span style={hero.stressChange.startsWith("+") ? "color: #e8a838;" : "color: #5bbd6e;"}>
+                            {hero.stressChange}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
+                  </div>
+                );
+              }}
             </For>
           </div>
 
@@ -176,7 +204,7 @@ export const ResultScreen: Component<ResultScreenProps> = (props) => {
           {/* Casualty warning */}
           {heroHasCasualties() && (
             <div class="details-overlay" style="border-color: rgba(234, 119, 103, 0.3);">
-              <p style="margin: 0; color: #ea7767; font-size: 0.78rem;">
+              <p class="casualty-message">
                 <strong>Casualties sustained.</strong> Some heroes did not return. Visit the Stagecoach to recruit new party members.
               </p>
             </div>
@@ -189,11 +217,13 @@ export const ResultScreen: Component<ResultScreenProps> = (props) => {
         <div class="expedition-controls-left" />
         <div class="expedition-controls-right">
           <button
-            class="action-primary"
+            class="action-primary launch-primary"
             onClick={props.onContinue}
             disabled={!props.viewModel.isContinueAvailable}
           >
-            Continue to Town
+            {props.viewModel.isContinueAvailable
+              ? "Proceed to Return"
+              : "Awaiting Resolution"}
           </button>
         </div>
       </footer>

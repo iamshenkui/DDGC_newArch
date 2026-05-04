@@ -1,6 +1,7 @@
 import { For, type Component } from "solid-js";
 
 import type { ReturnViewModel } from "../../bridge/contractTypes";
+import { resolveHeroPortrait } from "../../assets/originalAssetPaths";
 
 interface ReturnScreenProps {
   viewModel: ReturnViewModel;
@@ -12,11 +13,20 @@ interface ReturnScreenProps {
  *
  * Shows returning heroes and expedition conclusion summary.
  * References original Unity prefab structure from:
- *   Assets/Prefabs/UI/ReturnToTownWindow.prefab (estimated)
+ *   Assets/Prefabs/UI/ReturnToTownWindow.prefab
+ *
+ * Source hierarchy: UI_Expedition/ReturnToTownWindow
+ *   SummaryBannerPanel → CloseLabel + SummaryText
+ *   ReturningHeroPanel → HeroReturnCard × 4
+ *   ResumeButton → return to estate/town surface
  */
 export const ReturnScreen: Component<ReturnScreenProps> = (props) => {
   return (
-    <div class="expedition-viewport">
+    <div
+      class="expedition-viewport"
+      data-source-scene="UI_Expedition/ReturnToTownWindow"
+      data-source-prefab="Assets/Prefabs/UI/ReturnToTownWindow.prefab"
+    >
       {/* ── Top HUD ─────────────────────────────────────── */}
       <header class="expedition-hud">
         <span class="expedition-hud-left">
@@ -35,13 +45,14 @@ export const ReturnScreen: Component<ReturnScreenProps> = (props) => {
         <div class="expedition-surface-mist" />
 
         <div class="expedition-content">
-          {/* Summary */}
+          {/* Summary banner */}
           <div class="outcome-banner outcome-banner--success">
-            <h2 class="outcome-banner-title">Expedition Concluded</h2>
+            <div class="outcome-banner-ornament" />
+            <h2 class="outcome-banner-title">Expedition Log Closed</h2>
             <p class="outcome-banner-subtitle">{props.viewModel.summary}</p>
-            <p class="outcome-banner-summary" style="opacity: 0.7;">
-              The expedition log has been closed. All surviving heroes have returned to the roster.
-              Visit town buildings to tend to hero conditions and prepare for the next expedition.
+            <p class="return-summary-text">
+              The expedition has concluded. All surviving heroes have returned to the Estate.
+              Visit town buildings to tend to hero conditions and prepare for future expeditions.
             </p>
           </div>
 
@@ -49,21 +60,37 @@ export const ReturnScreen: Component<ReturnScreenProps> = (props) => {
           {props.viewModel.returningHeroes.length > 0 && (
             <div class="returning-hero-row">
               <For each={props.viewModel.returningHeroes}>
-                {(hero) => (
-                  <div class="returning-hero-card">
-                    <div class="returning-hero-card-name">{hero.heroName}</div>
-                    <div class="returning-hero-card-stats">
-                      <div class="returning-hero-stat">
-                        <span style="color: var(--panel-muted);">HP</span>
-                        <span style="color: #5bbd6e;">{hero.hp}</span>
-                      </div>
-                      <div class="returning-hero-stat">
-                        <span style="color: var(--panel-muted);">Stress</span>
-                        <span style="color: #e8a838;">{hero.stress}</span>
+                {(hero) => {
+                  const portraitUrl = resolveHeroPortrait({ heroId: hero.heroId, classLabel: hero.classLabel });
+                  return (
+                    <div class="returning-hero-card">
+                      {portraitUrl ? (
+                        <img
+                          class="returning-hero-portrait"
+                          src={portraitUrl}
+                          alt={hero.heroName}
+                        />
+                      ) : (
+                        <div class="returning-hero-portrait returning-hero-portrait--fallback">
+                          <span class="returning-hero-portrait-letter">
+                            {hero.heroName[0]}
+                          </span>
+                        </div>
+                      )}
+                      <div class="returning-hero-card-name">{hero.heroName}</div>
+                      <div class="returning-hero-card-stats">
+                        <div class="returning-hero-stat">
+                          <span style="color: var(--panel-muted);">HP</span>
+                          <span style="color: #5bbd6e;">{hero.hp}</span>
+                        </div>
+                        <div class="returning-hero-stat">
+                          <span style="color: var(--panel-muted);">Stress</span>
+                          <span style="color: #e8a838;">{hero.stress}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  );
+                }}
               </For>
             </div>
           )}
@@ -75,11 +102,13 @@ export const ReturnScreen: Component<ReturnScreenProps> = (props) => {
         <div class="expedition-controls-left" />
         <div class="expedition-controls-right">
           <button
-            class="action-primary"
+            class="action-primary launch-primary"
             onClick={props.onResumeTown}
             disabled={!props.viewModel.isTownResumeAvailable}
           >
-            Resume Town Activities
+            {props.viewModel.isTownResumeAvailable
+              ? "Resume Town Activities"
+              : "Awaiting Town Handoff"}
           </button>
         </div>
       </footer>

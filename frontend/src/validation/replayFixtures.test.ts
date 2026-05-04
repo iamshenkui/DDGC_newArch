@@ -309,6 +309,7 @@ describe("replay fixtures — hero and campaign state consistency", () => {
         for (const hero of result.heroOutcomes) {
           expect(hero.heroId).toBeTruthy();
           expect(hero.heroName).toBeTruthy();
+          expect(hero.classLabel).toBeTruthy();
           expect(["alive", "dead", "stressed"]).toContain(hero.status);
           expect(hero.hpChange).toBeTruthy();
           expect(hero.stressChange).toBeTruthy();
@@ -331,6 +332,9 @@ describe("replay fixtures — hero and campaign state consistency", () => {
         );
         expect(townHero).toBeDefined();
         expect(hero.heroName).toBe(townHero!.name);
+        expect(hero.classLabel).toBeTruthy();
+        expect(hero.hp).toBeTruthy();
+        expect(hero.stress).toBeTruthy();
       }
     });
 

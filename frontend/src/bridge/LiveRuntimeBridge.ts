@@ -312,6 +312,7 @@ const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
     {
       heroId: "hero-hunter-live-01",
       heroName: "Yuan",
+      classLabel: "Hunter",
       status: "alive",
       hpChange: "-2",
       stressChange: "+5"
@@ -319,6 +320,7 @@ const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
     {
       heroId: "hero-white-live-01",
       heroName: "Mei",
+      classLabel: "White",
       status: "alive",
       hpChange: "-3",
       stressChange: "+3"
@@ -341,12 +343,14 @@ const createLiveReturnViewModel = (): ReturnViewModel => ({
     {
       heroId: "hero-hunter-live-01",
       heroName: "Yuan",
+      classLabel: "Hunter",
       hp: "40 / 42",
       stress: "5"
     },
     {
       heroId: "hero-white-live-01",
       heroName: "Mei",
+      classLabel: "White",
       hp: "38 / 41",
       stress: "3"
     }
