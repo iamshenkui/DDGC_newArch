@@ -120,11 +120,15 @@ export const replayHeroDetailViewModel: HeroDetailViewModel = {
   hp: "38",
   maxHp: "42",
   stress: "17",
+  maxStress: "200",
   resolve: "3",
+  resolveLabel: "Resolute",
   progression: {
     level: 2,
     experience: "240",
-    experienceToNext: "360"
+    experienceToNext: "360",
+    resolveLevel: 3,
+    resolveXP: "120 / 300"
   },
   resistances: {
     stun: "40%",
@@ -135,11 +139,33 @@ export const replayHeroDetailViewModel: HeroDetailViewModel = {
     trap: "70%",
     hazard: "20%"
   },
-  combatSkills: ["Hunting Bow", "Rapid Shot", "Marked for Death", "Batty Advice"],
-  campingSkills: ["Campfire Song", "Warrior's Restore"],
-  weapon: "Hunter's Bow (+2)",
-  armor: "Leather Armor (+1)",
-  campNotes: "Excellent sustain healer with strong camp utility. Marked for Death synergy with teammates."
+  baseStats: {
+    dmg: "8-14",
+    maxHp: "42",
+    crit: "12%",
+    spd: "6",
+    dodge: "8%"
+  },
+  combatSkills: [
+    { name: "Hunting Bow", level: 3, description: "A precise ranged attack that targets the enemy's weak points.", target: "Back 2 rows", hitRating: "85%", critRating: "15%" },
+    { name: "Rapid Shot", level: 2, description: "Fire two quick arrows in succession at a single target.", target: "Back 3 rows", hitRating: "75%", critRating: "10%" },
+    { name: "Marked for Death", level: 1, description: "Mark an enemy, increasing crit chance against them for all allies.", target: "All rows", hitRating: "100%", critRating: "0%" },
+  ],
+  campingSkills: [
+    { name: "Campfire Song", level: 2, description: "Sing a rousing song that reduces stress for all party members during camp.", target: "All party", hitRating: "100%", critRating: "0%" },
+    { name: "Warrior's Restore", level: 1, description: "Restore HP to a wounded ally during camp.", target: "Single ally", hitRating: "100%", critRating: "0%" },
+  ],
+  weapon: { name: "Hunter's Bow", level: 2 },
+  armor: { name: "Leather Armor", level: 1 },
+  leftTrinket: { name: "Hunter's Badge", description: "+5% crit chance, +2 DMG vs marked targets" },
+  rightTrinket: { name: "Shadowstep Cloak", description: "+10% dodge when below 50% HP" },
+  positiveQuirks: ["steady", "sharp_eyes"],
+  negativeQuirks: ["paranoid"],
+  diseases: [],
+  isWounded: true,
+  isAfflicted: false,
+  heroDescription: "A seasoned hunter from the northern wilds, skilled in tracking and ranged combat. Prefers to strike from the shadows before the enemy can react.",
+  talent: "Eagle Eye — Increases crit chance by 5% for all party members when in rank 3 or 4."
 };
 
 export const replayBuildingDetailViewModel: BuildingDetailViewModel = {
@@ -740,13 +766,21 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!vm.hp || typeof vm.hp !== "string") e.push("HeroDetailViewModel: hp is missing");
       if (!vm.maxHp || typeof vm.maxHp !== "string") e.push("HeroDetailViewModel: maxHp is missing");
       if (!vm.stress || typeof vm.stress !== "string") e.push("HeroDetailViewModel: stress is missing");
+      if (!vm.maxStress || typeof vm.maxStress !== "string") e.push("HeroDetailViewModel: maxStress is missing");
       if (!vm.resolve || typeof vm.resolve !== "string") e.push("HeroDetailViewModel: resolve is missing");
+      if (!vm.resolveLabel || typeof vm.resolveLabel !== "string") e.push("HeroDetailViewModel: resolveLabel is missing");
       if (!vm.progression || typeof vm.progression !== "object") e.push("HeroDetailViewModel: progression is missing");
       if (!vm.resistances || typeof vm.resistances !== "object") e.push("HeroDetailViewModel: resistances is missing");
+      if (!vm.baseStats || typeof vm.baseStats !== "object") e.push("HeroDetailViewModel: baseStats is missing");
       if (!Array.isArray(vm.combatSkills)) e.push("HeroDetailViewModel: combatSkills is not an array");
       if (!Array.isArray(vm.campingSkills)) e.push("HeroDetailViewModel: campingSkills is not an array");
-      if (!vm.weapon || typeof vm.weapon !== "string") e.push("HeroDetailViewModel: weapon is missing");
-      if (!vm.armor || typeof vm.armor !== "string") e.push("HeroDetailViewModel: armor is missing");
+      if (!vm.weapon || typeof vm.weapon !== "object") e.push("HeroDetailViewModel: weapon is missing or not an object");
+      if (!vm.armor || typeof vm.armor !== "object") e.push("HeroDetailViewModel: armor is missing or not an object");
+      if (!Array.isArray(vm.positiveQuirks)) e.push("HeroDetailViewModel: positiveQuirks is not an array");
+      if (!Array.isArray(vm.negativeQuirks)) e.push("HeroDetailViewModel: negativeQuirks is not an array");
+      if (!Array.isArray(vm.diseases)) e.push("HeroDetailViewModel: diseases is not an array");
+      if (typeof vm.heroDescription !== "string") e.push("HeroDetailViewModel: heroDescription is not a string");
+      if (typeof vm.talent !== "string") e.push("HeroDetailViewModel: talent is not a string");
       break;
     }
     case "building-detail": {

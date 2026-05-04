@@ -130,11 +130,15 @@ const createLiveHeroDetailViewModel = (hero: TownHeroSummary): HeroDetailViewMod
   hp: hero.hp.split(" / ")[0],
   maxHp: hero.hp.split(" / ")[1] ?? hero.hp.split(" / ")[0],
   stress: hero.stress,
+  maxStress: hero.maxStress,
   resolve: "3",
+  resolveLabel: "Resolute",
   progression: {
     level: hero.level,
     experience: "0",
-    experienceToNext: "300"
+    experienceToNext: "300",
+    resolveLevel: 3,
+    resolveXP: "120 / 300"
   },
   resistances: {
     stun: "40%",
@@ -145,11 +149,29 @@ const createLiveHeroDetailViewModel = (hero: TownHeroSummary): HeroDetailViewMod
     trap: "70%",
     hazard: "20%"
   },
-  combatSkills: ["Skill 1", "Skill 2"],
-  campingSkills: ["Campfire Song"],
-  weapon: "Basic Weapon",
-  armor: "Leather Armor",
-  campNotes: "Hero detail view - live mode placeholder."
+  baseStats: {
+    dmg: "8-14",
+    maxHp: hero.maxHp,
+    crit: "12%",
+    spd: "6",
+    dodge: "8%"
+  },
+  combatSkills: [
+    { name: "Skill 1", level: 2, description: "A basic offensive skill.", target: "Front row", hitRating: "85%", critRating: "10%" },
+    { name: "Skill 2", level: 1, description: "A supporting skill.", target: "All allies", hitRating: "100%", critRating: "0%" }
+  ],
+  campingSkills: [
+    { name: "Campfire Song", level: 1, description: "Reduce party stress during camp.", target: "All party", hitRating: "100%", critRating: "0%" }
+  ],
+  weapon: { name: "Basic Weapon", level: 1 },
+  armor: { name: "Leather Armor", level: 1 },
+  positiveQuirks: hero.positiveQuirks,
+  negativeQuirks: hero.negativeQuirks,
+  diseases: hero.diseases,
+  isWounded: hero.isWounded,
+  isAfflicted: hero.isAfflicted,
+  heroDescription: "A hero ready for adventure.",
+  talent: "Natural talent — increases effectiveness in their chosen role."
 });
 
 const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): BuildingDetailViewModel => {

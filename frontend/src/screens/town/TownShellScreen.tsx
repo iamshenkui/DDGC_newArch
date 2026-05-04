@@ -116,7 +116,7 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
         </For>
       </PixiStage>
 
-      {/* ── Roster Bar ──────────────────────────────────── */}
+      {/* ── Roster Bar (HeroSlot style) ─────────────────── */}
       <section class="viewport-roster">
         <div class="roster-scroll">
           <For each={props.viewModel.heroes}>
@@ -128,11 +128,31 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                   class="roster-hero"
                   onClick={() => props.onOpenHero(hero.id)}
                 >
-                  <div class="roster-hero-header">
+                  {/* Portrait area — mirrors HeroSlot Frame + Image */}
+                  <div class="roster-hero-portrait">
+                    <div class="roster-portrait-frame" />
+                    <div class="roster-portrait-avatar">
+                      <span class="roster-portrait-letter">
+                        {hero.classLabel[0]}
+                      </span>
+                    </div>
+                    {/* Level badge */}
+                    <span class="roster-portrait-level">Lv{hero.level}</span>
+                    {/* Status overlay */}
+                    {(hero.isWounded || hero.isAfflicted) && (
+                      <div class="roster-portrait-status">
+                        {hero.isAfflicted ? "A" : "W"}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Info area — mirrors HeroSlot.HeroLabel */}
+                  <div class="roster-hero-info">
                     <span class="roster-hero-name">{hero.name}</span>
                     <span class="roster-hero-class">{hero.classLabel}</span>
-                    <span class="roster-hero-level">Lv{hero.level}</span>
                   </div>
+
+                  {/* Bars — HP / Stress */}
                   <div class="roster-hero-bars">
                     <div class="roster-bar-row">
                       <div class="roster-bar-label">HP</div>
@@ -145,7 +165,6 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                           }}
                         />
                       </div>
-                      <span class="roster-bar-value">{hpInfo.current}/{hpInfo.max}</span>
                     </div>
                     <div class="roster-bar-row">
                       <div class="roster-bar-label">ST</div>
@@ -158,14 +177,14 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                           }}
                         />
                       </div>
-                      <span class="roster-bar-value">{hero.stress}/{hero.maxStress}</span>
                     </div>
                   </div>
-                  {(hero.isWounded || hero.isAfflicted) && (
-                    <div class="roster-hero-status-tag">
-                      {hero.isAfflicted ? "Afflicted" : "Wounded"}
-                    </div>
-                  )}
+
+                  {/* Numeric values footer */}
+                  <div class="roster-hero-footer">
+                    <span class="roster-footer-hp">{hpInfo.current}/{hpInfo.max}</span>
+                    <span class="roster-footer-stress">{hero.stress}/{hero.maxStress}</span>
+                  </div>
                 </button>
               );
             }}

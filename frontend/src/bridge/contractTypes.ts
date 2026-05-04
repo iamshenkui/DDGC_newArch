@@ -75,6 +75,8 @@ export interface HeroProgression {
   level: number;
   experience: string;
   experienceToNext: string;
+  resolveLevel: number;
+  resolveXP: string;
 }
 
 export interface HeroResistances {
@@ -87,6 +89,35 @@ export interface HeroResistances {
   hazard: string;
 }
 
+export interface HeroBaseStats {
+  dmg: string;
+  maxHp: string;
+  crit: string;
+  spd: string;
+  dodge: string;
+}
+
+export interface EquipmentItem {
+  name: string;
+  level: number;
+  icon?: string;
+}
+
+export interface TrinketItem {
+  name: string;
+  description: string;
+  icon?: string;
+}
+
+export interface SkillDetail {
+  name: string;
+  level: number;
+  description: string;
+  target: string;
+  hitRating: string;
+  critRating: string;
+}
+
 export interface HeroDetailViewModel {
   kind: "hero-detail";
   heroId: string;
@@ -95,14 +126,25 @@ export interface HeroDetailViewModel {
   hp: string;
   maxHp: string;
   stress: string;
+  maxStress: string;
   resolve: string;
+  resolveLabel: string;
   progression: HeroProgression;
   resistances: HeroResistances;
-  combatSkills: ReadonlyArray<string>;
-  campingSkills: ReadonlyArray<string>;
-  weapon: string;
-  armor: string;
-  campNotes: string;
+  baseStats: HeroBaseStats;
+  combatSkills: ReadonlyArray<SkillDetail>;
+  campingSkills: ReadonlyArray<SkillDetail>;
+  weapon: EquipmentItem;
+  armor: EquipmentItem;
+  leftTrinket?: TrinketItem;
+  rightTrinket?: TrinketItem;
+  positiveQuirks: ReadonlyArray<string>;
+  negativeQuirks: ReadonlyArray<string>;
+  diseases: ReadonlyArray<string>;
+  isWounded: boolean;
+  isAfflicted: boolean;
+  heroDescription: string;
+  talent: string;
 }
 
 export interface TownViewModel {

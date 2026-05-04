@@ -48,7 +48,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
             classLabel: hero.classLabel,
             hp: hero.hp.split(" / ")[0],
             maxHp: hero.hp.split(" / ")[1] ?? hero.hp.split(" / ")[0],
-            stress: hero.stress
+            stress: hero.stress,
+            maxStress: hero.maxStress,
+            positiveQuirks: hero.positiveQuirks,
+            negativeQuirks: hero.negativeQuirks,
+            diseases: hero.diseases,
+            isWounded: hero.isWounded,
+            isAfflicted: hero.isAfflicted
           }
         };
         break;
