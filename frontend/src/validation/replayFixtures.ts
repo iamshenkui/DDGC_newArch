@@ -75,7 +75,7 @@ const townHeroes: ReadonlyArray<TownHeroSummary> = [
 
 export const replayTownViewModel: TownViewModel = {
   kind: "town",
-  title: "Town Surface Placeholder",
+  title: "The Estate — Town Surface",
   campaignName: "The Azure Lantern",
   campaignSummary:
     "Representative Phase 10 replay snapshot for roster, building, and provisioning work.",
@@ -96,13 +96,13 @@ export const replayTownViewModel: TownViewModel = {
     {
       id: "blacksmith",
       label: "Blacksmith",
-      summary: "Equipment status is contract-backed but still visually skeletal.",
+      summary: "Weapon and armor upgrades available for heroes who meet tier requirements.",
       status: "partial"
     },
     {
       id: "sanitarium",
       label: "Sanitarium",
-      summary: "Needs real rendered treatment flow in Phase 10 town surface.",
+      summary: "Treatment facility for diseases, stress relief, and quirk management.",
       status: "partial"
     }
   ],

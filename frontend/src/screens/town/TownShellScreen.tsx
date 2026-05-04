@@ -1,7 +1,6 @@
-import type { Component } from "solid-js";
+import { For, type Component } from "solid-js";
 
 import type { TownViewModel } from "../../bridge/contractTypes";
-import { AppFrame } from "../../components/layout/AppFrame";
 import { PixiStage } from "../../render/PixiStage";
 
 interface TownShellScreenProps {
@@ -25,162 +24,154 @@ function healthPercent(hp: string): number {
   return Math.round((current / max) * 100);
 }
 
-function healthClass(hp: string): string {
+function healthBarColor(hp: string): string {
   const pct = healthPercent(hp);
-  if (pct >= 80) return "text-good";
-  if (pct >= 40) return "text-warning";
-  return "text-danger";
+  if (pct >= 80) return "#5bbd6e";
+  if (pct >= 40) return "#e8a838";
+  return "#ea7767";
 }
 
-function healthBarClass(hp: string): string {
-  const pct = healthPercent(hp);
-  if (pct >= 80) return "bar-fill bar-fill-health";
-  if (pct >= 40) return "bar-fill bar-fill-health-warning";
-  return "bar-fill bar-fill-health-danger";
-}
+/**
+ * Map conceptual building positions on the estate landscape.
+ * These approximate the EstateManagement.unity scene layout:
+ * stagecoach at the gate (left), guild at the training yard (right),
+ * blacksmith at the forge (center-right), sanitarium at the clinic (center-left).
+ */
+const BUILDING_POSITIONS: Record<string, { left: string; top: string }> = {
+  stagecoach:  { left: "10%",  top: "55%" },
+  guild:       { left: "68%",  top: "35%" },
+  blacksmith:  { left: "48%",  top: "58%" },
+  sanitarium:  { left: "28%",  top: "32%" },
+  abbey:       { left: "75%",  top: "62%" },
+  tavern:      { left: "18%",  top: "68%" },
+  market:      { left: "58%",  top: "48%" },
+  graveyard:   { left: "82%",  top: "28%" },
+  museum:      { left: "40%",  top: "22%" },
+  provisioner: { left: "52%",  top: "70%" },
+  sanctuary:   { left: "30%",  top: "48%" },
+  inn:         { left: "65%",  top: "55%" },
+};
 
-function stressLevelClass(stress: string): string {
-  const s = Number(stress);
-  if (s <= 20) return "text-good";
-  if (s <= 40) return "text-warning";
-  return "text-danger";
-}
+const ROSTER_BUILDING_POSITIONS: Record<string, string> = {
+  ready:   "status-ready",
+  partial: "status-partial",
+  locked:  "status-locked",
+};
 
-function stressBarClass(stress: string): string {
-  const s = Number(stress);
-  if (s <= 40) return "bar-fill bar-fill-stress";
-  return "bar-fill bar-fill-stress-high";
-}
+const buildingStatusLabel: Record<string, string> = {
+  ready:   "Open",
+  partial: "Visit",
+  locked:  "Locked",
+};
 
 export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
   return (
-    <AppFrame
-      eyebrow="Town / Meta Surface"
-      title={props.viewModel.campaignName}
-      subtitle={props.viewModel.campaignSummary}
-    >
-      <section class="grid">
-        <div class="stack">
-          <section class="panel stack">
-            <div class="row">
-              <span class="pill">Flow: town</span>
-              <span class="pill">Gold: {props.viewModel.gold}</span>
-              {props.viewModel.isFreshVisit && (
-                <span class="pill" style="color: #c6d46a;">Fresh Visit</span>
-              )}
-              <span class="pill">Next: {props.viewModel.nextActionLabel}</span>
-            </div>
-            <div class="row">
-              <button class="action-primary" onClick={props.onStartProvisioning}>
-                {props.viewModel.nextActionLabel}
+    <div class="town-viewport">
+      {/* ── Top HUD ─────────────────────────────────────── */}
+      <header class="viewport-hud">
+        <span class="viewport-hud-left">
+          <span class="eyebrow">Town / Meta Surface</span>
+          <h1 class="viewport-title">{props.viewModel.campaignName}</h1>
+        </span>
+        <span class="viewport-hud-center">
+          <span class="hud-pill">Gold: {props.viewModel.gold}</span>
+          {props.viewModel.isFreshVisit && (
+            <span class="hud-pill hud-pill-accent">Fresh Visit</span>
+          )}
+        </span>
+        <span class="viewport-hud-right">
+          <span class="hud-pill">{props.viewModel.heroes.length} heroes</span>
+          <button class="action-primary" onClick={props.onStartProvisioning}>
+            {props.viewModel.nextActionLabel}
+          </button>
+        </span>
+      </header>
+
+      {/* ── Game Surface ────────────────────────────────── */}
+      <PixiStage label="Town estate" rendererId="ddgc-town-stage">
+        <For each={props.viewModel.buildings}>
+          {(building) => {
+            const pos = BUILDING_POSITIONS[building.id] ?? {
+              left: `${20 + (building.id.length * 3) % 50}%`,
+              top: `${30 + (building.id.length * 5) % 40}%`,
+            };
+            return (
+              <button
+                class="building-icon"
+                style={{
+                  left: pos.left,
+                  top: pos.top,
+                }}
+                onClick={() => props.onOpenBuilding(building.id)}
+                title={building.summary}
+              >
+                <span class="building-icon-marker" />
+                <span class="building-icon-label">{building.label}</span>
+                <span class={`building-icon-status ${ROSTER_BUILDING_POSITIONS[building.status] ?? "status-locked"}`}>
+                  {buildingStatusLabel[building.status] ?? building.status}
+                </span>
               </button>
-            </div>
-          </section>
+            );
+          }}
+        </For>
+      </PixiStage>
 
-          <section class="panel stack">
-            <h2 class="panel-title">Roster Summary</h2>
-            <div class="surface-card">
-              <p>
-                {props.viewModel.heroes.length} hero{props.viewModel.heroes.length !== 1 ? "es" : ""} available in the roster.
-                Review hero status before provisioning for expedition.
-              </p>
-            </div>
-            <ul class="list-reset">
-              {props.viewModel.heroes.map((hero) => {
-                const hpInfo = parseHp(hero.hp);
-                const stressNum = Number(hero.stress);
-                return (
-                  <li class="surface-card stack">
-                    <div class="row">
-                      <strong>{hero.name}</strong>
-                      <span class="pill">{hero.classLabel}</span>
-                      <span class="pill">Lv {hero.level}</span>
-                      {hero.isWounded && (
-                        <span class="pill" style="color: #e8a838; border-color: rgba(232,168,56,0.3);">Wounded</span>
-                      )}
-                      {hero.isAfflicted && (
-                        <span class="pill" style="color: #ea7767; border-color: rgba(234,119,103,0.3);">Afflicted</span>
-                      )}
-                    </div>
-                    <div class="stack">
-                      <div class="bar-row">
-                        <span class="stat-label">HP</span>
-                        <span class={`stat-value ${healthClass(hero.hp)}`}>
-                          {hpInfo.current} / {hpInfo.max}
-                        </span>
-                        <div class="bar-container">
-                          <div
-                            class={healthBarClass(hero.hp)}
-                            style={{ width: `${healthPercent(hero.hp)}%` }}
-                          />
-                        </div>
-                      </div>
-                      <div class="bar-row">
-                        <span class="stat-label">Stress</span>
-                        <span class={`stat-value ${stressLevelClass(hero.stress)}`}>
-                          {hero.stress} / {hero.maxStress}
-                        </span>
-                        <div class="bar-container">
-                          <div
-                            class={stressBarClass(hero.stress)}
-                            style={{ width: `${Math.min((stressNum / Number(hero.maxStress || 200)) * 100, 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div class="row" style="gap: 6px; font-size: 0.82rem; color: var(--panel-muted);">
-                      <span>XP: {hero.xp}</span>
-                      {hero.positiveQuirks.length > 0 && (
-                        <span>+{hero.positiveQuirks.length} quirk{hero.positiveQuirks.length !== 1 ? "s" : ""}</span>
-                      )}
-                      {hero.negativeQuirks.length > 0 && (
-                        <span style="color: #ea7767;">-{hero.negativeQuirks.length} quirk{hero.negativeQuirks.length !== 1 ? "s" : ""}</span>
-                      )}
-                      {hero.diseases.length > 0 && (
-                        <span style="color: #ea7767;">{hero.diseases.length} disease{hero.diseases.length !== 1 ? "s" : ""}</span>
-                      )}
-                    </div>
-                    <div class="row">
-                      <button
-                        class="action-secondary"
-                        onClick={() => props.onOpenHero(hero.id)}
-                      >
-                        Inspect Hero
-                      </button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-
-          <PixiStage label="Town stage layer" rendererId="ddgc-town-stage" />
-        </div>
-        <div class="stack">
-          <section class="panel stack">
-            <h2 class="panel-title">Buildings</h2>
-            <ul class="list-reset">
-              {props.viewModel.buildings.map((building) => (
-                <li class="surface-card stack">
-                  <div class="row">
-                    <strong>{building.label}</strong>
-                    <span class="pill">{building.status}</span>
+      {/* ── Roster Bar ──────────────────────────────────── */}
+      <section class="viewport-roster">
+        <div class="roster-scroll">
+          <For each={props.viewModel.heroes}>
+            {(hero) => {
+              const hpInfo = parseHp(hero.hp);
+              const stressNum = Number(hero.stress);
+              return (
+                <button
+                  class="roster-hero"
+                  onClick={() => props.onOpenHero(hero.id)}
+                >
+                  <div class="roster-hero-header">
+                    <span class="roster-hero-name">{hero.name}</span>
+                    <span class="roster-hero-class">{hero.classLabel}</span>
+                    <span class="roster-hero-level">Lv{hero.level}</span>
                   </div>
-                  <p>{building.summary}</p>
-                  <div class="row">
-                    <button
-                      class="action-secondary"
-                      onClick={() => props.onOpenBuilding(building.id)}
-                    >
-                      Open Building
-                    </button>
+                  <div class="roster-hero-bars">
+                    <div class="roster-bar-row">
+                      <div class="roster-bar-label">HP</div>
+                      <div class="roster-bar-track">
+                        <div
+                          class="roster-bar-fill"
+                          style={{
+                            width: `${healthPercent(hero.hp)}%`,
+                            background: healthBarColor(hero.hp),
+                          }}
+                        />
+                      </div>
+                      <span class="roster-bar-value">{hpInfo.current}/{hpInfo.max}</span>
+                    </div>
+                    <div class="roster-bar-row">
+                      <div class="roster-bar-label">ST</div>
+                      <div class="roster-bar-track">
+                        <div
+                          class="roster-bar-fill"
+                          style={{
+                            width: `${Math.min((stressNum / Number(hero.maxStress || 200)) * 100, 100)}%`,
+                            background: stressNum > 40 ? "#ea7767" : "#e8a838",
+                          }}
+                        />
+                      </div>
+                      <span class="roster-bar-value">{hero.stress}/{hero.maxStress}</span>
+                    </div>
                   </div>
-                </li>
-              ))}
-            </ul>
-          </section>
+                  {(hero.isWounded || hero.isAfflicted) && (
+                    <div class="roster-hero-status-tag">
+                      {hero.isAfflicted ? "Afflicted" : "Wounded"}
+                    </div>
+                  )}
+                </button>
+              );
+            }}
+          </For>
         </div>
       </section>
-    </AppFrame>
+    </div>
   );
 };

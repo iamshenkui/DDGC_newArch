@@ -16,7 +16,7 @@ import type {
 
 const createLiveTownViewModel = (): TownViewModel => ({
   kind: "town",
-  title: "Town Surface — Live Mode",
+  title: "The Estate — Fresh Campaign",
   campaignName: "Fresh Campaign",
   campaignSummary:
     "Live runtime boot: DDGC host initialized with fresh campaign state. Roster and building data reflects initial campaign setup.",

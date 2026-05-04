@@ -1,4 +1,4 @@
-import type { Component } from "solid-js";
+import type { ParentComponent } from "solid-js";
 import { RendererType } from "@contracts/ui-substrate";
 import type { IPixiRenderer } from "@contracts/pixi-renderer";
 
@@ -7,26 +7,31 @@ interface PixiStageProps {
   rendererId?: string;
 }
 
-export const PixiStage: Component<PixiStageProps> = (props) => {
+/**
+ * Primary game viewport surface for town/meta scene rendering.
+ *
+ * In the current CSS-only phase this provides the landscape viewport shell
+ * with a scenic estate background. When Pixi/Spine integration is wired,
+ * the canvas layer hosts the actual runtime renderer.
+ */
+export const PixiStage: ParentComponent<PixiStageProps> = (props) => {
   const rendererType: RendererType = RendererType.PixiJS;
   const rendererContract: Pick<IPixiRenderer, "id"> | undefined = props.rendererId
     ? { id: props.rendererId }
     : undefined;
 
   return (
-    <section class="panel stage-shell">
-      <div class="row">
-        <span class="pill">Renderer: {rendererType}</span>
-        <span class="pill">
-          Contract: {rendererContract?.id ?? "ddgc-pixi-stage-placeholder"}
-        </span>
+    <div
+      class="game-surface"
+      id={props.rendererId ?? "ddgc-stage-canvas"}
+      data-renderer={rendererType}
+      data-contract={rendererContract?.id ?? "ddgc-pixi-stage"}
+    >
+      <div class="game-surface-sky" />
+      <div class="game-surface-landscape" />
+      <div class="game-surface-buildings">
+        {props.children}
       </div>
-      <div class="stage-canvas" id="ddgc-stage-canvas">
-        <div>
-          <strong>{props.label}</strong>
-          <div>Reserved canvas layer for Pixi and Spine-backed town/meta rendering.</div>
-        </div>
-      </div>
-    </section>
+    </div>
   );
 };
