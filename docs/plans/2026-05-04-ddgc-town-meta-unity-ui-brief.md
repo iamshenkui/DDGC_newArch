@@ -248,6 +248,37 @@ RaidPartyPanel
 └── PartySlots (4× HeroSlot instances)
 ```
 
+### 2.7 Startup / Title Screen Layout
+
+The MainMenuWindow prefab serves as the game's entry point — a full-screen overlay rendered before the town surface loads. Unlike the building windows which always appear over the town shell, the MainMenuWindow acts as a standalone boot surface with no town context behind it.
+
+```
+MainMenuWindow.prefab (active: false — shown on app boot, before EstateManagement)
+└── MainMenuWindow (1023×740, center-anchored (0.5,0.5), pos=(0,0), pivot=(0.5,0.5))
+    ├── MenuOptions (466×486, center-anchored, pos=(-4,19))
+    │   └── [LayoutGroup — vertical, 5 equal-height button rows]
+    │       ├── "Return To Game" Button (466×97.2, top-left anchored (0,1), pos=(233,-48.6))
+    │       │   └── Text (236×43, center-anchored)
+    │       ├── "Controls" Button (466×97.2, top-left anchored, pos=(233,-145.8))
+    │       │   └── Text
+    │       ├── "Options" Button (466×97.2, top-left anchored, pos=(233,-243.0))
+    │       │   └── Text
+    │       ├── "Return To Main Menu" Button (466×97.2, top-left anchored, pos=(233,-340.2))
+    │       │   └── Text (292.4×43, center-anchored, pos=(-3.2,3))
+    │       └── "Return To Desktop" Button (466×97.2, top-left anchored, pos=(233,-437.4))
+    │           └── Text
+    └── CloseButton (32×32, center-anchored, pos=(339.2,246))
+```
+
+**Key layout observations:**
+- The root is center-anchored with a fixed 1023×740 size — smaller than the full 1280×720 canvas, acting as a centered dialog.
+- `MenuOptions` uses a vertical `LayoutGroup` to stack 5 equal-height buttons (97.2px each). Despite the LayoutGroup, children use top-left absolute positioning within the group.
+- Each button uses a shared button sprite (GUID `b14c9d4fa66bc4d45897fba8c866125a`, unresolved).
+- The background sprite is a separate asset (GUID `4e780ea66a89c2f4b8bdc4f4b76c290d`).
+- Font reference: `Deutsch.ttf` (GUID `f930c4496e27b454ebc744aa4b25236e`) — distinct from the town UI's `ZhiYiSongTi-Regular.ttf`.
+- Script: `Assets/Scripts/UI/Windows/MainMenuWindow.cs` (GUID `05dd000f283abed408736f33983dcd2e`).
+- The prefab is instantiated as a child of `UI_Shared → UI_MidWindows` in the EstateManagement scene but is **active=false by default**, shown only on first boot/return-to-menu.
+
 ---
 
 ## 3. Target Landscape-First Frontend Layout
@@ -265,6 +296,7 @@ RaidPartyPanel
 
 | Flow State | Unity Source | Frontend Target | Layout Pattern |
 |------------|-------------|-----------------|----------------|
+| `startup` | `MainMenuWindow.prefab` | `StartupScreen` | Full-screen centered dialog with vertical menu button stack, boot flow entry |
 | `town` | `UI_Estate` + `UI_Shared` | `TownShellScreen` | Bottom-nav shell with building grid + roster summary, two-column stack |
 | `hero-detail` | `CharacterWindow.prefab` | `HeroDetailScreen` | Full-screen overlay, two-column info + stats tabbed panel |
 | `building` | `UI_LowWindows/*Window` | `BuildingDetailScreen` + sub-screens | Left-right panel split (character + service), modal |
@@ -274,6 +306,38 @@ RaidPartyPanel
 | `return` | `ResultHeroWindow` + `ResultItemWindow` | `ReturnScreen` | Returning hero list + resources, full-screen |
 
 ### 3.3 Target Wireframe Descriptions
+
+**Startup / Title Screen:**
+```
+┌─────────────────────────────────────────────────────┐
+│                                                       │
+│                                                       │
+│              ┌─────────────────────────┐              │
+│              │   DDGC                   │              │
+│              │   暗黑地牢: 降龙           │              │
+│              │                         │              │
+│              │  ┌─────────────────────┐│              │
+│              │  │   New Campaign      ││              │
+│              │  └─────────────────────┘│              │
+│              │  ┌─────────────────────┐│              │
+│              │  │   Load Campaign     ││              │
+│              │  └─────────────────────┘│              │
+│              │  ┌─────────────────────┐│              │
+│              │  │   Boot Replay Shell ││              │
+│              │  └─────────────────────┘│              │
+│              │  ┌─────────────────────┐│              │
+│              │  │   Boot Live Shell   ││              │
+│              │  └─────────────────────┘│              │
+│              │                         │              │
+│              │              [× Close]  │              │
+│              └─────────────────────────┘              │
+│                                                       │
+│                                                       │
+│       [Return To Desktop]  [Settings]  [Help]          │
+└─────────────────────────────────────────────────────┘
+```
+
+The startup screen maps directly to `MainMenuWindow.prefab`: a centered dialog over a dark backdrop with a vertical button stack. The Unity original shows "Return To Game", "Controls", "Options", "Return To Main Menu", "Return To Desktop". The frontend variant replaces these with campaign entry ("New Campaign", "Load Campaign") and boot-mode selection ("Boot Replay Shell", "Boot Live Shell"). The game title and close button are preserved from the original layout.
 
 **Town Shell:**
 ```
@@ -429,6 +493,17 @@ Every building window decomposes into isomorphic frontend panels:
 | `LootSlot.prefab` | Loot list items | Each acquired item |
 | `ResultHeroWindow.cs` | `ReturnScreen` | Returning hero list |
 | `QuestCompletionWindow.cs` | Result + return flow | Redirects to town resume |
+
+### 4.5 Startup / Title Decomposition
+
+| Unity Element | Frontend Equivalent | Notes |
+|--------------|-------------------|-------|
+| `MainMenuWindow` root | `StartupScreen` full-screen centered dialog | `AppFrame` wrapper with `grid` layout |
+| `MenuOptions → LayoutGroup` | `.grid > .panel.stack` button column | Campaign entry + boot options instead of game flow buttons |
+| `"Return To Game"` Button | `onNewCampaign()` / `onLoadCampaign()` | Replaced by campaign entry callbacks |
+| `CloseButton` | Dismiss overlay | `onReturnToDesktop` or esc handling |
+| Background sprite (GUID `4e780ea66a89c2f4b8bdc4f4b76c290d`) | CSS dark backdrop | `AppFrame` default background |
+| Button sprite (GUID `b14c9d4fa66bc4d45897fba8c866125a`) | `.action-primary` / `.action-secondary` buttons | CSS button styling, no raster sprite |
 
 ---
 
