@@ -1,0 +1,77 @@
+{
+  "source_file": "Assets/Prefabs/UI/Controls/GameSetup.prefab",
+  "file_kind": "prefab",
+  "hierarchy": [
+    {
+      "file_id": "1000012903911338",
+      "name": "GameSetup",
+      "tag": "Untagged",
+      "active": true,
+      "rect_transform": {
+        "anchor_min": null,
+        "anchor_max": null,
+        "anchored_position": null,
+        "size_delta": null,
+        "pivot": null,
+        "local_scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "components": [
+        {
+          "file_id": "114000010365537294",
+          "kind": "GameSetup",
+          "script": {
+            "file_id": "11500000",
+            "guid": "95b3cc1a91a89ab43a0a3bde812bfd9c",
+            "type": 3,
+            "asset_path": "Assets/Scripts/Setup/ContentLoading/GameSetup.cs"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "95b3cc1a91a89ab43a0a3bde812bfd9c",
+              "type": 3,
+              "asset_path": "Assets/Scripts/Setup/ContentLoading/GameSetup.cs"
+            },
+            "arrowTexture": {
+              "file_id": "2800000",
+              "guid": "f55ab39a3073fcc48bcfdb8ec25e815e",
+              "type": 3,
+              "asset_path": "Assets/Cursors/arrow.png"
+            }
+          }
+        }
+      ],
+      "children": []
+    }
+  ],
+  "prefab_instances": [],
+  "text_nodes": [],
+  "asset_references": [
+    {
+      "game_object_file_id": "1000012903911338",
+      "component_file_id": "114000010365537294",
+      "component_kind": "GameSetup",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "95b3cc1a91a89ab43a0a3bde812bfd9c",
+          "type": 3,
+          "asset_path": "Assets/Scripts/Setup/ContentLoading/GameSetup.cs"
+        },
+        "arrowTexture": {
+          "file_id": "2800000",
+          "guid": "f55ab39a3073fcc48bcfdb8ec25e815e",
+          "type": 3,
+          "asset_path": "Assets/Cursors/arrow.png"
+        }
+      }
+    }
+  ],
+  "native_game_object_count": 1,
+  "prefab_instance_count": 0
+}

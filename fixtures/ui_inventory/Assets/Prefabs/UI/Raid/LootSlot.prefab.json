@@ -1,0 +1,430 @@
+{
+  "source_file": "Assets/Prefabs/UI/Raid/LootSlot.prefab",
+  "file_kind": "prefab",
+  "hierarchy": [
+    {
+      "file_id": "165466",
+      "name": "LootSlot",
+      "tag": "Untagged",
+      "active": true,
+      "rect_transform": {
+        "anchor_min": {
+          "x": 0,
+          "y": 0
+        },
+        "anchor_max": {
+          "x": 0,
+          "y": 0
+        },
+        "anchored_position": {
+          "x": 0,
+          "y": 0
+        },
+        "size_delta": {
+          "x": 0,
+          "y": 0
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 1
+        },
+        "local_scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "components": [
+        {
+          "file_id": "11407876",
+          "kind": "MonoBehaviour",
+          "script": {
+            "file_id": "11500000",
+            "guid": "306cc8c2b49d7114eaa3623786fc2126",
+            "type": 3,
+            "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "306cc8c2b49d7114eaa3623786fc2126",
+              "type": 3,
+              "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "file_id": "142400",
+          "name": "RewardSlot",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 1
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 1
+            },
+            "anchored_position": {
+              "x": 0,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 80,
+              "y": 160
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 1
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "11415664",
+              "kind": "RewardSlot",
+              "script": {
+                "file_id": "11500000",
+                "guid": "51c3dc4087065044a8dffc492f3f0f75",
+                "type": 3,
+                "asset_path": "Assets/Scripts/UI/Slots/RewardSlot.cs"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "51c3dc4087065044a8dffc492f3f0f75",
+                  "type": 3,
+                  "asset_path": "Assets/Scripts/UI/Slots/RewardSlot.cs"
+                }
+              }
+            },
+            {
+              "file_id": "11430952",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "file_id": "164008",
+              "name": "SlotItem",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 106,
+                  "y": 164
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11467360",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "4b1be51c0b9661a4e88ad83836691330",
+                      "type": 3,
+                      "asset_path": "Assets/Resources/Sprites/rarity_common.png"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "174072",
+                  "name": "Text",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 1,
+                      "y": 0
+                    },
+                    "anchor_max": {
+                      "x": 1,
+                      "y": 0
+                    },
+                    "anchored_position": {
+                      "x": -30,
+                      "y": 25
+                    },
+                    "size_delta": {
+                      "x": 40,
+                      "y": 30
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11400056",
+                      "kind": "Text",
+                      "script": {
+                        "file_id": "11500000",
+                        "guid": "5f7201a12d95ffc409449d95f23cf332",
+                        "type": 3,
+                        "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                      },
+                      "text": 4,
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "11500000",
+                          "guid": "5f7201a12d95ffc409449d95f23cf332",
+                          "type": 3,
+                          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                        },
+                        "m_Font": {
+                          "file_id": "12800000",
+                          "guid": "ee61792463755b745b5aacaf225b30aa",
+                          "type": 3,
+                          "asset_path": "Assets/Fonts/ZhiYiSongTi-Regular.ttf"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                },
+                {
+                  "file_id": "191146",
+                  "name": "SlotItemIcon",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0,
+                      "y": 1
+                    },
+                    "anchor_max": {
+                      "x": 0,
+                      "y": 1
+                    },
+                    "anchored_position": {
+                      "x": 0,
+                      "y": 0
+                    },
+                    "size_delta": {
+                      "x": 106,
+                      "y": 164
+                    },
+                    "pivot": {
+                      "x": 0,
+                      "y": 1
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11492596",
+                      "kind": "Image",
+                      "script": {
+                        "file_id": "11500000",
+                        "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                        "type": 3,
+                        "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                      },
+                      "text": null,
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "11500000",
+                          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                          "type": 3,
+                          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                        },
+                        "m_Sprite": {
+                          "file_id": "21300000",
+                          "guid": "b2b4b96f22273a1439e32397be6e45fe",
+                          "type": 3,
+                          "asset_path": "Assets/Resources/Sprites/inv_provision+_0.png"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "prefab_instances": [],
+  "text_nodes": [
+    {
+      "game_object_file_id": "174072",
+      "component_file_id": "11400056",
+      "component_kind": "Text",
+      "text": 4
+    }
+  ],
+  "asset_references": [
+    {
+      "game_object_file_id": "142400",
+      "component_file_id": "11415664",
+      "component_kind": "RewardSlot",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "51c3dc4087065044a8dffc492f3f0f75",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Slots/RewardSlot.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "142400",
+      "component_file_id": "11430952",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "164008",
+      "component_file_id": "11467360",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "4b1be51c0b9661a4e88ad83836691330",
+          "type": 3,
+          "asset_path": "Assets/Resources/Sprites/rarity_common.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "165466",
+      "component_file_id": "11407876",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "174072",
+      "component_file_id": "11400056",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "ee61792463755b745b5aacaf225b30aa",
+          "type": 3,
+          "asset_path": "Assets/Fonts/ZhiYiSongTi-Regular.ttf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "191146",
+      "component_file_id": "11492596",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "b2b4b96f22273a1439e32397be6e45fe",
+          "type": 3,
+          "asset_path": "Assets/Resources/Sprites/inv_provision+_0.png"
+        }
+      }
+    }
+  ],
+  "native_game_object_count": 5,
+  "prefab_instance_count": 0
+}

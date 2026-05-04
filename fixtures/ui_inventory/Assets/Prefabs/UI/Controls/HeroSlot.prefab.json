@@ -1,0 +1,3973 @@
+{
+  "source_file": "Assets/Prefabs/UI/Controls/HeroSlot.prefab",
+  "file_kind": "prefab",
+  "hierarchy": [
+    {
+      "file_id": "184204",
+      "name": "HeroSlot",
+      "tag": "Roster Hero Slot",
+      "active": true,
+      "rect_transform": {
+        "anchor_min": {
+          "x": 0,
+          "y": 0
+        },
+        "anchor_max": {
+          "x": 0,
+          "y": 0
+        },
+        "anchored_position": {
+          "x": 0,
+          "y": 0
+        },
+        "size_delta": {
+          "x": 430,
+          "y": 120
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "local_scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "components": [
+        {
+          "file_id": "11444514",
+          "kind": "Image",
+          "script": {
+            "file_id": "11500000",
+            "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+            "type": 3,
+            "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+              "type": 3,
+              "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+            },
+            "m_Sprite": {
+              "file_id": "21300000",
+              "guid": "49065c5846da2b748b14239778162e06",
+              "type": 3,
+              "asset_path": "Assets/Sprites/ui/hero_slot_bg.png"
+            }
+          }
+        },
+        {
+          "file_id": "11466338",
+          "kind": "MonoBehaviour",
+          "script": {
+            "file_id": "11500000",
+            "guid": "306cc8c2b49d7114eaa3623786fc2126",
+            "type": 3,
+            "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "306cc8c2b49d7114eaa3623786fc2126",
+              "type": 3,
+              "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+            }
+          }
+        },
+        {
+          "file_id": "11412516",
+          "kind": "HeroSlot",
+          "script": {
+            "file_id": "11500000",
+            "guid": "c45da415900fe314d9d700d5e66cebc4",
+            "type": 3,
+            "asset_path": "Assets/Scripts/UI/Slots/HeroSlot.cs"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "c45da415900fe314d9d700d5e66cebc4",
+              "type": 3,
+              "asset_path": "Assets/Scripts/UI/Slots/HeroSlot.cs"
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "file_id": "114142",
+          "name": "Name",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": -95,
+              "y": 30
+            },
+            "size_delta": {
+              "x": 180,
+              "y": 50
+            },
+            "pivot": {
+              "x": 0,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 0.7,
+              "y": 0.7,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "11411728",
+              "kind": "Text",
+              "script": {
+                "file_id": "11500000",
+                "guid": "5f7201a12d95ffc409449d95f23cf332",
+                "type": 3,
+                "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+              },
+              "text": "英雄名称",
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "5f7201a12d95ffc409449d95f23cf332",
+                  "type": 3,
+                  "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                },
+                "m_Font": {
+                  "file_id": "12800000",
+                  "guid": "8b12fbf382bc88047888339a40b569ea",
+                  "type": 3,
+                  "asset_path": "Assets/Fonts/Bak/game.otf"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "153516",
+          "name": "StressPanel",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": -150,
+              "y": -36
+            },
+            "size_delta": {
+              "x": 90,
+              "y": 15
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "11426430",
+              "kind": "LayoutGroup",
+              "script": {
+                "file_id": "11500000",
+                "guid": "30649d3a9faa99c48a7b1166b86bf2a0",
+                "type": 3,
+                "asset_path": "<unresolved:30649d3a9faa99c48a7b1166b86bf2a0>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "30649d3a9faa99c48a7b1166b86bf2a0",
+                  "type": 3,
+                  "asset_path": "<unresolved:30649d3a9faa99c48a7b1166b86bf2a0>"
+                }
+              }
+            },
+            {
+              "file_id": "11462080",
+              "kind": "StressOverlayPanel",
+              "script": {
+                "file_id": "11500000",
+                "guid": "99be192e1767aee4e9e80bb70f3132da",
+                "type": 3,
+                "asset_path": "Assets/Scripts/UI/Panels/StressOverlayPanel.cs"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "99be192e1767aee4e9e80bb70f3132da",
+                  "type": 3,
+                  "asset_path": "Assets/Scripts/UI/Panels/StressOverlayPanel.cs"
+                },
+                "normalPip": {
+                  "file_id": "21300000",
+                  "guid": "3dc25943c0f55ea419840972b6121378",
+                  "type": 3,
+                  "asset_path": "Assets/Sprites/ui/stress.normal.png"
+                },
+                "stressedPip": {
+                  "file_id": "21300000",
+                  "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+                  "type": 3,
+                  "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+                },
+                "overstressedPip": {
+                  "file_id": "21300000",
+                  "guid": "bc794be09ac80f04e812cdc62375b076",
+                  "type": 3,
+                  "asset_path": "Assets/Sprites/ui/stress.overstressed.png"
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "file_id": "116086",
+              "name": "StressPipSlot",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchor_max": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 0,
+                  "y": 0
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11479144",
+                  "kind": "MonoBehaviour",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                    "type": 3,
+                    "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                      "type": 3,
+                      "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "113014",
+                  "name": "StressPip",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchor_max": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchored_position": {
+                      "x": 0,
+                      "y": 0
+                    },
+                    "size_delta": {
+                      "x": 6,
+                      "y": 12
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11466370",
+                      "kind": "Image",
+                      "script": {
+                        "file_id": "11500000",
+                        "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                        "type": 3,
+                        "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                      },
+                      "text": null,
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "11500000",
+                          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                          "type": 3,
+                          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                        },
+                        "m_Sprite": {
+                          "file_id": "21300000",
+                          "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+                          "type": 3,
+                          "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "file_id": "138354",
+              "name": "StressPipSlot",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchor_max": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 0,
+                  "y": 0
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11473492",
+                  "kind": "MonoBehaviour",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                    "type": 3,
+                    "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                      "type": 3,
+                      "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "119806",
+                  "name": "StressPip",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchor_max": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchored_position": {
+                      "x": 0,
+                      "y": 0
+                    },
+                    "size_delta": {
+                      "x": 6,
+                      "y": 12
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11439014",
+                      "kind": "Image",
+                      "script": {
+                        "file_id": "11500000",
+                        "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                        "type": 3,
+                        "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                      },
+                      "text": null,
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "11500000",
+                          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                          "type": 3,
+                          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                        },
+                        "m_Sprite": {
+                          "file_id": "21300000",
+                          "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+                          "type": 3,
+                          "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "file_id": "138842",
+              "name": "StressPipSlot",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchor_max": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 0,
+                  "y": 0
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11486450",
+                  "kind": "MonoBehaviour",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                    "type": 3,
+                    "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                      "type": 3,
+                      "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "182776",
+                  "name": "StressPip",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchor_max": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchored_position": {
+                      "x": 0,
+                      "y": 0
+                    },
+                    "size_delta": {
+                      "x": 6,
+                      "y": 12
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11457252",
+                      "kind": "Image",
+                      "script": {
+                        "file_id": "11500000",
+                        "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                        "type": 3,
+                        "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                      },
+                      "text": null,
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "11500000",
+                          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                          "type": 3,
+                          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                        },
+                        "m_Sprite": {
+                          "file_id": "21300000",
+                          "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+                          "type": 3,
+                          "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "file_id": "162974",
+              "name": "StressPipSlot",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchor_max": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 0,
+                  "y": 0
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11482418",
+                  "kind": "MonoBehaviour",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                    "type": 3,
+                    "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                      "type": 3,
+                      "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "164472",
+                  "name": "StressPip",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchor_max": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchored_position": {
+                      "x": 0,
+                      "y": 0
+                    },
+                    "size_delta": {
+                      "x": 6,
+                      "y": 12
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11457838",
+                      "kind": "Image",
+                      "script": {
+                        "file_id": "11500000",
+                        "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                        "type": 3,
+                        "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                      },
+                      "text": null,
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "11500000",
+                          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                          "type": 3,
+                          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                        },
+                        "m_Sprite": {
+                          "file_id": "21300000",
+                          "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+                          "type": 3,
+                          "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "file_id": "169970",
+              "name": "StressPipSlot",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchor_max": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 0,
+                  "y": 0
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11418216",
+                  "kind": "MonoBehaviour",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                    "type": 3,
+                    "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                      "type": 3,
+                      "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "190026",
+                  "name": "StressPip",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchor_max": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchored_position": {
+                      "x": 0,
+                      "y": 0
+                    },
+                    "size_delta": {
+                      "x": 6,
+                      "y": 12
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11461440",
+                      "kind": "Image",
+                      "script": {
+                        "file_id": "11500000",
+                        "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                        "type": 3,
+                        "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                      },
+                      "text": null,
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "11500000",
+                          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                          "type": 3,
+                          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                        },
+                        "m_Sprite": {
+                          "file_id": "21300000",
+                          "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+                          "type": 3,
+                          "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "file_id": "172556",
+              "name": "StressPipSlot",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchor_max": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 0,
+                  "y": 0
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11448590",
+                  "kind": "MonoBehaviour",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                    "type": 3,
+                    "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                      "type": 3,
+                      "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "184220",
+                  "name": "StressPip",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchor_max": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchored_position": {
+                      "x": 0,
+                      "y": 0
+                    },
+                    "size_delta": {
+                      "x": 6,
+                      "y": 12
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11461934",
+                      "kind": "Image",
+                      "script": {
+                        "file_id": "11500000",
+                        "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                        "type": 3,
+                        "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                      },
+                      "text": null,
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "11500000",
+                          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                          "type": 3,
+                          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                        },
+                        "m_Sprite": {
+                          "file_id": "21300000",
+                          "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+                          "type": 3,
+                          "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "file_id": "184992",
+              "name": "StressPipSlot",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchor_max": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 0,
+                  "y": 0
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11464378",
+                  "kind": "MonoBehaviour",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                    "type": 3,
+                    "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                      "type": 3,
+                      "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "151710",
+                  "name": "StressPip",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchor_max": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchored_position": {
+                      "x": 0,
+                      "y": 0
+                    },
+                    "size_delta": {
+                      "x": 6,
+                      "y": 12
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11408306",
+                      "kind": "Image",
+                      "script": {
+                        "file_id": "11500000",
+                        "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                        "type": 3,
+                        "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                      },
+                      "text": null,
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "11500000",
+                          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                          "type": 3,
+                          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                        },
+                        "m_Sprite": {
+                          "file_id": "21300000",
+                          "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+                          "type": 3,
+                          "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "file_id": "189178",
+              "name": "StressPipSlot",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchor_max": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 0,
+                  "y": 0
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11489224",
+                  "kind": "MonoBehaviour",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                    "type": 3,
+                    "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                      "type": 3,
+                      "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "162594",
+                  "name": "StressPip",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchor_max": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchored_position": {
+                      "x": 0,
+                      "y": 0
+                    },
+                    "size_delta": {
+                      "x": 6,
+                      "y": 12
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11405170",
+                      "kind": "Image",
+                      "script": {
+                        "file_id": "11500000",
+                        "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                        "type": 3,
+                        "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                      },
+                      "text": null,
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "11500000",
+                          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                          "type": 3,
+                          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                        },
+                        "m_Sprite": {
+                          "file_id": "21300000",
+                          "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+                          "type": 3,
+                          "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "file_id": "194862",
+              "name": "StressPipSlot",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchor_max": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 0,
+                  "y": 0
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11401034",
+                  "kind": "MonoBehaviour",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                    "type": 3,
+                    "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                      "type": 3,
+                      "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "194022",
+                  "name": "StressPip",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchor_max": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchored_position": {
+                      "x": 0,
+                      "y": 0
+                    },
+                    "size_delta": {
+                      "x": 6,
+                      "y": 12
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11457890",
+                      "kind": "Image",
+                      "script": {
+                        "file_id": "11500000",
+                        "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                        "type": 3,
+                        "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                      },
+                      "text": null,
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "11500000",
+                          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                          "type": 3,
+                          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                        },
+                        "m_Sprite": {
+                          "file_id": "21300000",
+                          "guid": "ab5387e5c82cc2f499be30c836546082",
+                          "type": 3,
+                          "asset_path": "<unresolved:ab5387e5c82cc2f499be30c836546082>"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "file_id": "195080",
+              "name": "StressPipSlot",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchor_max": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 0,
+                  "y": 0
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11442518",
+                  "kind": "MonoBehaviour",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                    "type": 3,
+                    "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                      "type": 3,
+                      "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "179266",
+                  "name": "StressPip",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchor_max": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchored_position": {
+                      "x": 0,
+                      "y": 0
+                    },
+                    "size_delta": {
+                      "x": 6,
+                      "y": 12
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11495486",
+                      "kind": "Image",
+                      "script": {
+                        "file_id": "11500000",
+                        "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                        "type": 3,
+                        "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                      },
+                      "text": null,
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "11500000",
+                          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                          "type": 3,
+                          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                        },
+                        "m_Sprite": {
+                          "file_id": "21300000",
+                          "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+                          "type": 3,
+                          "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "file_id": "156078",
+          "name": "RosterResolveColor",
+          "tag": "Untagged",
+          "active": false,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 0,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 395,
+              "y": 104
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "11450644",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "8bd76508559398747b37920cce4f30e8",
+                  "type": 3,
+                  "asset_path": "<unresolved:8bd76508559398747b37920cce4f30e8>"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "163272",
+          "name": "WeaponLevel",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": -50,
+              "y": -35
+            },
+            "size_delta": {
+              "x": 30,
+              "y": 25
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "11473244",
+              "kind": "Text",
+              "script": {
+                "file_id": "11500000",
+                "guid": "5f7201a12d95ffc409449d95f23cf332",
+                "type": 3,
+                "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+              },
+              "text": 3,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "5f7201a12d95ffc409449d95f23cf332",
+                  "type": 3,
+                  "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                },
+                "m_Font": {
+                  "file_id": "12800000",
+                  "guid": "8b12fbf382bc88047888339a40b569ea",
+                  "type": 3,
+                  "asset_path": "Assets/Fonts/Bak/game.otf"
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "file_id": "7905440983462248439",
+              "name": "Image",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchored_position": {
+                  "x": -30,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 26,
+                  "y": 26
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "1973252875178009056",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "ab1ebfb4dc4526945820a4aae57b94f5",
+                      "type": 3,
+                      "asset_path": "Assets/Sprites/town/icons/weapon.png"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            }
+          ]
+        },
+        {
+          "file_id": "186952",
+          "name": "Portrait",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": -150,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 95,
+              "y": 95
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "11418508",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "1b8fa6db81737d049b6594547944a720",
+                  "type": 3,
+                  "asset_path": "Assets/Sprites/ui/char_icon.png"
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "file_id": "101898",
+              "name": "Status",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0,
+                  "y": 1
+                },
+                "anchor_max": {
+                  "x": 0,
+                  "y": 1
+                },
+                "anchored_position": {
+                  "x": 5,
+                  "y": -10
+                },
+                "size_delta": {
+                  "x": 49,
+                  "y": 49
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11473768",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "b4ac4abf0c714194fa99e07f4f616915",
+                      "type": 3,
+                      "asset_path": "Assets/Resources/Sprites/party.icon_roster.png"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            },
+            {
+              "file_id": "107882",
+              "name": "DiseaseIcon",
+              "tag": "Untagged",
+              "active": false,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 1,
+                  "y": 1
+                },
+                "anchor_max": {
+                  "x": 1,
+                  "y": 1
+                },
+                "anchored_position": {
+                  "x": -15,
+                  "y": -15
+                },
+                "size_delta": {
+                  "x": 24,
+                  "y": 24
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11493844",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "551b912508ab0f7418e1f4ec1af298cb",
+                      "type": 3,
+                      "asset_path": "<unresolved:551b912508ab0f7418e1f4ec1af298cb>"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            },
+            {
+              "file_id": "1637030495342236019",
+              "name": "Image",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 100,
+                  "y": 100
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "2477568555148984570",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "81cafa13596dda64b87f029975606d75",
+                      "type": 3,
+                      "asset_path": "Assets/Sprites/ui/char_slot.png"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            }
+          ]
+        },
+        {
+          "file_id": "187456",
+          "name": "ResolveLevelBar",
+          "tag": "Untagged",
+          "active": false,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 105,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 80,
+              "y": 100
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "11491588",
+              "kind": "ResolveBar",
+              "script": {
+                "file_id": "11500000",
+                "guid": "21806ade71f280e4fb5cd2339efe35a3",
+                "type": 3,
+                "asset_path": "Assets/Scripts/UI/Controls/ResolveBar.cs"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "21806ade71f280e4fb5cd2339efe35a3",
+                  "type": 3,
+                  "asset_path": "Assets/Scripts/UI/Controls/ResolveBar.cs"
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "file_id": "121340",
+              "name": "ResolveBarFrame",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchored_position": {
+                  "x": 2.1,
+                  "y": -15.5
+                },
+                "size_delta": {
+                  "x": 37,
+                  "y": 59
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11448568",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "4e043ac4c69f2844ea3a992d0edeed5b",
+                      "type": 3,
+                      "asset_path": "<unresolved:4e043ac4c69f2844ea3a992d0edeed5b>"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            },
+            {
+              "file_id": "137340",
+              "name": "ResolveBar",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchored_position": {
+                  "x": 0.51,
+                  "y": -21.7
+                },
+                "size_delta": {
+                  "x": 18.4,
+                  "y": 38.1
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11474894",
+                  "kind": "MonoBehaviour",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "67db9e8f0e2ae9c40bc1e2b64352a6b4",
+                    "type": 3,
+                    "asset_path": "<unresolved:67db9e8f0e2ae9c40bc1e2b64352a6b4>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "67db9e8f0e2ae9c40bc1e2b64352a6b4",
+                      "type": 3,
+                      "asset_path": "<unresolved:67db9e8f0e2ae9c40bc1e2b64352a6b4>"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "143472",
+                  "name": "Fill",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0,
+                      "y": 0
+                    },
+                    "anchor_max": {
+                      "x": 1,
+                      "y": 0.684
+                    },
+                    "anchored_position": {
+                      "x": 0,
+                      "y": -3.0517578e-05
+                    },
+                    "size_delta": {
+                      "x": 0,
+                      "y": 1.1444e-05
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11441986",
+                      "kind": "Image",
+                      "script": {
+                        "file_id": "11500000",
+                        "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                        "type": 3,
+                        "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                      },
+                      "text": null,
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "11500000",
+                          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                          "type": 3,
+                          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                        },
+                        "m_Sprite": {
+                          "file_id": "10905",
+                          "guid": "0000000000000000f000000000000000",
+                          "type": 0,
+                          "asset_path": "<unresolved:0000000000000000f000000000000000>"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "file_id": "150046",
+              "name": "ResolveLevelImage",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 1
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 1
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 64,
+                  "y": 64
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 1
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11491262",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "434ad0e61155e9c47a83f620ef47fbf9",
+                      "type": 3,
+                      "asset_path": "<unresolved:434ad0e61155e9c47a83f620ef47fbf9>"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "141072",
+                  "name": "ResolveNumber",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchor_max": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchored_position": {
+                      "x": 2.3,
+                      "y": 1.8
+                    },
+                    "size_delta": {
+                      "x": 40.4,
+                      "y": 34.9
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11477350",
+                      "kind": "Text",
+                      "script": {
+                        "file_id": "11500000",
+                        "guid": "5f7201a12d95ffc409449d95f23cf332",
+                        "type": 3,
+                        "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                      },
+                      "text": 6,
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "11500000",
+                          "guid": "5f7201a12d95ffc409449d95f23cf332",
+                          "type": 3,
+                          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                        },
+                        "m_Font": {
+                          "file_id": "12800000",
+                          "guid": "8b12fbf382bc88047888339a40b569ea",
+                          "type": 3,
+                          "asset_path": "Assets/Fonts/Bak/game.otf"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "file_id": "197980",
+          "name": "ArmorLevel",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": -10,
+              "y": -35
+            },
+            "size_delta": {
+              "x": 30,
+              "y": 25
+            },
+            "pivot": {
+              "x": 0,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "11430266",
+              "kind": "Text",
+              "script": {
+                "file_id": "11500000",
+                "guid": "5f7201a12d95ffc409449d95f23cf332",
+                "type": 3,
+                "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+              },
+              "text": 3,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "5f7201a12d95ffc409449d95f23cf332",
+                  "type": 3,
+                  "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                },
+                "m_Font": {
+                  "file_id": "12800000",
+                  "guid": "8b12fbf382bc88047888339a40b569ea",
+                  "type": 3,
+                  "asset_path": "Assets/Fonts/Bak/game.otf"
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "file_id": "6743393750762866277",
+              "name": "Image",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchored_position": {
+                  "x": -30,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 26,
+                  "y": 26
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "4958757325201668133",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "c1ee0f01d1ba1ad4bafedd75c46418c5",
+                      "type": 3,
+                      "asset_path": "Assets/Sprites/town/icons/armor.png"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            }
+          ]
+        },
+        {
+          "file_id": "109923677738443186",
+          "name": "Chaos",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 70,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 99,
+              "y": 99
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 0.75,
+              "y": 0.75,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "1330040871549678823",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "1b039384276975a4bbd48ee37a05f6af",
+                  "type": 3,
+                  "asset_path": "Assets/Sprites/ui/chaos_progress_bg.png"
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "file_id": "1510787718021934026",
+              "name": "Progress",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 47,
+                  "y": 47
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "1662529952402114343",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "fa58f73c30abee646838d4a4f6e114c8",
+                      "type": 3,
+                      "asset_path": "Assets/Sprites/ui/chaos_progress.png"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            },
+            {
+              "file_id": "1993652051597019237",
+              "name": "Value",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 160,
+                  "y": 30
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "8181668214072326854",
+                  "kind": "Text",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "5f7201a12d95ffc409449d95f23cf332",
+                    "type": 3,
+                    "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                  },
+                  "text": "黑/20",
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "5f7201a12d95ffc409449d95f23cf332",
+                      "type": 3,
+                      "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                    },
+                    "m_Font": {
+                      "file_id": "12800000",
+                      "guid": "8b12fbf382bc88047888339a40b569ea",
+                      "type": 3,
+                      "asset_path": "Assets/Fonts/Bak/game.otf"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            },
+            {
+              "file_id": "9151006079558356546",
+              "name": "Text",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 1
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 1
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 80,
+                  "y": 30
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "5297106276282544384",
+                  "kind": "Text",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "5f7201a12d95ffc409449d95f23cf332",
+                    "type": 3,
+                    "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                  },
+                  "text": "混沌值",
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "5f7201a12d95ffc409449d95f23cf332",
+                      "type": 3,
+                      "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                    },
+                    "m_Font": {
+                      "file_id": "12800000",
+                      "guid": "8b12fbf382bc88047888339a40b569ea",
+                      "type": 3,
+                      "asset_path": "Assets/Fonts/Bak/game.otf"
+                    }
+                  }
+                },
+                {
+                  "file_id": "3192089356392621611",
+                  "kind": "LocalizationText",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "d91a74cfdf909ab44a6b6ec2010bf0fa",
+                    "type": 3,
+                    "asset_path": "Assets/Scripts/UI/LocalizationText.cs"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "d91a74cfdf909ab44a6b6ec2010bf0fa",
+                      "type": 3,
+                      "asset_path": "Assets/Scripts/UI/LocalizationText.cs"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            }
+          ]
+        },
+        {
+          "file_id": "6998136916067922481",
+          "name": "Class",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": -95,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 180,
+              "y": 30
+            },
+            "pivot": {
+              "x": 0,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 0.7,
+              "y": 0.7,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "803429161995364844",
+              "kind": "Text",
+              "script": {
+                "file_id": "11500000",
+                "guid": "5f7201a12d95ffc409449d95f23cf332",
+                "type": 3,
+                "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+              },
+              "text": "职业",
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "5f7201a12d95ffc409449d95f23cf332",
+                  "type": 3,
+                  "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                },
+                "m_Font": {
+                  "file_id": "12800000",
+                  "guid": "8b12fbf382bc88047888339a40b569ea",
+                  "type": 3,
+                  "asset_path": "Assets/Fonts/Bak/game.otf"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "9093330112128294347",
+          "name": "Exp",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 150,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 99,
+              "y": 99
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 0.75,
+              "y": 0.75,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "667126068630383765",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "76720b3611b0f454186a9437655fd5c1",
+                  "type": 3,
+                  "asset_path": "Assets/Sprites/ui/exp_progress_bg.png"
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "file_id": "1929377896529649113",
+              "name": "Text",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 1
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 1
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 80,
+                  "y": 30
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "1105180248839612804",
+                  "kind": "Text",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "5f7201a12d95ffc409449d95f23cf332",
+                    "type": 3,
+                    "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                  },
+                  "text": "经验值",
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "5f7201a12d95ffc409449d95f23cf332",
+                      "type": 3,
+                      "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                    },
+                    "m_Font": {
+                      "file_id": "12800000",
+                      "guid": "8b12fbf382bc88047888339a40b569ea",
+                      "type": 3,
+                      "asset_path": "Assets/Fonts/Bak/game.otf"
+                    }
+                  }
+                },
+                {
+                  "file_id": "1291690533212298027",
+                  "kind": "LocalizationText",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "d91a74cfdf909ab44a6b6ec2010bf0fa",
+                    "type": 3,
+                    "asset_path": "Assets/Scripts/UI/LocalizationText.cs"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "d91a74cfdf909ab44a6b6ec2010bf0fa",
+                      "type": 3,
+                      "asset_path": "Assets/Scripts/UI/LocalizationText.cs"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            },
+            {
+              "file_id": "4924219128666378055",
+              "name": "Level",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 50.3
+                },
+                "size_delta": {
+                  "x": 160,
+                  "y": 30
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "870479660507304223",
+                  "kind": "Text",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "5f7201a12d95ffc409449d95f23cf332",
+                    "type": 3,
+                    "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                  },
+                  "text": 1,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "5f7201a12d95ffc409449d95f23cf332",
+                      "type": 3,
+                      "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                    },
+                    "m_Font": {
+                      "file_id": "12800000",
+                      "guid": "8b12fbf382bc88047888339a40b569ea",
+                      "type": 3,
+                      "asset_path": "Assets/Fonts/Bak/game.otf"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            },
+            {
+              "file_id": "5978722323518775231",
+              "name": "Progress",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 47,
+                  "y": 47
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "5189738221492058808",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "b041f0513522bf84eb2c818d92d4c8d6",
+                      "type": 3,
+                      "asset_path": "Assets/Sprites/ui/exp_progress.png"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            },
+            {
+              "file_id": "6639575226992847169",
+              "name": "Value",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 160,
+                  "y": 30
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "3107098724263461363",
+                  "kind": "Text",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "5f7201a12d95ffc409449d95f23cf332",
+                    "type": 3,
+                    "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                  },
+                  "text": "1/20",
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "5f7201a12d95ffc409449d95f23cf332",
+                      "type": 3,
+                      "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                    },
+                    "m_Font": {
+                      "file_id": "12800000",
+                      "guid": "8b12fbf382bc88047888339a40b569ea",
+                      "type": 3,
+                      "asset_path": "Assets/Fonts/Bak/game.otf"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "prefab_instances": [],
+  "text_nodes": [
+    {
+      "game_object_file_id": "114142",
+      "component_file_id": "11411728",
+      "component_kind": "Text",
+      "text": "英雄名称"
+    },
+    {
+      "game_object_file_id": "141072",
+      "component_file_id": "11477350",
+      "component_kind": "Text",
+      "text": 6
+    },
+    {
+      "game_object_file_id": "163272",
+      "component_file_id": "11473244",
+      "component_kind": "Text",
+      "text": 3
+    },
+    {
+      "game_object_file_id": "197980",
+      "component_file_id": "11430266",
+      "component_kind": "Text",
+      "text": 3
+    },
+    {
+      "game_object_file_id": "1929377896529649113",
+      "component_file_id": "1105180248839612804",
+      "component_kind": "Text",
+      "text": "经验值"
+    },
+    {
+      "game_object_file_id": "1993652051597019237",
+      "component_file_id": "8181668214072326854",
+      "component_kind": "Text",
+      "text": "黑/20"
+    },
+    {
+      "game_object_file_id": "4924219128666378055",
+      "component_file_id": "870479660507304223",
+      "component_kind": "Text",
+      "text": 1
+    },
+    {
+      "game_object_file_id": "6639575226992847169",
+      "component_file_id": "3107098724263461363",
+      "component_kind": "Text",
+      "text": "1/20"
+    },
+    {
+      "game_object_file_id": "6998136916067922481",
+      "component_file_id": "803429161995364844",
+      "component_kind": "Text",
+      "text": "职业"
+    },
+    {
+      "game_object_file_id": "9151006079558356546",
+      "component_file_id": "5297106276282544384",
+      "component_kind": "Text",
+      "text": "混沌值"
+    }
+  ],
+  "asset_references": [
+    {
+      "game_object_file_id": "101898",
+      "component_file_id": "11473768",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "b4ac4abf0c714194fa99e07f4f616915",
+          "type": 3,
+          "asset_path": "Assets/Resources/Sprites/party.icon_roster.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "107882",
+      "component_file_id": "11493844",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "551b912508ab0f7418e1f4ec1af298cb",
+          "type": 3,
+          "asset_path": "<unresolved:551b912508ab0f7418e1f4ec1af298cb>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "113014",
+      "component_file_id": "11466370",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+          "type": 3,
+          "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "114142",
+      "component_file_id": "11411728",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "8b12fbf382bc88047888339a40b569ea",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/game.otf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "116086",
+      "component_file_id": "11479144",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "119806",
+      "component_file_id": "11439014",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+          "type": 3,
+          "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "121340",
+      "component_file_id": "11448568",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "4e043ac4c69f2844ea3a992d0edeed5b",
+          "type": 3,
+          "asset_path": "<unresolved:4e043ac4c69f2844ea3a992d0edeed5b>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "137340",
+      "component_file_id": "11474894",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "67db9e8f0e2ae9c40bc1e2b64352a6b4",
+          "type": 3,
+          "asset_path": "<unresolved:67db9e8f0e2ae9c40bc1e2b64352a6b4>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "138354",
+      "component_file_id": "11473492",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "138842",
+      "component_file_id": "11486450",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "141072",
+      "component_file_id": "11477350",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "8b12fbf382bc88047888339a40b569ea",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/game.otf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "143472",
+      "component_file_id": "11441986",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "10905",
+          "guid": "0000000000000000f000000000000000",
+          "type": 0,
+          "asset_path": "<unresolved:0000000000000000f000000000000000>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "150046",
+      "component_file_id": "11491262",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "434ad0e61155e9c47a83f620ef47fbf9",
+          "type": 3,
+          "asset_path": "<unresolved:434ad0e61155e9c47a83f620ef47fbf9>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "151710",
+      "component_file_id": "11408306",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+          "type": 3,
+          "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "153516",
+      "component_file_id": "11426430",
+      "component_kind": "LayoutGroup",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "30649d3a9faa99c48a7b1166b86bf2a0",
+          "type": 3,
+          "asset_path": "<unresolved:30649d3a9faa99c48a7b1166b86bf2a0>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "153516",
+      "component_file_id": "11462080",
+      "component_kind": "StressOverlayPanel",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "99be192e1767aee4e9e80bb70f3132da",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Panels/StressOverlayPanel.cs"
+        },
+        "normalPip": {
+          "file_id": "21300000",
+          "guid": "3dc25943c0f55ea419840972b6121378",
+          "type": 3,
+          "asset_path": "Assets/Sprites/ui/stress.normal.png"
+        },
+        "stressedPip": {
+          "file_id": "21300000",
+          "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+          "type": 3,
+          "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+        },
+        "overstressedPip": {
+          "file_id": "21300000",
+          "guid": "bc794be09ac80f04e812cdc62375b076",
+          "type": 3,
+          "asset_path": "Assets/Sprites/ui/stress.overstressed.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "156078",
+      "component_file_id": "11450644",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "8bd76508559398747b37920cce4f30e8",
+          "type": 3,
+          "asset_path": "<unresolved:8bd76508559398747b37920cce4f30e8>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "162594",
+      "component_file_id": "11405170",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+          "type": 3,
+          "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "162974",
+      "component_file_id": "11482418",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "163272",
+      "component_file_id": "11473244",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "8b12fbf382bc88047888339a40b569ea",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/game.otf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "164472",
+      "component_file_id": "11457838",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+          "type": 3,
+          "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "169970",
+      "component_file_id": "11418216",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "172556",
+      "component_file_id": "11448590",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "179266",
+      "component_file_id": "11495486",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+          "type": 3,
+          "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "182776",
+      "component_file_id": "11457252",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+          "type": 3,
+          "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "184204",
+      "component_file_id": "11444514",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "49065c5846da2b748b14239778162e06",
+          "type": 3,
+          "asset_path": "Assets/Sprites/ui/hero_slot_bg.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "184204",
+      "component_file_id": "11466338",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "184204",
+      "component_file_id": "11412516",
+      "component_kind": "HeroSlot",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "c45da415900fe314d9d700d5e66cebc4",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Slots/HeroSlot.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "184220",
+      "component_file_id": "11461934",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+          "type": 3,
+          "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "184992",
+      "component_file_id": "11464378",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "186952",
+      "component_file_id": "11418508",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "1b8fa6db81737d049b6594547944a720",
+          "type": 3,
+          "asset_path": "Assets/Sprites/ui/char_icon.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "187456",
+      "component_file_id": "11491588",
+      "component_kind": "ResolveBar",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "21806ade71f280e4fb5cd2339efe35a3",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Controls/ResolveBar.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "189178",
+      "component_file_id": "11489224",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "190026",
+      "component_file_id": "11461440",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "23c1ec6e58a7af5468bf7be7662cb113",
+          "type": 3,
+          "asset_path": "<unresolved:23c1ec6e58a7af5468bf7be7662cb113>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "194022",
+      "component_file_id": "11457890",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "ab5387e5c82cc2f499be30c836546082",
+          "type": 3,
+          "asset_path": "<unresolved:ab5387e5c82cc2f499be30c836546082>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "194862",
+      "component_file_id": "11401034",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "195080",
+      "component_file_id": "11442518",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "197980",
+      "component_file_id": "11430266",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "8b12fbf382bc88047888339a40b569ea",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/game.otf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "109923677738443186",
+      "component_file_id": "1330040871549678823",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "1b039384276975a4bbd48ee37a05f6af",
+          "type": 3,
+          "asset_path": "Assets/Sprites/ui/chaos_progress_bg.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1510787718021934026",
+      "component_file_id": "1662529952402114343",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "fa58f73c30abee646838d4a4f6e114c8",
+          "type": 3,
+          "asset_path": "Assets/Sprites/ui/chaos_progress.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1637030495342236019",
+      "component_file_id": "2477568555148984570",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "81cafa13596dda64b87f029975606d75",
+          "type": 3,
+          "asset_path": "Assets/Sprites/ui/char_slot.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1929377896529649113",
+      "component_file_id": "1105180248839612804",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "8b12fbf382bc88047888339a40b569ea",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/game.otf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1929377896529649113",
+      "component_file_id": "1291690533212298027",
+      "component_kind": "LocalizationText",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "d91a74cfdf909ab44a6b6ec2010bf0fa",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/LocalizationText.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1993652051597019237",
+      "component_file_id": "8181668214072326854",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "8b12fbf382bc88047888339a40b569ea",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/game.otf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "4924219128666378055",
+      "component_file_id": "870479660507304223",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "8b12fbf382bc88047888339a40b569ea",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/game.otf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "5978722323518775231",
+      "component_file_id": "5189738221492058808",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "b041f0513522bf84eb2c818d92d4c8d6",
+          "type": 3,
+          "asset_path": "Assets/Sprites/ui/exp_progress.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "6639575226992847169",
+      "component_file_id": "3107098724263461363",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "8b12fbf382bc88047888339a40b569ea",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/game.otf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "6743393750762866277",
+      "component_file_id": "4958757325201668133",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "c1ee0f01d1ba1ad4bafedd75c46418c5",
+          "type": 3,
+          "asset_path": "Assets/Sprites/town/icons/armor.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "6998136916067922481",
+      "component_file_id": "803429161995364844",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "8b12fbf382bc88047888339a40b569ea",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/game.otf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "7905440983462248439",
+      "component_file_id": "1973252875178009056",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "ab1ebfb4dc4526945820a4aae57b94f5",
+          "type": 3,
+          "asset_path": "Assets/Sprites/town/icons/weapon.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "9093330112128294347",
+      "component_file_id": "667126068630383765",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "76720b3611b0f454186a9437655fd5c1",
+          "type": 3,
+          "asset_path": "Assets/Sprites/ui/exp_progress_bg.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "9151006079558356546",
+      "component_file_id": "5297106276282544384",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "8b12fbf382bc88047888339a40b569ea",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/game.otf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "9151006079558356546",
+      "component_file_id": "3192089356392621611",
+      "component_kind": "LocalizationText",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "d91a74cfdf909ab44a6b6ec2010bf0fa",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/LocalizationText.cs"
+        }
+      }
+    }
+  ],
+  "native_game_object_count": 48,
+  "prefab_instance_count": 0
+}

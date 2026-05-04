@@ -1,0 +1,352 @@
+{
+  "source_file": "Assets/Prefabs/UI/Estate/PanelWindows/Glossary/GlossaryRecord.prefab",
+  "file_kind": "prefab",
+  "hierarchy": [
+    {
+      "file_id": "177374",
+      "name": "GlossaryRecord",
+      "tag": "Untagged",
+      "active": true,
+      "rect_transform": {
+        "anchor_min": {
+          "x": 0,
+          "y": 1
+        },
+        "anchor_max": {
+          "x": 0,
+          "y": 1
+        },
+        "anchored_position": {
+          "x": 150,
+          "y": 0
+        },
+        "size_delta": {
+          "x": 440,
+          "y": 44
+        },
+        "pivot": {
+          "x": 0,
+          "y": 1
+        },
+        "local_scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "components": [
+        {
+          "file_id": "11445508",
+          "kind": "GlossaryRecord",
+          "script": {
+            "file_id": "11500000",
+            "guid": "17d2d9e70fc5f3442928e45c51807d0f",
+            "type": 3,
+            "asset_path": "Assets/Scripts/UI/Slots/GlossaryRecord.cs"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "17d2d9e70fc5f3442928e45c51807d0f",
+              "type": 3,
+              "asset_path": "Assets/Scripts/UI/Slots/GlossaryRecord.cs"
+            }
+          }
+        },
+        {
+          "file_id": "11492688",
+          "kind": "MonoBehaviour",
+          "script": {
+            "file_id": "11500000",
+            "guid": "306cc8c2b49d7114eaa3623786fc2126",
+            "type": 3,
+            "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "306cc8c2b49d7114eaa3623786fc2126",
+              "type": 3,
+              "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+            }
+          }
+        },
+        {
+          "file_id": "11489004",
+          "kind": "Text",
+          "script": {
+            "file_id": "11500000",
+            "guid": "5f7201a12d95ffc409449d95f23cf332",
+            "type": 3,
+            "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "5f7201a12d95ffc409449d95f23cf332",
+              "type": 3,
+              "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+            },
+            "m_Font": {
+              "file_id": "12800000",
+              "guid": "b601d2a4d5d34414aa0b143ce082e654",
+              "type": 3,
+              "asset_path": "Assets/Fonts/Bak/DwarvenAxe BB W00 Regular.ttf"
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "file_id": "109752",
+          "name": "MouseOver",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0,
+              "y": 1
+            },
+            "anchor_max": {
+              "x": 0,
+              "y": 1
+            },
+            "anchored_position": {
+              "x": 0,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 100,
+              "y": 33
+            },
+            "pivot": {
+              "x": 0,
+              "y": 1
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [],
+          "children": []
+        },
+        {
+          "file_id": "110496",
+          "name": "Term",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0,
+              "y": 1
+            },
+            "anchor_max": {
+              "x": 0,
+              "y": 1
+            },
+            "anchored_position": {
+              "x": 0,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 210,
+              "y": 59
+            },
+            "pivot": {
+              "x": 1,
+              "y": 1
+            },
+            "local_scale": {
+              "x": 0.7,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "11451198",
+              "kind": "Text",
+              "script": {
+                "file_id": "11500000",
+                "guid": "5f7201a12d95ffc409449d95f23cf332",
+                "type": 3,
+                "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "5f7201a12d95ffc409449d95f23cf332",
+                  "type": 3,
+                  "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                },
+                "m_Font": {
+                  "file_id": "12800000",
+                  "guid": "b601d2a4d5d34414aa0b143ce082e654",
+                  "type": 3,
+                  "asset_path": "Assets/Fonts/Bak/DwarvenAxe BB W00 Regular.ttf"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "153656",
+          "name": "Divider",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0
+            },
+            "anchored_position": {
+              "x": -80,
+              "y": -10
+            },
+            "size_delta": {
+              "x": 584,
+              "y": 7
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 1
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "11498892",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "2c55804df1d22bb4c91e1e2e8c439da0",
+                  "type": 3,
+                  "asset_path": "<unresolved:2c55804df1d22bb4c91e1e2e8c439da0>"
+                }
+              }
+            }
+          ],
+          "children": []
+        }
+      ]
+    }
+  ],
+  "prefab_instances": [],
+  "text_nodes": [],
+  "asset_references": [
+    {
+      "game_object_file_id": "110496",
+      "component_file_id": "11451198",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "b601d2a4d5d34414aa0b143ce082e654",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/DwarvenAxe BB W00 Regular.ttf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "153656",
+      "component_file_id": "11498892",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "2c55804df1d22bb4c91e1e2e8c439da0",
+          "type": 3,
+          "asset_path": "<unresolved:2c55804df1d22bb4c91e1e2e8c439da0>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "177374",
+      "component_file_id": "11445508",
+      "component_kind": "GlossaryRecord",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "17d2d9e70fc5f3442928e45c51807d0f",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Slots/GlossaryRecord.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "177374",
+      "component_file_id": "11492688",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "177374",
+      "component_file_id": "11489004",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "b601d2a4d5d34414aa0b143ce082e654",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/DwarvenAxe BB W00 Regular.ttf"
+        }
+      }
+    }
+  ],
+  "native_game_object_count": 4,
+  "prefab_instance_count": 0
+}

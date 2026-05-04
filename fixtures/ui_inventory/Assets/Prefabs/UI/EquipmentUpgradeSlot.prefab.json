@@ -1,0 +1,598 @@
+{
+  "source_file": "Assets/Prefabs/UI/EquipmentUpgradeSlot.prefab",
+  "file_kind": "prefab",
+  "hierarchy": [
+    {
+      "file_id": "8029293041438008703",
+      "name": "EquipmentUpgradeSlot",
+      "tag": "Untagged",
+      "active": true,
+      "rect_transform": {
+        "anchor_min": {
+          "x": 0,
+          "y": 0
+        },
+        "anchor_max": {
+          "x": 0,
+          "y": 0
+        },
+        "anchored_position": {
+          "x": 0,
+          "y": 0
+        },
+        "size_delta": {
+          "x": 0,
+          "y": 0
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "local_scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "components": [
+        {
+          "file_id": "7125802955082924861",
+          "kind": "MonoBehaviour",
+          "script": {
+            "file_id": "11500000",
+            "guid": "306cc8c2b49d7114eaa3623786fc2126",
+            "type": 3,
+            "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "306cc8c2b49d7114eaa3623786fc2126",
+              "type": 3,
+              "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+            }
+          }
+        },
+        {
+          "file_id": "6480945645698393338",
+          "kind": "Image",
+          "script": {
+            "file_id": "11500000",
+            "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+            "type": 3,
+            "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+              "type": 3,
+              "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+            },
+            "m_Sprite": {
+              "file_id": "21300000",
+              "guid": "8e2148e0b1ab55242a1da97a604ae04d",
+              "type": 3,
+              "asset_path": "Assets/Sprites/ui/upgrade_slot.png"
+            }
+          }
+        },
+        {
+          "file_id": "5866346214033469367",
+          "kind": "EquipmentUpgradeSlot",
+          "script": {
+            "file_id": "11500000",
+            "guid": "1c4f12d7f3245534ea6e379a09a4cdf7",
+            "type": 3,
+            "asset_path": "Assets/Scripts/UI/Slots/EquipmentUpgradeSlot.cs"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "1c4f12d7f3245534ea6e379a09a4cdf7",
+              "type": 3,
+              "asset_path": "Assets/Scripts/UI/Slots/EquipmentUpgradeSlot.cs"
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "file_id": "3315395798483481555",
+          "name": "CostFrame",
+          "tag": "Untagged",
+          "active": false,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": -25,
+              "y": -50
+            },
+            "size_delta": {
+              "x": 103,
+              "y": 139
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "3333669255630625554",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "830d1d225a5bf4749a447a79fa387ec3",
+                  "type": 3,
+                  "asset_path": "<unresolved:830d1d225a5bf4749a447a79fa387ec3>"
+                }
+              }
+            },
+            {
+              "file_id": "7186483966732959573",
+              "kind": "BuildCostFrame",
+              "script": {
+                "file_id": "11500000",
+                "guid": "9b30a28eeaa319e4384e44904e53def3",
+                "type": 3,
+                "asset_path": "Assets/Scripts/UI/Controls/BuildCostFrame.cs"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "9b30a28eeaa319e4384e44904e53def3",
+                  "type": 3,
+                  "asset_path": "Assets/Scripts/UI/Controls/BuildCostFrame.cs"
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "file_id": "2831947042376961700",
+              "name": "HeirloomOne",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchored_position": {
+                  "x": -2,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 40,
+                  "y": 40
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "6329898652764395233",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "c97f5a3fa7898024b9213f24c6818359",
+                      "type": 3,
+                      "asset_path": "Assets/Resources/Sprites/gold.png"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "4155484577974253125",
+                  "name": "Amount",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchor_max": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchored_position": {
+                      "x": 45,
+                      "y": 0
+                    },
+                    "size_delta": {
+                      "x": 60,
+                      "y": 30
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "4688631274920084373",
+                      "kind": "Text",
+                      "script": {
+                        "file_id": "11500000",
+                        "guid": "5f7201a12d95ffc409449d95f23cf332",
+                        "type": 3,
+                        "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                      },
+                      "text": 2000,
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "11500000",
+                          "guid": "5f7201a12d95ffc409449d95f23cf332",
+                          "type": 3,
+                          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                        },
+                        "m_Font": {
+                          "file_id": "12800000",
+                          "guid": "8b12fbf382bc88047888339a40b569ea",
+                          "type": 3,
+                          "asset_path": "Assets/Fonts/Bak/game.otf"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "file_id": "4752577909946598309",
+          "name": "Icon",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 4.5776367e-05,
+              "y": 1.0967255e-05
+            },
+            "size_delta": {
+              "x": 79,
+              "y": 79
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "307313441506934126",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "ecbe6d639cb0e1d4f86af742f83175e5",
+                  "type": 3,
+                  "asset_path": "Assets/Sprites/ui/upgrade_locked.png"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "7145470184037119376",
+          "name": "Background",
+          "tag": "Untagged",
+          "active": false,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 0,
+              "y": -3.8146973e-06
+            },
+            "size_delta": {
+              "x": 63,
+              "y": 62
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "1814223742138494084",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "8e2148e0b1ab55242a1da97a604ae04d",
+                  "type": 3,
+                  "asset_path": "Assets/Sprites/ui/upgrade_slot.png"
+                }
+              }
+            }
+          ],
+          "children": []
+        }
+      ]
+    }
+  ],
+  "prefab_instances": [],
+  "text_nodes": [
+    {
+      "game_object_file_id": "4155484577974253125",
+      "component_file_id": "4688631274920084373",
+      "component_kind": "Text",
+      "text": 2000
+    }
+  ],
+  "asset_references": [
+    {
+      "game_object_file_id": "2831947042376961700",
+      "component_file_id": "6329898652764395233",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "c97f5a3fa7898024b9213f24c6818359",
+          "type": 3,
+          "asset_path": "Assets/Resources/Sprites/gold.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "3315395798483481555",
+      "component_file_id": "3333669255630625554",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "830d1d225a5bf4749a447a79fa387ec3",
+          "type": 3,
+          "asset_path": "<unresolved:830d1d225a5bf4749a447a79fa387ec3>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "3315395798483481555",
+      "component_file_id": "7186483966732959573",
+      "component_kind": "BuildCostFrame",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "9b30a28eeaa319e4384e44904e53def3",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Controls/BuildCostFrame.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "4155484577974253125",
+      "component_file_id": "4688631274920084373",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "8b12fbf382bc88047888339a40b569ea",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/game.otf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "4752577909946598309",
+      "component_file_id": "307313441506934126",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "ecbe6d639cb0e1d4f86af742f83175e5",
+          "type": 3,
+          "asset_path": "Assets/Sprites/ui/upgrade_locked.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "7145470184037119376",
+      "component_file_id": "1814223742138494084",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "8e2148e0b1ab55242a1da97a604ae04d",
+          "type": 3,
+          "asset_path": "Assets/Sprites/ui/upgrade_slot.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "8029293041438008703",
+      "component_file_id": "7125802955082924861",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "8029293041438008703",
+      "component_file_id": "6480945645698393338",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "8e2148e0b1ab55242a1da97a604ae04d",
+          "type": 3,
+          "asset_path": "Assets/Sprites/ui/upgrade_slot.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "8029293041438008703",
+      "component_file_id": "5866346214033469367",
+      "component_kind": "EquipmentUpgradeSlot",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "1c4f12d7f3245534ea6e379a09a4cdf7",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Slots/EquipmentUpgradeSlot.cs"
+        }
+      }
+    }
+  ],
+  "native_game_object_count": 6,
+  "prefab_instance_count": 0
+}

@@ -1,0 +1,501 @@
+{
+  "source_file": "Assets/Prefabs/UI/Estate/PanelWindows/ActivityLog/ActivityRecord.prefab",
+  "file_kind": "prefab",
+  "hierarchy": [
+    {
+      "file_id": "188598",
+      "name": "ActivityRecord",
+      "tag": "Untagged",
+      "active": true,
+      "rect_transform": {
+        "anchor_min": {
+          "x": 0,
+          "y": 0
+        },
+        "anchor_max": {
+          "x": 0,
+          "y": 0
+        },
+        "anchored_position": {
+          "x": 0,
+          "y": 0
+        },
+        "size_delta": {
+          "x": 0,
+          "y": 0
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "local_scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "components": [
+        {
+          "file_id": "11490550",
+          "kind": "ActivityRecordSlot",
+          "script": {
+            "file_id": "11500000",
+            "guid": "5cc4b949d3ed36440aaeecab23955f04",
+            "type": 3,
+            "asset_path": "Assets/Scripts/UI/Slots/ActivityRecordSlot.cs"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "5cc4b949d3ed36440aaeecab23955f04",
+              "type": 3,
+              "asset_path": "Assets/Scripts/UI/Slots/ActivityRecordSlot.cs"
+            }
+          }
+        },
+        {
+          "file_id": "11433258",
+          "kind": "Image",
+          "script": {
+            "file_id": "11500000",
+            "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+            "type": 3,
+            "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+              "type": 3,
+              "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+            },
+            "m_Sprite": {
+              "file_id": "21300000",
+              "guid": "4d5a0ba4b86c3aa4bb89a2a00c37deb2",
+              "type": 3,
+              "asset_path": "<unresolved:4d5a0ba4b86c3aa4bb89a2a00c37deb2>"
+            }
+          }
+        },
+        {
+          "file_id": "11425178",
+          "kind": "LayoutGroup",
+          "script": {
+            "file_id": "11500000",
+            "guid": "59f8146938fff824cb5fd77236b75775",
+            "type": 3,
+            "asset_path": "<unresolved:59f8146938fff824cb5fd77236b75775>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "59f8146938fff824cb5fd77236b75775",
+              "type": 3,
+              "asset_path": "<unresolved:59f8146938fff824cb5fd77236b75775>"
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "file_id": "137146",
+          "name": "ActivityDescription",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0,
+              "y": 0
+            },
+            "anchor_max": {
+              "x": 0,
+              "y": 0
+            },
+            "anchored_position": {
+              "x": 0,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 0,
+              "y": 0
+            },
+            "pivot": {
+              "x": 1,
+              "y": 1
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "11413478",
+              "kind": "Text",
+              "script": {
+                "file_id": "11500000",
+                "guid": "5f7201a12d95ffc409449d95f23cf332",
+                "type": 3,
+                "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+              },
+              "text": "Seeker Crusader was slain by file Bone Captain.",
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "5f7201a12d95ffc409449d95f23cf332",
+                  "type": 3,
+                  "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                },
+                "m_Font": {
+                  "file_id": "12800000",
+                  "guid": "b601d2a4d5d34414aa0b143ce082e654",
+                  "type": 3,
+                  "asset_path": "Assets/Fonts/Bak/DwarvenAxe BB W00 Regular.ttf"
+                }
+              }
+            },
+            {
+              "file_id": "11430010",
+              "kind": "MonoBehaviour",
+              "script": {
+                "file_id": "11500000",
+                "guid": "cfabb0440166ab443bba8876756fdfa9",
+                "type": 3,
+                "asset_path": "<unresolved:cfabb0440166ab443bba8876756fdfa9>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "cfabb0440166ab443bba8876756fdfa9",
+                  "type": 3,
+                  "asset_path": "<unresolved:cfabb0440166ab443bba8876756fdfa9>"
+                }
+              }
+            },
+            {
+              "file_id": "11402534",
+              "kind": "MonoBehaviour",
+              "script": {
+                "file_id": "11500000",
+                "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                "type": 3,
+                "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                  "type": 3,
+                  "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "file_id": "163138",
+              "name": "Portrait",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0,
+                  "y": 1
+                },
+                "anchor_max": {
+                  "x": 0,
+                  "y": 1
+                },
+                "anchored_position": {
+                  "x": -46.4,
+                  "y": -38.5
+                },
+                "size_delta": {
+                  "x": 85,
+                  "y": 85
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11471814",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "943fc3a11f088934f82e888a26098792",
+                      "type": 3,
+                      "asset_path": "<unresolved:943fc3a11f088934f82e888a26098792>"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            },
+            {
+              "file_id": "179854",
+              "name": "Separator",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchor_max": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchored_position": {
+                  "x": 183.5,
+                  "y": -18
+                },
+                "size_delta": {
+                  "x": 584,
+                  "y": 7
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 1
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11448954",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "df6e7401ae0d29b47809cbf27c7c1180",
+                      "type": 3,
+                      "asset_path": "<unresolved:df6e7401ae0d29b47809cbf27c7c1180>"
+                    }
+                  }
+                },
+                {
+                  "file_id": "11437420",
+                  "kind": "MonoBehaviour",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                    "type": 3,
+                    "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                      "type": 3,
+                      "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "prefab_instances": [],
+  "text_nodes": [
+    {
+      "game_object_file_id": "137146",
+      "component_file_id": "11413478",
+      "component_kind": "Text",
+      "text": "Seeker Crusader was slain by file Bone Captain."
+    }
+  ],
+  "asset_references": [
+    {
+      "game_object_file_id": "137146",
+      "component_file_id": "11413478",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "b601d2a4d5d34414aa0b143ce082e654",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/DwarvenAxe BB W00 Regular.ttf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "137146",
+      "component_file_id": "11430010",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "cfabb0440166ab443bba8876756fdfa9",
+          "type": 3,
+          "asset_path": "<unresolved:cfabb0440166ab443bba8876756fdfa9>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "137146",
+      "component_file_id": "11402534",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "163138",
+      "component_file_id": "11471814",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "943fc3a11f088934f82e888a26098792",
+          "type": 3,
+          "asset_path": "<unresolved:943fc3a11f088934f82e888a26098792>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "179854",
+      "component_file_id": "11448954",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "df6e7401ae0d29b47809cbf27c7c1180",
+          "type": 3,
+          "asset_path": "<unresolved:df6e7401ae0d29b47809cbf27c7c1180>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "179854",
+      "component_file_id": "11437420",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "188598",
+      "component_file_id": "11490550",
+      "component_kind": "ActivityRecordSlot",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5cc4b949d3ed36440aaeecab23955f04",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Slots/ActivityRecordSlot.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "188598",
+      "component_file_id": "11433258",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "4d5a0ba4b86c3aa4bb89a2a00c37deb2",
+          "type": 3,
+          "asset_path": "<unresolved:4d5a0ba4b86c3aa4bb89a2a00c37deb2>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "188598",
+      "component_file_id": "11425178",
+      "component_kind": "LayoutGroup",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "59f8146938fff824cb5fd77236b75775",
+          "type": 3,
+          "asset_path": "<unresolved:59f8146938fff824cb5fd77236b75775>"
+        }
+      }
+    }
+  ],
+  "native_game_object_count": 4,
+  "prefab_instance_count": 0
+}

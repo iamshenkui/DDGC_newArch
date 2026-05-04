@@ -1,0 +1,644 @@
+{
+  "source_file": "Assets/Prefabs/UI/TreatmentHeroSlot.prefab",
+  "file_kind": "prefab",
+  "hierarchy": [
+    {
+      "file_id": "3052045608336834134",
+      "name": "TreatmentHeroSlot",
+      "tag": "Untagged",
+      "active": true,
+      "rect_transform": {
+        "anchor_min": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "anchor_max": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "anchored_position": {
+          "x": -166,
+          "y": 145
+        },
+        "size_delta": {
+          "x": 125,
+          "y": 116
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "local_scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "components": [
+        {
+          "file_id": "4109977144036169344",
+          "kind": "Image",
+          "script": {
+            "file_id": "11500000",
+            "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+            "type": 3,
+            "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+              "type": 3,
+              "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+            },
+            "m_Sprite": {
+              "file_id": "21300000",
+              "guid": "e28d45be6740af2489cc42479de9a066",
+              "type": 3,
+              "asset_path": "Assets/Resources/Data/Heroes/Sprites/alchemist/A/alchemist_portrait_roster.png"
+            }
+          }
+        },
+        {
+          "file_id": "5814763094175485870",
+          "kind": "TreatmentHeroSlot",
+          "script": {
+            "file_id": "11500000",
+            "guid": "bd19c95502a2a334d9f29b6827456b00",
+            "type": 3,
+            "asset_path": "Assets/Scripts/UI/Slots/TreatmentHeroSlot.cs"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "bd19c95502a2a334d9f29b6827456b00",
+              "type": 3,
+              "asset_path": "Assets/Scripts/UI/Slots/TreatmentHeroSlot.cs"
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "file_id": "464752806113664263",
+          "name": "FreeOverlay",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 0,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 125,
+              "y": 116
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "2984467811933604868",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "71b2d8d23cc61d241af610ba1b8f9646",
+                  "type": 3,
+                  "asset_path": "Assets/Resources/Sprites/hero_slot.background.png"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "1735113006367822520",
+          "name": "ActiveOverlay",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 0,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 145,
+              "y": 145
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "8352309413989910287",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "cb4b27e020186bf48bb8127e497c402e",
+                  "type": 3,
+                  "asset_path": "Assets/Resources/Sprites/hero_slot.backgroundhightlight.png"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "2021801805735985936",
+          "name": "Locked",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 0,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 142,
+              "y": 142
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "6765499988617600805",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "4d03c5c3647c53347a492135109580cf",
+                  "type": 3,
+                  "asset_path": "Assets/Resources/Sprites/hero_slot.locked_icon.png"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "4121004887574727567",
+          "name": "ActivityButton",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0
+            },
+            "anchored_position": {
+              "x": 0,
+              "y": -10
+            },
+            "size_delta": {
+              "x": 110,
+              "y": 30
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "9019175097383198148",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "220f3942986e9e144b0fe1410a56845b",
+                  "type": 3,
+                  "asset_path": "Assets/Resources/Sprites/hero_activity.cancel_button.png"
+                }
+              }
+            },
+            {
+              "file_id": "4201897269748508170",
+              "kind": "Button",
+              "script": {
+                "file_id": "11500000",
+                "guid": "4e29b1a8efbd4b44bb3f3716e73f07ff",
+                "type": 3,
+                "asset_path": "<unresolved:4e29b1a8efbd4b44bb3f3716e73f07ff>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "4e29b1a8efbd4b44bb3f3716e73f07ff",
+                  "type": 3,
+                  "asset_path": "<unresolved:4e29b1a8efbd4b44bb3f3716e73f07ff>"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "5428944831413232924",
+          "name": "HeroLabel",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 1
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 1
+            },
+            "anchored_position": {
+              "x": 0,
+              "y": 20
+            },
+            "size_delta": {
+              "x": 160,
+              "y": 30
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "3934455821765858252",
+              "kind": "Text",
+              "script": {
+                "file_id": "11500000",
+                "guid": "5f7201a12d95ffc409449d95f23cf332",
+                "type": 3,
+                "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+              },
+              "text": "英雄名称",
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "5f7201a12d95ffc409449d95f23cf332",
+                  "type": 3,
+                  "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                },
+                "m_Font": {
+                  "file_id": "12800000",
+                  "guid": "8b12fbf382bc88047888339a40b569ea",
+                  "type": 3,
+                  "asset_path": "Assets/Fonts/Bak/game.otf"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "7334062333695852158",
+          "name": "Frame",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 0,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 145,
+              "y": 145
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "9144993351367665328",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "cb4b27e020186bf48bb8127e497c402e",
+                  "type": 3,
+                  "asset_path": "Assets/Resources/Sprites/hero_slot.backgroundhightlight.png"
+                }
+              }
+            }
+          ],
+          "children": []
+        }
+      ]
+    }
+  ],
+  "prefab_instances": [],
+  "text_nodes": [
+    {
+      "game_object_file_id": "5428944831413232924",
+      "component_file_id": "3934455821765858252",
+      "component_kind": "Text",
+      "text": "英雄名称"
+    }
+  ],
+  "asset_references": [
+    {
+      "game_object_file_id": "464752806113664263",
+      "component_file_id": "2984467811933604868",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "71b2d8d23cc61d241af610ba1b8f9646",
+          "type": 3,
+          "asset_path": "Assets/Resources/Sprites/hero_slot.background.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1735113006367822520",
+      "component_file_id": "8352309413989910287",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "cb4b27e020186bf48bb8127e497c402e",
+          "type": 3,
+          "asset_path": "Assets/Resources/Sprites/hero_slot.backgroundhightlight.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "2021801805735985936",
+      "component_file_id": "6765499988617600805",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "4d03c5c3647c53347a492135109580cf",
+          "type": 3,
+          "asset_path": "Assets/Resources/Sprites/hero_slot.locked_icon.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "3052045608336834134",
+      "component_file_id": "4109977144036169344",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "e28d45be6740af2489cc42479de9a066",
+          "type": 3,
+          "asset_path": "Assets/Resources/Data/Heroes/Sprites/alchemist/A/alchemist_portrait_roster.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "3052045608336834134",
+      "component_file_id": "5814763094175485870",
+      "component_kind": "TreatmentHeroSlot",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "bd19c95502a2a334d9f29b6827456b00",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Slots/TreatmentHeroSlot.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "4121004887574727567",
+      "component_file_id": "9019175097383198148",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "220f3942986e9e144b0fe1410a56845b",
+          "type": 3,
+          "asset_path": "Assets/Resources/Sprites/hero_activity.cancel_button.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "4121004887574727567",
+      "component_file_id": "4201897269748508170",
+      "component_kind": "Button",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "4e29b1a8efbd4b44bb3f3716e73f07ff",
+          "type": 3,
+          "asset_path": "<unresolved:4e29b1a8efbd4b44bb3f3716e73f07ff>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "5428944831413232924",
+      "component_file_id": "3934455821765858252",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "8b12fbf382bc88047888339a40b569ea",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/game.otf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "7334062333695852158",
+      "component_file_id": "9144993351367665328",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "cb4b27e020186bf48bb8127e497c402e",
+          "type": 3,
+          "asset_path": "Assets/Resources/Sprites/hero_slot.backgroundhightlight.png"
+        }
+      }
+    }
+  ],
+  "native_game_object_count": 7,
+  "prefab_instance_count": 0
+}

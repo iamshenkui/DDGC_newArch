@@ -1,0 +1,196 @@
+{
+  "source_file": "Assets/Prefabs/UI/Raid/Map/HallwaySlot.prefab",
+  "file_kind": "prefab",
+  "hierarchy": [
+    {
+      "file_id": "1000012402949472",
+      "name": "HallwaySlot",
+      "tag": "Untagged",
+      "active": true,
+      "rect_transform": {
+        "anchor_min": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "anchor_max": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "anchored_position": {
+          "x": -500,
+          "y": -400
+        },
+        "size_delta": {
+          "x": 0,
+          "y": 0
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "local_scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "components": [
+        {
+          "file_id": "114000012396475334",
+          "kind": "RaidMapHallwaySlot",
+          "script": {
+            "file_id": "11500000",
+            "guid": "c67ae8beac959e744982b64b8c982ad6",
+            "type": 3,
+            "asset_path": "Assets/Scripts/UI/Slots/RaidMapHallwaySlot.cs"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "c67ae8beac959e744982b64b8c982ad6",
+              "type": 3,
+              "asset_path": "Assets/Scripts/UI/Slots/RaidMapHallwaySlot.cs"
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "file_id": "1000012586340944",
+          "name": "Indicator",
+          "tag": "Untagged",
+          "active": false,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 36.000153,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 24,
+              "y": 24
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": -1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "114000012440205826",
+              "kind": "Image",
+              "script": {
+                "file_id": "-765806418",
+                "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                "type": 3,
+                "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "-765806418",
+                  "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                  "type": 3,
+                  "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "eb5a8be642c253741bb70b1fbc38673a",
+                  "type": 3,
+                  "asset_path": "<unresolved:eb5a8be642c253741bb70b1fbc38673a>"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "1000013437500032",
+          "name": "HallContainer",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 0,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 0,
+              "y": 0
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [],
+          "children": []
+        }
+      ]
+    }
+  ],
+  "prefab_instances": [],
+  "text_nodes": [],
+  "asset_references": [
+    {
+      "game_object_file_id": "1000012402949472",
+      "component_file_id": "114000012396475334",
+      "component_kind": "RaidMapHallwaySlot",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "c67ae8beac959e744982b64b8c982ad6",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Slots/RaidMapHallwaySlot.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1000012586340944",
+      "component_file_id": "114000012440205826",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "-765806418",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "eb5a8be642c253741bb70b1fbc38673a",
+          "type": 3,
+          "asset_path": "<unresolved:eb5a8be642c253741bb70b1fbc38673a>"
+        }
+      }
+    }
+  ],
+  "native_game_object_count": 3,
+  "prefab_instance_count": 0
+}
