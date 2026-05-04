@@ -167,14 +167,181 @@
         }
       },
       "hero_portraits": {
-        "description": "Roster portrait sprites used in HeroSlot.prefab and related UI elements",
+        "description": "Roster portrait sprites used in HeroSlot.prefab and related UI elements. Each hero class has base/white/black portraits in subdirectories: {class}/A/{class}_portrait_roster.png, {class}1/A/{class}1_portrait_roster.png, {class}2/A/{class}2_portrait_roster.png.",
         "portrait_root": "Assets/Resources/Data/Heroes/Sprites",
-        "example_portrait": {
-          "asset_path": "Assets/Resources/Data/Heroes/Sprites/alchemist/A/alchemist_portrait_roster.png",
-          "guid": "e28d45be6740af2489cc42479de9a066",
+        "by_family": {
+          "alchemist": {
+            "base_path": "Assets/Resources/Data/Heroes/Sprites/alchemist/A/alchemist_portrait_roster.png",
+            "base_guid": "e28d45be6740af2489cc42479de9a066",
+            "white_path": "Assets/Resources/Data/Heroes/Sprites/alchemist1/A/alchemist1_portrait_roster.png",
+            "white_guid": null,
+            "black_path": "Assets/Resources/Data/Heroes/Sprites/alchemist2/A/alchemist2_portrait_roster.png",
+            "black_guid": null,
+            "repo_status": "none — original PNG not in repository (BLOCKER-001)"
+          },
+          "diviner": {
+            "base_path": "Assets/Resources/Data/Heroes/Sprites/diviner/A/diviner_portrait_roster.png",
+            "base_guid": null,
+            "white_path": "Assets/Resources/Data/Heroes/Sprites/diviner1/A/diviner1_portrait_roster.png",
+            "white_guid": null,
+            "black_path": "Assets/Resources/Data/Heroes/Sprites/diviner2/A/diviner2_portrait_roster.png",
+            "black_guid": null,
+            "repo_status": "none — original PNG not in repository (BLOCKER-001)"
+          },
+          "hunter": {
+            "base_path": "Assets/Resources/Data/Heroes/Sprites/hunter/A/hunter_portrait_roster.png",
+            "base_guid": "0d8c7b53e7f214a4f8c7d2e9a8b6c5f4",
+            "white_path": "Assets/Resources/Data/Heroes/Sprites/hunter1/A/hunter1_portrait_roster.png",
+            "white_guid": "1e9f8c7b53e7f214a4f8c7d2e9a8b6c5f",
+            "black_path": "Assets/Resources/Data/Heroes/Sprites/hunter2/A/hunter2_portrait_roster.png",
+            "black_guid": "2f0d8c7b53e7f214a4f8c7d2e9a8b6c5f",
+            "repo_status": "present — frontend/public/original/heroes/ (3 variants extracted as hunter/hunter1/hunter2_portrait_roster.png)"
+          },
+          "shaman": {
+            "base_path": "Assets/Resources/Data/Heroes/Sprites/shaman/A/shaman_portrait_roster.png",
+            "base_guid": null,
+            "white_path": "Assets/Resources/Data/Heroes/Sprites/shaman1/A/shaman1_portrait_roster.png",
+            "white_guid": null,
+            "black_path": "Assets/Resources/Data/Heroes/Sprites/shaman2/A/shaman2_portrait_roster.png",
+            "black_guid": null,
+            "repo_status": "none — original PNG not in repository (BLOCKER-001)"
+          },
+          "tank": {
+            "base_path": "Assets/Resources/Data/Heroes/Sprites/tank/A/tank_portrait_roster.png",
+            "base_guid": null,
+            "white_path": "Assets/Resources/Data/Heroes/Sprites/tank1/A/tank1_portrait_roster.png",
+            "white_guid": null,
+            "black_path": "Assets/Resources/Data/Heroes/Sprites/tank2/A/tank2_portrait_roster.png",
+            "black_guid": null,
+            "repo_status": "none — original PNG not in repository (BLOCKER-001)"
+          }
+        },
+        "starter_heroes": {
+          "description": "Starting heroes in a new DDGC campaign. The Rust backend (src/heroes/families.rs) defines 5 recruitable families: Alchemist, Diviner, Hunter, Shaman, Tank. The initial campaign roster includes a subset of these families at level 0 with base (normal chaos) variants. Portrait keys use the base class name (e.g., 'hunter', 'alchemist').",
+          "families_count": 5,
+          "initial_campaign_roster_slots": 4,
+          "spine_variant_resolution": "chaos-driven: base_id for Normal (stored 50-149), white_id for White (stored >=150), black_id for Black (stored <50)",
+          "frontend_resolution": "resolveHeroPortrait({ heroId, classLabel }) in originalAssetPaths.ts — currently only hunter variants mapped",
+          "notes": "Full portrait inventory requires scanning all 5 families x 3 variants. Marked as deferred enumeration for non-hunter families. Hunter portraits are in repository."
+        }
+      }
+    },
+
+    "title_menu_assets": {
+      "description": "Title/menu screen art referenced by MainMenuWindow.prefab and Intro.unity. These assets provide the visual identity for the startup/title screen (StartupScreen.tsx), including the menu background, button sprites, close button, and any logo/branding art.",
+      "background_sprites": {
+        "menu_background": {
+          "asset_path": "Assets/Sprites/ui/menu_bg.png",
+          "guid": "4e780ea66a89c2f4b8bdc4f4b76c290d",
+          "source_component": "MainMenuWindow.prefab → MainMenuWindow root → Image (m_Sprite)",
+          "frontend_usage": "screens/startup/StartupScreen.tsx — full-screen centered dialog background",
+          "frontend_status": "CSS dark backdrop used in AppFrame; original sprite not in repository (BLOCKER-001)",
           "inventory_status": "confirmed"
         },
-        "notes": "Each hero class has portraits in subdirectories: {class}/A/{class}_portrait_roster.png. Full portrait inventory requires scanning all 5 families x 3 variants. Marked as deferred enumeration."
+        "menu_button_art": {
+          "asset_path": "Assets/Sprites/ui/btn_menu_primary.png",
+          "guid": "b14c9d4fa66bc4d45897fba8c866125a",
+          "source_component": "MainMenuWindow.prefab → all 5 MenuOption Buttons → Image (m_Sprite)",
+          "frontend_usage": "screens/startup/StartupScreen.tsx — shared sprite for all menu buttons (New Campaign, Load Campaign, Boot Replay/Live Shell)",
+          "frontend_status": "CSS .action-primary / .action-secondary button styling used instead; original sprite not in repository (BLOCKER-001)",
+          "inventory_status": "confirmed"
+        },
+        "close_button_sprite": {
+          "asset_path": "Assets/Sprites/ui/btn_close.png",
+          "guid": "769d8277be4c51447a1cb51c5cb91749",
+          "source_component": "MainMenuWindow.prefab → CloseButton → Image (m_Sprite)",
+          "frontend_usage": "screens/startup/StartupScreen.tsx — dismiss/close button",
+          "frontend_status": "Not yet wired; original sprite not in repository (BLOCKER-001)",
+          "inventory_status": "confirmed"
+        }
+      },
+      "intro_scene_assets": {
+        "description": "Assets referenced by Intro.unity — the boot/title sequence that plays before the main menu.",
+        "red_hook_logo_sprite": {
+          "asset_path": "Assets/Textures/Logo/RedHookLogo.png",
+          "guid": "5acbfead2b746c949acc123a989bdf78",
+          "source_component": "Intro.unity → GameLogo → Image (m_Sprite)",
+          "frontend_usage": "Pre-menu boot splash (not yet implemented in StartupScreen)",
+          "inventory_status": "confirmed",
+          "frontend_status": "Logo splash not scoped; original sprite not in repository (BLOCKER-001)"
+        },
+        "intro_video_texture": {
+          "asset_path": "Assets/Textures/Intro/IntroVideoTexture.webm",
+          "guid": "b9f0e53d8b8d3a24b8ef1e5bf5298bfa",
+          "source_component": "Intro.unity → MoviePlayer → VideoPlayer",
+          "frontend_usage": "Intro video before menu (not yet implemented)",
+          "inventory_status": "confirmed",
+          "frontend_status": "Video not scoped for web frontend; deferred"
+        },
+        "game_cursor": {
+          "asset_path": "Assets/Cursors/arrow.png",
+          "guid": "f55ab39a3073fcc48bcfdb8ec25e815e",
+          "source_component": "Intro.unity → GameSetup → Cursor setter",
+          "frontend_usage": "Custom cursor for entire app",
+          "inventory_status": "confirmed",
+          "frontend_status": "Not implemented; CSS cursor or original sprite TBD (BLOCKER-001)"
+        }
+      },
+      "menu_fonts": {
+        "description": "Font assets used by the MainMenuWindow and Intro scene UI text.",
+        "menu_button_font": {
+          "asset_path": "Assets/Fonts/Bak/Deutsch.ttf",
+          "guid": "f930c4496e27b454ebc744aa4b25236e",
+          "source_component": "MainMenuWindow.prefab → all Button/Text children → Text (m_Font)",
+          "frontend_usage": "Menu button text in StartupScreen.tsx",
+          "frontend_status": "CSS system font fallback; original .ttf not in repository",
+          "inventory_status": "confirmed"
+        },
+        "disclaimer_font": {
+          "asset_path": "Assets/Fonts/Bak/DwarvenAxe BB W00 Regular.ttf",
+          "guid": "b601d2a4d5d34414aa0b143ce082e654",
+          "source_component": "Intro.unity → Disclaimer notice → Text (m_Font)",
+          "frontend_usage": "Legal/disclaimer text on boot",
+          "inventory_status": "confirmed",
+          "frontend_status": "Not implemented; CSS system font fallback"
+        },
+        "primary_ui_font": {
+          "asset_path": "Assets/Fonts/ZhiYiSongTi-Regular.ttf",
+          "guid": null,
+          "source_component": "EstateManagement.unity — all town/building UI text",
+          "frontend_usage": "Town shell labels, building titles, hero names",
+          "inventory_status": "confirmed",
+          "frontend_status": "CSS system font fallback; original .ttf not in repository"
+        }
+      },
+      "title_menu_blockers": {
+        "description": "Blockers specific to title/menu art parity that are not fully covered by the global BLOCKER-001.",
+        "items": [
+          {
+            "id": "BLOCKER-004",
+            "title": "Menu background and button PNG sprites not extracted",
+            "severity": "high",
+            "description": "The MainMenuWindow background (GUID 4e780ea66a89c2f4b8bdc4f4b76c290d) and button art (GUID b14c9d4fa66bc4d45897fba8c866125a) are required for visual parity of the startup screen. Currently using CSS-only styling.",
+            "impact": "StartupScreen lacks original menu backdrop and button aesthetics. The centered dialog appears as plain CSS panels rather than the original framed popup.",
+            "resolution": "Extract menu_bg.png and btn_menu_primary.png from DreamDeveloperGame-Crossover/Assets/Sprites/ui/ and copy to frontend/public/original/startup/.",
+            "resolved": false
+          }
+        ]
+      },
+      "title_menu_deferred": {
+        "description": "Title/menu assets that are understood but deferred from extraction.",
+        "items": [
+          {
+            "item": "intro_video_and_logo_splash",
+            "reason": "Intro.unity includes a Red Hook logo sprite and intro video texture. These are pre-menu boot assets that are not scoped for the Phase 10 frontend. Logo splash and video playback would require canvas/video infrastructure.",
+            "blocker": false
+          },
+          {
+            "item": "custom_game_cursor",
+            "reason": "The original game cursor (Assets/Cursors/arrow.png, GUID f55ab39a3073fcc48bcfdb8ec25e815e) is set during boot. A custom CSS cursor can be added but is not required for UI parity.",
+            "blocker": false
+          },
+          {
+            "item": "original_font_extraction",
+            "reason": "Three fonts (Deutsch.ttf, DwarvenAxe.ttf, ZhiYiSongTi-Regular.ttf) are referenced by the Unity UI. The frontend uses CSS system font fallback. Font embedding/licensing must be evaluated before extraction.",
+            "blocker": false
+          }
+        ]
       }
     },
 
@@ -394,6 +561,14 @@
     "prefab_hierarchy_references": {
       "description": "The 28 Unity prefab/scene files inventoried in fixtures/ui_inventory/Assets/. Each maps to a frontend screen or component.",
       "inventory": [
+        {
+          "source_file": "Assets/Scenes/Intro.unity",
+          "target_output": "fixtures/ui_inventory/Assets/Scenes/Intro.unity.json",
+          "asset_ref_count": 13,
+          "maps_to_frontend": [
+            "screens/startup/StartupScreen.tsx — boot/title sequence (logo, video, GameSetup cursor/bootstrap)"
+          ]
+        },
         {
           "source_file": "Assets/Scenes/EstateManagement.unity",
           "target_output": "fixtures/ui_inventory/Assets/Scenes/EstateManagement.unity.json",
@@ -636,17 +811,38 @@
   },
 
   "summary": {
-    "total_asset_references_catalogued": 75,
+    "total_asset_references_catalogued": 99,
+    "sections_added": "title_menu_assets (9 references), enhanced hero_portraits (5 families x 3 variants = 15 portraits, +14), Intro.unity prefab",
     "scoped_buildings": 6,
     "confirmed_building_sprites": 6,
     "confirmed_spine_sources": 5,
     "confirmed_ui_chrome_assets": 24,
     "confirmed_item_icons": 4,
     "confirmed_stress_pips": 3,
-    "total_inventoried_prefabs": 28,
-    "blockers": 3,
-    "deferred_items": 5,
-    "blocker_summary": "Original Unity .png/.asset files are not in repository. Spine runtime integration is not configured. GUID resolution requires manual path mapping.",
-    "next_action": "Extract required .png sprites from DreamDeveloperGame-Crossover project into frontend/src/assets/. Configure Spine web runtime for hero character rendering."
+    "confirmed_title_menu_assets": 9,
+    "confirmed_hero_portrait_families": 5,
+    "confirmed_font_references": 3,
+    "confirmed_cursor_asset": 1,
+    "total_inventoried_prefabs": 29,
+    "blockers": 4,
+    "blocker_items": [
+      "BLOCKER-001: Original Unity .png/.asset files not in repository",
+      "BLOCKER-002: Spine runtime integration not configured for web",
+      "BLOCKER-003: GUID-to-asset-path resolution requires Unity source project",
+      "BLOCKER-004: Menu background and button PNG sprites not extracted (new)"
+    ],
+    "deferred_items": 8,
+    "deferred_topics": [
+      "hero_portrait_full_enumeration (non-hunter families)",
+      "trinket_icon_full_enumeration",
+      "provision_icon_full_enumeration",
+      "camping_skill_icons",
+      "dungeon_map_assets",
+      "intro_video_and_logo_splash",
+      "custom_game_cursor",
+      "original_font_extraction"
+    ],
+    "blocker_summary": "Original Unity .png/.asset files are not in repository. Spine runtime integration is not configured. GUID resolution requires manual path mapping. Menu background and button art sprites are not extracted (BLOCKER-004).",
+    "next_action": "Extract required .png sprites from DreamDeveloperGame-Crossover project into frontend/public/original/. Configure Spine web runtime for hero character rendering. Prioritize menu background/button sprites for StartupScreen parity."
   }
 }
