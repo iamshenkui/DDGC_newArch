@@ -43,19 +43,26 @@ function stressBarColor(stress: string): string {
 }
 
 /**
- * Expedition launch screen — landscape viewport layout.
+ * Expedition launch screen — landscape game viewport for pre-launch review.
  *
  * Pre-launch review showing party vitals, expedition details, and warnings.
  * References original Unity prefab structure from:
  *   Assets/Prefabs/UI/ExpeditionWindow.prefab (estimated)
  *
- * Supply icon reference:
+ * Supply icon reference (not extracted — BLOCKER-004):
  *   data-asset-path="Assets/Resources/Sprites/inv_supply+rattle_drum.png"
  *   data-guid="e401bf9b9275ede4aa2ff50d13cc6207"
+ *
+ * Gold icon reference (not extracted — BLOCKER-004):
+ *   data-asset-path="Assets/Resources/Sprites/gold.png"
  */
 export const ExpeditionScreen: Component<ExpeditionScreenProps> = (props) => {
   return (
-    <div class="expedition-viewport">
+    <div
+      class="expedition-viewport"
+      data-source-scene="UI_Expedition/ExpeditionWindow"
+      data-source-prefab="Assets/Prefabs/UI/ExpeditionWindow.prefab"
+    >
       {/* ── Top HUD ─────────────────────────────────────── */}
       <header class="expedition-hud">
         <span class="expedition-hud-left">
@@ -67,10 +74,13 @@ export const ExpeditionScreen: Component<ExpeditionScreenProps> = (props) => {
           <span class="hud-pill">Party: {props.viewModel.partySize} heroes</span>
           <span class="hud-pill">Difficulty: {props.viewModel.difficulty}</span>
           <span
-            class="hud-pill"
+            class="hud-pill supply-pill"
             data-asset-path="Assets/Resources/Sprites/inv_supply+rattle_drum.png"
             data-guid="e401bf9b9275ede4aa2ff50d13cc6207"
+            data-extraction-status="not-extracted"
+            data-blocker="BLOCKER-004: Original Unity supply sprite not extracted"
           >
+            <span class="supply-icon-fallback" aria-hidden="true" />
             Supply: {props.viewModel.supplyLevel}
           </span>
         </span>
@@ -82,12 +92,15 @@ export const ExpeditionScreen: Component<ExpeditionScreenProps> = (props) => {
         <div class="expedition-surface-mist" />
 
         <div class="expedition-content">
-          {/* Party vitals */}
+          {/* Party vitals row */}
           {props.viewModel.party.length > 0 && (
             <div class="expedition-hero-row">
               <For each={props.viewModel.party}>
                 {(hero) => (
                   <div class="vitals-card">
+                    <div class="vitals-card-portrait">
+                      <span class="vitals-card-initial">{hero.classLabel[0]}</span>
+                    </div>
                     <div class="vitals-card-name">{hero.name}</div>
                     <div class="vitals-card-class">{hero.classLabel}</div>
                     <div class="vitals-card-bars">
@@ -190,13 +203,13 @@ export const ExpeditionScreen: Component<ExpeditionScreenProps> = (props) => {
             Return to Town
           </button>
           <button
-            class="action-primary"
+            class="action-primary launch-primary"
             onClick={props.onLaunchExpedition}
             disabled={!props.viewModel.isLaunchable}
           >
             {props.viewModel.isLaunchable
               ? "Launch Expedition"
-              : "Expedition Not Ready"}
+              : "Party Not Ready"}
           </button>
         </div>
       </footer>

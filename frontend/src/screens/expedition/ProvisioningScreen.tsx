@@ -44,17 +44,20 @@ function stressBarColor(stress: string): string {
 }
 
 /**
- * Provisioning screen — landscape viewport layout.
+ * Provisioning screen — landscape game viewport with party/loadout layout.
  *
- * Mirrors the party/loadout preparation feel from original Unity prefabs:
+ * Mirrors the party inventory and preparation feel from original Unity prefabs:
  *   Assets/Prefabs/UI/PartyInventorySlot.prefab
  *   Assets/Prefabs/UI/PartyInventorySlotInDungeon.prefab
+ *   Assets/Prefabs/UI/ProvisionShop.prefab (estimated)
  *
- * Supply icon references:
+ * Supply icons reference original asset paths (not extracted — see blocker notes):
+ *   BLOCKER-004: Original supply sprites not extracted from Unity project
  *   data-asset-path="Assets/Resources/Sprites/inv_supply+rattle_drum.png"
  *   data-guid="e401bf9b9275ede4aa2ff50d13cc6207"
  *
- * Gold icon reference:
+ * Gold icon:
+ *   BLOCKER-004: Original gold sprite not extracted from Unity project
  *   data-asset-path="Assets/Resources/Sprites/gold.png"
  */
 export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) => {
@@ -85,7 +88,11 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
   const isFull = () => selectedCount() >= props.viewModel.maxPartySize;
 
   return (
-    <div class="expedition-viewport">
+    <div
+      class="expedition-viewport"
+      data-source-scene="UI_Provision/ProvisionShop"
+      data-source-prefab="Assets/Prefabs/UI/ProvisionShop.prefab"
+    >
       {/* ── Top HUD ─────────────────────────────────────── */}
       <header class="expedition-hud">
         <span class="expedition-hud-left">
@@ -93,35 +100,67 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
           <h1 class="expedition-title">{props.viewModel.title}</h1>
         </span>
         <span class="expedition-hud-center">
+          {/* Party count pill */}
           <span class="hud-pill">
             Party: {selectedCount()} / {props.viewModel.maxPartySize}
           </span>
-          <span class="hud-pill">
+          {/* Expedition label */}
+          <span class="hud-pill hud-pill-accent">
             {props.viewModel.expeditionLabel}
           </span>
+          {/* Supply level pill with icon */}
           <span
-            class="hud-pill"
+            class="hud-pill supply-pill"
             data-asset-path="Assets/Resources/Sprites/inv_supply+rattle_drum.png"
             data-guid="e401bf9b9275ede4aa2ff50d13cc6207"
+            data-extraction-status="not-extracted"
+            data-blocker="BLOCKER-004: Original Unity supply sprite not extracted"
           >
+            <span class="supply-icon-fallback" aria-hidden="true" />
             Supply: {props.viewModel.supplyLevel}
           </span>
+          {/* Provision cost pill with gold icon */}
           <span
-            class="hud-pill"
+            class="hud-pill gold-pill"
             data-asset-path="Assets/Resources/Sprites/gold.png"
+            data-extraction-status="not-extracted"
+            data-blocker="BLOCKER-004: Original Unity gold sprite not extracted"
           >
+            <span class="gold-icon-fallback" aria-hidden="true" />
             Cost: {props.viewModel.provisionCost}
           </span>
         </span>
+        {/* Readiness summary — compact game HUD element */}
+        <span class="expedition-hud-right">
+          {selectedCount() > 0 && (
+            <span class="readiness-summary">
+              {woundedCount() > 0 && (
+                <span class="readiness-badge readiness-badge--wounded" title="Wounded">
+                  {woundedCount()}W
+                </span>
+              )}
+              {afflictedCount() > 0 && (
+                <span class="readiness-badge readiness-badge--afflicted" title="Afflicted">
+                  {afflictedCount()}A
+                </span>
+              )}
+              {woundedCount() === 0 && afflictedCount() === 0 && selectedCount() > 0 && (
+                <span class="readiness-badge readiness-badge--ready" title="All heroes fit">
+                  Ready
+                </span>
+              )}
+            </span>
+          )}
+        </span>
       </header>
 
-      {/* ── Game Surface ─────────────────────────────────── */}
+      {/* ── Game Surface with party formation ──────────────── */}
       <div class="expedition-surface">
         <div class="expedition-surface-bg" />
         <div class="expedition-surface-mist" />
 
-        <div class="expedition-content">
-          {/* Party formation slots */}
+        <div class="expedition-content provisioning-content">
+          {/* Party formation — main focal area */}
           <div class="party-formation">
             <For each={partyFormation()}>
               {(hero) => {
@@ -134,7 +173,7 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
                           <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
                         </svg>
                       </div>
-                      <span class="party-slot-empty-label">Empty</span>
+                      <span class="party-slot-empty-label">Open</span>
                     </div>
                   );
                 }
@@ -204,130 +243,129 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
             </For>
           </div>
 
-          {/* Readiness state */}
+          {/* ── Party Readiness Panel (game HUD on surface) ── */}
           {selectedCount() > 0 && (
             <div class="readiness-panel">
               <div class="readiness-stat">
                 <span class="readiness-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M20 12H4M12 4v16" />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                    <path d="M2 17l10 5 10-5" />
+                    <path d="M2 12l10 5 10-5" />
                   </svg>
                 </span>
-                <span class="readiness-label">Selected</span>
-                <span class="readiness-value">{selectedCount()} / {props.viewModel.maxPartySize}</span>
+                <span class="readiness-label">Supply</span>
+                <span class="readiness-value">{props.viewModel.supplyLevel}</span>
+              </div>
+              <div class="readiness-stat">
+                <span class="readiness-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 6v6l4 2" />
+                  </svg>
+                </span>
+                <span class="readiness-label">Cost</span>
+                <span class="readiness-value">{props.viewModel.provisionCost}</span>
+              </div>
+              <div class="readiness-stat">
+                <span class="readiness-label">Party</span>
+                <span class={`readiness-value ${woundedCount() > 0 || afflictedCount() > 0 ? "readiness-warning" : "readiness-ready"}`}>
+                  {selectedCount()}/{props.viewModel.maxPartySize}
+                </span>
               </div>
               {woundedCount() > 0 && (
                 <div class="readiness-stat">
-                  <span class="readiness-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M12 8v8M8 12h8" />
-                    </svg>
-                  </span>
                   <span class="readiness-label">Wounded</span>
                   <span class="readiness-value readiness-warning">{woundedCount()}</span>
                 </div>
               )}
               {afflictedCount() > 0 && (
                 <div class="readiness-stat">
-                  <span class="readiness-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M18 6L6 18M6 6l12 12" />
-                    </svg>
-                  </span>
                   <span class="readiness-label">Afflicted</span>
                   <span class="readiness-value readiness-danger">{afflictedCount()}</span>
                 </div>
               )}
-              {woundedCount() === 0 && afflictedCount() === 0 && selectedCount() > 0 && (
-                <div class="readiness-stat">
-                  <span class="readiness-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                      <path d="M22 4L12 14.01l-3-3" />
-                    </svg>
-                  </span>
-                  <span class="readiness-label">Ready</span>
-                  <span class="readiness-value readiness-ready">Party Fit</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Available heroes (roster) */}
-          {unselectedHeroes().length > 0 && (
-            <div class="readiness-panel" style="flex-direction: column; gap: 8px; padding: 12px;">
-              <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--panel-muted); align-self: flex-start;">
-                Available Heroes
-              </div>
-              <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
-                <For each={unselectedHeroes()}>
-                  {(hero) => {
-                    const hpInfo = parseHp(hero.hp);
-                    const stressNum = Number(hero.stress);
-                    const stressMax = Number(hero.maxStress || 200);
-                    const showStatus = hero.isWounded || hero.isAfflicted;
-
-                    return (
-                      <button
-                        class="party-slot"
-                        style="min-height: 140px; width: 120px;"
-                        onClick={() => props.onToggleHeroSelection(hero.id)}
-                        disabled={!hero.isSelected && isFull()}
-                        title={isFull() ? "Party is full" : `Add ${hero.name} to party`}
-                      >
-                        {/* Status badge */}
-                        {showStatus && (
-                          <span
-                            class={`party-slot-status ${
-                              hero.isAfflicted
-                                ? "party-slot-status--afflicted"
-                                : "party-slot-status--wounded"
-                            }`}
-                          >
-                            {hero.isAfflicted ? "A" : "W"}
-                          </span>
-                        )}
-                        <span class="party-slot-level">Lv{hero.level}</span>
-                        <div class="party-slot-portrait">
-                          <span class="party-slot-initial">{hero.classLabel[0]}</span>
-                        </div>
-                        <span class="party-slot-name">{hero.name}</span>
-                        <span class="party-slot-class">{hero.classLabel}</span>
-                        <div class="party-slot-bars">
-                          <div class="party-slot-bar-row">
-                            <div class="party-slot-bar-label">HP</div>
-                            <div class="party-slot-bar-track">
-                              <div
-                                class="party-slot-bar-fill"
-                                style={{
-                                  width: `${healthPercent(hero.hp)}%`,
-                                  background: healthBarColor(hero.hp),
-                                }}
-                              />
-                            </div>
-                          </div>
-                          <div class="party-slot-bar-row">
-                            <div class="party-slot-bar-label">ST</div>
-                            <div class="party-slot-bar-track">
-                              <div
-                                class="party-slot-bar-fill"
-                                style={{
-                                  width: `${stressPercent(hero.stress, hero.maxStress)}%`,
-                                  background: stressBarColor(hero.stress),
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  }}
-                </For>
-              </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* ── Available heroes roster strip (like town roster) ── */}
+      {unselectedHeroes().length > 0 && (
+        <section
+          class="provisioning-roster-strip"
+          data-source-hierarchy="UI_Provision/RosterPanel"
+        >
+          <div class="provisioning-roster-label">Available Heroes</div>
+          <div class="roster-scroll provisioning-roster-scroll">
+            <For each={unselectedHeroes()}>
+              {(hero) => {
+                const hpInfo = parseHp(hero.hp);
+                const stressNum = Number(hero.stress);
+                const stressMax = Number(hero.maxStress || 200);
+                const showStatus = hero.isWounded || hero.isAfflicted;
+
+                return (
+                  <button
+                    class="roster-hero provisioning-roster-hero"
+                    onClick={() => props.onToggleHeroSelection(hero.id)}
+                    disabled={!hero.isSelected && isFull()}
+                    title={isFull() ? "Party is full" : `Add ${hero.name} to party`}
+                    data-source-prefab="Assets/Prefabs/UI/HeroSlot.prefab"
+                  >
+                    <div class="roster-hero-portrait">
+                      <div class="roster-portrait-frame" />
+                      <div class="roster-portrait-avatar">
+                        <span class="roster-portrait-letter">{hero.classLabel[0]}</span>
+                      </div>
+                      <span class="roster-portrait-level">Lv{hero.level}</span>
+                      {showStatus && (
+                        <span class="roster-portrait-status">
+                          {hero.isAfflicted ? "A" : "W"}
+                        </span>
+                      )}
+                    </div>
+                    <div class="roster-hero-info">
+                      <span class="roster-hero-name">{hero.name}</span>
+                      <span class="roster-hero-class">{hero.classLabel}</span>
+                    </div>
+                    <div class="roster-hero-bars">
+                      <div class="roster-bar-row">
+                        <span class="roster-bar-label">HP</span>
+                        <span class="roster-bar-track">
+                          <span
+                            class="roster-bar-fill"
+                            style={{
+                              width: `${healthPercent(hero.hp)}%`,
+                              background: healthBarColor(hero.hp),
+                            }}
+                          />
+                        </span>
+                      </div>
+                      <div class="roster-bar-row">
+                        <span class="roster-bar-label">ST</span>
+                        <span class="roster-bar-track">
+                          <span
+                            class="roster-bar-fill"
+                            style={{
+                              width: `${stressPercent(hero.stress, hero.maxStress)}%`,
+                              background: stressBarColor(hero.stress),
+                            }}
+                          />
+                        </span>
+                      </div>
+                    </div>
+                    <div class="roster-hero-footer">
+                      <span>HP {hpInfo.current}/{hpInfo.max}</span>
+                      <span>ST {stressNum}/{stressMax}</span>
+                    </div>
+                  </button>
+                );
+              }}
+            </For>
+          </div>
+        </section>
+      )}
 
       {/* ── Bottom Controls ───────────────────────────────── */}
       <footer class="expedition-controls">
@@ -341,13 +379,13 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
             Return to Town
           </button>
           <button
-            class="action-primary"
+            class="action-primary launch-primary"
             onClick={props.onConfirmProvisioning}
             disabled={!props.viewModel.isReadyToLaunch}
           >
             {props.viewModel.isReadyToLaunch
               ? "Confirm & Launch Expedition"
-              : "Select Party Members"}
+              : "Fill Party Ranks"}
           </button>
         </div>
       </footer>
