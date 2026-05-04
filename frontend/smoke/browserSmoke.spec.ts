@@ -192,18 +192,22 @@ test.describe("browser smoke: fidelity gates", () => {
     // Fidelity — town is a completed product surface
     await expectFidelity(page.locator(".town-viewport"), "Town screen");
 
-    // Landscape viewport check
+    // Estate layout check — town uses three-zone estate layout from Unity EstateManagement.unity
     await expect(
       page.locator(".town-viewport"),
       "Town must use .town-viewport for landscape layout"
     ).toBeVisible();
     await expect(
-      page.locator(".viewport-hud"),
-      "Town must have a .viewport-hud bar"
+      page.locator(".estate-top-panel"),
+      "Town must have an estate top panel (EstateNameplate + CurrencyPanel)"
     ).toBeVisible();
     await expect(
-      page.locator(".viewport-roster"),
-      "Town must have a .viewport-roster bar"
+      page.locator(".estate-stage-shell"),
+      "Town must have an estate central stage (UI_Estate building collection)"
+    ).toBeVisible();
+    await expect(
+      page.locator(".estate-bottom-panel"),
+      "Town must have an estate bottom panel (EmbarkButton + RosterPanel)"
     ).toBeVisible();
 
     expectNoErrors(pageErrors, consoleErrors, "Phase 2 (town)");
@@ -277,7 +281,7 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page);
 
     // 5b. Town → Provisioning
-    await page.getByRole("button", { name: "Provision Expedition" }).click();
+    await page.locator(".estate-embark-button").click();
     await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
     await settle(page);
 

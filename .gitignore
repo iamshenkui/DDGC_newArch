@@ -9,3 +9,4 @@ Cargo.lock
 frontend/dist/
 frontend/node_modules/
 frontend/vite.config.ts.timestamp-*.mjs
+test-results/
