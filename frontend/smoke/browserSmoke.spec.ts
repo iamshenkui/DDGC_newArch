@@ -91,6 +91,18 @@ async function expectFidelity(
   }
 }
 
+async function expectOriginalAssetImage(
+  locator: ReturnType<Page["locator"]>,
+  srcFragment: string,
+  description: string
+): Promise<void> {
+  await expect(locator, `${description}: image must be visible`).toBeVisible();
+  await expect(locator, `${description}: image src must use staged original assets`).toHaveAttribute(
+    "src",
+    new RegExp(srcFragment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+  );
+}
+
 /** Wait for Solid.js reactive updates to settle after a dispatch */
 async function settle(page: Page, ms = 400): Promise<void> {
   await page.waitForTimeout(ms);
@@ -160,6 +172,17 @@ test.describe("browser smoke: fidelity gates", () => {
       ).toBeVisible();
     }
 
+    await expectOriginalAssetImage(
+      page.locator('.building-icon-image[src*="/original/buildings/"]').first(),
+      "/original/buildings/",
+      "Town building marker"
+    );
+    await expectOriginalAssetImage(
+      page.locator('.roster-portrait-image[src*="/original/heroes/"]').first(),
+      "/original/heroes/",
+      "Town roster portrait"
+    );
+
     // Fidelity — town is a completed product surface
     await expectFidelity(page.locator(".town-viewport"), "Town screen");
 
@@ -193,6 +216,11 @@ test.describe("browser smoke: fidelity gates", () => {
       page.getByText("Shen — Hunter"),
       "Hero detail title (name + class) must be visible"
     ).toBeVisible();
+    await expectOriginalAssetImage(
+      page.locator('.hero-portrait-image[src*="hunter_portrait_roster.png"]'),
+      "hunter_portrait_roster.png",
+      "Hero detail portrait"
+    );
 
     // Cycle through each tab to verify reactive rendering
     const tabs = ["装备", "技能", "信息", "状态"];
@@ -378,7 +406,7 @@ test.describe("browser smoke: fidelity gates", () => {
 
     // Verify live-specific content
     await expect(
-      page.getByText("Fresh Campaign"),
+      page.getByRole("heading", { name: "Fresh Campaign" }),
       "Live town campaign name must be visible"
     ).toBeVisible();
 
@@ -429,7 +457,7 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page);
 
     // Launch expedition from live (button text may differ)
-    await page.locator(".viewport-hud .action-primary").click();
+    await page.locator(".estate-embark-button").click();
     await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
     await settle(page);
 

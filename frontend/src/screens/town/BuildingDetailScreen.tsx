@@ -2,6 +2,7 @@ import type { Component } from "solid-js";
 
 import type { BuildingDetailViewModel } from "../../bridge/contractTypes";
 import { AppFrame } from "../../components/layout/AppFrame";
+import { BuildingIcon } from "./buildings/BuildingIcons";
 
 /**
  * Generic building detail screen — fallback for buildings without a
@@ -30,15 +31,6 @@ interface BuildingDetailScreenProps {
   onReturn: () => void;
   onAction: (actionId: string) => void;
 }
-
-/** Generic building SVG used as fallback icon marker */
-const GenericBuildingSvg = () => (
-  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" class="building-detail-icon">
-    <rect x="14" y="14" width="20" height="24" rx="2" fill="#1b322c" stroke="#c6d46a" stroke-width="0.6" opacity="0.6" />
-    <polygon points="11,14 24,6 37,14" fill="#c6d46a" opacity="0.25" stroke="#c6d46a" stroke-width="0.5" />
-    <rect x="20" y="28" width="8" height="10" rx="1" fill="#0e1714" stroke="#c6d46a" stroke-width="0.4" opacity="0.5" />
-  </svg>
-);
 
 export const BuildingDetailScreen: Component<BuildingDetailScreenProps> = (props) => {
   const statusLabel = () => {
@@ -74,7 +66,9 @@ export const BuildingDetailScreen: Component<BuildingDetailScreenProps> = (props
         <div class="stack">
           {/* Building icon */}
           <div class="building-detail-icon-wrap">
-            <GenericBuildingSvg />
+            <div class="building-icon-marker building-icon-marker-detail">
+              <BuildingIcon buildingId={props.viewModel.buildingId} size={96} />
+            </div>
           </div>
 
           <section class="panel stack">

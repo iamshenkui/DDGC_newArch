@@ -1,0 +1,66 @@
+models:
+  worker_default: K2.6-code-preview
+  arbiter_default: K2.6-code-preview
+routing:
+  worker_provider: kimi
+  arbiter_provider: kimi
+strategy:
+  fast_provider: minimax
+  fast_model: MiniMax-M2.7-highspeed
+  default_provider: kimi
+  default_model: K2.6-code-preview
+  strong_provider: deepseek
+  strong_model: deepseek-v4-pro[1m]
+  fast_retry_limit: 10
+  default_retry_limit: 2
+  runtime_fast_same_tier_retry_limit: 10
+  runtime_default_same_tier_retry_limit: 2
+  runtime_strong_same_tier_retry_limit: 1
+  runtime_strong_bounded_retry_limit: 1
+providers:
+  kimi:
+    name: kimi
+    api_key_env: KIMI_API_KEY
+    base_url: https://api.kimi.com/coding/
+    base_url_env: KIMI_BASE_URL
+    model: K2.6-code-preview
+    model_env_var: OPENAI_MODEL
+    extra_env: {}
+  deepseek:
+    name: deepseek
+    api_key_env: DEEPSEEK_API_KEY
+    base_url: https://api.deepseek.com/anthropic
+    base_url_env: DEEPSEEK_BASE_URL
+    model: deepseek-v4-pro[1m]
+    model_env_var: ANTHROPIC_MODEL
+    extra_env:
+      ANTHROPIC_DEFAULT_OPUS_MODEL: deepseek-v4-pro[1m]
+      ANTHROPIC_DEFAULT_SONNET_MODEL: deepseek-v4-pro[1m]
+      ANTHROPIC_DEFAULT_HAIKU_MODEL: deepseek-v4-flash
+      CLAUDE_CODE_SUBAGENT_MODEL: deepseek-v4-flash
+      CLAUDE_CODE_EFFORT_LEVEL: max
+  minimax:
+    name: minimax
+    api_key_env: MINIMAX_API_KEY
+    base_url: https://api.minimaxi.com/anthropic
+    base_url_env: MINIMAX_BASE_URL
+    model: MiniMax-M2.7-highspeed
+    model_env_var: OPENAI_MODEL
+    extra_env: {}
+  glm:
+    name: glm
+    api_key_env: GLM_API_KEY
+    base_url: https://open.bigmodel.cn/api/anthropic
+    base_url_env: GLM_BASE_URL
+    model: glm-5.1
+    model_env_var: OPENAI_MODEL
+    extra_env: {}
+  openrouter:
+    name: openrouter
+    api_key_env: OPENROUTER_API_KEY
+    base_url: https://openrouter.ai/api
+    base_url_env: OPENROUTER_BASE_URL
+    model: z-ai/glm-5.1
+    model_env_var: OPENAI_MODEL
+    extra_env: {}
+skill_sources: []

@@ -1,5 +1,6 @@
 import { createSignal, For, type Component } from "solid-js";
 
+import { resolveHeroPortrait } from "../../assets/originalAssetPaths";
 import type { HeroDetailViewModel } from "../../bridge/contractTypes";
 import { AppFrame } from "../../components/layout/AppFrame";
 
@@ -35,6 +36,11 @@ export const HeroDetailScreen: Component<HeroDetailScreenProps> = (props) => {
   const [activeTab, setActiveTab] = createSignal<TabKey>("equipment");
   const maxStress = () => Number(props.viewModel.maxStress) || 200;
   const pips = () => stressPips(Number(props.viewModel.stress), maxStress());
+  const portraitSrc = () =>
+    resolveHeroPortrait({
+      heroId: props.viewModel.heroId,
+      classLabel: props.viewModel.classLabel
+    });
 
   return (
     <AppFrame
@@ -48,11 +54,20 @@ export const HeroDetailScreen: Component<HeroDetailScreenProps> = (props) => {
         <div class="hero-detail-left">
           <div class="hero-portrait-area">
             <div class="hero-portrait-frame">
-              <div class="hero-portrait-placeholder">
-                <span class="hero-portrait-initial">
-                  {props.viewModel.classLabel[0]}
-                </span>
-              </div>
+              {portraitSrc() ? (
+                <img
+                  class="hero-portrait-image"
+                  src={portraitSrc()}
+                  alt={`${props.viewModel.name} portrait`}
+                  loading="eager"
+                />
+              ) : (
+                <div class="hero-portrait-placeholder">
+                  <span class="hero-portrait-initial">
+                    {props.viewModel.classLabel[0]}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
