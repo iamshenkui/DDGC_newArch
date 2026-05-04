@@ -2,6 +2,7 @@ import { For, type Component } from "solid-js";
 
 import type { TownViewModel } from "../../bridge/contractTypes";
 import { PixiStage } from "../../render/PixiStage";
+import { BuildingIcon } from "./buildings/BuildingIcons";
 
 interface TownShellScreenProps {
   viewModel: TownViewModel;
@@ -104,8 +105,11 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                 }}
                 onClick={() => props.onOpenBuilding(building.id)}
                 title={building.summary}
+                data-building-id={building.id}
               >
-                <span class="building-icon-marker" />
+                <span class="building-icon-marker">
+                  <BuildingIcon buildingId={building.id} size={36} />
+                </span>
                 <span class="building-icon-label">{building.label}</span>
                 <span class={`building-icon-status ${ROSTER_BUILDING_POSITIONS[building.status] ?? "status-locked"}`}>
                   {buildingStatusLabel[building.status] ?? building.status}

@@ -6,6 +6,7 @@ import { BuildingDetailScreen } from "./BuildingDetailScreen";
 import { StagecoachBuildingScreen } from "./buildings/StagecoachBuildingScreen";
 import { GuildBuildingScreen } from "./buildings/GuildBuildingScreen";
 import { BlacksmithBuildingScreen } from "./buildings/BlacksmithBuildingScreen";
+import { SanitariumBuildingScreen } from "./buildings/SanitariumBuildingScreen";
 
 interface BuildingScreenRouterProps {
   viewModel: BuildingDetailViewModel;
@@ -34,6 +35,13 @@ export const BuildingScreenRouter: Component<BuildingScreenRouterProps> = (props
       </Match>
       <Match when={buildingId() === "blacksmith"}>
         <BlacksmithBuildingScreen
+          viewModel={props.viewModel}
+          onReturn={props.onReturn}
+          onAction={props.onAction}
+        />
+      </Match>
+      <Match when={buildingId() === "sanitarium"}>
+        <SanitariumBuildingScreen
           viewModel={props.viewModel}
           onReturn={props.onReturn}
           onAction={props.onAction}
