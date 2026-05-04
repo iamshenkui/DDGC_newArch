@@ -84,6 +84,7 @@ The rendered frontend now supports the full town → provisioning → expedition
 | StagecoachBuildingScreen | Stagecoach | StageCoachWindow.cs |
 | GuildBuildingScreen | Guild | GuildHeroWindow.cs |
 | BlacksmithBuildingScreen | Blacksmith | BlacksmithHeroWindow.cs |
+| SanitariumBuildingScreen | Sanitarium | SanitariumWindow.cs |
 | ProvisioningScreen | Provisioning | UI_Provision |
 | ExpeditionScreen | Expedition launch | SelectedQuestPanel |
 | ResultScreen | Expedition result | RaidResultWindow |

@@ -37,6 +37,7 @@ The following prefabs were extracted into fixture JSON at `fixtures/ui_inventory
 | `HeroResultSlot.prefab` | `ResultScreen.tsx` — per-hero outcome cards |
 | `LootSlot.prefab` | `ResultScreen.tsx` — loot list |
 | `OverlaySlot.prefab` | `ExpeditionScreen.tsx` — expedition overlay |
+| `SanitariumWindow.prefab` | `SanitariumBuildingScreen.tsx` — quirk/disease treatment UI |
 
 **Unmapped prefabs (not in scoped screens):**
 - `TreatmentHeroSlot.prefab` — Sanitarium treatment UI (not part of frontend scope)
@@ -53,25 +54,41 @@ Key manager and window scripts analyzed for behavior and panel decomposition:
 - `CharacterWindow.cs` — tab panel layout, stress display, stat panels
 - `EstateSceneManager.cs` — scene root organization, panel activation
 - `BuildingWindow.cs`, `UpgradableBuildingWindow.cs` — building window pattern
-- `StageCoachWindow.cs`, `GuildHeroWindow.cs`, `BlacksmithHeroWindow.cs` — specialized building screens
+- `StageCoachWindow.cs`, `GuildHeroWindow.cs`, `BlacksmithHeroWindow.cs`, `SanitariumWindow.cs` — specialized building screens
 - `RaidResultWindow.cs`, `ResultHeroWindow.cs`, `ResultItemWindow.cs` — result/return flow
 - `ProvisioningManager.cs`, `PartyFormationManager.cs` — provisioning flow
 - `StressPanel.cs`, `ResistancesPanel.cs`, `QuirksPanel.cs`, `CharEquipmentPanel.cs` — hero detail sub-panels
 
-### 1.4 Building Sprites Reused (via Inline SVG Icons)
+### 1.4 Extracted Original Sprites
 
-Six scoped buildings have inline SVG icons in `BuildingIcons.tsx` that reference the original Unity `.png` sprite paths and GUIDs. These serve as faithful abstract representations until the original sprites can be extracted from the Unity project:
+Nine Unity original sprites have been extracted into `frontend/public/original/` as PNG assets served directly by the Vite dev server:
 
-| Building | Original Asset | GUID | Frontend Icon |
+**Building sprites (6/6 scoped):**
+
+| Building | Original Asset | GUID | Frontend Path |
 |----------|---------------|------|---------------|
-| Stagecoach | `building_perception_tower.png` | `87a55679f12a1e6489ecdb1d6e6f6b93` | Conic spire SVG |
-| Guild | `building_train_field.png` | `67a5e7aed8029d84dbf9c9e497a944d2` | Dojo gate SVG |
-| Blacksmith | `building_forging.png` | `23e01c10f262ddc4ba9977b91314b031` | Anvil/forge SVG |
-| Sanitarium | `building_cell_repair.png` | `55375034893560044a266e905926e8ff` | Medical cross SVG |
-| Abbey | `building_faith_altar.png` | `311540f167839cf4da00305566192b4a` | Chapel spire SVG |
-| Tavern | `building_paradise.png` | `c0ea280d2704bdb4a9621d6e181e0316` | Mug SVG |
+| Stagecoach | `building_perception_tower.png` | `87a55679f12a1e6489ecdb1d6e6f6b93` | `/original/buildings/building_perception_tower.png` |
+| Guild | `building_train_field.png` | `67a5e7aed8029d84dbf9c9e497a944d2` | `/original/buildings/building_train_field.png` |
+| Blacksmith | `building_forging.png` | `23e01c10f262ddc4ba9977b91314b031` | `/original/buildings/building_forging.png` |
+| Sanitarium | `building_cell_repair.png` | `55375034893560044a266e905926e8ff` | `/original/buildings/building_cell_repair.png` |
+| Abbey | `building_faith_altar.png` | `311540f167839cf4da00305566192b4a` | `/original/buildings/building_faith_altar.png` |
+| Tavern | `building_paradise.png` | `c0ea280d2704bdb4a9621d6e181e0316` | `/original/buildings/building_paradise.png` |
 
-Each SVG carries `data-asset-path` and `data-guid` attributes for future automated sprite replacement.
+Building icons are rendered via `BuildingIcons.tsx` which calls `resolveBuildingImage(buildingId)` from `originalAssetPaths.ts`. When the asset is present, an `<img>` element is rendered with the sprite; otherwise a CSS-letter fallback is shown. Each `<img>` carries the CSS class `building-icon-image`.
+
+**Hero portrait sprites (3/15 extracted):**
+
+| Hero | Variant | Frontend Path |
+|------|---------|---------------|
+| Hunter | Base (chaos 50–149) | `/original/heroes/hunter_portrait_roster.png` |
+| Hunter | White variant (chaos ≥ 150) | `/original/heroes/hunter1_portrait_roster.png` |
+| Hunter | Black variant (chaos < 50) | `/original/heroes/hunter2_portrait_roster.png` |
+
+Hero portraits are resolved via `resolveHeroPortrait()`. Extracted portraits render as `<img>` with class `roster-portrait-image`; missing portraits fall through to a CSS initial-letter avatar. Only the Hunter family (3 of 15 portrait slots) has been extracted; Alchemist, Diviner, Shaman, and Tank families are deferred.
+
+Each extracted image carries `data-asset-path` and `data-guid` attributes on its parent element for traceability.
+
+**UI chrome sprites: ~300 items still not extracted.** All button, panel, bar, and dialog background textures remain as CSS equivalents (see §1.5).
 
 ### 1.5 UI Chrome Patterns Reused (CSS-Only)
 
@@ -86,6 +103,8 @@ Each SVG carries `data-asset-path` and `data-guid` attributes for future automat
 | `char_bg.png` | `.hero-portrait-frame` gradient background |
 | `lowwindow_bg.png` | `.details-overlay` backdrop blur panel |
 | `building_label_bg.png`, `building_title_bg.png` | `.building-icon-label` / `.viewport-title` styled text |
+| Building icons (6 `building_*.png`) | **Extracted — reuses original PNG via `<img>`** (see §1.4) |
+| Hero portraits (3 `*_portrait_roster.png`) | **Partially extracted — Hunter family only** (see §1.4) |
 
 ---
 
@@ -97,7 +116,7 @@ These are documented in the [asset manifest](../frontend/src/assets/asset-manife
 
 | Blocker | Severity | Description | Impact |
 |---------|----------|-------------|--------|
-| BLOCKER-001 | Critical | Original Unity `.png` sprite files not in repository | Frontend uses CSS-only dark theme with inline SVGs; no raster sprites for buildings, items, or portraits |
+| BLOCKER-001 | High (partial) | Original Unity `.png` sprite files incomplete — 6/6 building sprites and 3/15 hero portraits extracted | Building icons reuse original PNGs via `<img>`; hero portraits partially rendered (Hunter only); ~300 UI chrome sprites (buttons, panels, bars) still CSS-only; remaining hero families (Alchemist, Diviner, Shaman, Tank) fall back to CSS-letter avatars |
 | BLOCKER-002 | High | Spine runtime not configured for web | HeroDetailScreen cannot render original Spine skeletal animations; placeholder initial-letter avatars used instead |
 | BLOCKER-003 | High | GUID-to-asset-path requires Unity source | Cannot automate asset extraction; manual copy needed from `DreamDeveloperGame-Crossover/Assets` |
 
@@ -107,7 +126,7 @@ These are non-blocking for the scoped UI but tracked for future phases:
 
 | Item | Reason | Blocker |
 |------|--------|---------|
-| Hero portrait full enumeration (5 families × 3 variants) | Path pattern known but extraction deferred | No |
+| Hero portrait full enumeration (5 families × 3 variants) | 3/15 extracted (Hunter variants); Alchemist, Diviner, Shaman, Tank deferred | No |
 | Trinket icon full enumeration (~10 trinkets) | Deferred until trinket UI is scoped | No |
 | Provision icon full enumeration | Deferred until provisioning UI details are designed | No |
 | Camping skill icons | No icon sprites scoped yet | No |
@@ -116,7 +135,7 @@ These are non-blocking for the scoped UI but tracked for future phases:
 
 ### 2.3 Deferred Screens (Unscoped Buildings)
 
-Six buildings exist in EstateManagement.unity but have no dedicated frontend screen:
+Five buildings exist in EstateManagement.unity but have no dedicated frontend screen:
 
 | Building | Unity Scene Presence | Status |
 |----------|---------------------|--------|
@@ -124,10 +143,10 @@ Six buildings exist in EstateManagement.unity but have no dedicated frontend scr
 | Graveyard | Present with `DeathRecord.prefab` | Deferred |
 | Museum (Legacy Tower) | Present | Deferred |
 | Provisioner | Present | Deferred |
-| Sanctuary | Present | Deferred |
 | Inn | Present | Deferred |
 
 These render as generic building detail fallback via `BuildingScreenRouter` when navigated to, but have no specialized UI.
+Sanitarium was originally deferred but now has a dedicated `SanitariumBuildingScreen.tsx` (see screen table in §5).
 
 ---
 
@@ -150,19 +169,17 @@ npm run typecheck
 # Production build
 npm run build
 
-# Unit tests (vitest)
+# Unit tests (vitest, no browser needed)
 npm run test
 
-# Validation smoke tests (replay fixtures + build-run)
+# Validation smoke tests (replay fixture decoding + build-run contracts)
 npm run smoke
 
-# Full build-verification pipeline
-npm run smoke-build
-
 # Browser acceptance tests (Playwright, requires build first)
-npm run build && npx playwright test
-# or
-npm run smoke-browser
+npm run build && npm run smoke-browser
+
+# Full pipeline: build + validation smoke + browser smoke
+npm run smoke-build
 ```
 
 ### 3.2 Browser Smoke Coverage (UIR-010)
@@ -172,10 +189,12 @@ The Playwright smoke suite at `frontend/smoke/browserSmoke.spec.ts` covers:
 **Replay boot → full meta-loop:**
 1. Startup screen with Boot Replay Shell / Boot Live Shell buttons
 2. Replay boot → Town shell with campaign info, gold, roster heroes (Shen, Bai Xiu, Hei Zhen), and building labels (Stagecoach, Guild, Blacksmith, Sanitarium)
-3. Hero detail screen with tab navigation (装备, 技能, 信息, 状态)
-4. Building detail (Guild) with action buttons
-5. Full provisioning → expedition launch → result → return → town loop
-6. Town re-entry after loop (campaign persistence)
+3. Town viewport verification: `.estate-top-panel` (EstateNameplate + CurrencyPanel), `.estate-stage-shell` (building collection), `.estate-bottom-panel` (EmbarkButton + RosterPanel)
+4. Original asset image checks: building icons served from `/original/buildings/`, hero roster portraits from `/original/heroes/`
+5. Hero detail screen with tab navigation (装备, 战斗技能, 状态, 信息, 扎营技能)
+6. Building detail (Guild) with action buttons
+7. Full provisioning → expedition launch → result → return → town loop
+8. Town re-entry after loop (campaign persistence)
 
 **Live boot path:**
 7. Live boot → Town shell with Fresh Campaign data
@@ -290,12 +309,15 @@ This is enforced by `FlowController.resolveScreen()` and `canTransition()` — n
 | UIR-002 | Extract Unity UI inventories | 28 prefab JSON fixtures in `fixtures/ui_inventory/` |
 | UIR-003 | Write Unity hierarchy and layout migration brief | `docs/plans/2026-05-04-ddgc-town-meta-unity-ui-brief.md` |
 | UIR-004 | Create original asset manifest | `frontend/src/assets/asset-manifest.json` |
-| UIR-005 | Implement landscape town game viewport | `TownShellScreen.tsx`, `PixiStage.tsx`, `.town-viewport` CSS |
-| UIR-006 | Migrate roster and hero detail UI | `HeroDetailScreen.tsx`, `contractTypes.ts` HeroDetailViewModel |
-| UIR-007 | Migrate town building UI with original assets | `BuildingScreenRouter.tsx`, `BuildingIcons.tsx`, 3 building screen components |
+| UIR-004A | Rewrite startup title page from original menu UI | `StartupScreen.tsx`, `components/layout/AppFrame.tsx`, `components/layout/MenuFrame.tsx` |
+| UIR-005 | Implement landscape town game viewport | `screens/town/TownShellScreen.tsx`, `render/PixiStage.tsx`, `.town-viewport` CSS |
+| UIR-005A | Implement town shell layout from Unity estate | `TownShellScreen.tsx` rewrite, `.estate-*` CSS classes |
+| UIR-005B | Validate town shell entry and flow | Flow tests, replay fixture alignment |
+| UIR-006 | Migrate roster and hero detail UI | `screens/town/HeroDetailScreen.tsx`, `screens/town/BuildingDetailScreen.tsx`, `contractTypes.ts` HeroDetailViewModel |
+| UIR-007 | Migrate town building UI with original assets | `screens/town/BuildingScreenRouter.tsx`, `screens/town/buildings/BuildingIcons.tsx` (rewritten with extracted PNGs), `screens/town/buildings/SanitariumBuildingScreen.tsx`, `assets/originalAssetPaths.ts`, 6 building screen components |
 | UIR-008 | Migrate provisioning and launch flow | `ProvisioningScreen.tsx`, `ExpeditionScreen.tsx` |
-| UIR-009 | Migrate result and return loop | `ResultScreen.tsx`, `ReturnScreen.tsx` |
-| UIR-010 | Add browser smoke coverage for fidelity gates | `frontend/smoke/browserSmoke.spec.ts` |
+| UIR-009 | Migrate result and return loop | `ResultScreen.tsx`, `ReturnScreen.tsx`, `ResultReturnFlow.test.ts` |
+| UIR-010 | Add browser smoke coverage for fidelity gates | `frontend/smoke/browserSmoke.spec.ts` — 2 tests covering replay + live meta-loop, original asset image assertions, fidelity blocklist checks, landscape viewport verification |
 | **UIR-011** | **Document Unity asset and layout parity outcome** | **This document** |
 
 ### Frontend Screen Completion Status
@@ -309,6 +331,7 @@ This is enforced by `FlowController.resolveScreen()` and `canTransition()` — n
 | `StagecoachBuildingScreen` | ✅ Complete | `StageCoachWindow.cs` | Passes fidelity blocklist |
 | `GuildBuildingScreen` | ✅ Complete | `GuildHeroWindow.cs` | Passes fidelity blocklist |
 | `BlacksmithBuildingScreen` | ✅ Complete | `BlacksmithHeroWindow.cs` | Passes fidelity blocklist |
+| `SanitariumBuildingScreen` | ✅ Complete | `SanitariumWindow.cs` + `TreatmentHeroSlot.prefab` | Passes fidelity blocklist |
 | `ProvisioningScreen` | ✅ Complete | `UI_Provision` + `PartyFormationManager` | Passes fidelity blocklist |
 | `ExpeditionScreen` | ✅ Complete | `SelectedQuestPanel` + `RaidPreparationManager` | Passes fidelity blocklist |
 | `ResultScreen` | ✅ Complete | `RaidResultWindow.cs` + `HeroResultSlot` | Passes fidelity blocklist |
@@ -328,7 +351,7 @@ The asset manifest at `frontend/src/assets/asset-manifest.json` remains the cano
 - 4 confirmed item icons (provisions + trinket samples)
 - 3 stress pip states documented
 - 5 deferred items enumerated
-- **No assets have been extracted** — frontend remains CSS-only with inline SVGs for building icons
+- **Asset extraction status: 6 building sprites and 3 hero portraits extracted** — see `frontend/public/original/`
 
 ---
 
@@ -338,6 +361,8 @@ The asset manifest at `frontend/src/assets/asset-manifest.json` remains the cano
 |----------|----------|
 | Unity Hierarchy & Layout Migration Brief | `docs/plans/2026-05-04-ddgc-town-meta-unity-ui-brief.md` |
 | Asset Manifest | `frontend/src/assets/asset-manifest.json` |
+| Original Asset Paths Resolver | `frontend/src/assets/originalAssetPaths.ts` |
+| Extracted Sprite Assets | `frontend/public/original/` (6 building PNGs, 3 hero portrait PNGs) |
 | Prefab Inventory Index | `fixtures/ui_inventory/index.json` |
 | Frontend README | `frontend/README.md` |
 | Browser Smoke Tests | `frontend/smoke/browserSmoke.spec.ts` |

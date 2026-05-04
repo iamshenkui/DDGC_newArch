@@ -557,7 +557,7 @@ Every building window decomposes into isomorphic frontend panels:
 The completed UI Redo (UIR-005 through UIR-011) implements all screens described in this brief. See the **[UIR-011 outcome document](../UIR-011-UI-REDO-RECOVERY-OUTCOME.md)** for:
 
 - The full inventory of scenes, prefabs, and assets inspected and mapped
-- Asset blockers and deferred work (original `.png` sprites not in repo, Spine runtime not configured)
+- Asset blockers and deferred work (6/6 building sprites + 3/15 hero portraits extracted; ~300 UI chrome sprites and Spine runtime still pending)
 - Local run, smoke, and browser acceptance commands
 - Why the final frontend is frame-based game UI, not a generic web layout
-- Screen completion status with fidelity gate results
+- Screen completion status with fidelity gate results (14 screens, all passing)
