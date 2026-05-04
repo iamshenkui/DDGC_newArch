@@ -1,28 +1,62 @@
 /**
  * Original Unity asset path resolvers.
  *
- * Maps building IDs and hero class labels to the physical PNG sprites
- * extracted from the DreamDeveloperGame-Crossover Unity project.
+ * Maps building IDs, hero class labels, and shell chrome elements to the
+ * physical PNG sprites extracted from the DreamDeveloperGame-Crossover
+ * Unity project.
  *
  * Current repo status (frontend/public/original/):
- *   6 building sprites (all scoped buildings)
- *   3 hunter family portraits (base, white variant, black variant)
+ *   buildings/  11 building sprites (all 11 town catalog entries — full set)
+ *   chrome/     10 shell chrome sprites (nameplate, buttons, embark, gold,
+ *               building label/icon backgrounds)
+ *   heroes/     3 hunter family portraits (base, white, black variants)
  *   All other hero families (alchemist, diviner, shaman, tank) — not yet extracted
  *
  * See asset-manifest.json for the full inventory with GUIDs and deferred items.
  */
 
 // ── Building sprites ──────────────────────────────────────────────────────
-// 6 scoped buildings, all present in frontend/public/original/buildings/
+// All 11 town building catalog entries, staged in frontend/public/original/buildings/
 
 const buildingImageById: Record<string, string> = {
+  // Scoped (UIR-006/UIR-007 core set)
   stagecoach: "/original/buildings/building_perception_tower.png",
   guild: "/original/buildings/building_train_field.png",
   blacksmith: "/original/buildings/building_forging.png",
   sanitarium: "/original/buildings/building_cell_repair.png",
   abbey: "/original/buildings/building_faith_altar.png",
-  tavern: "/original/buildings/building_paradise.png"
+  tavern: "/original/buildings/building_paradise.png",
+  // Deferred buildings (UIR-005B staged)
+  garden: "/original/buildings/building_garden.png",
+  graveyard: "/original/buildings/building_hero_archive.png",
+  legacytower: "/original/buildings/building_legacy_tower.png",
+  market: "/original/buildings/building_market.png",
+  campingtrainer: "/original/buildings/building_space_analysis.png"
 };
+
+// ── Shell chrome sprites (UIR-005B) ────────────────────────────────────────
+// Town screen shell chrome staged in frontend/public/original/chrome/.
+// Covers top nameplate, side-button chrome, embark control, currency
+// iconography, and building label backgrounds.
+
+const chromePaths = {
+  estateNameBg: "/original/chrome/estate_name_bg.png",
+  goldIcon: "/original/chrome/gold.png",
+  embarkButton: "/original/chrome/btn_play.png",
+  closeButton: "/original/chrome/btn_close.png",
+  saveButton01: "/original/chrome/btn_save_01.png",
+  saveButton02: "/original/chrome/btn_save_02.png",
+  buildingLabelBg: "/original/chrome/building_label_bg01.png",
+  buildingIconBg: "/original/chrome/building_icon_bg.png",
+  buildingTitleBg: "/original/chrome/building_title_bg.png",
+  buildingInfoBg: "/original/chrome/building_info_bg.png"
+} as const;
+
+export type ChromeAssetKey = keyof typeof chromePaths;
+
+export function resolveChromeAsset(key: ChromeAssetKey): string {
+  return chromePaths[key];
+}
 
 // ── Hero portraits ────────────────────────────────────────────────────────
 // 5 recruitable families x 3 chaos variants each. Currently only hunter

@@ -1,12 +1,12 @@
 {
-  "manifest_version": "1.0.0",
-  "task": "UIR-006",
+  "manifest_version": "1.1.0",
+  "task": "UIR-005B",
   "title": "DDGC Unity Original Asset Manifest",
-  "description": "Maps original Unity assets and GUIDs to frontend usage for DDGC heroes, buildings, items, provisions, icons, and UI chrome. Updated for UIR-006: CharacterWindow prefab hierarchy now annotated on HeroDetailScreen; HeroSlot prefab hierarchy annotated on TownShellScreen roster.",
+  "description": "Maps original Unity assets and GUIDs to frontend usage for DDGC heroes, buildings, items, provisions, icons, and UI chrome. Updated for UIR-005B: staged 5 deferred building sprites and 10 shell chrome sprites (nameplate, buttons, embark, gold, label backgrounds) from Unity source into frontend/public/original/.",
   "source_root": "DreamDeveloperGame-Crossover/Assets",
   "inventory_anchor": "fixtures/ui_inventory/index.json",
   "inventory_targets": 28,
-  "generated": "2026-05-04",
+  "generated": "2026-05-05",
 
   "sections": {
     "building_sprites": {
@@ -57,48 +57,60 @@
         }
       },
       "deferred_buildings": {
-        "description": "Additional buildings in EstateManagement.unity with no frontend screen implementation yet",
+        "description": "Additional buildings in EstateManagement.unity staged by UIR-005B — sprites now present in frontend/public/original/buildings/",
+        "inventory_status": "staged (UIR-005B)",
         "market": {
           "asset_path": "Assets/Sprites/town/buildings/building_market.png",
-          "guid": "8c3505ec8c7e25b42aacdcaece82f821"
+          "guid": "8c3505ec8c7e25b42aacdcaece82f821",
+          "frontend_status": "staged — frontend/public/original/buildings/building_market.png"
         },
         "graveyard": {
-          "asset_path": null,
-          "notes": "Graveyard prefab exists at Assets/Prefabs/UI/Estate/Buildings/Graveyard/DeathRecord.prefab"
+          "asset_path": "Assets/Sprites/town/buildings/building_hero_archive.png",
+          "guid": null,
+          "frontend_status": "staged — frontend/public/original/buildings/building_hero_archive.png"
         },
         "museum": {
           "asset_path": "Assets/Sprites/town/buildings/building_legacy_tower.png",
-          "guid": "ebd56d507c80af54986327ac7cb16661"
+          "guid": "ebd56d507c80af54986327ac7cb16661",
+          "frontend_status": "staged — frontend/public/original/buildings/building_legacy_tower.png"
         },
         "provisioner": {
           "asset_path": null,
-          "notes": "Provisioner building exists in data/Buildings.json but no distinct sprite identified"
+          "notes": "Provisioner building exists in data/Buildings.json but no distinct sprite identified. No sprite available in Unity source either."
         },
         "sanctuary": {
           "asset_path": "Assets/Sprites/town/buildings/building_space_analysis.png",
-          "guid": null
+          "guid": null,
+          "frontend_status": "staged — frontend/public/original/buildings/building_space_analysis.png"
         },
         "inn": {
           "asset_path": "Assets/Sprites/town/buildings/building_garden.png",
-          "guid": "c34c4012911d41c4bbed2328d7025138"
+          "guid": "c34c4012911d41c4bbed2328d7025138",
+          "frontend_status": "staged — frontend/public/original/buildings/building_garden.png"
         }
       },
       "supporting_sprites": {
+        "description": "Supporting building UI sprites from Unity — building label/chrome backgrounds. Staged by UIR-005B.",
+        "inventory_status": "staged (UIR-005B)",
         "building_label_bg": {
           "asset_path": "Assets/Sprites/town/building_label_bg01.png",
-          "guid": "0beef34e329073f43bc2a495a740b0b4"
+          "guid": "0beef34e329073f43bc2a495a740b0b4",
+          "frontend_status": "staged — frontend/public/original/chrome/building_label_bg01.png"
         },
         "building_icon_bg": {
           "asset_path": "Assets/Sprites/ui/building_icon_bg.png",
-          "guid": "366866d49b92bc7489d973717eabaa58"
+          "guid": "366866d49b92bc7489d973717eabaa58",
+          "frontend_status": "staged — frontend/public/original/chrome/building_icon_bg.png"
         },
         "building_title_bg": {
           "asset_path": "Assets/Sprites/ui/building_title_bg.png",
-          "guid": "f25ac3da7d687e34e89e1443ea12c9a3"
+          "guid": "f25ac3da7d687e34e89e1443ea12c9a3",
+          "frontend_status": "staged — frontend/public/original/chrome/building_title_bg.png"
         },
         "building_info_bg": {
           "asset_path": "Assets/Sprites/ui/building_info_bg.png",
-          "guid": "72d195261b2d2994c81fbbf372235b7a"
+          "guid": "72d195261b2d2994c81fbbf372235b7a",
+          "frontend_status": "staged — frontend/public/original/chrome/building_info_bg.png"
         },
         "npc_market": {
           "asset_path": "Assets/Sprites/town/npc/npc_market.png",
@@ -388,7 +400,8 @@
           "asset_path": "Assets/Resources/Sprites/gold.png",
           "guid": null,
           "frontend_usage": "TownShellScreen gold display, shop costs",
-          "inventory_status": "confirmed"
+          "inventory_status": "confirmed",
+          "frontend_status": "staged — frontend/public/original/chrome/gold.png (UIR-005B)"
         }
       }
     },
@@ -863,7 +876,7 @@
     "total_asset_references_catalogued": 99,
     "sections_added": "title_menu_assets (9 references), enhanced hero_portraits (5 families x 3 variants = 15 portraits, +14), Intro.unity prefab",
     "scoped_buildings": 6,
-    "confirmed_building_sprites": 6,
+    "confirmed_building_sprites": 11,
     "confirmed_spine_sources": 5,
     "confirmed_ui_chrome_assets": 24,
     "confirmed_item_icons": 4,
@@ -872,6 +885,8 @@
     "confirmed_hero_portrait_families": 5,
     "confirmed_font_references": 3,
     "confirmed_cursor_asset": 1,
+    "staged_building_sprites": 11,
+    "staged_chrome_sprites": 10,
     "total_inventoried_prefabs": 29,
     "blockers": 4,
     "blocker_items": [
@@ -892,8 +907,8 @@
       "custom_game_cursor",
       "original_font_extraction"
     ],
-    "blocker_summary": "Original Unity .png/.asset files are not in repository. Spine runtime integration is not configured. GUID resolution requires manual path mapping. Menu background and button art sprites are not extracted (BLOCKER-004).",
-    "next_action": "Extract required .png sprites from DreamDeveloperGame-Crossover project into frontend/public/original/. Configure Spine web runtime for hero character rendering. Prioritize menu background/button sprites for StartupScreen parity.",
+    "blocker_summary": "Town/base shell chrome and building sprites staged by UIR-005B (11 buildings, 10 chrome sprites). BLOCKER-001 partially resolved for town/view. Remaining gaps: non-hunter hero portraits (12 PNGs exist in source), Spine runtime integration (BLOCKER-002), menu background/button sprites (BLOCKER-004), provisioner building has no source sprite. GUID resolution requires manual path mapping (BLOCKER-003).",
+    "next_action": "Wire staged shell chrome sprites into TownShellScreen CSS (nameplate, embark button, currency icon). Extract non-hunter hero portrait PNGs (12 sprites from Assets/Resources/Data/Heroes/Sprites/). Extract menu background/button sprites for StartupScreen parity (BLOCKER-004).",
     "uir_006_complete": "Roster and hero detail screens now have full prefab hierarchy annotations (HeroSlot/CharacterWindow), game-style panel styling with HP/ST labels, 5-tab layout matching Unity tab order, and documented missing asset paths.",
     "uir_007_complete": {
       "description": "UIR-007: Town building UI migrated with original building sprites and Unity prefab hierarchy references.",
@@ -936,6 +951,42 @@
       },
       "deferred_assets": {
         "non_scoped_buildings": "Market, graveyard, museum, provisioner, sanctuary, inn — have no dedicated building screen components; fall through to generic BuildingDetailScreen which shows placeholder icon for missing sprites."
+      }
+    },
+    "uir_005B_completed": {
+      "description": "UIR-005B: UI Redo — stage town/base shell chrome and source assets. Copied all missing building art and shell chrome PNGs from the Unity DreamDeveloperGame-Crossover source project into frontend/public/original/.",
+      "changes": [
+        {
+          "target": "frontend/public/original/buildings/",
+          "change": "Added 5 deferred building sprites: building_garden.png (inn/garden), building_hero_archive.png (graveyard), building_legacy_tower.png (museum/legacytower), building_market.png (market), building_space_analysis.png (sanctuary/campingtrainer). Total building sprites now 11, covering all TOWN_BUILDING_CATALOG entries."
+        },
+        {
+          "target": "frontend/public/original/chrome/",
+          "change": "Created new chrome/ directory with 10 shell chrome sprites: estate_name_bg.png (top nameplate), btn_close.png, btn_play.png (embark control), btn_save_01.png, btn_save_02.png (side-button chrome), gold.png (currency icon), building_label_bg01.png, building_icon_bg.png, building_title_bg.png, building_info_bg.png (building label/icon backgrounds)."
+        },
+        {
+          "target": "frontend/src/assets/originalAssetPaths.ts",
+          "change": "Extended buildingImageById map from 6 to 11 entries covering all catalog IDs. Added resolveChromeAsset() resolver with typed ChromeAssetKey export for shell chrome paths. Updated header comments to reflect full asset inventory."
+        },
+        {
+          "target": "frontend/src/assets/asset-manifest.json",
+          "change": "Updated deferred_buildings and supporting_sprites sections to mark assets as staged. Added currency_icons.gold frontend_status. Added UIR-005B completion record. Updated manifest_version to 1.1.0, task to UIR-005B."
+        }
+      ],
+      "staged_assets": {
+        "building_sprites": "11/11 town catalog entries staged (6 scoped + 5 deferred)",
+        "shell_chrome": "10 shell chrome sprites staged covering nameplate, side buttons, embark control, currency iconography, and building label/icon backgrounds",
+        "hero_portraits": "3/15 portrait sprites staged (hunter family only; 12 remaining from 4 other families deferred)"
+      },
+      "blockers_and_deferred": {
+        "BLOCKER-001": {
+          "status": "partially resolved by UIR-005B",
+          "detail": "All town/base building sprites and shell chrome sprites that existed in the Unity source project have been copied to frontend/public/original/. The remaining BLOCKER-001 gaps are: (a) non-hunter hero portrait sprites (alchemist, diviner, shaman, tank — 12 PNGs exist in Unity source at Assets/Resources/Data/Heroes/Sprites/), (b) Spine skeleton data files, (c) font files (Deutsch.ttf, DwarvenAxe.ttf, ZhiYiSongTi-Regular.ttf)."
+        },
+        "provisioner_sprite": {
+          "status": "no source asset exists",
+          "detail": "The provisioner building (data/Buildings.json) has no distinct sprite in the Unity Assets/Sprites/town/buildings/ directory. Will need a placeholder or new art asset."
+        }
       }
     }
   }
