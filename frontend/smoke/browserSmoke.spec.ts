@@ -233,10 +233,18 @@ test.describe("browser smoke: fidelity gates", () => {
     );
 
     // Cycle through each tab to verify reactive rendering
-    const tabs = ["装备", "技能", "信息", "状态"];
-    for (const tabLabel of tabs) {
-      const tabBtn = page.locator(".hero-tab-btn").filter({ hasText: tabLabel });
-      await expect(tabBtn, `Tab "${tabLabel}" must be visible`).toBeVisible();
+    // Use data-source-component for unique identification (Chinese labels
+    // "战斗技能" and "扎营技能" both contain "技能")
+    const tabComponents = [
+      "EquipButton",
+      "CombatSkillButton",
+      "StateButton",
+      "InfoButton",
+      "CampingSkillButton",
+    ];
+    for (const comp of tabComponents) {
+      const tabBtn = page.locator(`.hero-tab-btn[data-source-component="${comp}"]`);
+      await expect(tabBtn, `Tab "${comp}" must be visible`).toBeVisible();
       await tabBtn.click();
       await settle(page, 200);
     }
@@ -256,20 +264,20 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page, 800);
 
     await expect(
-      page.getByText("Building — Guild"),
-      "Guild building eyebrow must be visible"
-    ).toBeVisible();
+      page.locator(".building-detail-eyebrow"),
+      "Building eyebrow must be visible"
+    ).toHaveText("Building");
     await expect(
-      page.getByText("Guild").first(),
-      "Building label must be visible"
-    ).toBeVisible();
+      page.locator(".building-detail-name"),
+      "Building name must be visible"
+    ).toHaveText("Guild");
     await expect(
-      page.locator("strong").filter({ hasText: "Train Combat Skill" }),
+      page.locator(".building-action-card-header").filter({ hasText: "Train Combat Skill" }),
       "Building action must be visible"
     ).toBeVisible();
 
     // Fidelity — building detail is a completed product surface
-    await expectFidelity(page.locator("main.app-frame"), "Building detail screen");
+    await expectFidelity(page.locator(".app-frame"), "Building detail screen");
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
 
     // ── Phase 5: Full meta-loop ─────────────────────────────
@@ -359,11 +367,11 @@ test.describe("browser smoke: fidelity gates", () => {
       "Return screen eyebrow must be visible"
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Expedition Concluded" }),
+      page.getByRole("heading", { name: "Returning to Town" }),
       "Return screen heading must be visible"
     ).toBeVisible();
     await expect(
-      page.getByText("Resume Town Activities"),
+      page.getByRole("button", { name: "Resume Town Activities" }),
       "Resume button must be visible"
     ).toBeVisible();
     await expectFidelity(
@@ -453,11 +461,15 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page, 800);
 
     await expect(
-      page.getByText("Building — Stagecoach"),
-      "Stagecoach building eyebrow must be visible"
-    ).toBeVisible();
+      page.locator(".building-detail-eyebrow"),
+      "Building eyebrow must be visible"
+    ).toHaveText("Building");
+    await expect(
+      page.locator(".building-detail-name"),
+      "Stagecoach building name must be visible"
+    ).toHaveText("Stagecoach");
     await expectFidelity(
-      page.locator("main.app-frame"),
+      page.locator(".app-frame"),
       "Live building detail screen"
     );
 
@@ -499,11 +511,11 @@ test.describe("browser smoke: fidelity gates", () => {
       "Live return screen eyebrow must be visible"
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Expedition Concluded" }),
+      page.getByRole("heading", { name: "Returning to Town" }),
       "Live return screen heading must be visible"
     ).toBeVisible();
     await expect(
-      page.getByText("Resume Town Activities"),
+      page.getByRole("button", { name: "Resume Town Activities" }),
       "Resume button must be visible on live return screen"
     ).toBeVisible();
 
