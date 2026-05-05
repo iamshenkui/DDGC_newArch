@@ -75,7 +75,7 @@ function expectNoErrors(
 }
 
 /**
- * Assert the text content of an element does not contain any blocklisted
+ * Assert the text content of a locator does not contain any blocklisted
  * fidelity patterns.
  */
 async function expectFidelity(
@@ -87,6 +87,24 @@ async function expectFidelity(
     expect(
       text,
       `${screenName}: must not contain prohibited pattern "${pattern}"`
+    ).not.toMatch(pattern);
+  }
+}
+
+/**
+ * Full-page fidelity scan — reads all visible text from the page body
+ * and checks it is free of blocklisted placeholder/skeletal language.
+ * Catches text outside the primary content locator.
+ */
+async function expectFullPageFidelity(
+  page: Page,
+  screenName: string
+): Promise<void> {
+  const bodyText = await page.locator("body").innerText();
+  for (const pattern of FIDELITY_BLOCKLIST) {
+    expect(
+      bodyText,
+      `${screenName} (full page): must not contain prohibited pattern "${pattern}"`
     ).not.toMatch(pattern);
   }
 }
@@ -188,6 +206,13 @@ test.describe("browser smoke: fidelity gates", () => {
 
     // Fidelity — town is a completed product surface
     await expectFidelity(page.locator(".town-viewport"), "Town screen");
+    await expectFullPageFidelity(page, "Town screen");
+
+    // Landscape viewport check for town screen
+    await expect(
+      page.locator(".town-viewport"),
+      "Town must use .town-viewport for landscape layout"
+    ).toBeVisible();
 
     // Estate layout check — town uses three-zone estate layout from Unity EstateManagement.unity.
     // UIR-005D screenshot anchors: top nameplate, side buttons (6), embark control, currency strip (5), 11 buildings.
@@ -261,6 +286,14 @@ test.describe("browser smoke: fidelity gates", () => {
 
     // Fidelity — hero detail is a completed product surface
     await expectFidelity(page.locator(".hero-detail-layout"), "Hero detail screen");
+    await expectFullPageFidelity(page, "Hero detail screen");
+
+    // Landscape viewport check for hero detail
+    await expect(
+      page.locator(".hero-detail-layout"),
+      "Hero detail screen must use .hero-detail-layout landscape class"
+    ).toBeVisible();
+
     expectNoErrors(pageErrors, consoleErrors, "Phase 3 (hero detail)");
 
     // ── Phase 4: Building detail ───────────────────────────
@@ -289,6 +322,14 @@ test.describe("browser smoke: fidelity gates", () => {
 
     // Fidelity — building detail is a completed product surface
     await expectFidelity(page.locator(".app-frame"), "Building detail screen");
+    await expectFullPageFidelity(page, "Building detail screen");
+
+    // Landscape viewport check — building detail uses .app-frame as its landscape layout container
+    await expect(
+      page.locator(".app-frame"),
+      "Building detail screen must use .app-frame landscape layout"
+    ).toBeVisible();
+
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
 
     // ── Phase 5: Full meta-loop ─────────────────────────────
@@ -316,6 +357,13 @@ test.describe("browser smoke: fidelity gates", () => {
       page.locator(".expedition-viewport"),
       "Provisioning screen"
     );
+    await expectFullPageFidelity(page, "Provisioning screen");
+
+    // Landscape viewport check for provisioning
+    await expect(
+      page.locator(".expedition-viewport"),
+      "Provisioning screen must use .expedition-viewport landscape layout"
+    ).toBeVisible();
 
     // 5c. Provisioning → Expedition
     await page
@@ -343,6 +391,13 @@ test.describe("browser smoke: fidelity gates", () => {
       page.locator(".expedition-viewport"),
       "Expedition launch screen"
     );
+    await expectFullPageFidelity(page, "Expedition launch screen");
+
+    // Landscape viewport check for expedition launch
+    await expect(
+      page.locator(".expedition-viewport"),
+      "Expedition launch screen must use .expedition-viewport landscape layout"
+    ).toBeVisible();
 
     // 5d. Expedition → Result (success)
     await page.getByRole("button", { name: "Launch Expedition" }).click();
@@ -368,6 +423,13 @@ test.describe("browser smoke: fidelity gates", () => {
       page.locator(".expedition-viewport"),
       "Result screen"
     );
+    await expectFullPageFidelity(page, "Result screen");
+
+    // Landscape viewport check for result screen
+    await expect(
+      page.locator(".expedition-viewport"),
+      "Result screen must use .expedition-viewport landscape layout"
+    ).toBeVisible();
 
     // 5e. Result → Return
     await page.getByRole("button", { name: "Proceed to Return" }).click();
@@ -389,11 +451,12 @@ test.describe("browser smoke: fidelity gates", () => {
       page.locator(".expedition-viewport"),
       "Return screen"
     );
+    await expectFullPageFidelity(page, "Return screen");
 
-    // Landscape viewport check for expedition-family screens
+    // Landscape viewport check for return screen
     await expect(
       page.locator(".expedition-viewport"),
-      "Expedition screens must use .expedition-viewport"
+      "Return screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
     // 5f. Return → Town (back to the meta-loop)
@@ -403,15 +466,30 @@ test.describe("browser smoke: fidelity gates", () => {
 
     await expect(
       page.getByText("城镇中枢"),
-      "Must be back at town after resume"
+      "Must be back at town (城镇中枢) after resume"
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "苍灯远征" }),
-      "Replay campaign name must persist after loop"
+      "Replay campaign name must persist after meta-loop"
+    ).toBeVisible();
+    await expect(
+      page.locator(".estate-building-node"),
+      "All 11 building nodes must re-render after meta-loop return"
+    ).toHaveCount(11);
+    await expect(
+      page.locator(".estate-embark-button"),
+      "Embark control must be present after meta-loop return"
     ).toBeVisible();
 
-    // Final fidelity and error check for entire loop
+    // Landscape viewport check — town screen still valid after meta-loop
+    await expect(
+      page.locator(".town-viewport"),
+      "Town must use .town-viewport landscape layout after meta-loop return"
+    ).toBeVisible();
+
+    // Final fidelity and error check for entire meta-loop
     await expectFidelity(page.locator(".town-viewport"), "Town after meta-loop");
+    await expectFullPageFidelity(page, "Town after meta-loop");
     expectNoErrors(pageErrors, consoleErrors, "Phase 5 (meta-loop)");
   });
 
@@ -455,6 +533,16 @@ test.describe("browser smoke: fidelity gates", () => {
       "Live town currency strip (5 slots) must render"
     ).toHaveCount(5);
 
+    // Fidelity — live town is a completed product surface
+    await expectFidelity(page.locator(".town-viewport"), "Live town screen");
+    await expectFullPageFidelity(page, "Live town screen");
+
+    // Landscape viewport check for live town screen
+    await expect(
+      page.locator(".town-viewport"),
+      "Live town screen must use .town-viewport landscape layout"
+    ).toBeVisible();
+
     // Open hero detail from live bridge via the "英雄" utility button
     await page.getByRole("button", { name: "英雄", exact: true }).click();
     await page.waitForSelector(".hero-detail-layout", { timeout: 5_000 });
@@ -470,6 +558,13 @@ test.describe("browser smoke: fidelity gates", () => {
       page.locator(".hero-detail-layout"),
       "Live hero detail screen"
     );
+    await expectFullPageFidelity(page, "Live hero detail screen");
+
+    // Landscape viewport check for live hero detail
+    await expect(
+      page.locator(".hero-detail-layout"),
+      "Live hero detail screen must use .hero-detail-layout landscape class"
+    ).toBeVisible();
 
     // Return and open a building
     await page.getByRole("button", { name: "Return to Town" }).click();
@@ -492,6 +587,13 @@ test.describe("browser smoke: fidelity gates", () => {
       page.locator(".app-frame"),
       "Live building detail screen"
     );
+    await expectFullPageFidelity(page, "Live building detail screen");
+
+    // Landscape viewport check for live building detail
+    await expect(
+      page.locator(".app-frame"),
+      "Live building detail screen must use .app-frame landscape layout"
+    ).toBeVisible();
 
     // Full live flow: provisioning → expedition → result → return
     await page.getByRole("button", { name: "Return to Town" }).click();
@@ -543,11 +645,12 @@ test.describe("browser smoke: fidelity gates", () => {
       page.locator(".expedition-viewport"),
       "Live expedition screens"
     );
+    await expectFullPageFidelity(page, "Live expedition screens");
 
     // Landscape viewport check for live expedition screens
     await expect(
       page.locator(".expedition-viewport"),
-      "Live expedition screens must use .expedition-viewport"
+      "Live expedition screens must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
     // Return to Town — complete the live meta-loop
@@ -559,9 +662,28 @@ test.describe("browser smoke: fidelity gates", () => {
       page.getByText("城镇中枢"),
       "Must be back at town (城镇中枢) after resume in live path"
     ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "新档位面" }),
+      "Live campaign name must persist after live meta-loop"
+    ).toBeVisible();
+    await expect(
+      page.locator(".estate-building-node"),
+      "All building nodes must re-render after live meta-loop return"
+    ).toHaveCount(11);
+    await expect(
+      page.locator(".estate-embark-button"),
+      "Embark control must be present after live meta-loop return"
+    ).toBeVisible();
+
+    // Landscape viewport check — town screen still valid after live meta-loop
+    await expect(
+      page.locator(".town-viewport"),
+      "Town must use .town-viewport landscape layout after live meta-loop"
+    ).toBeVisible();
 
     // Final fidelity check after live meta-loop
     await expectFidelity(page.locator(".town-viewport"), "Town after live meta-loop");
+    await expectFullPageFidelity(page, "Town after live meta-loop");
 
     expectNoErrors(pageErrors, consoleErrors, "Live boot flow");
   });
