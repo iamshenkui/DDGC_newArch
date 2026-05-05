@@ -61,9 +61,13 @@ export const TOWN_BUILDING_CATALOG: ReadonlyArray<TownBuildingCatalogEntry> = [
     id: "blacksmith",
     displayName: "锻造舱",
     summary: "升级与维护武器、防具和装备。",
-    // Unity source: anchorMin=(0.5,0), anchorMax=(0.5,0), anchoredPosition=(709,294)
-    // Converted to center-based: y = -(1080/2) + 294 = -246
-    x: 709, y: -246,
+    // Unity source: anchorMin=(0.5,0), anchorMax=(0.5,0), anchoredPosition=(709,294).
+    // The bottom-anchored Y is measured from the Unity canvas bottom (720px tall),
+    // so the equivalent center-anchored Y for the source 1280×720 canvas is
+    // 294 - 720/2 = -66. The frontend renders the source canvas centered inside
+    // its 1920×1080 reference, so building positions are passed through 1:1
+    // and the same -66 keeps Blacksmith aligned with the rest of the estate.
+    x: 709, y: -66,
     width: 482, height: 482,
     labelOffsetX: 0, labelOffsetY: -168,
     sourcePrefab: BUILDING_SOURCE.prefab,
@@ -94,7 +98,7 @@ export const TOWN_BUILDING_CATALOG: ReadonlyArray<TownBuildingCatalogEntry> = [
   },
   {
     id: "legacytower",
-    displayName: "遗留塔",
+    displayName: "维度灯塔",
     summary: "查看传承与博物馆式收藏内容。",
     x: 0, y: 270,
     width: 541, height: 541,

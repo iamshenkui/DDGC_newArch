@@ -405,7 +405,7 @@ export const replayGardenBuildingDetailViewModel: BuildingDetailViewModel = {
 export const replayLegacyTowerBuildingDetailViewModel: BuildingDetailViewModel = {
   kind: "building-detail",
   buildingId: "legacytower",
-  label: "遗留塔",
+  label: "维度灯塔",
   status: "partial",
   description: "查看传承与博物馆式收藏内容，回顾战役历程与成就。",
   actions: [

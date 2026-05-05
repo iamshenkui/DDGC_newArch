@@ -175,7 +175,7 @@ test.describe("browser smoke: fidelity gates", () => {
     const expectedBuildings = [
       "次元感知塔", "试炼场", "锻造舱", "细胞修复站",
       "信仰祭坛", "迷情乐园", "英雄档案馆", "天国花园",
-      "遗留塔", "交易市场", "空间分析"
+      "维度灯塔", "交易市场", "空间分析"
     ];
     for (const label of expectedBuildings) {
       await expect(
