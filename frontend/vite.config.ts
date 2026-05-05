@@ -23,6 +23,6 @@ export default defineConfig({
     host: "0.0.0.0"
   },
   test: {
-    exclude: ["node_modules", "dist", "smoke"]
+    exclude: ["node_modules", "dist", "smoke", "smoke-cap"]
   }
 });

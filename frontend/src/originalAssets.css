@@ -48,3 +48,569 @@
   object-position: center top;
   filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.35));
 }
+
+/* ──────────────────────────────────────────────────────────────────
+ * Building detail window — source-faithful to Unity prefab hierarchy
+ * Mirrors Assets/Prefabs/UI/Estate/Buildings/{Building}/
+ *   {Building}Window/
+ *     LeftPanel/
+ *       Icon         → .building-detail-sprite (building_icon_bg.png)
+ *       Title/
+ *         BuildingLabel → .building-detail-name (building_title_bg.png)
+ *         BuildingDesc  → .building-detail-desc
+ *     RightPanel/
+ *       UpgradeWindow / SkillUpgradeSlot / EquipmentUpgradeSlot /
+ *       TreatmentHeroSlot → .building-action-section + cards
+ *     CloseButton    → .building-return-btn (btn_close.png)
+ *
+ * Background sprite atlas (frontend/public/original/chrome/):
+ *   building_icon_bg.png   → frame around building icon
+ *   building_title_bg.png  → behind building name banner
+ *   building_label_bg01.png → behind action labels
+ *   building_info_bg.png   → behind info / status card
+ *   btn_close.png          → return-to-town close button
+ * ────────────────────────────────────────────────────────────────── */
+
+.app-frame[data-source-scene*="EstateManagement"] {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 32px clamp(24px, 4vw, 64px);
+  background:
+    radial-gradient(ellipse 60% 44% at 50% 12%, rgba(160, 124, 70, 0.12), rgba(7, 6, 9, 0) 65%),
+    radial-gradient(ellipse 48% 32% at 38% 90%, rgba(80, 64, 40, 0.10), transparent 60%),
+    linear-gradient(180deg, #14101a 0%, #0a070d 55%, #050307 100%);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 18px;
+  isolation: isolate;
+}
+
+.app-frame[data-source-scene*="EstateManagement"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 14% 18%, rgba(232, 220, 200, 0.28), transparent 60%),
+    radial-gradient(1px 1px at 32% 8%, rgba(232, 220, 200, 0.18), transparent 60%),
+    radial-gradient(1px 1px at 64% 22%, rgba(232, 220, 200, 0.22), transparent 60%),
+    radial-gradient(1px 1px at 88% 14%, rgba(232, 220, 200, 0.18), transparent 60%),
+    radial-gradient(1.5px 1.5px at 22% 78%, rgba(232, 220, 200, 0.20), transparent 60%),
+    radial-gradient(1px 1px at 78% 84%, rgba(232, 220, 200, 0.18), transparent 60%);
+  opacity: 0.55;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app-frame[data-source-scene*="EstateManagement"] > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Building header — LeftPanel/Icon + LeftPanel/Title ─────── */
+.building-detail-header {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 28px;
+  padding: 20px 28px;
+  background:
+    linear-gradient(180deg, rgba(28, 22, 14, 0.78), rgba(16, 12, 8, 0.82)),
+    var(--ddgc-chrome-building-info-bg, url("/original/chrome/building_info_bg.png"));
+  background-size: cover, 100% 100%;
+  background-position: center, center;
+  background-repeat: no-repeat;
+  border: 1px solid rgba(196, 168, 110, 0.25);
+  border-radius: 6px;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(232, 200, 140, 0.10),
+    inset 0 0 60px rgba(0, 0, 0, 0.35);
+}
+
+.building-detail-sprite {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: var(--ddgc-chrome-building-icon-bg, url("/original/chrome/building_icon_bg.png"));
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  border-radius: 6px;
+}
+
+.building-detail-sprite::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(196, 168, 110, 0.18);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.building-detail-sprite-img {
+  position: relative;
+  width: 84%;
+  height: 84%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+  z-index: 1;
+}
+
+.building-detail-sprite-fallback {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 70%;
+  height: 70%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(196, 168, 110, 0.18), rgba(0, 0, 0, 0.55));
+  border: 1px solid rgba(196, 168, 110, 0.25);
+  font-family: var(--heading-font);
+  font-size: 3.4rem;
+  font-weight: 700;
+  color: rgba(244, 224, 184, 0.75);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  z-index: 1;
+}
+
+/* Title block — LeftPanel/Title */
+.building-detail-title-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  align-self: center;
+}
+
+.building-detail-eyebrow {
+  display: inline-block;
+  font-size: 0.66rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(214, 184, 124, 0.82);
+  padding: 2px 0;
+}
+
+.building-detail-name {
+  position: relative;
+  margin: 0;
+  padding: 12px 22px;
+  font-family: var(--heading-font);
+  font-size: clamp(1.7rem, 2.6vw, 2.4rem);
+  letter-spacing: 0.08em;
+  color: rgba(248, 232, 200, 0.96);
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.7);
+  background-image: var(--ddgc-chrome-building-title-bg, url("/original/chrome/building_title_bg.png"));
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  border-radius: 4px;
+  align-self: flex-start;
+  min-width: 240px;
+}
+
+.building-detail-status {
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(196, 168, 110, 0.2);
+  align-self: flex-start;
+}
+
+.building-detail-status.status-ready {
+  color: #b9d77e;
+  border-color: rgba(185, 215, 126, 0.35);
+  background: rgba(120, 168, 60, 0.12);
+}
+
+.building-detail-status.status-partial {
+  color: #e8c878;
+  border-color: rgba(232, 200, 120, 0.35);
+  background: rgba(196, 152, 60, 0.12);
+}
+
+.building-detail-status.status-locked {
+  color: #ea9b88;
+  border-color: rgba(234, 155, 136, 0.35);
+  background: rgba(180, 80, 60, 0.14);
+}
+
+.building-detail-desc {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: rgba(220, 204, 174, 0.82);
+  max-width: 64ch;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+/* ── Content grid — LeftPanel + RightPanel ──────────────────── */
+.building-detail-content {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.building-detail-left,
+.building-detail-right {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Info card — LeftPanel info surface (building_info_bg.png) ── */
+.building-info-card {
+  position: relative;
+  padding: 16px 20px;
+  border-radius: 6px;
+  background:
+    linear-gradient(180deg, rgba(22, 16, 10, 0.84), rgba(12, 8, 6, 0.86)),
+    var(--ddgc-chrome-building-info-bg, url("/original/chrome/building_info_bg.png"));
+  background-size: cover, 100% 100%;
+  background-position: center, center;
+  background-repeat: no-repeat;
+  border: 1px solid rgba(196, 168, 110, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(232, 200, 140, 0.08),
+    inset 0 0 36px rgba(0, 0, 0, 0.4),
+    0 8px 18px rgba(0, 0, 0, 0.4);
+}
+
+.building-info-card-title {
+  margin: 0 0 12px;
+  padding: 6px 12px;
+  font-family: var(--heading-font);
+  font-size: 0.92rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(244, 224, 184, 0.92);
+  background-image: var(--ddgc-chrome-building-label-bg, url("/original/chrome/building_label_bg01.png"));
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  border-radius: 3px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  display: inline-block;
+}
+
+.building-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px dashed rgba(196, 168, 110, 0.14);
+  font-size: 0.84rem;
+}
+
+.building-info-row:last-child {
+  border-bottom: none;
+}
+
+.building-info-label {
+  color: rgba(214, 192, 150, 0.74);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+}
+
+.building-info-value {
+  color: rgba(248, 232, 200, 0.94);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* ── Action sections — RightPanel/UpgradeWindow ─────────────── */
+.building-action-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.building-action-section-title {
+  margin: 0;
+  padding: 6px 14px;
+  font-family: var(--heading-font);
+  font-size: 0.86rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(248, 232, 200, 0.94);
+  background-image: var(--ddgc-chrome-building-label-bg, url("/original/chrome/building_label_bg01.png"));
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  border-radius: 3px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  align-self: flex-start;
+}
+
+/* ── Action card — UpgradeSlot / SkillUpgradeSlot prefab ────── */
+.building-action-card {
+  position: relative;
+  padding: 14px 18px;
+  border-radius: 5px;
+  background:
+    linear-gradient(180deg, rgba(20, 14, 10, 0.78), rgba(10, 6, 4, 0.82)),
+    var(--ddgc-chrome-building-info-bg, url("/original/chrome/building_info_bg.png"));
+  background-size: cover, 100% 100%;
+  background-position: center, center;
+  background-repeat: no-repeat;
+  border: 1px solid rgba(196, 168, 110, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(232, 200, 140, 0.06),
+    inset 0 0 28px rgba(0, 0, 0, 0.45),
+    0 4px 12px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.building-action-card:hover {
+  border-color: rgba(214, 184, 124, 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(232, 200, 140, 0.10),
+    inset 0 0 28px rgba(0, 0, 0, 0.40),
+    0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.building-action-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.building-action-label {
+  font-family: var(--heading-font);
+  font-size: 0.96rem;
+  font-weight: 600;
+  color: rgba(248, 232, 200, 0.94);
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+.building-action-pill {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.building-action-pill--unsupported {
+  color: #ea9b88;
+  background: rgba(180, 80, 60, 0.18);
+  border: 1px solid rgba(234, 155, 136, 0.35);
+}
+
+.building-action-pill--unavailable {
+  color: #e8c878;
+  background: rgba(196, 152, 60, 0.16);
+  border: 1px solid rgba(232, 200, 120, 0.32);
+}
+
+.building-action-pill--info {
+  color: #c8d0a4;
+  background: rgba(160, 180, 120, 0.12);
+  border: 1px solid rgba(200, 208, 164, 0.28);
+}
+
+.building-action-desc {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: rgba(214, 196, 156, 0.78);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.building-action-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.building-action-cost {
+  font-size: 0.78rem;
+  color: rgba(214, 192, 150, 0.85);
+  letter-spacing: 0.04em;
+}
+
+.building-action-cost strong {
+  color: rgba(248, 232, 200, 0.96);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-left: 4px;
+}
+
+.building-action-cost-unavailable {
+  color: rgba(214, 192, 150, 0.45);
+  text-decoration: line-through;
+}
+
+.building-action-cost-unavailable strong {
+  color: rgba(248, 232, 200, 0.55);
+}
+
+/* Action button — primary uses btn_save_01 / save_02 chrome cue */
+.building-action-btn {
+  font-family: var(--heading-font);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 9px 20px;
+  border-radius: 3px;
+  border: 1px solid rgba(196, 168, 110, 0.28);
+  background: rgba(28, 22, 14, 0.55);
+  color: rgba(244, 224, 184, 0.86);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease,
+    box-shadow 0.15s ease, transform 0.1s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+.building-action-btn--primary {
+  color: rgba(20, 14, 6, 0.96);
+  background:
+    linear-gradient(180deg, rgba(232, 200, 130, 0.96), rgba(196, 156, 80, 0.94));
+  border-color: rgba(248, 220, 160, 0.55);
+  text-shadow: 0 1px 1px rgba(255, 240, 200, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 200, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+    0 4px 12px rgba(0, 0, 0, 0.45);
+}
+
+.building-action-btn--primary:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 200, 0.5),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+    0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+.building-action-btn--primary:active {
+  transform: translateY(0);
+  filter: brightness(0.96);
+}
+
+.building-action-btn--disabled,
+.building-action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: rgba(40, 32, 20, 0.45);
+  color: rgba(214, 192, 150, 0.5);
+  border-color: rgba(196, 168, 110, 0.15);
+  box-shadow: none;
+  filter: grayscale(0.4);
+}
+
+.building-action-btn:focus-visible {
+  outline: 2px solid rgba(244, 224, 184, 0.55);
+  outline-offset: 2px;
+}
+
+/* ── Return to town — CloseButton (btn_close.png) ───────────── */
+.building-return-row {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 20px;
+}
+
+.building-return-btn {
+  position: relative;
+  font-family: var(--heading-font);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 12px 36px 12px 56px;
+  border-radius: 3px;
+  border: 1px solid rgba(196, 168, 110, 0.32);
+  background:
+    linear-gradient(180deg, rgba(48, 36, 22, 0.82), rgba(20, 14, 8, 0.88));
+  color: rgba(244, 224, 184, 0.92);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease,
+    box-shadow 0.15s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+  box-shadow:
+    inset 0 1px 0 rgba(232, 200, 140, 0.1),
+    0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.building-return-btn::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  transform: translateY(-50%);
+  background-image: var(--ddgc-chrome-btn-close, url("/original/chrome/btn_close.png"));
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: brightness(0.95) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
+}
+
+.building-return-btn:hover {
+  border-color: rgba(232, 200, 140, 0.5);
+  background:
+    linear-gradient(180deg, rgba(60, 46, 28, 0.88), rgba(28, 20, 12, 0.92));
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(232, 200, 140, 0.16),
+    0 6px 18px rgba(0, 0, 0, 0.55);
+}
+
+.building-return-btn:active {
+  transform: translateY(0);
+  filter: brightness(0.96);
+}
+
+.building-return-btn:focus-visible {
+  outline: 2px solid rgba(244, 224, 184, 0.55);
+  outline-offset: 2px;
+}
+
+/* ── Responsive: collapse to single column on narrow screens ── */
+@media (max-width: 920px) {
+  .building-detail-header {
+    grid-template-columns: 1fr;
+    text-align: center;
+    padding: 18px;
+  }
+
+  .building-detail-sprite {
+    width: min(220px, 60vw);
+    height: min(220px, 60vw);
+    margin: 0 auto;
+  }
+
+  .building-detail-title-area {
+    align-items: center;
+  }
+
+  .building-detail-content {
+    grid-template-columns: 1fr;
+  }
+
+  .app-frame[data-source-scene*="EstateManagement"] {
+    padding: 18px 14px;
+  }
+}

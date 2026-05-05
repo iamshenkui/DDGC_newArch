@@ -37,8 +37,8 @@
         "sanitarium": {
           "asset_path": "Assets/Sprites/town/buildings/building_cell_repair.png",
           "guid": "55375034893560044a266e905926e8ff",
-          "frontend_usage": "screens/town/BuildingScreenRouter.tsx (generic BuildingDetailScreen)",
-          "frontend_routes": "app.frontend.route('sanitarium') / BuildingScreenRouter Match when true (fallback detail)",
+          "frontend_usage": "screens/town/buildings/SanitariumBuildingScreen.tsx",
+          "frontend_routes": "app.frontend.route('sanitarium') / BuildingScreenRouter Match when buildingId === 'sanitarium'",
           "inventory_status": "confirmed"
         },
         "abbey": {
