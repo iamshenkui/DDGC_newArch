@@ -35,7 +35,7 @@ export const ReturnScreen: Component<ReturnScreenProps> = (props) => {
         </span>
         <span class="expedition-hud-center">
           <span class="hud-pill hud-pill-accent">{props.viewModel.expeditionName}</span>
-          <span class="hud-pill" style="color: #5bbd6e;">Closed</span>
+          <span class="hud-pill hud-pill-closed">Closed</span>
         </span>
       </header>
 
@@ -46,11 +46,11 @@ export const ReturnScreen: Component<ReturnScreenProps> = (props) => {
 
         <div class="expedition-content">
           {/* Summary banner */}
-          <div class="outcome-banner outcome-banner--success">
+          <div class="outcome-banner outcome-banner--success" data-source-component="SummaryBannerPanel">
             <div class="outcome-banner-ornament" />
             <h2 class="outcome-banner-title">Expedition Log Closed</h2>
             <p class="outcome-banner-subtitle">{props.viewModel.summary}</p>
-            <p class="return-summary-text">
+            <p class="outcome-banner-detail outcome-detail--success">
               The expedition has concluded. All surviving heroes have returned to the Estate.
               Visit town buildings to tend to hero conditions and prepare for future expeditions.
             </p>
@@ -58,12 +58,12 @@ export const ReturnScreen: Component<ReturnScreenProps> = (props) => {
 
           {/* Returning heroes */}
           {props.viewModel.returningHeroes.length > 0 && (
-            <div class="returning-hero-row">
+            <div class="returning-hero-row" data-source-component="ReturningHeroPanel">
               <For each={props.viewModel.returningHeroes}>
                 {(hero) => {
                   const portraitUrl = resolveHeroPortrait({ heroId: hero.heroId, classLabel: hero.classLabel });
                   return (
-                    <div class="returning-hero-card">
+                    <div class="returning-hero-card" data-source-prefab="Assets/Prefabs/UI/ReturnToTownWindow.prefab">
                       {portraitUrl ? (
                         <img
                           class="returning-hero-portrait"

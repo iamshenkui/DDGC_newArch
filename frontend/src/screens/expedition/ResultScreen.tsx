@@ -1,11 +1,12 @@
 import { For, type Component } from "solid-js";
 
 import type { ExpeditionResultViewModel } from "../../bridge/contractTypes";
-import { resolveHeroPortrait } from "../../assets/originalAssetPaths";
+import { resolveChromeAsset, resolveHeroPortrait } from "../../assets/originalAssetPaths";
 
 interface ResultScreenProps {
   viewModel: ExpeditionResultViewModel;
   onContinue: () => void;
+  onReturnToTown: () => void;
 }
 
 /**
@@ -149,13 +150,13 @@ export const ResultScreen: Component<ResultScreenProps> = (props) => {
                       <div class="hero-outcome-changes">
                         <div class="hero-outcome-change">
                           <span class="hero-outcome-change-label">HP</span>
-                          <span style={hero.hpChange.startsWith("-") ? "color: #ea7767;" : "color: #5bbd6e;"}>
+                          <span class={`hero-outcome-change-value ${hero.hpChange.startsWith("-") ? "change-negative" : "change-positive"}`}>
                             {hero.hpChange}
                           </span>
                         </div>
                         <div class="hero-outcome-change">
                           <span class="hero-outcome-change-label">Stress</span>
-                          <span style={hero.stressChange.startsWith("+") ? "color: #e8a838;" : "color: #5bbd6e;"}>
+                          <span class={`hero-outcome-change-value ${hero.stressChange.startsWith("+") ? "change-stress" : "change-positive"}`}>
                             {hero.stressChange}
                           </span>
                         </div>
@@ -171,7 +172,13 @@ export const ResultScreen: Component<ResultScreenProps> = (props) => {
           <div class="resources-panel">
             <div class="resource-item">
               <span class="resource-label">Gold</span>
-              <span class="resource-value resource-value--positive">
+              <span class="resource-value resource-value--positive result-gold-value">
+                <img
+                  class="gold-icon-image"
+                  src={resolveChromeAsset("goldIcon")}
+                  alt=""
+                  aria-hidden="true"
+                />
                 +{props.viewModel.resourcesGained.gold}
               </span>
             </div>
@@ -216,6 +223,9 @@ export const ResultScreen: Component<ResultScreenProps> = (props) => {
       <footer class="expedition-controls">
         <div class="expedition-controls-left" />
         <div class="expedition-controls-right">
+          <button class="action-secondary" onClick={props.onReturnToTown}>
+            Return to Town
+          </button>
           <button
             class="action-primary launch-primary"
             onClick={props.onContinue}

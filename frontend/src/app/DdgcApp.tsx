@@ -174,6 +174,9 @@ export function DdgcApp() {
             onContinue={() => {
               void dispatchIntent(bridge, { type: "continue-from-result" });
             }}
+            onReturnToTown={() => {
+              void dispatchIntent(bridge, { type: "return-to-town" });
+            }}
           />
         </Match>
         <Match
