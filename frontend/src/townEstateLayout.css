@@ -371,7 +371,10 @@
   pointer-events: none;
 }
 
-/* Source-backed label background using Unity building_label_bg01.png */
+/* Source-backed label background using Unity building_label_bg01.png.
+   Reference town.png renders this band as a near-imperceptible underlay over
+   the dark starfield, so the bright cream/gold sprite is dimmed and blended
+   to keep the caption's glyphs readable without competing visual weight. */
 .estate-building-banner::before {
   content: "";
   position: absolute;
@@ -379,7 +382,8 @@
   background-image: var(--ddgc-chrome-building-label-bg, url("/original/chrome/building_label_bg01.png"));
   background-size: 100% 100%;
   background-repeat: no-repeat;
-  opacity: 0.88;
+  opacity: 0.42;
+  mix-blend-mode: overlay;
   pointer-events: none;
 }
 
