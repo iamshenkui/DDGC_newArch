@@ -310,7 +310,11 @@
 /* Each building slot is a Unity Button+Image+BuildingSlot component triplet
    parented under UI_Estate/UI_Estate. The source prefab renders each building
    with its own sprite asset (not a shared background frame). Position/size
-   are driven by the source RectTransform. */
+   are driven by the source RectTransform, so the click region's bounding box
+   matches the building sizeDelta exactly — no padding, no expansion, no
+   shrinkage. This keeps the hit area aligned with the visible estate layer
+   (transparent regions of the sprite are still clickable as part of the
+   source-faithful sizeDelta box, matching Unity's UGUI Button behavior). */
 .estate-building-node {
   position: absolute;
   z-index: 3;
@@ -360,6 +364,12 @@
 }
 
 /* ── Building label banner (source: BuildingLabel sizeDelta=(326,48), building_label_bg01.png) ── */
+/* The Unity BuildingLabel is a child of each BuildingSlot prefab. Its anchored
+   position is captured per-building in `buildingCatalog.ts` (labelOffsetX/Y)
+   so the banner sits at the source-backed offset relative to the building's
+   center. The 326×48 sizeDelta is fixed across all 11 buildings — this CSS
+   mirrors that constraint exactly so the local chrome aligns 1:1 with the
+   Unity prefab rather than scaling to fit a longer/shorter caption. */
 .estate-building-banner {
   position: absolute;
   width: 326px;

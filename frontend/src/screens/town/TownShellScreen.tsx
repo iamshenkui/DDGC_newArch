@@ -145,6 +145,17 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                   const layout = getTownBuildingCatalogEntry(building.id);
                   if (!layout) return null;
 
+                  // Click region is the building's Unity sizeDelta box, anchored at
+                  // anchoredPosition (translated to CSS top-left via -50% transform).
+                  // This makes the hit area line up exactly with the visible estate
+                  // layer rendered by the source-backed building sprite.
+                  const sourceRect =
+                    `anchorMin=(0.5,0.5) anchorMax=(0.5,0.5) ` +
+                    `anchoredPosition=(${layout.x},${layout.y}) ` +
+                    `sizeDelta=(${layout.width},${layout.height})`;
+                  const labelSourceRect =
+                    `anchoredPosition=(${layout.labelOffsetX},${layout.labelOffsetY}) sizeDelta=(326,48)`;
+
                   return (
                     <button
                       class="estate-building-node"
@@ -156,12 +167,14 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                       }}
                       onClick={() => props.onOpenBuilding(building.id)}
                       title={building.summary}
+                      aria-label={`${layout.displayName} — ${BUILDING_STATUS_LABEL[building.status]}`}
                       data-building-id={building.id}
                       data-source-prefab="UI/Estate/BuildingSlot"
                       data-source-scene="EstateManagement.unity"
+                      data-source-rect={sourceRect}
                       data-source-guid={layout.sourceGuid ?? undefined}
                     >
-                      <span class="estate-building-art">
+                      <span class="estate-building-art" aria-hidden="true">
                         <BuildingIcon buildingId={building.id} size={layout.width} fallbackLabel={layout.displayName} />
                       </span>
                       <span
@@ -171,7 +184,7 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                           top: `${layout.height / 2 - layout.labelOffsetY}px`
                         }}
                         data-source-prefab="UI/Estate/BuildingSlot/BuildingLabel"
-                        data-source-rect="sizeDelta=(326,48)"
+                        data-source-rect={labelSourceRect}
                         data-source-sprite="building_label_bg01.png"
                         data-source-guid="0beef34e329073f43bc2a495a740b0b4"
                       >
