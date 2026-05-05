@@ -8,6 +8,8 @@
 
 ## 1. Files Inspected
 
+> **Source verification note:** All Unity RectTransform values in this document were cross-checked by direct JSON extraction from `fixtures/ui_inventory/Assets/Scenes/EstateManagement.unity.json` on 2026-05-05 using a Python hierarchy walker. Raw values match the committed brief; anchor-mode and parent-path corrections were applied where the original brief had descriptive approximations.
+
 ### Unity Scene JSON Extractions (`fixtures/ui_inventory/`)
 | File | Kind | Size | GameObjects | Prefab Instances | Text Nodes |
 |------|------|------|-------------|-------------------|------------|
@@ -159,6 +161,8 @@ Contains five currency amount displays and five currency icon sprites:
 **Source:** `UI_Shared → UI_Panels → BottomPanel`
 **RectTransform:** anchorMin=(0,0), anchorMax=(1,1), pivot=(0.5,0), anchoredPosition=(0,0), sizeDelta=(0,0) — full-width bottom-stretch
 
+**Source verification:** Directly extracted from `EstateManagement.unity.json` hierarchy (verified 2026-05-05): UI_Panels parent is at `anchor=(0,0)-(0,0) pos=(0,0) size=(0,0)`; EstateNameplate child is at `anchor=(1,1)-(1,1) pos=(-1624,-76.5) size=(592,153)`; BottomPanel child is at `anchor=(0,0)-(1,1) pos=(0,0) size=(0,0)`.
+
 #### 3.3.1 Embark Control (`EmbarkButton`)
 
 **Source:** `BottomPanel → EmbarkButton`
@@ -172,7 +176,8 @@ The primary CTA button that transitions from town to provisioning/expedition flo
 #### 3.3.2 Side Buttons (`SideButtons`)
 
 **Source:** `BottomPanel → SideButtons`
-Six navigation buttons anchored to bottom-right corner:
+**RectTransform:** anchorMin=(0,0), anchorMax=(1,1), pivot=(0.5,0.5), anchoredPosition=(0,0), sizeDelta=(0,0) — full-stretch parent container.
+Six navigation button children, each individually **top-right anchored** (`anchorMin=(1,1)`, `anchorMax=(1,1)`) within the full-stretch parent:
 
 | Button | anchoredPosition | sizeDelta |
 |--------|-----------------|-----------|
@@ -228,8 +233,10 @@ All building nodes use center-anchored RectTransforms with anchor=(0.5,0.5), piv
 | Market | (340.5, -222) | (326, 339) | (0, -150) | (326, 48) |
 | Sanitarium | (390, 110) | (339, 339) | (50, -100) | (326, 48) |
 | CampingTrainer | (-607, 220) | (266, 314) | (-100, -110) | (326, 48) |
+| QuickProgressButton | (389, 137) | (97, 42) | — | — |
+| QuickStartButton | (-324, 137.1) | (97, 42) | — | — |
 
-> ⚠️ **Blacksmith anchor anomaly:** Blacksmith uses anchorMin=(0.5,0), anchorMax=(0.5,0) unlike all other buildings which use center anchors. This means its Y-position is measured from the bottom edge of the canvas, not the center. In a 720px tall canvas, the bottom-anchored Y=294 translates to approximately Y=-66 from center (294 - 720/2 = -66).
+> ⚠️ **Blacksmith anchor anomaly:** Blacksmith uses `anchorMin=(0.5,0)`, `anchorMax=(0.5,0)` unlike all other buildings which use center anchors. This means its Y-position is measured from the bottom edge of the canvas, not the center. In a 720px tall canvas, the bottom-anchored Y=294 translates to approximately Y=-66 from center (294 - 720/2 = -66). The frontend `buildingCatalog.ts` normalizes this to `y=-246` for the 1920×1080 reference canvas (effective center offset: -(1080/2) + 294 = -246).
 
 ### 4.2 Building ID → Display Name Mapping (DDGC Chinese)
 
@@ -325,7 +332,7 @@ For each anchor point:
 | Guild pos | (120, -50) | (120, -50) | exact |
 | Tavern pos | (-650, -220) | (-650, -220) | exact |
 | Graveyard pos | (695.5, 95.63) | (696, 96) | rounded |
-| Blacksmith pos | (709, 294) ⚠️ | (709, 294) | exact (anchor anomaly) |
+| Blacksmith pos | (709, 294) ⚠️ | (709, -246) | normalized to center-based coords |
 | StageCoach pos | (31, -267) | (31, -267) | exact |
 | Garden pos | (-245, -211) | (-245, -211) | exact |
 | LegacyTower pos | (0, 270) | (0, 270) | exact |
@@ -349,7 +356,7 @@ For each anchor point:
 
 ## 8. Recommendations for Reconstruction
 
-1. **Blacksmith anchor fix:** The Blacksmith uses a bottom-anchored RectTransform in Unity (anchorMin=(0.5,0)). On the 1280×720 canvas, its effective center-relative Y is -66 (294 - 360). The frontend catalog records the raw value y=294. Either normalize this to the center-relative coordinate system or document the anchor exception explicitly.
+1. **Blacksmith anchor fix:** The Blacksmith uses a bottom-anchored RectTransform in Unity (anchorMin=(0.5,0)). On the 1280×720 canvas, its effective center-relative Y is -66 (294 - 360). The frontend `buildingCatalog.ts` has been updated to use the normalized center-based value `y=-246` (computed as -(1080/2) + 294 for the 1920×1080 reference canvas). The anchor exception is now documented in the catalog source comment.
 
 2. **Building label banner:** The Unity BuildingLabel has a fixed sizeDelta of (326, 48) across all buildings. The frontend CSS uses flexible sizing (min-width: 9rem, max-width: 13rem). For pixel-perfect parity, constrain the banner to 326×48 at the 1920×1080 reference scale.
 
