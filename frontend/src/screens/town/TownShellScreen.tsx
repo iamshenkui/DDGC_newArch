@@ -362,7 +362,18 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
               </div>
             </div>
 
-            {/* ── UI_Roster/RosterPanel — hero roster strip (Unity UI_Shared/UI_Roster/RosterPanel) ── */}
+            {/* ── UI_Roster/RosterPanel — hero roster strip (Unity UI_Shared/UI_Roster/RosterPanel)
+                 Each slot mirrors HeroSlot.prefab hierarchy:
+                   HeroSlot (root: Image + TownHeroSlot)
+                   ├── ActiveOverlay  — active: false (not rendered)
+                   ├── Locked         — active: false (not rendered)
+                   ├── HeroLabel      — Text "英雄名称"
+                   ├── EventLocked    — active: false (not rendered)
+                   ├── FreeOverlay    — active: false (not rendered)
+                   ├── ActivityButton — (Image + Button, not rendered in roster)
+                   ├── CostLabel      — gold cost (not rendered in roster)
+                   └── Frame          — Image (hero_slot.backgroundhightlight.png)
+            */}
             <div
               class="roster-scroll estate-roster-strip"
               data-source-scene="EstateManagement.unity"
@@ -373,10 +384,21 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                 {(hero) => {
                   const portraitSrc = resolveHeroPortrait({ heroId: hero.id, classLabel: hero.classLabel });
                   const hp = parseHp(hero.hp);
+                  const topQuirks = hero.positiveQuirks.slice(0, 2);
+                  const topNegQuirks = hero.negativeQuirks.slice(0, 2);
+                  const hasDiseases = hero.diseases.length > 0;
                   return (
-                    <button class="roster-hero estate-roster-hero" onClick={() => props.onOpenHero(hero.id)}>
-                      <div class="roster-hero-portrait estate-roster-portrait">
-                        <div class="roster-portrait-frame estate-roster-frame" />
+                    <button
+                      class="roster-hero estate-roster-hero"
+                      onClick={() => props.onOpenHero(hero.id)}
+                      data-source-prefab="UI/HeroSlot.prefab"
+                      data-source-component="TownHeroSlot"
+                      data-hero-id={hero.id}
+                    >
+                      {/* ── HeroSlot portrait surface (mirrors HeroSlot root Image component) ── */}
+                      <div class="roster-hero-portrait estate-roster-portrait" data-source-component="Image">
+                        {/* Frame — mirrors HeroSlot/Frame child (Image: hero_slot.backgroundhightlight.png) */}
+                        <div class="roster-portrait-frame estate-roster-frame" data-source-component="Frame" />
                         {portraitSrc ? (
                           <img
                             class="roster-portrait-image"
@@ -395,7 +417,8 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                         )}
                       </div>
                       <div class="estate-roster-meta">
-                        <span class="roster-hero-name">{hero.name}</span>
+                        {/* HeroLabel — mirrors HeroSlot/HeroLabel (Text: hero name) */}
+                        <span class="roster-hero-name" data-source-component="HeroLabel">{hero.name}</span>
                         <span class="roster-hero-class">{hero.classLabel}</span>
                         <div class="estate-roster-bars">
                           <span class="estate-mini-bar">
@@ -406,6 +429,24 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                           </span>
                         </div>
                         <span class="estate-roster-stats">HP {hp.current}/{hp.max} · ST {hero.stress}/{hero.maxStress}</span>
+                        {/* Quirks & Diseases — compact inline summary */}
+                        <div class="roster-status-chips">
+                          <For each={topQuirks}>
+                            {(quirk) => (
+                              <span class="roster-chip roster-chip--positive" title={`Positive Quirk: ${quirk}`}>{quirk}</span>
+                            )}
+                          </For>
+                          <For each={topNegQuirks}>
+                            {(quirk) => (
+                              <span class="roster-chip roster-chip--negative" title={`Negative Quirk: ${quirk}`}>{quirk}</span>
+                            )}
+                          </For>
+                          {hasDiseases && (
+                            <span class="roster-chip roster-chip--disease" title={`${hero.diseases.length} disease(s)`}>
+                              {hero.diseases.length > 1 ? `${hero.diseases.length} diseases` : hero.diseases[0]}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </button>
                   );

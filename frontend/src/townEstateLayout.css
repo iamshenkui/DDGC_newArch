@@ -574,3 +574,41 @@
   font-size: 0.68rem;
   letter-spacing: 0.04em;
 }
+
+/* ── Roster quirk/disease chips (compact indicators on hero slot) ────── */
+.roster-status-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  margin-top: 0.25rem;
+}
+
+.roster-chip {
+  font-size: 0.55rem;
+  font-weight: 500;
+  padding: 0.08rem 0.3rem;
+  border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 5rem;
+  line-height: 1.2;
+}
+
+.roster-chip--positive {
+  color: #8cbf8a;
+  background: rgba(91, 189, 110, 0.1);
+  border: 1px solid rgba(91, 189, 110, 0.15);
+}
+
+.roster-chip--negative {
+  color: #d68a7a;
+  background: rgba(234, 119, 103, 0.08);
+  border: 1px solid rgba(234, 119, 103, 0.12);
+}
+
+.roster-chip--disease {
+  color: #b88a6a;
+  background: rgba(184, 138, 106, 0.08);
+  border: 1px solid rgba(184, 138, 106, 0.12);
+}
