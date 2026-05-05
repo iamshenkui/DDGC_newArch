@@ -257,6 +257,49 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                 </span>
               </div>
 
+              {/* ── Top-right utility buttons — source-backed text glyphs
+                   Reference town.png shows three small square text buttons
+                   (饰品仓库, 英雄, 设置) floating directly on the sky.
+                   Lifted out of BottomPanel so z-index stacks above the nameplate. ── */}
+              <nav
+                class="estate-side-panel"
+                aria-label="顶部导航"
+                data-source-scene="EstateManagement.unity"
+                data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons"
+              >
+                <button
+                  class="estate-side-button"
+                  title="饰品仓库"
+                  aria-label="饰品仓库"
+                  data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons/RealmInventory"
+                  data-source-rect="anchoredPosition=(-340,-80) sizeDelta=(136,136)"
+                >
+                  饰品仓库
+                </button>
+                <button
+                  class="estate-side-button"
+                  title="英雄"
+                  aria-label="英雄"
+                  data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons/Hero"
+                  data-source-rect="anchoredPosition=(-220,-80) sizeDelta=(136,136)"
+                  onClick={() => {
+                    const firstHero = props.viewModel.heroes[0] ?? props.viewModel.roster[0];
+                    if (firstHero) props.onOpenHero(firstHero.id);
+                  }}
+                >
+                  英雄
+                </button>
+                <button
+                  class="estate-side-button"
+                  title="设置"
+                  aria-label="设置"
+                  data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons/Settings"
+                  data-source-rect="anchoredPosition=(-100,-80) sizeDelta=(136,136)"
+                >
+                  设置
+                </button>
+              </nav>
+
               {/* ── UI_Panels/BottomPanel — bottom panel grouping (Unity UI_Shared/UI_Panels/BottomPanel) ── */}
               <div
                 class="estate-bottom-panel"
@@ -264,48 +307,6 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                 data-source-prefab="UI_Shared/UI_Panels/BottomPanel"
                 data-source-rect="anchorMin=(0,0) anchorMax=(1,1) pivot=(0.5,0) anchoredPosition=(0,0) sizeDelta=(0,0)"
               >
-                {/* ── Top-right utility buttons — source-backed text glyphs
-                     Reference town.png shows three small square text buttons
-                     (饰品仓库, 英雄, 设置) floating directly on the sky. ── */}
-                <nav
-                  class="estate-side-panel"
-                  aria-label="顶部导航"
-                  data-source-scene="EstateManagement.unity"
-                  data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons"
-                >
-                  <button
-                    class="estate-side-button"
-                    title="饰品仓库"
-                    aria-label="饰品仓库"
-                    data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons/RealmInventory"
-                    data-source-rect="anchoredPosition=(-340,-80) sizeDelta=(136,136)"
-                  >
-                    饰品仓库
-                  </button>
-                  <button
-                    class="estate-side-button"
-                    title="英雄"
-                    aria-label="英雄"
-                    data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons/Hero"
-                    data-source-rect="anchoredPosition=(-220,-80) sizeDelta=(136,136)"
-                    onClick={() => {
-                      const firstHero = props.viewModel.heroes[0] ?? props.viewModel.roster[0];
-                      if (firstHero) props.onOpenHero(firstHero.id);
-                    }}
-                  >
-                    英雄
-                  </button>
-                  <button
-                    class="estate-side-button"
-                    title="设置"
-                    aria-label="设置"
-                    data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons/Settings"
-                    data-source-rect="anchoredPosition=(-100,-80) sizeDelta=(136,136)"
-                  >
-                    设置
-                  </button>
-                </nav>
-
                 {/* ── BottomPanel/EmbarkButton — primary expedition CTA ── */}
                 <button
                   class="estate-embark-button"

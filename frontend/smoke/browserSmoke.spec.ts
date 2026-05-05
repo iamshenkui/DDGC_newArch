@@ -224,7 +224,7 @@ test.describe("browser smoke: fidelity gates", () => {
 
     // ── Phase 3: Hero detail ───────────────────────────────
     // Click the "英雄" top-right utility button to open hero detail
-    await page.getByRole("button", { name: "英雄" }).click();
+    await page.getByRole("button", { name: "英雄", exact: true }).click();
     await page.waitForSelector(".hero-detail-layout", { timeout: 5_000 });
     await settle(page);
 
@@ -456,7 +456,7 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toHaveCount(5);
 
     // Open hero detail from live bridge via the "英雄" utility button
-    await page.getByRole("button", { name: "英雄" }).click();
+    await page.getByRole("button", { name: "英雄", exact: true }).click();
     await page.waitForSelector(".hero-detail-layout", { timeout: 5_000 });
     await settle(page);
 
