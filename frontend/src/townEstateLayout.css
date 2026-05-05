@@ -1,16 +1,20 @@
 /* ── Town viewport (source: EstateManagement.unity / Canvas / UI_Estate) ── */
 /* Scene ambient derived from Unity EstateManagement.unity camera:
-   main camera ambient ≈ #211a19 with exponential fog (density 0.018, color #0c0a0d).
-   No single backdrop sprite exists in the Unity source; the toned-down
-   gradient reconstructs the scene's ambient occlusion and atmospheric falloff. */
+   main camera ambient ≈ #0a0810 with exponential fog (density 0.018, color #0c0a0d).
+   The reference frame (ref_image/town.png) reads as a near-black starfield with
+   subtle warm-gold spill from beacons; the gradient stack here reconstructs
+   that ambient atmosphere — no single backdrop sprite exists in the Unity
+   source. The starfield speckling is layered on .estate-stage-shell so the
+   shell chrome and building layer compose against one continuous sky rather
+   than two stacked panels. */
 .estate-town-screen {
   position: relative;
   min-height: 100vh;
   overflow: hidden;
   background:
-    radial-gradient(ellipse 70% 52% at 50% 45%, rgba(148, 114, 68, 0.14), rgba(14, 12, 17, 0) 36%),
-    radial-gradient(ellipse 54% 38% at 38% 58%, rgba(152, 124, 74, 0.08), transparent 46%),
-    linear-gradient(182deg, #261e1c 0%, #151014 48%, #0c0a0d 100%);
+    radial-gradient(ellipse 60% 44% at 50% 48%, rgba(148, 114, 68, 0.10), rgba(7, 6, 9, 0) 50%),
+    radial-gradient(ellipse 48% 32% at 38% 60%, rgba(152, 124, 74, 0.05), transparent 56%),
+    linear-gradient(182deg, #14101a 0%, #0a070d 50%, #050307 100%);
 }
 
 .estate-town-screen::before {
@@ -18,8 +22,8 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(182deg, rgba(255, 228, 184, 0.05), transparent 14%),
-    radial-gradient(ellipse 80% 38% at 50% 82%, transparent 40%, rgba(0, 0, 0, 0.48) 74%);
+    linear-gradient(182deg, rgba(255, 228, 184, 0.03), transparent 14%),
+    radial-gradient(ellipse 80% 38% at 50% 82%, transparent 40%, rgba(0, 0, 0, 0.55) 78%);
   pointer-events: none;
 }
 
@@ -54,8 +58,10 @@
 /* ── Central estate stage surface (EstateManagement.unity / UI_Estate stage) ── */
 /* The estate stage surface is the walkable ground plane beneath the building
    layer. No flat backdrop sprite exists in the Unity source — the scene relies
-   on camera ambient and atmospheric fog. This reconstruction uses minimal
-   ambient occlusion toning so the surface reads as depth, not as a CSS panel. */
+   on camera ambient and atmospheric fog. This reconstruction layers a faint
+   starfield/particulate speckle over a soft warm-gold spill so the shell
+   chrome and the 11-building cluster compose against one continuous painted
+   sky rather than reading as a panel and a separate building grid. */
 .estate-stage-shell {
   position: absolute;
   inset: 0;
@@ -65,14 +71,38 @@
 .estate-stage-backdrop {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 88% 62% at 50% 52%, rgba(56, 44, 30, 0.16), transparent 72%);
+  background:
+    radial-gradient(ellipse 80% 56% at 50% 52%, rgba(86, 64, 36, 0.18), transparent 70%),
+    radial-gradient(ellipse 36% 24% at 28% 34%, rgba(218, 184, 122, 0.05), transparent 70%),
+    radial-gradient(ellipse 30% 22% at 72% 38%, rgba(220, 188, 130, 0.05), transparent 70%);
 }
 
+/* Subtle starfield/dust speckle reconstruction. The reference frame shows
+   faint white pinpricks scattered across the dark sky behind the floating
+   islands; this layer reproduces that texture with two offset radial-gradient
+   stacks so the buildings sit on a continuous starry plane rather than
+   appearing pasted onto a flat panel. */
 .estate-stage-grid {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 58% 46% at 50% 54%, rgba(210, 182, 128, 0.04), transparent 64%);
-  opacity: 0.28;
+  background-image:
+    radial-gradient(1px 1px at 18% 22%, rgba(232, 220, 200, 0.55), transparent 60%),
+    radial-gradient(1px 1px at 32% 12%, rgba(232, 220, 200, 0.40), transparent 60%),
+    radial-gradient(1px 1px at 48% 28%, rgba(232, 220, 200, 0.45), transparent 60%),
+    radial-gradient(1px 1px at 62% 14%, rgba(232, 220, 200, 0.40), transparent 60%),
+    radial-gradient(1px 1px at 78% 24%, rgba(232, 220, 200, 0.50), transparent 60%),
+    radial-gradient(1px 1px at 88% 8%, rgba(232, 220, 200, 0.40), transparent 60%),
+    radial-gradient(1.5px 1.5px at 12% 68%, rgba(232, 220, 200, 0.45), transparent 60%),
+    radial-gradient(1px 1px at 28% 76%, rgba(232, 220, 200, 0.35), transparent 60%),
+    radial-gradient(1px 1px at 44% 82%, rgba(232, 220, 200, 0.40), transparent 60%),
+    radial-gradient(1px 1px at 58% 78%, rgba(232, 220, 200, 0.40), transparent 60%),
+    radial-gradient(1.5px 1.5px at 74% 72%, rgba(232, 220, 200, 0.45), transparent 60%),
+    radial-gradient(1px 1px at 86% 84%, rgba(232, 220, 200, 0.40), transparent 60%),
+    radial-gradient(1px 1px at 6% 46%, rgba(232, 220, 200, 0.35), transparent 60%),
+    radial-gradient(1px 1px at 92% 50%, rgba(232, 220, 200, 0.35), transparent 60%);
+  opacity: 0.66;
+  mix-blend-mode: screen;
+  pointer-events: none;
 }
 
 /* ── UI_Shared — persistent shell chrome (matches Unity UI_Shared) ── */
@@ -100,32 +130,48 @@
 }
 
 /* ── Top panel: source-backed nameplate (EstateManagement.unity / UI_Panels/EstateNameplate) ── */
+/* Reference frame renders the upper-right corner as a small set of plain
+   serif text labels floating on the cosmic backdrop — no card, no plate.
+   The estate_name_bg.png ink-stroke (extracted from the Unity source) is
+   kept in the layer hierarchy as a barely-visible underlay so that source
+   fidelity is preserved, but the dominant treatment is the floating text
+   itself, which mirrors the painterly reference rather than the heavy
+   web-card treatment that previously made the screen read as web chrome
+   wrapped around the building coordinates. */
 .estate-top-panel {
   position: absolute;
-  top: 28px;
-  right: 42px;
+  top: 24px;
+  right: 36px;
   z-index: 4;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.6rem;
-  width: 720px;
+  gap: 0.4rem;
+  width: 360px;
   padding: 0;
   border: 0;
   background: transparent;
   box-shadow: none;
+  pointer-events: none;
+}
+
+.estate-top-panel > * {
+  pointer-events: auto;
 }
 
 .estate-name-card {
   position: relative;
-  width: 592px;
-  min-height: 153px;
-  padding: 1rem 1.25rem 1.1rem;
+  width: 100%;
+  min-height: 96px;
+  padding: 0.4rem 0.6rem;
   border: 0;
   background: transparent;
+  text-align: right;
 }
 
-/* Source-backed nameplate: estate_name_bg.png as the primary card surface */
+/* Source-backed nameplate retained as a faint underlay; reference frame
+   does not render this ink-stroke prominently, so the opacity is dropped to
+   keep the source asset present in the composition without dominating it. */
 .estate-name-card::before {
   content: "";
   position: absolute;
@@ -133,7 +179,9 @@
   background-image: var(--ddgc-chrome-name-bg, url("/original/chrome/estate_name_bg.png"));
   background-size: 100% 100%;
   background-repeat: no-repeat;
-  opacity: 0.9;
+  background-position: right center;
+  opacity: 0.18;
+  mix-blend-mode: screen;
   pointer-events: none;
   z-index: 0;
 }
@@ -143,71 +191,137 @@
   z-index: 1;
 }
 
+.estate-name-card .eyebrow {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(232, 220, 198, 0.62);
+}
+
 .estate-campaign-name {
-  margin: 0.25rem 0 0;
-  font-size: clamp(1.35rem, 2vw, 2rem);
-  letter-spacing: 0.04em;
+  margin: 0.18rem 0 0;
+  font-size: clamp(1.1rem, 1.6vw, 1.5rem);
+  letter-spacing: 0.06em;
+  color: rgba(245, 234, 212, 0.94);
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
 .estate-campaign-summary {
-  margin: 0.4rem 0 0;
-  color: rgba(229, 218, 196, 0.78);
-  font-size: 0.88rem;
-  line-height: 1.45;
+  margin: 0.3rem 0 0;
+  color: rgba(229, 218, 196, 0.66);
+  font-size: 0.74rem;
+  line-height: 1.4;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Top-left campaign tag — mirrors reference "新游戏" eyebrow ── */
+.estate-corner-tag {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+  user-select: none;
+}
+
+.estate-corner-tag-left {
+  top: 28px;
+  left: 36px;
+}
+
+.estate-corner-tag-text {
+  display: inline-block;
+  font-family: var(--heading-font);
+  font-size: 1.05rem;
+  letter-spacing: 0.16em;
+  color: rgba(245, 234, 212, 0.88);
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
 /* ── Currency strip — 5-currency panel (Unity UI_Shared/UI_TopWindows/CurrencyPanel) ── */
-/* Source RectTransform: anchorMin=(1,0) anchorMax=(1,0) pivot=(1,0) anchoredPosition=(-140,20) sizeDelta=(1000,80) */
+/* Source RectTransform: anchorMin=(1,0) anchorMax=(1,0) pivot=(1,0) anchoredPosition=(-140,20) sizeDelta=(1000,80)
+   Reference frame anchors this row flush with the bottom edge of the cosmic
+   backdrop with no chip backgrounds — flat icons + numbers floating against
+   the sky. The previous placement at bottom:232px was a heuristic to avoid
+   the hero roster strip, which the reference does not contain. Moving the
+   strip to the bottom edge restores the reference's clean bottom-edge
+   composition and lets the painterly sky read as one continuous tableau. */
 .estate-currency-strip {
+  position: absolute;
+  right: 28px;
+  bottom: 20px;
+  z-index: 5;
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.5rem;
+  gap: 1.1rem;
+  padding: 0;
+  pointer-events: auto;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
 .estate-currency-slot {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.28rem;
-  padding: 0.35rem 0.55rem;
-  background: rgba(14, 11, 12, 0.92);
-  color: rgba(242, 229, 205, 0.92);
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
+  gap: 0.32rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(244, 232, 208, 0.92);
+  font-size: 0.84rem;
+  letter-spacing: 0.04em;
 }
 
 .estate-currency-slot-gold {
-  background: rgba(20, 15, 12, 0.96);
+  margin-left: 0.3rem;
+  font-size: 1rem;
+  color: rgba(248, 226, 178, 0.96);
+  letter-spacing: 0.06em;
 }
 
 .estate-currency-icon {
-  width: 1rem;
-  height: 1rem;
+  width: 1.05rem;
+  height: 1.05rem;
   object-fit: contain;
-  opacity: 0.82;
+  opacity: 0.92;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+}
+
+.estate-currency-slot-gold .estate-currency-icon {
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .estate-currency-value {
   min-width: 1.5rem;
   text-align: right;
-  color: rgba(229, 218, 196, 0.85);
+  color: rgba(238, 224, 198, 0.94);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── Fresh-visit badge ── */
+/* Reference frame composition has no boxed/chrome eyebrow — toning the badge
+   down to a faint atmospheric accent (no border, low-opacity warm tint) keeps
+   the campaign-name nameplate reading as floating painterly text rather than
+   a web card with a status pill. */
 .estate-fresh-visit-badge {
   align-self: flex-end;
-  padding: 0.22rem 0.5rem;
-  border: 1px solid rgba(198, 170, 88, 0.22);
-  background: rgba(172, 134, 62, 0.12);
-  color: #d4ba71;
-  font-size: 0.62rem;
-  letter-spacing: 0.14em;
+  margin-top: 0.18rem;
+  padding: 0.16rem 0.4rem;
+  border: 0;
+  background: transparent;
+  color: rgba(212, 186, 113, 0.78);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 /* ── Quick action buttons (source: UI_Estate QuickStartButton + QuickProgressButton) ── */
-/* Unity anchoredPosition: QuickStart=(-324,137), QuickProgress=(389,137). Both 97x42 sizeDelta. */
+/* Unity anchoredPosition: QuickStart=(-324,137), QuickProgress=(389,137). Both 97x42 sizeDelta.
+   The buttons live ABOVE the building cluster, so heavy dark chip chrome
+   competes visually with the painted islands. Reducing chip opacity and
+   removing the solid background keeps the text legible while letting the
+   buildings remain the dominant visual layer. */
 .estate-quick-buttons {
   position: absolute;
   top: 403px;
@@ -225,16 +339,18 @@
   align-items: center;
   gap: 0.35rem;
   padding: 0.3rem 0.6rem;
-  background: rgba(14, 11, 12, 0.88);
-  color: rgba(222, 208, 174, 0.9);
+  background: rgba(14, 11, 12, 0.4);
+  color: rgba(232, 218, 184, 0.84);
   font-size: 0.66rem;
   letter-spacing: 0.08em;
   cursor: pointer;
   pointer-events: auto;
   border: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
 }
 
 .estate-quick-button:hover {
+  background: rgba(14, 11, 12, 0.6);
   filter: brightness(1.12);
 }
 
@@ -265,45 +381,50 @@
   pointer-events: auto;
 }
 
-/* ── Side button panel (source: UI_Shared/UI_Panels/BottomPanel/SideButtons) ── */
-/* Six Unity buttons stacked at overlapping positions (-100,-80), (-220,-80),
-   (-340,-80) with 136x136 sizeDelta. Only 3-4 are active at any time based
-   on game state; the CSS shows all six, reflecting the full prefab definition. */
+/* ── Top-right utility buttons (source: UI_Shared/UI_Panels/BottomPanel/SideButtons) ── */
+/* Reference town.png shows three small square text buttons (饰品仓库, 英雄, 设置)
+   floating directly on the dark sky at the upper-right corner. The previous
+   six icon buttons read as a distinct web toolbar; reducing to the three
+   text glyphs that actually appear in the reference, and rendering them as
+   minimal text-on-sky rather than icon chips, integrates the nav into the
+   painterly tableau. */
 .estate-side-panel {
   position: absolute;
-  top: 312px;
+  top: 28px;
   right: 36px;
   z-index: 6;
   display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0;
 }
 
 .estate-side-button {
   position: relative;
-  width: 48px;
-  height: 48px;
-  padding: 0;
-  border: 0;
-  background: transparent;
+  min-width: 56px;
+  padding: 0.28rem 0.45rem;
+  border: 1px solid rgba(212, 196, 164, 0.18);
+  border-radius: 2px;
+  background: rgba(12, 10, 14, 0.35);
+  color: rgba(232, 218, 184, 0.82);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
   cursor: pointer;
-  opacity: 0.82;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .estate-side-button:hover {
-  opacity: 1;
-  filter: brightness(1.08);
+  background: rgba(12, 10, 14, 0.55);
+  border-color: rgba(212, 196, 164, 0.32);
+  color: rgba(245, 234, 212, 0.94);
 }
 
 .estate-side-button:active {
-  filter: brightness(0.92);
-}
-
-.estate-side-button img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+  background: rgba(12, 10, 14, 0.65);
+  border-color: rgba(212, 196, 164, 0.22);
 }
 
 /* ── Building nodes (source: EstateManagement.unity / Estate/BuildingSlot prefab) ── */
@@ -328,16 +449,11 @@
 }
 
 .estate-building-node:hover {
-  filter: brightness(1.10) drop-shadow(0 0 8px rgba(198, 212, 106, 0.18));
+  filter: brightness(1.08);
 }
 
 .estate-building-node:active {
-  filter: brightness(0.95);
-}
-
-.estate-building-node:focus-visible {
-  outline: 2px solid rgba(198, 212, 106, 0.5);
-  outline-offset: 4px;
+  filter: brightness(0.96);
 }
 
 /* Building icon art — the source BuildingSlot Image component surface.
@@ -363,89 +479,52 @@
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
 }
 
-/* ── Building label banner (source: BuildingLabel sizeDelta=(326,48), building_label_bg01.png) ── */
-/* The Unity BuildingLabel is a child of each BuildingSlot prefab. Its anchored
-   position is captured per-building in `buildingCatalog.ts` (labelOffsetX/Y)
-   so the banner sits at the source-backed offset relative to the building's
-   center. The 326×48 sizeDelta is fixed across all 11 buildings — this CSS
-   mirrors that constraint exactly so the local chrome aligns 1:1 with the
-   Unity prefab rather than scaling to fit a longer/shorter caption. */
+/* ── Building label banner ── */
+/* Reference town.png renders each building name as bare white serif text
+   floating directly on the dark sky — no card frame, no pill plate, no
+   chrome background. The banner element is kept purely for positioning
+   (anchored offset per-building from the catalog) so the label sits at
+   the source-backed location without adding any visual chrome. */
 .estate-building-banner {
   position: absolute;
-  width: 326px;
-  height: 48px;
-  box-sizing: border-box;
-  padding: 0.35rem 0.6rem 0.4rem;
   transform: translate(-50%, -50%);
-  overflow: hidden;
-  pointer-events: none;
-}
-
-/* Source-backed label background using Unity building_label_bg01.png.
-   Reference town.png renders this band as a near-imperceptible underlay over
-   the dark starfield, so the bright cream/gold sprite is dimmed and blended
-   to keep the caption's glyphs readable without competing visual weight. */
-.estate-building-banner::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: var(--ddgc-chrome-building-label-bg, url("/original/chrome/building_label_bg01.png"));
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  opacity: 0.42;
-  mix-blend-mode: overlay;
   pointer-events: none;
 }
 
 .estate-building-source-label {
   position: relative;
   display: block;
-  color: #efe3c9;
-  font-size: 0.88rem;
-  font-weight: 300;
-  letter-spacing: 0.06em;
-  text-shadow: 0 0 6px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.45);
+  color: rgba(240, 232, 212, 0.82);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.75), 0 1px 3px rgba(0, 0, 0, 0.55);
+  white-space: nowrap;
 }
 
-.estate-building-status {
-  position: relative;
-  display: inline-flex;
-  margin-top: 0.38rem;
-  padding: 0.12rem 0.42rem;
-  font-size: 0.62rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.estate-building-status-ready {
-  background: rgba(93, 134, 83, 0.24);
-  color: #afd5a5;
-}
-
-.estate-building-status-partial {
-  background: rgba(161, 118, 58, 0.24);
-  color: #d9b476;
-}
-
-.estate-building-status-locked {
-  background: rgba(112, 86, 88, 0.24);
-  color: #d4b7b8;
-}
+/* Building status indicators are intentionally hidden — reference town.png
+   shows no colored chips or status pills beneath building labels. */
 
 /* ── Embark button (source: btn_play.png from Unity BottomPanel/EmbarkButton) ── */
+/* Reference town.png shows a large ornate compass-rose instrument at the
+   bottom-left — circular, metallic with gold/bronze directional spikes.
+   The source btn_play.png asset is mapped onto a rectangular frame here;
+   squaring the aspect ratio and centering the text keeps the instrument's
+   visual dominance while preserving the source-backed art. */
 .estate-embark-button {
   position: absolute;
   left: 20px;
   bottom: 18px;
   z-index: 5;
-  width: 268px;
-  min-height: 180px;
-  padding: 1.2rem 1.3rem;
+  width: 220px;
+  height: 220px;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: center;
   border: 0;
+  border-radius: 50%;
   background: transparent;
   cursor: pointer;
 }
@@ -456,7 +535,7 @@
   position: absolute;
   inset: 0;
   background-image: var(--ddgc-chrome-embark, url("/original/chrome/btn_play.png"));
-  background-size: cover;
+  background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
   opacity: 0.82;
@@ -479,17 +558,19 @@
 
 .estate-embark-title {
   display: block;
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   letter-spacing: 0.16em;
+  text-align: center;
 }
 
 .estate-embark-subtitle {
   display: block;
   margin-top: 0.25rem;
   color: rgba(247, 221, 174, 0.8);
-  font-size: 0.76rem;
+  font-size: 0.66rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+  text-align: center;
 }
 
 .estate-embark-button:focus-visible {
@@ -497,134 +578,29 @@
   outline-offset: 4px;
 }
 
-/* ── Hero roster strip (source: UI_Roster/RosterPanel → RosterScroll) ── */
-.estate-roster-strip {
+/* ── Central tower beacon glow (legacytower) ── */
+/* Reference town.png shows a warm vertical glow beam rising from the central
+   dimension lighthouse and faint orbital ring halos. This layer adds an
+   atmospheric radial wash centered on the legacy tower coordinates
+   (catalog x=0, y=270) so the central spire reads as the luminous anchor
+   of the building cluster. */
+.estate-tower-glow {
   position: absolute;
-  left: 304px;
-  right: 20px;
-  bottom: 22px;
-  z-index: 5;
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.9rem;
-  padding: 0.35rem 0;
-  overflow-x: auto;
+  top: 50%;
+  left: 50%;
+  width: 720px;
+  height: 720px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 2;
+  background:
+    radial-gradient(ellipse 40% 60% at 50% 42%, rgba(220, 200, 160, 0.08), transparent 60%),
+    radial-gradient(ellipse 28% 28% at 50% 42%, rgba(232, 212, 170, 0.05), transparent 50%);
+  mix-blend-mode: screen;
+  animation: tower-glow-pulse 6s ease-in-out infinite;
 }
 
-.estate-roster-strip::-webkit-scrollbar {
-  height: 4px;
-}
-
-.estate-roster-strip::-webkit-scrollbar-thumb {
-  background: rgba(160, 204, 188, 0.2);
-  border-radius: 999px;
-}
-
-.estate-roster-hero {
-  flex: 0 0 auto;
-  width: 9rem;
-  min-height: 12.2rem;
-  padding: 0.75rem 0.75rem 0.9rem;
-  background: rgba(14, 11, 12, 0.96);
-  cursor: pointer;
-  border: 0;
-}
-
-.estate-roster-hero:hover {
-  filter: brightness(1.08);
-}
-
-.estate-roster-hero:active {
-  filter: brightness(0.95);
-}
-
-.estate-roster-hero:focus-visible {
-  outline: 2px solid rgba(198, 212, 106, 0.5);
-  outline-offset: 2px;
-}
-
-.estate-roster-portrait {
-  width: 5.6rem;
-  height: 5.6rem;
-  margin: 0 auto;
-}
-
-.estate-roster-frame {
-  border-radius: 0;
-}
-
-.estate-roster-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.28rem;
-  margin-top: 0.75rem;
-  text-align: left;
-}
-
-.estate-roster-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  margin-top: 0.18rem;
-}
-
-.estate-mini-bar {
-  position: relative;
-  display: block;
-  height: 0.35rem;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.estate-mini-bar-fill {
-  display: block;
-  height: 100%;
-}
-
-.estate-mini-bar-stress {
-  background: rgba(110, 80, 50, 0.22);
-}
-
-.estate-roster-stats {
-  color: rgba(219, 206, 180, 0.68);
-  font-size: 0.68rem;
-  letter-spacing: 0.04em;
-}
-
-/* ── Roster quirk/disease chips (compact indicators on hero slot) ────── */
-.roster-status-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.2rem;
-  margin-top: 0.25rem;
-}
-
-.roster-chip {
-  font-size: 0.55rem;
-  font-weight: 500;
-  padding: 0.08rem 0.3rem;
-  border-radius: 3px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 5rem;
-  line-height: 1.2;
-}
-
-.roster-chip--positive {
-  color: #8cbf8a;
-  background: rgba(91, 189, 110, 0.1);
-  border: 1px solid rgba(91, 189, 110, 0.15);
-}
-
-.roster-chip--negative {
-  color: #d68a7a;
-  background: rgba(234, 119, 103, 0.08);
-  border: 1px solid rgba(234, 119, 103, 0.12);
-}
-
-.roster-chip--disease {
-  color: #b88a6a;
-  background: rgba(184, 138, 106, 0.08);
-  border: 1px solid rgba(184, 138, 106, 0.12);
+@keyframes tower-glow-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }

@@ -163,14 +163,6 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toBeVisible();
     await expect(page.getByText("1250"), "Gold amount must be visible").toBeVisible();
 
-    // Roster heroes
-    for (const name of ["Shen", "Bai Xiu", "Hei Zhen"]) {
-      await expect(
-        page.locator(".roster-scroll").getByText(name),
-        `Hero "${name}" must appear in roster`
-      ).toBeVisible();
-    }
-
     // Buildings — full 11-building screenshot anchor (Chinese display names).
     const expectedBuildings = [
       "次元感知塔", "试炼场", "锻造舱", "细胞修复站",
@@ -193,11 +185,6 @@ test.describe("browser smoke: fidelity gates", () => {
       "/original/buildings/",
       "Town building marker"
     );
-    await expectOriginalAssetImage(
-      page.locator('.roster-portrait-image[src*="/original/heroes/"]').first(),
-      "/original/heroes/",
-      "Town roster portrait"
-    );
 
     // Fidelity — town is a completed product surface
     await expectFidelity(page.locator(".town-viewport"), "Town screen");
@@ -218,12 +205,12 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toBeVisible();
     await expect(
       page.locator(".estate-bottom-panel"),
-      "Town must have an estate bottom panel (EmbarkButton + RosterPanel)"
+      "Town must have an estate bottom panel (EmbarkButton)"
     ).toBeVisible();
     await expect(
       page.locator(".estate-side-button"),
-      "Anchor A-SIDEBUTTONS: 6 side navigation buttons must render"
-    ).toHaveCount(6);
+      "Anchor A-SIDEBUTTONS: 3 top-right utility buttons must render"
+    ).toHaveCount(3);
     await expect(
       page.locator(".estate-embark-button"),
       "Anchor A-EMBARK: embark control must be present"
@@ -236,8 +223,8 @@ test.describe("browser smoke: fidelity gates", () => {
     expectNoErrors(pageErrors, consoleErrors, "Phase 2 (town)");
 
     // ── Phase 3: Hero detail ───────────────────────────────
-    // Click first hero in the roster (Shen)
-    await page.locator(".roster-hero").first().click();
+    // Click the "英雄" top-right utility button to open hero detail
+    await page.getByRole("button", { name: "英雄" }).click();
     await page.waitForSelector(".hero-detail-layout", { timeout: 5_000 });
     await settle(page);
 
@@ -461,23 +448,15 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toHaveCount(11);
     await expect(
       page.locator(".estate-side-button"),
-      "Live town side buttons (6) must render"
-    ).toHaveCount(6);
+      "Live town side buttons (3) must render"
+    ).toHaveCount(3);
     await expect(
       page.locator(".estate-currency-slot"),
       "Live town currency strip (5 slots) must render"
     ).toHaveCount(5);
 
-    // Live fixture heroes
-    for (const name of ["Yuan", "Mei"]) {
-      await expect(
-        page.locator(".roster-scroll").getByText(name),
-        `Live hero "${name}" must appear in roster`
-      ).toBeVisible();
-    }
-
-    // Open hero detail from live bridge
-    await page.locator(".roster-hero").first().click();
+    // Open hero detail from live bridge via the "英雄" utility button
+    await page.getByRole("button", { name: "英雄" }).click();
     await page.waitForSelector(".hero-detail-layout", { timeout: 5_000 });
     await settle(page);
 
