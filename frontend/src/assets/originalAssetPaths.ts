@@ -40,12 +40,28 @@ const buildingImageById: Record<string, string> = {
 // iconography, and building label backgrounds.
 
 const chromePaths = {
+  // Top nameplate
   estateNameBg: "/original/chrome/estate_name_bg.png",
+  // Currency
   goldIcon: "/original/chrome/gold.png",
+  bustIcon: "/original/chrome/gold.png",
+  portraitIcon: "/original/chrome/gold.png",
+  deedIcon: "/original/chrome/gold.png",
+  crestIcon: "/original/chrome/gold.png",
+  // Embark
   embarkButton: "/original/chrome/btn_play.png",
-  closeButton: "/original/chrome/btn_close.png",
-  saveButton01: "/original/chrome/btn_save_01.png",
-  saveButton02: "/original/chrome/btn_save_02.png",
+  // Side navigation (6 buttons from Unity UI_Shared/UI_Panels/BottomPanel/SideButtons)
+  sideActivityLog: "/original/chrome/btn_save_02.png",
+  sideRealmInventory: "/original/chrome/btn_save_02.png",
+  sideHero: "/original/chrome/btn_save_01.png",
+  sideTownEvent: "/original/chrome/btn_save_02.png",
+  sideSettings: "/original/chrome/btn_save_01.png",
+  sideGlossary: "/original/chrome/btn_save_02.png",
+  sideClose: "/original/chrome/btn_close.png",
+  // Quick action buttons
+  quickProgress: "/original/chrome/btn_save_02.png",
+  quickStart: "/original/chrome/btn_save_01.png",
+  // Building chrome
   buildingLabelBg: "/original/chrome/building_label_bg01.png",
   buildingIconBg: "/original/chrome/building_icon_bg.png",
   buildingTitleBg: "/original/chrome/building_title_bg.png",

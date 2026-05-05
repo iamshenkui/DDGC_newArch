@@ -5,6 +5,7 @@ import { resolveBuildingImage } from "../../../assets/originalAssetPaths";
 interface BuildingIconProps {
   buildingId: string;
   size?: number;
+  fallbackLabel?: string;
 }
 
 export const BuildingIcon: Component<BuildingIconProps> = (props) => {
@@ -26,7 +27,7 @@ export const BuildingIcon: Component<BuildingIconProps> = (props) => {
 
   return (
     <span class="building-icon-fallback" aria-hidden="true">
-      {props.buildingId[0]?.toUpperCase() ?? "?"}
+      {props.fallbackLabel?.[0] ?? props.buildingId[0]?.toUpperCase() ?? "?"}
     </span>
   );
 };

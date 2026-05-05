@@ -13,13 +13,14 @@ import type {
   ExpeditionResultViewModel,
   ReturnViewModel,
 } from "./contractTypes";
+import { createTownBuildingSummary } from "../town/buildingCatalog";
 
 const createLiveTownViewModel = (): TownViewModel => ({
   kind: "town",
-  title: "The Estate — Fresh Campaign",
-  campaignName: "Fresh Campaign",
+  title: "城镇界面",
+  campaignName: "新档位面",
   campaignSummary:
-    "Live runtime boot: DDGC host initialized with fresh campaign state. Roster and building data reflects initial campaign setup.",
+    "实时模式已启动，当前展示的是新战役的城镇主界面与初始编队。",
   heroes: [
     {
       id: "hero-hunter-live-01",
@@ -59,18 +60,17 @@ const createLiveTownViewModel = (): TownViewModel => ({
     }
   ] as ReadonlyArray<TownHeroSummary>,
   buildings: [
-    {
-      id: "stagecoach",
-      label: "Stagecoach",
-      summary: "Recruit new heroes to your party.",
-      status: "ready"
-    },
-    {
-      id: "guild",
-      label: "Guild",
-      summary: "Skill training and party capability review.",
-      status: "ready"
-    }
+    createTownBuildingSummary("stagecoach", "ready"),
+    createTownBuildingSummary("guild", "ready"),
+    createTownBuildingSummary("blacksmith", "ready"),
+    createTownBuildingSummary("sanitarium", "ready"),
+    createTownBuildingSummary("abbey", "ready"),
+    createTownBuildingSummary("tavern", "ready"),
+    createTownBuildingSummary("graveyard", "partial"),
+    createTownBuildingSummary("garden", "partial"),
+    createTownBuildingSummary("legacytower", "partial"),
+    createTownBuildingSummary("market", "partial"),
+    createTownBuildingSummary("campingtrainer", "partial")
   ] as ReadonlyArray<TownBuildingSummary>,
   roster: [
     {
@@ -112,7 +112,7 @@ const createLiveTownViewModel = (): TownViewModel => ({
   ] as ReadonlyArray<TownHeroSummary>,
   gold: 500,
   isFreshVisit: true,
-  nextActionLabel: "Launch Expedition"
+  nextActionLabel: "整备并出发"
 });
 
 const createLiveTownSnapshot = (): DdgcFrontendSnapshot => ({
@@ -130,15 +130,15 @@ const createLiveHeroDetailViewModel = (hero: TownHeroSummary): HeroDetailViewMod
   hp: hero.hp.split(" / ")[0],
   maxHp: hero.hp.split(" / ")[1] ?? hero.hp.split(" / ")[0],
   stress: hero.stress,
-  maxStress: hero.maxStress,
   resolve: "3",
-  resolveLabel: "Resolute",
+  resolveLabel: "Heroic",
+  maxStress: "200",
   progression: {
     level: hero.level,
     experience: "0",
     experienceToNext: "300",
-    resolveLevel: 3,
-    resolveXP: "120 / 300"
+    resolveLevel: 1,
+    resolveXP: "0"
   },
   resistances: {
     stun: "40%",
@@ -150,28 +150,28 @@ const createLiveHeroDetailViewModel = (hero: TownHeroSummary): HeroDetailViewMod
     hazard: "20%"
   },
   baseStats: {
-    dmg: "8-14",
+    dmg: "8-12",
     maxHp: hero.maxHp,
-    crit: "12%",
-    spd: "6",
-    dodge: "8%"
+    crit: "5%",
+    spd: "4",
+    dodge: "10%"
   },
   combatSkills: [
-    { name: "Skill 1", level: 2, description: "A basic offensive skill.", target: "Front row", hitRating: "85%", critRating: "10%" },
-    { name: "Skill 2", level: 1, description: "A supporting skill.", target: "All allies", hitRating: "100%", critRating: "0%" }
+    { name: "Skill 1", level: 1, description: "Combat skill description.", target: "Enemy", hitRating: "80%", critRating: "5%" },
+    { name: "Skill 2", level: 1, description: "Combat skill description.", target: "Self", hitRating: "100%", critRating: "0%" }
   ],
   campingSkills: [
-    { name: "Campfire Song", level: 1, description: "Reduce party stress during camp.", target: "All party", hitRating: "100%", critRating: "0%" }
+    { name: "Campfire Song", level: 1, description: "Camping skill description.", target: "Party", hitRating: "100%", critRating: "0%" }
   ],
   weapon: { name: "Basic Weapon", level: 1 },
   armor: { name: "Leather Armor", level: 1 },
-  positiveQuirks: hero.positiveQuirks,
-  negativeQuirks: hero.negativeQuirks,
-  diseases: hero.diseases,
+  positiveQuirks: [],
+  negativeQuirks: [],
+  diseases: [],
   isWounded: hero.isWounded,
   isAfflicted: hero.isAfflicted,
-  heroDescription: "A hero ready for adventure.",
-  talent: "Natural talent — increases effectiveness in their chosen role."
+  heroDescription: "A brave hero ready for adventure.",
+  talent: "Versatile"
 });
 
 const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): BuildingDetailViewModel => {

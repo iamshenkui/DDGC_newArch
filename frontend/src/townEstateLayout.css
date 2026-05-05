@@ -1,10 +1,16 @@
+/* ── Town viewport (source: EstateManagement.unity / Canvas / UI_Estate) ── */
+/* Scene ambient derived from Unity EstateManagement.unity camera:
+   main camera ambient ≈ #211a19 with exponential fog (density 0.018, color #0c0a0d).
+   No single backdrop sprite exists in the Unity source; the toned-down
+   gradient reconstructs the scene's ambient occlusion and atmospheric falloff. */
 .estate-town-screen {
   position: relative;
-  height: 100vh;
+  min-height: 100vh;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 48%, rgba(138, 108, 68, 0.16), rgba(15, 13, 17, 0) 34%),
-    linear-gradient(180deg, #211a19 0%, #120f13 56%, #09090b 100%);
+    radial-gradient(ellipse 70% 52% at 50% 45%, rgba(148, 114, 68, 0.14), rgba(14, 12, 17, 0) 36%),
+    radial-gradient(ellipse 54% 38% at 38% 58%, rgba(152, 124, 74, 0.08), transparent 46%),
+    linear-gradient(182deg, #261e1c 0%, #151014 48%, #0c0a0d 100%);
 }
 
 .estate-town-screen::before {
@@ -12,21 +18,98 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(255, 232, 192, 0.06), transparent 12%),
-    radial-gradient(circle at 50% 78%, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.48) 68%);
+    linear-gradient(182deg, rgba(255, 228, 184, 0.05), transparent 14%),
+    radial-gradient(ellipse 80% 38% at 50% 82%, transparent 40%, rgba(0, 0, 0, 0.48) 74%);
   pointer-events: none;
 }
 
+.estate-canvas-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.estate-reference-canvas {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: center center;
+  transform: translate(-50%, -50%);
+}
+
+/* ── UI_Estate — building layer (matches Unity UI_Estate/UI_Estate) ── */
+.estate-ui-estate {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.estate-ui-estate > * {
+  pointer-events: auto;
+}
+
+/* ── Central estate stage surface (EstateManagement.unity / UI_Estate stage) ── */
+/* The estate stage surface is the walkable ground plane beneath the building
+   layer. No flat backdrop sprite exists in the Unity source — the scene relies
+   on camera ambient and atmospheric fog. This reconstruction uses minimal
+   ambient occlusion toning so the surface reads as depth, not as a CSS panel. */
+.estate-stage-shell {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.estate-stage-backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 88% 62% at 50% 52%, rgba(56, 44, 30, 0.16), transparent 72%);
+}
+
+.estate-stage-grid {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 58% 46% at 50% 54%, rgba(210, 182, 128, 0.04), transparent 64%);
+  opacity: 0.28;
+}
+
+/* ── UI_Shared — persistent shell chrome (matches Unity UI_Shared) ── */
+.estate-ui-shared {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.estate-ui-shared > * {
+  pointer-events: auto;
+}
+
+/* ── UI_Panels — primary shell chrome panel group ── */
+.estate-ui-panels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.estate-ui-panels > * {
+  pointer-events: auto;
+}
+
+/* ── Top panel: source-backed nameplate (EstateManagement.unity / UI_Panels/EstateNameplate) ── */
 .estate-top-panel {
   position: absolute;
-  top: 1.25rem;
-  left: 1.5rem;
-  right: 1.5rem;
+  top: 28px;
+  right: 42px;
   z-index: 4;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.6rem;
+  width: 720px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -34,11 +117,30 @@
 }
 
 .estate-name-card {
-  min-width: 20rem;
+  position: relative;
+  width: 592px;
+  min-height: 153px;
   padding: 1rem 1.25rem 1.1rem;
-  border: 1px solid rgba(182, 153, 106, 0.34);
-  background: linear-gradient(180deg, rgba(31, 24, 22, 0.96), rgba(18, 14, 15, 0.88));
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
+  border: 0;
+  background: transparent;
+}
+
+/* Source-backed nameplate: estate_name_bg.png as the primary card surface */
+.estate-name-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--ddgc-chrome-name-bg, url("/original/chrome/estate_name_bg.png"));
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.estate-name-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 .estate-campaign-name {
@@ -54,160 +156,227 @@
   line-height: 1.45;
 }
 
-.estate-status-stack {
+/* ── Currency strip — 5-currency panel (Unity UI_Shared/UI_TopWindows/CurrencyPanel) ── */
+/* Source RectTransform: anchorMin=(1,0) anchorMax=(1,0) pivot=(1,0) anchoredPosition=(-140,20) sizeDelta=(1000,80) */
+.estate-currency-strip {
   display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  padding-top: 0.25rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
 }
 
-.estate-status-pill {
-  padding: 0.48rem 0.8rem;
-  border: 1px solid rgba(173, 144, 98, 0.32);
-  background: rgba(20, 16, 17, 0.88);
+.estate-currency-slot {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.35rem 0.55rem;
+  background: rgba(14, 11, 12, 0.92);
   color: rgba(242, 229, 205, 0.92);
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+}
+
+.estate-currency-slot-gold {
+  background: rgba(20, 15, 12, 0.96);
+}
+
+.estate-currency-icon {
+  width: 1rem;
+  height: 1rem;
+  object-fit: contain;
+  opacity: 0.82;
+}
+
+.estate-currency-value {
+  min-width: 1.5rem;
+  text-align: right;
+  color: rgba(229, 218, 196, 0.85);
+}
+
+/* ── Fresh-visit badge ── */
+.estate-fresh-visit-badge {
+  align-self: flex-end;
+  padding: 0.22rem 0.5rem;
+  border: 1px solid rgba(198, 170, 88, 0.22);
+  background: rgba(172, 134, 62, 0.12);
+  color: #d4ba71;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-.estate-status-pill-accent {
-  color: #d4ba71;
-}
-
-.estate-stage-shell {
+/* ── Quick action buttons (source: UI_Estate QuickStartButton + QuickProgressButton) ── */
+/* Unity anchoredPosition: QuickStart=(-324,137), QuickProgress=(389,137). Both 97x42 sizeDelta. */
+.estate-quick-buttons {
   position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-.estate-stage-sky {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 60% 50% at 50% 30%, rgba(42, 64, 72, 0.3), transparent 70%),
-    linear-gradient(180deg,
-      #0a1018 0%,
-      #111c26 20%,
-      #1a2c34 45%,
-      #24382f 65%,
-      #1e2e28 78%,
-      #152018 100%
-    );
-  z-index: 0;
-}
-
-.estate-stage-landscape {
-  position: absolute;
-  inset: 0;
-  background:
-    /* distant terrain silhouettes */
-    radial-gradient(ellipse 110% 18% at 15% 72%, rgba(38, 28, 22, 0.5) 0%, transparent 70%),
-    radial-gradient(ellipse 90% 16% at 70% 75%, rgba(42, 32, 24, 0.45) 0%, transparent 68%),
-    /* building foundation pads */
-    radial-gradient(ellipse 28% 14% at 50% 58%, rgba(58, 43, 35, 0.22) 0%, transparent 70%),
-    radial-gradient(ellipse 16% 10% at 72% 45%, rgba(48, 36, 28, 0.18) 0%, transparent 65%),
-    radial-gradient(ellipse 18% 10% at 32% 62%, rgba(46, 34, 26, 0.16) 0%, transparent 65%),
-    radial-gradient(ellipse 22% 12% at 12% 68%, rgba(44, 33, 25, 0.15) 0%, transparent 65%),
-    /* ground plane gradient */
-    linear-gradient(180deg,
-      transparent 52%,
-      rgba(24, 16, 12, 0.35) 70%,
-      rgba(16, 10, 8, 0.55) 88%
-    ),
-    /* atmospheric mist band */
-    radial-gradient(ellipse 85% 12% at 50% 55%, rgba(160, 140, 100, 0.04) 0%, transparent 65%);
-  z-index: 1;
+  top: 403px;
+  right: 642px;
+  left: 636px;
+  z-index: 7;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
   pointer-events: none;
 }
 
-.estate-stage-grid {
-  position: absolute;
-  inset: 5.4rem 7rem 7.4rem;
-  border-radius: 48% 48% 22% 22% / 42% 42% 18% 18%;
-  background:
-    radial-gradient(circle at 50% 55%, rgba(255, 231, 182, 0.05), transparent 58%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 18%),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 0, rgba(255, 255, 255, 0.015) 1px, transparent 1px, transparent 10%),
-    linear-gradient(0deg, rgba(255, 255, 255, 0.015) 0, rgba(255, 255, 255, 0.015) 1px, transparent 1px, transparent 12%);
-  opacity: 0.4;
-  z-index: 2;
-  pointer-events: none;
+.estate-quick-button {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  background: rgba(14, 11, 12, 0.88);
+  color: rgba(222, 208, 174, 0.9);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  pointer-events: auto;
+  border: 0;
 }
 
+.estate-quick-button:hover {
+  filter: brightness(1.12);
+}
+
+.estate-quick-button:active {
+  filter: brightness(0.94);
+}
+
+.estate-quick-button img {
+  width: 1rem;
+  height: 1rem;
+  object-fit: contain;
+  opacity: 0.78;
+}
+
+/* ── Side button panel (source: UI_Shared/UI_Panels/BottomPanel/SideButtons) ── */
+/* Six Unity buttons stacked at overlapping positions (-100,-80), (-220,-80),
+   (-340,-80) with 136x136 sizeDelta. Only 3-4 are active at any time based
+   on game state; the CSS shows all six, reflecting the full prefab definition. */
+.estate-side-panel {
+  position: absolute;
+  top: 312px;
+  right: 36px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.estate-side-button {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.82;
+}
+
+.estate-side-button:hover {
+  opacity: 1;
+  filter: brightness(1.08);
+}
+
+.estate-side-button:active {
+  filter: brightness(0.92);
+}
+
+.estate-side-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+}
+
+/* ── Building nodes (source: EstateManagement.unity / Estate/BuildingSlot prefab) ── */
+/* Each building slot is a Unity Button+Image+BuildingSlot component triplet
+   parented under UI_Estate/UI_Estate. The source prefab renders each building
+   with its own sprite asset (not a shared background frame). Position/size
+   are driven by the source RectTransform. */
 .estate-building-node {
   position: absolute;
-  z-index: 6;
+  z-index: 3;
   display: block;
   padding: 0;
   border: 0;
   background: transparent;
+  cursor: pointer;
   transform: translate(-50%, -50%);
+  outline: none;
 }
 
 .estate-building-node:hover {
-  transform: translate(-50%, -50%) scale(1.03);
+  filter: brightness(1.10) drop-shadow(0 0 8px rgba(198, 212, 106, 0.18));
 }
 
 .estate-building-node:active {
-  transform: translate(-50%, -50%) scale(0.99);
+  filter: brightness(0.95);
 }
 
+.estate-building-node:focus-visible {
+  outline: 2px solid rgba(198, 212, 106, 0.5);
+  outline-offset: 4px;
+}
+
+/* Building icon art — the source BuildingSlot Image component surface.
+   Individual building sprites (11 PNGs in public/original/buildings/) render
+   directly as the primary visual surface, matching the Unity prefab's Image
+   component rather than a CSS-framed approximation. */
 .estate-building-art {
+  position: relative;
+  display: block;
   width: 100%;
   height: 100%;
   border: 0;
-  background:
-    radial-gradient(ellipse 80% 70% at 50% 45%, rgba(198, 212, 106, 0.06), transparent 60%),
-    rgba(12, 10, 14, 0.5);
+  background: transparent;
   box-shadow: none;
-  border-radius: 18% 18% 12% 12% / 22% 22% 14% 14%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .estate-building-art .building-icon-image {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
 }
 
+/* ── Building label banner (source: BuildingLabel sizeDelta=(326,48), building_label_bg01.png) ── */
 .estate-building-banner {
   position: absolute;
-  min-width: 9rem;
-  max-width: 13rem;
-  padding: 0.45rem 0.7rem 0.52rem;
-  border: 1px solid rgba(184, 152, 103, 0.28);
-  background: linear-gradient(180deg, rgba(27, 20, 20, 0.94), rgba(17, 13, 14, 0.88));
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.32);
+  width: 326px;
+  height: 48px;
+  box-sizing: border-box;
+  padding: 0.35rem 0.6rem 0.4rem;
   transform: translate(-50%, -50%);
+  overflow: hidden;
+  pointer-events: none;
 }
 
-/* Source-backed sprite: BuildingLabel background (GUID 0beef34e329073f43bc2a495a740b0b4) */
-[data-source-sprite="Assets/Sprites/town/building_label_bg01.png"] .estate-building-banner {
-  border-image-source: none;
-  border-color: rgba(184, 152, 103, 0.32);
-  background:
-    linear-gradient(180deg, rgba(24, 18, 19, 0.96), rgba(15, 12, 14, 0.92));
+/* Source-backed label background using Unity building_label_bg01.png */
+.estate-building-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--ddgc-chrome-building-label-bg, url("/original/chrome/building_label_bg01.png"));
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  opacity: 0.88;
+  pointer-events: none;
 }
 
 .estate-building-source-label {
+  position: relative;
   display: block;
   color: #efe3c9;
   font-size: 0.88rem;
   letter-spacing: 0.06em;
 }
 
-.estate-building-contract-label {
-  display: block;
-  margin-top: 0.1rem;
-  color: rgba(218, 198, 168, 0.68);
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .estate-building-status {
+  position: relative;
   display: inline-flex;
   margin-top: 0.38rem;
   padding: 0.12rem 0.42rem;
@@ -232,34 +401,49 @@
   color: #d4b7b8;
 }
 
-.estate-bottom-panel {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 5;
-  display: grid;
-  grid-template-columns: minmax(14rem, 18rem) 1fr;
-  align-items: end;
-  gap: 1rem;
-  padding: 0.75rem 1.25rem 1rem;
-  background: linear-gradient(0deg, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.55) 70%, transparent 100%);
-  border-top: 1px solid rgba(160, 204, 188, 0.08);
-  border-left: 0;
-  border-right: 0;
-  border-bottom: 0;
-  box-shadow: none;
-}
-
+/* ── Embark button (source: btn_play.png from Unity BottomPanel/EmbarkButton) ── */
 .estate-embark-button {
-  min-height: 8.25rem;
+  position: absolute;
+  left: 20px;
+  bottom: 18px;
+  z-index: 5;
+  width: 268px;
+  min-height: 180px;
   padding: 1.2rem 1.3rem;
+  display: flex;
+  flex-direction: column;
   align-items: flex-start;
   justify-content: flex-end;
-  border-color: rgba(190, 137, 61, 0.45);
-  background:
-    radial-gradient(circle at 30% 30%, rgba(255, 192, 89, 0.22), rgba(158, 73, 27, 0) 40%),
-    linear-gradient(180deg, rgba(56, 22, 12, 0.96), rgba(24, 10, 11, 0.98));
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Source-backed embark button art as primary surface */
+.estate-embark-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--ddgc-chrome-embark, url("/original/chrome/btn_play.png"));
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.82;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.estate-embark-button:hover {
+  filter: brightness(1.08);
+}
+
+.estate-embark-button:active {
+  filter: brightness(0.92);
+}
+
+.estate-embark-button > * {
+  position: relative;
+  z-index: 1;
 }
 
 .estate-embark-title {
@@ -277,7 +461,18 @@
   text-transform: uppercase;
 }
 
+.estate-embark-button:focus-visible {
+  outline: 2px solid rgba(198, 212, 106, 0.5);
+  outline-offset: 4px;
+}
+
+/* ── Hero roster strip (source: UI_Roster/RosterPanel → RosterScroll) ── */
 .estate-roster-strip {
+  position: absolute;
+  left: 304px;
+  right: 20px;
+  bottom: 22px;
+  z-index: 5;
   display: flex;
   justify-content: flex-end;
   gap: 0.9rem;
@@ -285,13 +480,36 @@
   overflow-x: auto;
 }
 
+.estate-roster-strip::-webkit-scrollbar {
+  height: 4px;
+}
+
+.estate-roster-strip::-webkit-scrollbar-thumb {
+  background: rgba(160, 204, 188, 0.2);
+  border-radius: 999px;
+}
+
 .estate-roster-hero {
+  flex: 0 0 auto;
   width: 9rem;
   min-height: 12.2rem;
   padding: 0.75rem 0.75rem 0.9rem;
-  border: 1px solid rgba(155, 129, 92, 0.26);
-  background: linear-gradient(180deg, rgba(25, 20, 21, 0.94), rgba(12, 11, 13, 0.98));
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+  background: rgba(14, 11, 12, 0.96);
+  cursor: pointer;
+  border: 0;
+}
+
+.estate-roster-hero:hover {
+  filter: brightness(1.08);
+}
+
+.estate-roster-hero:active {
+  filter: brightness(0.95);
+}
+
+.estate-roster-hero:focus-visible {
+  outline: 2px solid rgba(198, 212, 106, 0.5);
+  outline-offset: 2px;
 }
 
 .estate-roster-portrait {
@@ -319,28 +537,9 @@
   margin-top: 0.18rem;
 }
 
-.estate-roster-bar-row {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.estate-roster-bar-label {
-  font-size: 0.55rem;
-  font-weight: 700;
-  color: rgba(219, 206, 180, 0.7);
-  letter-spacing: 0.04em;
-  min-width: 1.1rem;
-  flex: 0 0 auto;
-  text-align: right;
-}
-
-.estate-roster-bar-label--stress {
-  color: rgba(232, 168, 56, 0.6);
-}
-
 .estate-mini-bar {
-  flex: 1;
+  position: relative;
+  display: block;
   height: 0.35rem;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.08);
@@ -359,449 +558,4 @@
   color: rgba(219, 206, 180, 0.68);
   font-size: 0.68rem;
   letter-spacing: 0.04em;
-}
-
-@media (max-width: 1100px) {
-  .estate-top-panel {
-    position: relative;
-    top: auto;
-    left: auto;
-    width: auto;
-    margin: 1rem 1rem 0;
-  }
-
-  .estate-stage-shell {
-    position: relative;
-    inset: auto;
-    width: calc(100vw - 1rem);
-    height: 52vh;
-    margin: 0 auto;
-  }
-
-  .estate-bottom-panel {
-    position: relative;
-    left: auto;
-    right: auto;
-    bottom: auto;
-    grid-template-columns: 1fr;
-    margin: 0 1rem 1rem;
-  }
-
-  .estate-roster-strip {
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 720px) {
-  .estate-top-panel {
-    flex-direction: column;
-  }
-
-  .estate-name-card {
-    min-width: 0;
-  }
-
-  .estate-stage-shell {
-    height: 46vh;
-    padding-top: 0.75rem;
-  }
-
-  .estate-stage-grid {
-    inset: 3.8rem 2rem 6.6rem;
-  }
-
-  .estate-building-banner {
-    min-width: 6.8rem;
-    max-width: 8.8rem;
-    padding: 0.32rem 0.45rem 0.4rem;
-  }
-
-  .estate-building-source-label {
-    font-size: 0.72rem;
-  }
-
-  .estate-building-contract-label,
-  .estate-building-status {
-    font-size: 0.55rem;
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * Building Detail Screens
- *
- * Mirrors the Unity building window pattern from EstateManagement.unity:
- *   UI_Shared/UI_LowWindows/{Building}Window/
- *     LeftPanel/   → title, icon, description, talk button
- *     RightPanel/  → upgrade button, upgrade tree, action slots
- *     CloseButton  → Return to Town
- *
- * Source prefabs:
- *   StageCoach → Assets/Prefabs/UI/Estate/Buildings/StageCoach/StageCoachWindow.prefab
- *   Guild      → Assets/Prefabs/UI/Estate/Buildings/Guild/GuildWindow.prefab
- *   Blacksmith → Assets/Prefabs/UI/Estate/Buildings/Blacksmith/BlacksmithWindow.prefab
- *   Sanitarium → Assets/Prefabs/UI/Estate/Buildings/Sanitarium/SanitariumWindow.prefab
- *
- * Original building sprite references (see asset-manifest.json building_sprites):
- *   stagecoach → building_perception_tower.png  GUID 87a55679f12a1e6489ecdb1d6e6f6b93
- *   guild      → building_train_field.png       GUID 67a5e7aed8029d84dbf9c9e497a944d2
- *   blacksmith → building_forging.png           GUID 23e01c10f262ddc4ba9977b91314b031
- *   sanitarium → building_cell_repair.png       GUID 55375034893560044a266e905926e8ff
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-/* ── Building Detail Header (mirrors {Building}Window/LeftPanel/Icon + Title) ── */
-.building-detail-header {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 1.25rem;
-  padding: 1.25rem 1.5rem;
-  border: 1px solid rgba(184, 152, 103, 0.28);
-  background: linear-gradient(180deg, rgba(27, 20, 20, 0.96), rgba(17, 13, 14, 0.92));
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
-  margin-bottom: 1.25rem;
-}
-
-.building-detail-sprite {
-  width: 8rem;
-  height: 8rem;
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 18% 18% 12% 12% / 22% 22% 14% 14%;
-  background:
-    radial-gradient(ellipse 80% 70% at 50% 45%, rgba(198, 212, 106, 0.06), transparent 60%),
-    rgba(12, 10, 14, 0.5);
-  border: 1px solid rgba(198, 212, 106, 0.15);
-  overflow: hidden;
-}
-
-.building-detail-sprite-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.5));
-}
-
-.building-detail-sprite-fallback {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--heading-font);
-  font-size: 3rem;
-  font-weight: 700;
-  color: var(--panel-accent);
-  opacity: 0.4;
-}
-
-.building-detail-title-area {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  justify-content: center;
-}
-
-.building-detail-eyebrow {
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--panel-accent);
-  opacity: 0.8;
-}
-
-.building-detail-name {
-  margin: 0;
-  font-family: var(--heading-font);
-  font-size: clamp(1.6rem, 3vw, 2.4rem);
-  line-height: 1.1;
-  color: #efe3c9;
-  letter-spacing: 0.04em;
-}
-
-.building-detail-status {
-  display: inline-flex;
-  align-self: flex-start;
-  padding: 0.15rem 0.5rem;
-  font-size: 0.65rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  border-radius: 999px;
-}
-
-.building-detail-status.status-ready {
-  background: rgba(93, 134, 83, 0.24);
-  color: #afd5a5;
-}
-
-.building-detail-status.status-partial {
-  background: rgba(161, 118, 58, 0.24);
-  color: #d9b476;
-}
-
-.building-detail-status.status-locked {
-  background: rgba(112, 86, 88, 0.24);
-  color: #d4b7b8;
-}
-
-.building-detail-desc {
-  margin: 0.35rem 0 0;
-  color: rgba(218, 198, 168, 0.72);
-  font-size: 0.88rem;
-  line-height: 1.45;
-  max-width: 70ch;
-}
-
-/* ── Building Detail Content Layout (mirrors {Building}Window/LeftPanel + RightPanel) ── */
-.building-detail-content {
-  display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  gap: 1.25rem;
-}
-
-@media (max-width: 920px) {
-  .building-detail-header {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-
-  .building-detail-sprite {
-    margin: 0 auto;
-  }
-
-  .building-detail-status {
-    align-self: center;
-  }
-
-  .building-detail-content {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ── Building Action Section (mirrors {Building}Window/RightPanel/UpgradeWindow + slots) ── */
-.building-action-section {
-  margin-bottom: 1rem;
-}
-
-.building-action-section:last-child {
-  margin-bottom: 0;
-}
-
-.building-action-section-title {
-  margin: 0 0 0.6rem;
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--panel-accent);
-  font-family: var(--heading-font);
-  border-bottom: 1px solid rgba(184, 152, 103, 0.15);
-  padding-bottom: 0.35rem;
-}
-
-/* ── Action card — mirrors UpgradeSlot / EquipmentUpgradeSlot prefab style ── */
-.building-action-card {
-  padding: 0.85rem 1rem;
-  border: 1px solid rgba(160, 204, 188, 0.12);
-  background: linear-gradient(180deg, rgba(20, 16, 17, 0.94), rgba(12, 11, 13, 0.98));
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-  margin-bottom: 0.6rem;
-}
-
-.building-action-card:last-child {
-  margin-bottom: 0;
-}
-
-.building-action-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.3rem;
-}
-
-.building-action-label {
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: #efe3c9;
-}
-
-.building-action-desc {
-  margin: 0 0 0.5rem;
-  color: rgba(218, 198, 168, 0.65);
-  font-size: 0.78rem;
-  line-height: 1.4;
-}
-
-.building-action-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.building-action-cost {
-  font-size: 0.78rem;
-  color: var(--panel-muted);
-  letter-spacing: 0.04em;
-}
-
-.building-action-cost strong {
-  color: #d4ba71;
-  font-weight: 700;
-}
-
-.building-action-cost-unavailable {
-  opacity: 0.5;
-}
-
-/* ── Action buttons ── */
-.building-action-btn {
-  padding: 0.48rem 1rem;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  border: 0;
-  white-space: nowrap;
-  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
-}
-
-.building-action-btn:active {
-  transform: translateY(0);
-}
-
-.building-action-btn--primary {
-  background: linear-gradient(135deg, var(--panel-accent), var(--panel-accent-strong));
-  color: #15200b;
-}
-
-.building-action-btn--primary:hover {
-  filter: brightness(1.1);
-}
-
-.building-action-btn--secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--panel-muted);
-}
-
-.building-action-btn--secondary:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.building-action-btn--disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.25);
-}
-
-.building-action-btn--disabled:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-/* ── Pill badges for action states ── */
-.building-action-pill {
-  display: inline-flex;
-  padding: 0.15rem 0.45rem;
-  border-radius: 999px;
-  font-size: 0.6rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.building-action-pill--unsupported {
-  color: #ea7767;
-  border: 1px solid rgba(234, 119, 103, 0.3);
-  background: rgba(234, 119, 103, 0.1);
-}
-
-.building-action-pill--unavailable {
-  color: #e8a838;
-  border: 1px solid rgba(232, 168, 56, 0.3);
-  background: rgba(232, 168, 56, 0.1);
-}
-
-.building-action-pill--info {
-  color: #82aaff;
-  border: 1px solid rgba(130, 170, 255, 0.3);
-  background: rgba(130, 170, 255, 0.08);
-}
-
-/* ── Return to Town (mirrors CloseButton) ── */
-.building-return-row {
-  display: flex;
-  justify-content: center;
-  margin-top: 1.25rem;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(184, 152, 103, 0.12);
-}
-
-.building-return-btn {
-  padding: 0.6rem 1.8rem;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--panel-text);
-  border: 1px solid rgba(160, 204, 188, 0.2);
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.building-return-btn:hover {
-  background: rgba(198, 212, 106, 0.1);
-  border-color: rgba(198, 212, 106, 0.3);
-}
-
-.building-return-btn:active {
-  background: rgba(198, 212, 106, 0.15);
-}
-
-/* ── Left panel info cards (mirrors {Building}Window/LeftPanel sections) ── */
-.building-info-card {
-  padding: 1rem 1.25rem;
-  border: 1px solid rgba(160, 204, 188, 0.1);
-  background: linear-gradient(180deg, rgba(20, 16, 17, 0.94), rgba(12, 11, 13, 0.98));
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-  margin-bottom: 0.75rem;
-}
-
-.building-info-card:last-child {
-  margin-bottom: 0;
-}
-
-.building-info-card-title {
-  margin: 0 0 0.5rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--panel-muted);
-  font-family: var(--heading-font);
-}
-
-.building-info-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.3rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-.building-info-row:last-child {
-  border-bottom: 0;
-}
-
-.building-info-label {
-  font-size: 0.78rem;
-  color: rgba(218, 198, 168, 0.6);
-}
-
-.building-info-value {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: #efe3c9;
 }

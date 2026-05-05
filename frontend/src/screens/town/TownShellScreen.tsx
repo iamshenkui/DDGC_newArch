@@ -1,7 +1,8 @@
-import { For, type Component } from "solid-js";
+import { For, createSignal, onCleanup, onMount, type Component } from "solid-js";
 
-import { resolveHeroPortrait } from "../../assets/originalAssetPaths";
+import { resolveHeroPortrait, resolveChromeAsset } from "../../assets/originalAssetPaths";
 import type { TownBuildingSummary, TownHeroSummary, TownViewModel } from "../../bridge/contractTypes";
+import { getTownBuildingCatalogEntry, mergeTownBuildings } from "../../town/buildingCatalog";
 import { BuildingIcon } from "./buildings/BuildingIcons";
 
 interface TownShellScreenProps {
@@ -11,97 +12,13 @@ interface TownShellScreenProps {
   onStartProvisioning: () => void;
 }
 
-interface EstateBuildingLayout {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  sourceLabel: string;
-  sourcePrefabPath: string;
-  labelOffsetX: number;
-  labelOffsetY: number;
-}
-
-const ESTATE_STAGE_WIDTH = 1600;
-const ESTATE_STAGE_HEIGHT = 900;
-
-const ESTATE_BUILDING_LAYOUT: Record<string, EstateBuildingLayout> = {
-  stagecoach: {
-    x: 31,
-    y: -267,
-    width: 384,
-    height: 384,
-    sourceLabel: "次元感知塔",
-    sourcePrefabPath: "Assets/Prefabs/UI/Estate/Buildings/StageCoach/StageCoachWindow.prefab",
-    labelOffsetX: -26,
-    labelOffsetY: -150
-  },
-  guild: {
-    x: 120,
-    y: -50,
-    width: 397,
-    height: 397,
-    sourceLabel: "试炼场",
-    sourcePrefabPath: "Assets/Prefabs/UI/Estate/Buildings/Guild/GuildWindow.prefab",
-    labelOffsetX: 30,
-    labelOffsetY: -50
-  },
-  blacksmith: {
-    x: 709,
-    y: 294,
-    width: 482,
-    height: 482,
-    sourceLabel: "锻造舱",
-    sourcePrefabPath: "Assets/Prefabs/UI/Estate/Buildings/Blacksmith/BlacksmithWindow.prefab",
-    labelOffsetX: 0,
-    labelOffsetY: -168
-  },
-  sanitarium: {
-    x: 390,
-    y: 110,
-    width: 339,
-    height: 339,
-    sourceLabel: "细胞修复站",
-    sourcePrefabPath: "Assets/Prefabs/UI/Estate/Buildings/Sanitarium/SanitariumWindow.prefab",
-    labelOffsetX: 50,
-    labelOffsetY: -100
-  },
-  abbey: {
-    x: -330,
-    y: 90,
-    width: 519,
-    height: 519,
-    sourceLabel: "信仰祭坛",
-    sourcePrefabPath: "Assets/Prefabs/UI/Estate/Buildings/Abbey/AbbeyWindow.prefab",
-    labelOffsetX: -10,
-    labelOffsetY: 153
-  },
-  tavern: {
-    x: -650,
-    y: -220,
-    width: 519,
-    height: 519,
-    sourceLabel: "迷情乐园",
-    sourcePrefabPath: "Assets/Prefabs/UI/Estate/Buildings/Tavern/TavernWindow.prefab",
-    labelOffsetX: -6,
-    labelOffsetY: 160
-  },
-  graveyard: {
-    x: 696,
-    y: 96,
-    width: 344,
-    height: 344,
-    sourceLabel: "英雄档案馆",
-    sourcePrefabPath: "Assets/Prefabs/UI/Estate/Buildings/Graveyard/GraveyardWindow.prefab",
-    labelOffsetX: 100,
-    labelOffsetY: -100
-  }
-};
+const ESTATE_STAGE_WIDTH = 1920;
+const ESTATE_STAGE_HEIGHT = 1080;
 
 const BUILDING_STATUS_LABEL: Record<TownBuildingSummary["status"], string> = {
-  ready: "Open",
-  partial: "Visit",
-  locked: "Locked"
+  ready: "可用",
+  partial: "部分可用",
+  locked: "未开放"
 };
 
 function parseHp(hp: string): { current: number; max: number } {
@@ -137,32 +54,19 @@ function stressBarColor(hero: TownHeroSummary): string {
 }
 
 function estateLeft(x: number): string {
-  return `${50 + (x / ESTATE_STAGE_WIDTH) * 100}%`;
+  return `${ESTATE_STAGE_WIDTH / 2 + x}px`;
 }
 
 function estateTop(y: number): string {
-  return `${50 - (y / ESTATE_STAGE_HEIGHT) * 100}%`;
+  return `${ESTATE_STAGE_HEIGHT / 2 - y}px`;
 }
 
-function estateWidth(width: number): string {
-  return `${(width / ESTATE_STAGE_WIDTH) * 100}%`;
+function estateWidth(w: number): string {
+  return `${w}px`;
 }
 
-function estateHeight(height: number): string {
-  return `${(height / ESTATE_STAGE_HEIGHT) * 100}%`;
-}
-
-function buildingLayout(buildingId: string): EstateBuildingLayout {
-  return ESTATE_BUILDING_LAYOUT[buildingId] ?? {
-    x: 0,
-    y: 0,
-    width: 360,
-    height: 360,
-    sourceLabel: buildingId,
-    sourcePrefabPath: `Assets/Prefabs/UI/Estate/Buildings/${buildingId}.prefab`,
-    labelOffsetX: 0,
-    labelOffsetY: 120
-  };
+function estateHeight(h: number): string {
+  return `${h}px`;
 }
 
 function rosterHeroes(viewModel: TownViewModel): ReadonlyArray<TownHeroSummary> {
@@ -170,170 +74,347 @@ function rosterHeroes(viewModel: TownViewModel): ReadonlyArray<TownHeroSummary> 
 }
 
 export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
+  const mergedBuildings = () => mergeTownBuildings(props.viewModel.buildings);
+  const [canvasScale, setCanvasScale] = createSignal(1);
+
+  onMount(() => {
+    const updateCanvasScale = () => {
+      const widthScale = Math.max((window.innerWidth - 32) / ESTATE_STAGE_WIDTH, 0.1);
+      const heightScale = Math.max((window.innerHeight - 32) / ESTATE_STAGE_HEIGHT, 0.1);
+      setCanvasScale(Math.min(widthScale, heightScale, 1));
+    };
+
+    updateCanvasScale();
+    window.addEventListener("resize", updateCanvasScale);
+    onCleanup(() => window.removeEventListener("resize", updateCanvasScale));
+  });
+
+  const chromeVars = () =>
+    Object.entries({
+      "--ddgc-chrome-name-bg": resolveChromeAsset("estateNameBg"),
+      "--ddgc-chrome-building-icon-bg": resolveChromeAsset("buildingIconBg"),
+      "--ddgc-chrome-building-label-bg": resolveChromeAsset("buildingLabelBg"),
+      "--ddgc-chrome-building-title-bg": resolveChromeAsset("buildingTitleBg"),
+      "--ddgc-chrome-building-info-bg": resolveChromeAsset("buildingInfoBg"),
+      "--ddgc-chrome-embark": resolveChromeAsset("embarkButton"),
+      "--ddgc-chrome-bust": resolveChromeAsset("bustIcon"),
+      "--ddgc-chrome-portrait": resolveChromeAsset("portraitIcon"),
+      "--ddgc-chrome-deed": resolveChromeAsset("deedIcon"),
+      "--ddgc-chrome-crest": resolveChromeAsset("crestIcon"),
+      "--ddgc-chrome-gold": resolveChromeAsset("goldIcon")
+    } as Record<string, string>).reduce(
+      (acc, [k, v]) => {
+        acc[k] = `url("${v}")`;
+        return acc;
+      },
+      {} as Record<string, string>
+    );
+
   return (
-    <div
-      class="town-viewport estate-town-screen"
-      data-source-scene="Assets/Scenes/EstateManagement.unity"
-      data-source-manager="EstateSceneManager"
-      data-source-hierarchy="UI_Estate | UI_Shared"
-    >
-      {/*── Top Panel — mirrors UI_Shared/UI_Panels/EstateNameplate + UI_TopWindows/CurrencyPanel ──*/}
-      <header
-        class="estate-top-panel"
-        data-source-hierarchy="UI_Shared/UI_Panels/EstateNameplate | UI_Shared/UI_TopWindows/CurrencyPanel"
-      >
-        <div class="estate-name-card"
-          data-source-component="EstateNameplate"
-          data-source-sprite="Assets/Sprites/ui/building_title_bg.png"
-        >
-          <span class="eyebrow">Estate</span>
-          <h1 class="estate-campaign-name">{props.viewModel.campaignName}</h1>
-          <p class="estate-campaign-summary">{props.viewModel.campaignSummary}</p>
-        </div>
-        <div class="estate-status-stack" data-source-component="CurrencyPanel">
-          <span class="estate-status-pill">Gold {props.viewModel.gold}</span>
-          {props.viewModel.isFreshVisit && <span class="estate-status-pill estate-status-pill-accent">Fresh Visit</span>}
-        </div>
-      </header>
-
-      {/*── Central Estate Surface — mirrors UI_Estate building collection ──*/}
-      <section
-        class="estate-stage-shell"
-        aria-label="Town estate"
-        data-source-hierarchy="UI_Estate/UI_Estate"
-      >
-        <div class="estate-stage-sky" />
+    <div class="town-viewport estate-town-screen">
+      <div class="estate-canvas-frame">
         <div
-          class="estate-stage-landscape"
-          data-source-layer="EstateBackground"
-          data-source-sprite="Assets/Sprites/EstateBackground/estate_bg.png"
-        />
-        <div class="estate-stage-grid" />
-        <For each={props.viewModel.buildings}>
-          {(building) => {
-            const layout = buildingLayout(building.id);
-            return (
-              <button
-                class="building-icon estate-building-node"
-                style={{
-                  left: estateLeft(layout.x),
-                  top: estateTop(layout.y),
-                  width: estateWidth(layout.width),
-                  height: estateHeight(layout.height)
-                }}
-                onClick={() => props.onOpenBuilding(building.id)}
-                title={building.summary}
-                data-building-id={building.id}
-                data-source-prefab={layout.sourcePrefabPath}
-                data-source-component={building.label}
-              >
-                <span class="building-icon-marker estate-building-art"
-                  data-source-sprite="Assets/Sprites/ui/building_icon_bg.png"
-                  data-source-guid="366866d49b92bc7489d973717eabaa58"
-                >
-                  <BuildingIcon buildingId={building.id} size={layout.width} />
-                </span>
-                <span
-                  class="estate-building-banner"
-                  style={{
-                    left: `${50 + (layout.labelOffsetX / layout.width) * 100}%`,
-                    top: `${50 - (layout.labelOffsetY / layout.height) * 100}%`
-                  }}
-                  data-source-component="BuildingLabel"
-                  data-source-sprite="Assets/Sprites/town/building_label_bg01.png"
-                  data-source-title-bg="Assets/Sprites/ui/building_title_bg.png"
-                  data-source-info-bg="Assets/Sprites/ui/building_info_bg.png"
-                >
-                  <span class="estate-building-source-label"
-                    data-source-sprite="Assets/Sprites/ui/building_title_bg.png"
-                    data-source-guid="f25ac3da7d687e34e89e1443ea12c9a3"
-                  >{layout.sourceLabel}</span>
-                  <span class="estate-building-contract-label"
-                    data-source-sprite="Assets/Sprites/ui/building_info_bg.png"
-                    data-source-guid="1005dba8c66f9694895fbcfbc9fa59a1"
-                  >{building.label}</span>
-                  <span class={`estate-building-status estate-building-status-${building.status}`}>
-                    {BUILDING_STATUS_LABEL[building.status]}
-                  </span>
-                </span>
-              </button>
-            );
+          class="estate-reference-canvas"
+          style={{
+            transform: `translate(-50%, -50%) scale(${canvasScale()})`,
+            ...chromeVars()
           }}
-        </For>
-      </section>
-
-      {/*── Bottom Panel — mirrors UI_Shared/UI_Panels/BottomPanel/{EmbarkButton,SideButtons} + UI_Roster/RosterPanel ──*/}
-      <section
-        class="estate-bottom-panel"
-        data-source-hierarchy="UI_Shared/UI_Panels/BottomPanel | UI_Shared/UI_Roster/RosterPanel"
-      >
-        <button
-          class="estate-embark-button"
-          onClick={props.onStartProvisioning}
-          data-source-component="EmbarkButton"
-          data-source-prefab="Assets/Prefabs/UI/Estate/PanelWindows/EstateBottomPanel.prefab"
+          data-source-scene="EstateManagement.unity"
+          data-source-root="EstateSceneManager"
         >
-          <span class="estate-embark-title">位面探索</span>
-          <span class="estate-embark-subtitle">{props.viewModel.nextActionLabel}</span>
-        </button>
+          {/* ═══ UI_Estate — building layer from Unity UI_Estate/UI_Estate ═══ */}
+          <section
+            class="estate-ui-estate"
+            aria-label="Town estate"
+            data-source-scene="EstateManagement.unity"
+            data-source-prefab="UI_Estate/UI_Estate"
+            data-source-layer="building-surface"
+            data-source-rect="anchorMin=(0,0) anchorMax=(1,1) pivot=(0.5,0.5)"
+          >
+            {/* ── Central estate stage surface — source-backed ground plane ── */}
+            <div
+              class="estate-stage-shell"
+              data-source-scene="EstateManagement.unity"
+              data-source-layer="stage-surface"
+            >
+              <div class="estate-stage-backdrop" aria-hidden="true" />
+              <div class="estate-stage-grid" aria-hidden="true" />
 
-        <div class="roster-scroll estate-roster-strip" data-source-component="RosterPanel">
-          <For each={rosterHeroes(props.viewModel)}>
-            {(hero) => {
-              const portraitSrc = resolveHeroPortrait({ heroId: hero.id, classLabel: hero.classLabel });
-              const hp = parseHp(hero.hp);
-              return (
-                <button
-                  class="roster-hero estate-roster-hero"
-                  onClick={() => props.onOpenHero(hero.id)}
-                  data-source-prefab="Assets/Prefabs/UI/HeroSlot.prefab"
-                  data-source-hierarchy="HeroSlot"
-                  data-source-component="TownHeroSlot"
+              <For each={mergedBuildings()}>
+                {(building) => {
+                  const layout = getTownBuildingCatalogEntry(building.id);
+                  if (!layout) return null;
+
+                  return (
+                    <button
+                      class="estate-building-node"
+                      style={{
+                        left: estateLeft(layout.x),
+                        top: estateTop(layout.y),
+                        width: estateWidth(layout.width),
+                        height: estateHeight(layout.height)
+                      }}
+                      onClick={() => props.onOpenBuilding(building.id)}
+                      title={building.summary}
+                      data-building-id={building.id}
+                      data-source-prefab="UI/Estate/BuildingSlot"
+                      data-source-scene="EstateManagement.unity"
+                      data-source-guid={layout.sourceGuid ?? undefined}
+                    >
+                      <span class="estate-building-art">
+                        <BuildingIcon buildingId={building.id} size={layout.width} fallbackLabel={layout.displayName} />
+                      </span>
+                      <span
+                        class="estate-building-banner"
+                        style={{
+                          left: `${layout.width / 2 + layout.labelOffsetX}px`,
+                          top: `${layout.height / 2 - layout.labelOffsetY}px`
+                        }}
+                        data-source-prefab="UI/Estate/BuildingSlot/BuildingLabel"
+                        data-source-rect="sizeDelta=(326,48)"
+                        data-source-sprite="building_label_bg01.png"
+                        data-source-guid="0beef34e329073f43bc2a495a740b0b4"
+                      >
+                        <span class="estate-building-source-label">{layout.displayName}</span>
+                        <span class={`estate-building-status estate-building-status-${building.status}`}>
+                          {BUILDING_STATUS_LABEL[building.status]}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                }}
+              </For>
+            </div>
+
+            {/* ── QuickStart / QuickProgress — utility buttons from Unity UI_Estate/UI_Estate ── */}
+            <div
+              class="estate-quick-buttons"
+              data-source-scene="EstateManagement.unity"
+              data-source-prefab="UI_Estate/UI_Estate"
+              data-source-layer="quick-buttons"
+            >
+              <button
+                class="estate-quick-button"
+                title="快速开始"
+                aria-label="快速开始"
+                data-source-prefab="UI_Estate/UI_Estate/QuickStartButton"
+                data-source-rect="anchoredPosition=(-324,137) sizeDelta=(97,42)"
+              >
+                <img src={resolveChromeAsset("quickStart")} alt="" aria-hidden="true" />
+                <span>快速开始</span>
+              </button>
+              <button
+                class="estate-quick-button"
+                title="快速进度"
+                aria-label="快速进度"
+                data-source-prefab="UI_Estate/UI_Estate/QuickProgressButton"
+                data-source-rect="anchoredPosition=(389,137) sizeDelta=(97,42)"
+              >
+                <img src={resolveChromeAsset("quickProgress")} alt="" aria-hidden="true" />
+                <span>快速进度</span>
+              </button>
+            </div>
+          </section>
+
+          {/* ═══ UI_Shared — persistent shell chrome from Unity UI_Shared ═══ */}
+          <div
+            class="estate-ui-shared"
+            data-source-scene="EstateManagement.unity"
+            data-source-prefab="UI_Shared"
+            data-source-rect="anchorMin=(0,0) anchorMax=(1,1) pivot=(0.5,0.5)"
+          >
+            {/* ── UI_Panels — shell chrome panel group (Unity UI_Shared/UI_Panels) ── */}
+            <div
+              class="estate-ui-panels"
+              data-source-scene="EstateManagement.unity"
+              data-source-prefab="UI_Shared/UI_Panels"
+              data-source-rect="anchorMin=(0,0) anchorMax=(1,1) pivot=(0.5,0.5) sizeDelta=(0,0)"
+            >
+              {/* ── EstateNameplate — top-right campaign nameplate (Unity UI_Shared/UI_Panels/EstateNameplate) ── */}
+              <header
+                class="estate-top-panel"
+                data-source-scene="EstateManagement.unity"
+                data-source-prefab="UI_Shared/UI_Panels/EstateNameplate"
+                data-source-layer="top-nameplate"
+                data-source-rect="anchorMin=(1,1) anchorMax=(1,1) pivot=(0.5,0.5) anchoredPosition=(-1624,-76.5) sizeDelta=(592,153)"
+              >
+                <div class="estate-name-card">
+                  <span class="eyebrow">城镇中枢</span>
+                  <h1 class="estate-campaign-name">{props.viewModel.campaignName}</h1>
+                  <p class="estate-campaign-summary">{props.viewModel.campaignSummary}</p>
+                </div>
+
+                {/* ── CurrencyPanel — 5-currency strip (Unity UI_Shared/UI_TopWindows/CurrencyPanel) ── */}
+                <div
+                  class="estate-currency-strip"
+                  data-source-scene="EstateManagement.unity"
+                  data-source-prefab="UI_Shared/UI_TopWindows/CurrencyPanel"
+                  data-source-rect="anchorMin=(1,0) anchorMax=(1,0) pivot=(1,0) anchoredPosition=(-140,20) sizeDelta=(1000,80)"
                 >
-                  <div class="roster-hero-portrait estate-roster-portrait" data-source-hierarchy="HeroSlot/Frame">
-                    <div class="roster-portrait-frame estate-roster-frame" data-source-sprite="Assets/Resources/Sprites/hero_slot.backgroundhightlight.png" />
-                    {portraitSrc ? (
-                      <img
-                        class="roster-portrait-image"
-                        src={portraitSrc}
-                        alt={`${hero.name} portrait`}
-                        loading="eager"
-                      />
-                    ) : (
-                      <div class="roster-portrait-avatar">
-                        <span class="roster-portrait-letter">{hero.classLabel[0]}</span>
-                      </div>
-                    )}
-                    <span class="roster-portrait-level">Lv{hero.level}</span>
-                    {(hero.isWounded || hero.isAfflicted) && (
-                      <span class="roster-portrait-status">{hero.isAfflicted ? "A" : "W"}</span>
-                    )}
-                  </div>
-                  <div class="estate-roster-meta" data-source-hierarchy="HeroSlot/HeroLabel">
-                    <span class="roster-hero-name">{hero.name}</span>
-                    <span class="roster-hero-class">{hero.classLabel}</span>
-                    <div class="estate-roster-bars">
-                      <div class="estate-roster-bar-row">
-                        <span class="estate-roster-bar-label">HP</span>
-                        <span class="estate-mini-bar">
-                          <span class="estate-mini-bar-fill" style={{ width: `${healthPercent(hero)}%`, background: healthBarColor(hero) }} />
-                        </span>
-                      </div>
-                      <div class="estate-roster-bar-row">
-                        <span class="estate-roster-bar-label estate-roster-bar-label--stress">ST</span>
-                        <span class="estate-mini-bar estate-mini-bar-stress">
-                          <span class="estate-mini-bar-fill" style={{ width: `${stressPercent(hero)}%`, background: stressBarColor(hero) }} />
-                        </span>
-                      </div>
-                    </div>
-                    <span class="estate-roster-stats">HP {hp.current}/{hp.max} · ST {hero.stress}/{hero.maxStress}</span>
-                  </div>
+                  <span class="estate-currency-slot" data-source-sprite="currency_bust.png" data-source-layer="deferred-heirloom">
+                    <img class="estate-currency-icon" src={resolveChromeAsset("bustIcon")} alt="" aria-hidden="true" />
+                    <span class="estate-currency-value">—</span>
+                  </span>
+                  <span class="estate-currency-slot" data-source-sprite="currency_portrait.png" data-source-layer="deferred-heirloom">
+                    <img class="estate-currency-icon" src={resolveChromeAsset("portraitIcon")} alt="" aria-hidden="true" />
+                    <span class="estate-currency-value">—</span>
+                  </span>
+                  <span class="estate-currency-slot" data-source-sprite="currency_deed.png" data-source-layer="deferred-heirloom">
+                    <img class="estate-currency-icon" src={resolveChromeAsset("deedIcon")} alt="" aria-hidden="true" />
+                    <span class="estate-currency-value">—</span>
+                  </span>
+                  <span class="estate-currency-slot" data-source-sprite="currency_crest.png" data-source-layer="deferred-heirloom">
+                    <img class="estate-currency-icon" src={resolveChromeAsset("crestIcon")} alt="" aria-hidden="true" />
+                    <span class="estate-currency-value">—</span>
+                  </span>
+                  <span class="estate-currency-slot estate-currency-slot-gold" data-source-sprite="gold.png">
+                    <img class="estate-currency-icon" src={resolveChromeAsset("goldIcon")} alt="" aria-hidden="true" />
+                    <span class="estate-currency-value">{props.viewModel.gold}</span>
+                  </span>
+                </div>
+
+                {props.viewModel.isFreshVisit && (
+                  <span class="estate-fresh-visit-badge">本周初访</span>
+                )}
+              </header>
+
+              {/* ── UI_Panels/BottomPanel — bottom panel grouping (Unity UI_Shared/UI_Panels/BottomPanel) ── */}
+              <div
+                class="estate-bottom-panel"
+                data-source-scene="EstateManagement.unity"
+                data-source-prefab="UI_Shared/UI_Panels/BottomPanel"
+                data-source-rect="anchorMin=(0,0) anchorMax=(1,1) pivot=(0.5,0) anchoredPosition=(0,0) sizeDelta=(0,0)"
+              >
+                {/* ── BottomPanel/SideButtons — 6 side navigation buttons (Unity UI_Shared/UI_Panels/BottomPanel/SideButtons) ── */}
+                <nav
+                  class="estate-side-panel"
+                  aria-label="侧边导航"
+                  data-source-scene="EstateManagement.unity"
+                  data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons"
+                >
+                  <button
+                    class="estate-side-button"
+                    title="活动日志"
+                    aria-label="活动日志"
+                    data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons/ActivityLog"
+                    data-source-rect="anchoredPosition=(-100,-80) sizeDelta=(136,136)"
+                  >
+                    <img src={resolveChromeAsset("sideActivityLog")} alt="活动日志" loading="eager" />
+                  </button>
+                  <button
+                    class="estate-side-button"
+                    title="位面背包"
+                    aria-label="位面背包"
+                    data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons/RealmInventory"
+                    data-source-rect="anchoredPosition=(-340,-80) sizeDelta=(136,136)"
+                  >
+                    <img src={resolveChromeAsset("sideRealmInventory")} alt="位面背包" loading="eager" />
+                  </button>
+                  <button
+                    class="estate-side-button"
+                    title="英雄"
+                    aria-label="英雄"
+                    data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons/Hero"
+                    data-source-rect="anchoredPosition=(-220,-80) sizeDelta=(136,136)"
+                  >
+                    <img src={resolveChromeAsset("sideHero")} alt="英雄" loading="eager" />
+                  </button>
+                  <button
+                    class="estate-side-button"
+                    title="城镇事件"
+                    aria-label="城镇事件"
+                    data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons/TownEvent"
+                    data-source-rect="anchoredPosition=(-100,-80) sizeDelta=(136,136)"
+                  >
+                    <img src={resolveChromeAsset("sideTownEvent")} alt="城镇事件" loading="eager" />
+                  </button>
+                  <button
+                    class="estate-side-button"
+                    title="设置"
+                    aria-label="设置"
+                    data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons/Settings"
+                    data-source-rect="anchoredPosition=(-100,-80) sizeDelta=(136,136)"
+                  >
+                    <img src={resolveChromeAsset("sideSettings")} alt="设置" loading="eager" />
+                  </button>
+                  <button
+                    class="estate-side-button"
+                    title="术语表"
+                    aria-label="术语表"
+                    data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons/Glossary"
+                    data-source-rect="anchoredPosition=(-220,-80) sizeDelta=(136,136)"
+                  >
+                    <img src={resolveChromeAsset("sideGlossary")} alt="术语表" loading="eager" />
+                  </button>
+                </nav>
+
+                {/* ── BottomPanel/EmbarkButton — primary expedition CTA ── */}
+                <button
+                  class="estate-embark-button"
+                  onClick={props.onStartProvisioning}
+                  data-source-scene="EstateManagement.unity"
+                  data-source-prefab="UI_Shared/UI_Panels/BottomPanel/EmbarkButton"
+                  data-source-rect="anchorMin=(0,0) anchorMax=(0,0) pivot=(0.5,0.5) anchoredPosition=(20,20) sizeDelta=(968,968)"
+                >
+                  <span class="estate-embark-title">位面探索</span>
+                  <span class="estate-embark-subtitle">{props.viewModel.nextActionLabel}</span>
                 </button>
-              );
-            }}
-          </For>
+              </div>
+            </div>
+
+            {/* ── UI_Roster/RosterPanel — hero roster strip (Unity UI_Shared/UI_Roster/RosterPanel) ── */}
+            <div
+              class="roster-scroll estate-roster-strip"
+              data-source-scene="EstateManagement.unity"
+              data-source-prefab="UI_Shared/UI_Roster/RosterPanel"
+              data-source-layer="roster-strip"
+            >
+              <For each={rosterHeroes(props.viewModel)}>
+                {(hero) => {
+                  const portraitSrc = resolveHeroPortrait({ heroId: hero.id, classLabel: hero.classLabel });
+                  const hp = parseHp(hero.hp);
+                  return (
+                    <button class="roster-hero estate-roster-hero" onClick={() => props.onOpenHero(hero.id)}>
+                      <div class="roster-hero-portrait estate-roster-portrait">
+                        <div class="roster-portrait-frame estate-roster-frame" />
+                        {portraitSrc ? (
+                          <img
+                            class="roster-portrait-image"
+                            src={portraitSrc}
+                            alt={`${hero.name} portrait`}
+                            loading="eager"
+                          />
+                        ) : (
+                          <div class="roster-portrait-avatar">
+                            <span class="roster-portrait-letter">{hero.classLabel[0]}</span>
+                          </div>
+                        )}
+                        <span class="roster-portrait-level">Lv{hero.level}</span>
+                        {(hero.isWounded || hero.isAfflicted) && (
+                          <span class="roster-portrait-status">{hero.isAfflicted ? "A" : "W"}</span>
+                        )}
+                      </div>
+                      <div class="estate-roster-meta">
+                        <span class="roster-hero-name">{hero.name}</span>
+                        <span class="roster-hero-class">{hero.classLabel}</span>
+                        <div class="estate-roster-bars">
+                          <span class="estate-mini-bar">
+                            <span class="estate-mini-bar-fill" style={{ width: `${healthPercent(hero)}%`, background: healthBarColor(hero) }} />
+                          </span>
+                          <span class="estate-mini-bar estate-mini-bar-stress">
+                            <span class="estate-mini-bar-fill" style={{ width: `${stressPercent(hero)}%`, background: stressBarColor(hero) }} />
+                          </span>
+                        </div>
+                        <span class="estate-roster-stats">HP {hp.current}/{hp.max} · ST {hero.stress}/{hero.maxStress}</span>
+                      </div>
+                    </button>
+                  );
+                }}
+              </For>
+            </div>
+          </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 };

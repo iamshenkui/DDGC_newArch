@@ -14,6 +14,7 @@ import type {
   FlowState,
   FrontendLifecycle
 } from "../bridge/contractTypes";
+import { createTownBuildingSummary } from "../town/buildingCatalog";
 
 // Shared roster heroes used by both town, provisioning, and hero-detail fixtures.
 const townHeroes: ReadonlyArray<TownHeroSummary> = [
@@ -75,41 +76,28 @@ const townHeroes: ReadonlyArray<TownHeroSummary> = [
 
 export const replayTownViewModel: TownViewModel = {
   kind: "town",
-  title: "The Estate — Town Surface",
-  campaignName: "The Azure Lantern",
+  title: "城镇界面",
+  campaignName: "苍灯远征",
   campaignSummary:
-    "Representative Phase 10 replay snapshot for roster, building, and provisioning work.",
+    "回放快照：当前战役处于城镇整备阶段，可查看名册、建筑与远征准备。",
   heroes: townHeroes,
   buildings: [
-    {
-      id: "stagecoach",
-      label: "Stagecoach",
-      summary: "Recruit new heroes to expand your party roster.",
-      status: "ready"
-    },
-    {
-      id: "guild",
-      label: "Guild",
-      summary: "Skill training and party capability review.",
-      status: "ready"
-    },
-    {
-      id: "blacksmith",
-      label: "Blacksmith",
-      summary: "Weapon and armor upgrades available for heroes who meet tier requirements.",
-      status: "partial"
-    },
-    {
-      id: "sanitarium",
-      label: "Sanitarium",
-      summary: "Treatment facility for diseases, stress relief, and quirk management.",
-      status: "partial"
-    }
+    createTownBuildingSummary("stagecoach", "ready"),
+    createTownBuildingSummary("guild", "ready"),
+    createTownBuildingSummary("blacksmith", "ready"),
+    createTownBuildingSummary("sanitarium", "ready"),
+    createTownBuildingSummary("abbey", "ready"),
+    createTownBuildingSummary("tavern", "ready"),
+    createTownBuildingSummary("graveyard", "partial"),
+    createTownBuildingSummary("garden", "partial"),
+    createTownBuildingSummary("legacytower", "partial"),
+    createTownBuildingSummary("market", "partial"),
+    createTownBuildingSummary("campingtrainer", "partial")
   ],
   roster: townHeroes,
   gold: 1250,
   isFreshVisit: true,
-  nextActionLabel: "Provision Expedition"
+  nextActionLabel: "整备远征"
 };
 
 export const replayHeroDetailViewModel: HeroDetailViewModel = {
@@ -120,15 +108,15 @@ export const replayHeroDetailViewModel: HeroDetailViewModel = {
   hp: "38",
   maxHp: "42",
   stress: "17",
-  maxStress: "200",
   resolve: "3",
-  resolveLabel: "Resolute",
+  resolveLabel: "Heroic",
+  maxStress: "200",
   progression: {
     level: 2,
     experience: "240",
     experienceToNext: "360",
-    resolveLevel: 3,
-    resolveXP: "120 / 300"
+    resolveLevel: 2,
+    resolveXP: "120"
   },
   resistances: {
     stun: "40%",
@@ -142,36 +130,35 @@ export const replayHeroDetailViewModel: HeroDetailViewModel = {
   baseStats: {
     dmg: "8-14",
     maxHp: "42",
-    crit: "12%",
-    spd: "6",
-    dodge: "8%"
+    crit: "7%",
+    spd: "5",
+    dodge: "12%"
   },
   combatSkills: [
-    { name: "Hunting Bow", level: 3, description: "A precise ranged attack that targets the enemy's weak points.", target: "Back 2 rows", hitRating: "85%", critRating: "15%" },
-    { name: "Rapid Shot", level: 2, description: "Fire two quick arrows in succession at a single target.", target: "Back 3 rows", hitRating: "75%", critRating: "10%" },
-    { name: "Marked for Death", level: 1, description: "Mark an enemy, increasing crit chance against them for all allies.", target: "All rows", hitRating: "100%", critRating: "0%" },
+    { name: "Hunting Bow", level: 2, description: "Ranged attack that marks the target.", target: "Enemy", hitRating: "85%", critRating: "7%" },
+    { name: "Rapid Shot", level: 2, description: "Fire two quick shots at the target.", target: "Enemy", hitRating: "75%", critRating: "5%" },
+    { name: "Marked for Death", level: 1, description: "Mark a target to take increased damage.", target: "Enemy", hitRating: "100%", critRating: "0%" },
+    { name: "Batty Advice", level: 1, description: "Grant a random buff to an ally.", target: "Ally", hitRating: "100%", critRating: "0%" }
   ],
   campingSkills: [
-    { name: "Campfire Song", level: 2, description: "Sing a rousing song that reduces stress for all party members during camp.", target: "All party", hitRating: "100%", critRating: "0%" },
-    { name: "Warrior's Restore", level: 1, description: "Restore HP to a wounded ally during camp.", target: "Single ally", hitRating: "100%", critRating: "0%" },
+    { name: "Campfire Song", level: 2, description: "Restores party stress during camp.", target: "Party", hitRating: "100%", critRating: "0%" },
+    { name: "Warrior's Restore", level: 1, description: "Heal a hero during camp rest.", target: "Self", hitRating: "100%", critRating: "0%" }
   ],
-  weapon: { name: "Hunter's Bow", level: 2 },
-  armor: { name: "Leather Armor", level: 1 },
-  leftTrinket: { name: "Hunter's Badge", description: "+5% crit chance, +2 DMG vs marked targets" },
-  rightTrinket: { name: "Shadowstep Cloak", description: "+10% dodge when below 50% HP" },
+  weapon: { name: "Hunter's Bow (+2)", level: 3 },
+  armor: { name: "Leather Armor (+1)", level: 2 },
   positiveQuirks: ["steady", "sharp_eyes"],
   negativeQuirks: ["paranoid"],
   diseases: [],
   isWounded: true,
   isAfflicted: false,
-  heroDescription: "A seasoned hunter from the northern wilds, skilled in tracking and ranged combat. Prefers to strike from the shadows before the enemy can react.",
-  talent: "Eagle Eye — Increases crit chance by 5% for all party members when in rank 3 or 4."
+  heroDescription: "An expert hunter with keen eyes and deadly aim.",
+  talent: "Natural Marksman"
 };
 
 export const replayBuildingDetailViewModel: BuildingDetailViewModel = {
   kind: "building-detail",
   buildingId: "guild",
-  label: "Guild",
+  label: "试炼场",
   status: "ready",
   description: "The guild provides skill training and party capability review. Upgrade your heroes' abilities to better face the challenges ahead.",
   actions: [
@@ -222,8 +209,8 @@ export const replayBuildingDetailViewModel: BuildingDetailViewModel = {
 export const replayBlacksmithBuildingDetailViewModel: BuildingDetailViewModel = {
   kind: "building-detail",
   buildingId: "blacksmith",
-  label: "Blacksmith",
-  status: "partial",
+  label: "锻造舱",
+  status: "ready",
   description: "The blacksmith forges and upgrades weapons and armor. Enhance your heroes' equipment to improve their combat effectiveness.",
   actions: [
     {
@@ -258,8 +245,8 @@ export const replayBlacksmithBuildingDetailViewModel: BuildingDetailViewModel = 
 export const replaySanitariumBuildingDetailViewModel: BuildingDetailViewModel = {
   kind: "building-detail",
   buildingId: "sanitarium",
-  label: "Sanitarium",
-  status: "partial",
+  label: "细胞修复站",
+  status: "ready",
   description: "The sanitarium provides treatment for physical and mental afflictions. Cure diseases, reduce stress, and remove negative quirks.",
   actions: [
     {
@@ -293,7 +280,7 @@ export const replaySanitariumBuildingDetailViewModel: BuildingDetailViewModel = 
 export const replayStagecoachBuildingDetailViewModel: BuildingDetailViewModel = {
   kind: "building-detail",
   buildingId: "stagecoach",
-  label: "Stagecoach",
+  label: "次元感知塔",
   status: "ready",
   description: "The stagecoach brings new heroes to town. Recruit adventurers to expand your party roster and fill gaps in your expedition team.",
   actions: [
@@ -323,6 +310,168 @@ export const replayStagecoachBuildingDetailViewModel: BuildingDetailViewModel = 
     }
   ],
   upgradeRequirement: "Reach Town Level 2 to unlock rare recruitment."
+};
+
+export const replayAbbeyBuildingDetailViewModel: BuildingDetailViewModel = {
+  kind: "building-detail",
+  buildingId: "abbey",
+  label: "信仰祭坛",
+  status: "ready",
+  description: "通过祈祷与仪式降低英雄压力，恢复精神状态。",
+  actions: [
+    {
+      id: "pray",
+      label: "祈祷",
+      description: "进行一次祈祷仪式，降低英雄的压力值。",
+      cost: "100 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "meditate",
+      label: "冥想",
+      description: "深入冥想以恢复精神并消除负面状态。",
+      cost: "200 Gold",
+      isAvailable: false,
+      isUnsupported: false
+    }
+  ],
+  upgradeRequirement: "Reach Town Level 2 to unlock meditation."
+};
+
+export const replayTavernBuildingDetailViewModel: BuildingDetailViewModel = {
+  kind: "building-detail",
+  buildingId: "tavern",
+  label: "迷情乐园",
+  status: "ready",
+  description: "通过酒馆活动缓解压力并恢复状态，在轻松的氛围中重整队伍。",
+  actions: [
+    {
+      id: "drink",
+      label: "畅饮",
+      description: "在酒馆畅饮一番，大幅降低压力但可能带来随机效果。",
+      cost: "150 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "gamble",
+      label: "博弈",
+      description: "参与酒馆博弈活动，有机会获得额外金币。",
+      cost: "50 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    }
+  ]
+};
+
+export const replayGraveyardBuildingDetailViewModel: BuildingDetailViewModel = {
+  kind: "building-detail",
+  buildingId: "graveyard",
+  label: "英雄档案馆",
+  status: "partial",
+  description: "查看阵亡英雄记录与历史档案，缅怀逝去的战士。",
+  actions: [
+    {
+      id: "view-records",
+      label: "查看档案",
+      description: "浏览阵亡英雄的历史记录与战斗数据。",
+      cost: "0 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    }
+  ]
+};
+
+export const replayGardenBuildingDetailViewModel: BuildingDetailViewModel = {
+  kind: "building-detail",
+  buildingId: "garden",
+  label: "天国花园",
+  status: "partial",
+  description: "提供特殊休整与恢复服务，在宁静的花园中治愈身心。",
+  actions: [
+    {
+      id: "rest",
+      label: "休整",
+      description: "在花园中休整，恢复英雄生命值并降低压力。",
+      cost: "200 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    }
+  ],
+  upgradeRequirement: "Reach Town Level 2 to unlock garden upgrades."
+};
+
+export const replayLegacyTowerBuildingDetailViewModel: BuildingDetailViewModel = {
+  kind: "building-detail",
+  buildingId: "legacytower",
+  label: "遗留塔",
+  status: "partial",
+  description: "查看传承与博物馆式收藏内容，回顾战役历程与成就。",
+  actions: [
+    {
+      id: "view-legacy",
+      label: "查看传承",
+      description: "浏览已解锁的传承物品与战役成就。",
+      cost: "0 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "claim-reward",
+      label: "领取奖励",
+      description: "领取传承里程碑奖励。",
+      cost: "0 Gold",
+      isAvailable: false,
+      isUnsupported: false
+    }
+  ]
+};
+
+export const replayMarketBuildingDetailViewModel: BuildingDetailViewModel = {
+  kind: "building-detail",
+  buildingId: "market",
+  label: "交易市场",
+  status: "partial",
+  description: "购买补给、物资与商店类服务，为远征做好物资准备。",
+  actions: [
+    {
+      id: "buy-supplies",
+      label: "购买补给",
+      description: "购买远征所需的各类补给品和物资。",
+      cost: "100 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "buy-trinket",
+      label: "购买饰品",
+      description: "浏览并购买英雄可装备的饰品。",
+      cost: "300 Gold",
+      isAvailable: false,
+      isUnsupported: false
+    }
+  ],
+  upgradeRequirement: "Reach Town Level 2 to unlock trinket shop."
+};
+
+export const replayCampingTrainerBuildingDetailViewModel: BuildingDetailViewModel = {
+  kind: "building-detail",
+  buildingId: "campingtrainer",
+  label: "空间分析",
+  status: "partial",
+  description: "营火与露营训练相关服务，提升队伍在远征中的生存能力。",
+  actions: [
+    {
+      id: "train-camping",
+      label: "露营训练",
+      description: "训练英雄的露营技能，提高远征中的恢复效果。",
+      cost: "150 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    }
+  ],
+  upgradeRequirement: "Reach Town Level 2 to unlock advanced camping skills."
 };
 
 export const replayProvisioningViewModel: ProvisioningViewModel = {
@@ -538,6 +687,55 @@ export const replayStagecoachBuildingSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing stagecoach building detail."
 };
 
+export const replayAbbeyBuildingSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "town",
+  viewModel: replayAbbeyBuildingDetailViewModel,
+  debugMessage: "Replay bridge showing abbey building detail."
+};
+
+export const replayTavernBuildingSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "town",
+  viewModel: replayTavernBuildingDetailViewModel,
+  debugMessage: "Replay bridge showing tavern building detail."
+};
+
+export const replayGraveyardBuildingSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "town",
+  viewModel: replayGraveyardBuildingDetailViewModel,
+  debugMessage: "Replay bridge showing graveyard building detail."
+};
+
+export const replayGardenBuildingSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "town",
+  viewModel: replayGardenBuildingDetailViewModel,
+  debugMessage: "Replay bridge showing garden building detail."
+};
+
+export const replayLegacyTowerBuildingSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "town",
+  viewModel: replayLegacyTowerBuildingDetailViewModel,
+  debugMessage: "Replay bridge showing legacy tower building detail."
+};
+
+export const replayMarketBuildingSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "town",
+  viewModel: replayMarketBuildingDetailViewModel,
+  debugMessage: "Replay bridge showing market building detail."
+};
+
+export const replayCampingTrainerBuildingSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "town",
+  viewModel: replayCampingTrainerBuildingDetailViewModel,
+  debugMessage: "Replay bridge showing camping trainer building detail."
+};
+
 const unsupportedViewModel: UnsupportedViewModel = {
   kind: "unsupported",
   title: "Live Runtime Not Wired Yet",
@@ -601,8 +799,8 @@ export const liveLoadingSnapshot: DdgcFrontendSnapshot = {
 // as a placeholder in the snapshot structure (the viewModel is not consumed by StartupScreen).
 const startupViewModel: BootLoadViewModel = {
   kind: "boot-load",
-  title: "DDGC",
-  summary: "暗黑地牢: 降龙",
+  title: "DDGC Rendered Frontend",
+  summary: "Boot the product-owned frontend shell through replay mode first.",
   mode: "replay"
 };
 
@@ -774,21 +972,13 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!vm.hp || typeof vm.hp !== "string") e.push("HeroDetailViewModel: hp is missing");
       if (!vm.maxHp || typeof vm.maxHp !== "string") e.push("HeroDetailViewModel: maxHp is missing");
       if (!vm.stress || typeof vm.stress !== "string") e.push("HeroDetailViewModel: stress is missing");
-      if (!vm.maxStress || typeof vm.maxStress !== "string") e.push("HeroDetailViewModel: maxStress is missing");
       if (!vm.resolve || typeof vm.resolve !== "string") e.push("HeroDetailViewModel: resolve is missing");
-      if (!vm.resolveLabel || typeof vm.resolveLabel !== "string") e.push("HeroDetailViewModel: resolveLabel is missing");
       if (!vm.progression || typeof vm.progression !== "object") e.push("HeroDetailViewModel: progression is missing");
       if (!vm.resistances || typeof vm.resistances !== "object") e.push("HeroDetailViewModel: resistances is missing");
-      if (!vm.baseStats || typeof vm.baseStats !== "object") e.push("HeroDetailViewModel: baseStats is missing");
       if (!Array.isArray(vm.combatSkills)) e.push("HeroDetailViewModel: combatSkills is not an array");
       if (!Array.isArray(vm.campingSkills)) e.push("HeroDetailViewModel: campingSkills is not an array");
-      if (!vm.weapon || typeof vm.weapon !== "object") e.push("HeroDetailViewModel: weapon is missing or not an object");
-      if (!vm.armor || typeof vm.armor !== "object") e.push("HeroDetailViewModel: armor is missing or not an object");
-      if (!Array.isArray(vm.positiveQuirks)) e.push("HeroDetailViewModel: positiveQuirks is not an array");
-      if (!Array.isArray(vm.negativeQuirks)) e.push("HeroDetailViewModel: negativeQuirks is not an array");
-      if (!Array.isArray(vm.diseases)) e.push("HeroDetailViewModel: diseases is not an array");
-      if (typeof vm.heroDescription !== "string") e.push("HeroDetailViewModel: heroDescription is not a string");
-      if (typeof vm.talent !== "string") e.push("HeroDetailViewModel: talent is not a string");
+      if (!vm.weapon || typeof vm.weapon !== "object" || typeof (vm.weapon as Record<string,unknown>).name !== "string") e.push("HeroDetailViewModel: weapon is missing or not an EquipmentItem");
+      if (!vm.armor || typeof vm.armor !== "object" || typeof (vm.armor as Record<string,unknown>).name !== "string") e.push("HeroDetailViewModel: armor is missing or not an EquipmentItem");
       break;
     }
     case "building-detail": {

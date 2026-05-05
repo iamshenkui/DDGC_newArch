@@ -77,12 +77,12 @@ describe("runtime bridge skeleton", () => {
     expect(snapshot.viewModel.kind).toBe("building-detail");
     const buildingDetail = snapshot.viewModel as BuildingDetailViewModel;
     expect(buildingDetail.kind).toBe("building-detail");
-    expect(buildingDetail.label).toBe("Guild");
+    expect(buildingDetail.label).toBe("试炼场");
     expect(buildingDetail.status).toBe("ready");
     expect(buildingDetail.actions.length).toBeGreaterThan(0);
   });
 
-  it("replay open-building intent for blacksmith shows partial status", async () => {
+  it("replay open-building intent for blacksmith shows ready status", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
 
@@ -93,8 +93,8 @@ describe("runtime bridge skeleton", () => {
 
     expect(snapshot.viewModel.kind).toBe("building-detail");
     const buildingDetail = snapshot.viewModel as BuildingDetailViewModel;
-    expect(buildingDetail.label).toBe("Blacksmith");
-    expect(buildingDetail.status).toBe("partial");
+    expect(buildingDetail.label).toBe("锻造舱");
+    expect(buildingDetail.status).toBe("ready");
   });
 
   it("replay return-to-town after opening building returns to town view", async () => {
@@ -119,7 +119,7 @@ describe("runtime bridge skeleton", () => {
     expect(snapshot.viewModel.kind).toBe("building-detail");
     const buildingDetail = snapshot.viewModel as BuildingDetailViewModel;
     expect(buildingDetail.kind).toBe("building-detail");
-    expect(buildingDetail.label).toBe("Stagecoach");
+    expect(buildingDetail.label).toBe("次元感知塔");
     expect(buildingDetail.status).toBe("ready");
   });
 
@@ -134,7 +134,7 @@ describe("runtime bridge skeleton", () => {
 
     expect(snapshot.viewModel.kind).toBe("building-detail");
     const buildingDetail = snapshot.viewModel as BuildingDetailViewModel;
-    expect(buildingDetail.label).toBe("Guild");
+    expect(buildingDetail.label).toBe("试炼场");
     expect(buildingDetail.status).toBe("ready");
   });
 
