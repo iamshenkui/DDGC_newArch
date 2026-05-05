@@ -1,6 +1,7 @@
 import { For, type Component } from "solid-js";
 
 import type { ProvisioningViewModel } from "../../bridge/contractTypes";
+import { resolveChromeAsset, resolveHeroPortrait } from "../../assets/originalAssetPaths";
 
 interface ProvisioningScreenProps {
   viewModel: ProvisioningViewModel;
@@ -51,14 +52,17 @@ function stressBarColor(stress: string): string {
  *   Assets/Prefabs/UI/PartyInventorySlotInDungeon.prefab
  *   Assets/Prefabs/UI/ProvisionShop.prefab (estimated)
  *
- * Supply icons reference original asset paths (not extracted — see blocker notes):
- *   BLOCKER-004: Original supply sprites not extracted from Unity project
- *   data-asset-path="Assets/Resources/Sprites/inv_supply+rattle_drum.png"
- *   data-guid="e401bf9b9275ede4aa2ff50d13cc6207"
- *
- * Gold icon:
- *   BLOCKER-004: Original gold sprite not extracted from Unity project
- *   data-asset-path="Assets/Resources/Sprites/gold.png"
+ * Original asset wiring:
+ *   gold       — extracted, served from /original/chrome/gold.png (UIR-005B).
+ *                Wired via resolveChromeAsset("goldIcon") on the cost pill.
+ *   portraits  — extracted hunter family served from /original/heroes/ (UIR-005B).
+ *                Wired via resolveHeroPortrait on selected party slots and the
+ *                roster strip; un-extracted families fall through to a
+ *                CSS-letter avatar.
+ *   supply     — Assets/Resources/Sprites/inv_supply+rattle_drum.png
+ *                GUID e401bf9b9275ede4aa2ff50d13cc6207.
+ *                Not extracted (BLOCKER-001) — pill keeps the explicit blocker
+ *                annotation and a CSS fallback swatch until the PNG is staged.
  */
 export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) => {
   const selectedCount = () =>
@@ -87,6 +91,14 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
 
   const isFull = () => selectedCount() >= props.viewModel.maxPartySize;
 
+  const partyStatusLabel = () => {
+    if (selectedCount() === 0) return "No heroes selected";
+    if (afflictedCount() > 0) return `${afflictedCount()} afflicted in party`;
+    if (woundedCount() > 0) return `${woundedCount()} wounded in party`;
+    if (isFull()) return "Party ready to embark";
+    return `${selectedCount()} of ${props.viewModel.maxPartySize} heroes selected`;
+  };
+
   return (
     <div
       class="expedition-viewport"
@@ -100,9 +112,17 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
           <h1 class="expedition-title">{props.viewModel.title}</h1>
         </span>
         <span class="expedition-hud-center">
-          {/* Party count pill */}
-          <span class="hud-pill">
-            Party: {selectedCount()} / {props.viewModel.maxPartySize}
+          {/* Party count pill with party glyph */}
+          <span class="hud-pill hud-pill--with-icon">
+            <span class="hud-pill-icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                <circle cx="9" cy="8" r="3.5" />
+                <path d="M2 20c0-3.6 3.2-6 7-6s7 2.4 7 6" />
+                <circle cx="17" cy="9" r="2.5" />
+                <path d="M22 19c0-2.4-1.8-4-4-4" />
+              </svg>
+            </span>
+            Party: {selectedCount()}/{props.viewModel.maxPartySize}
           </span>
           {/* Expedition label */}
           <span class="hud-pill hud-pill-accent">
@@ -111,22 +131,28 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
           {/* Supply level pill with icon */}
           <span
             class="hud-pill supply-pill"
+            data-source-component="ProvisionInventoryEntry"
             data-asset-path="Assets/Resources/Sprites/inv_supply+rattle_drum.png"
             data-guid="e401bf9b9275ede4aa2ff50d13cc6207"
             data-extraction-status="not-extracted"
-            data-blocker="BLOCKER-004: Original Unity supply sprite not extracted"
+            data-blocker="BLOCKER-001: Original Unity supply sprite not in repository"
           >
             <span class="supply-icon-fallback" aria-hidden="true" />
             Supply: {props.viewModel.supplyLevel}
           </span>
-          {/* Provision cost pill with gold icon */}
+          {/* Provision cost pill with extracted gold sprite */}
           <span
             class="hud-pill gold-pill"
+            data-source-component="ProvisionCostEntry"
             data-asset-path="Assets/Resources/Sprites/gold.png"
-            data-extraction-status="not-extracted"
-            data-blocker="BLOCKER-004: Original Unity gold sprite not extracted"
+            data-extraction-status="staged"
           >
-            <span class="gold-icon-fallback" aria-hidden="true" />
+            <img
+              class="gold-icon-image"
+              src={resolveChromeAsset("goldIcon")}
+              alt=""
+              aria-hidden="true"
+            />
             Cost: {props.viewModel.provisionCost}
           </span>
         </span>
@@ -160,34 +186,48 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
         <div class="expedition-surface-mist" />
 
         <div class="expedition-content provisioning-content">
+          <div class="party-formation-banner">
+            <span class="party-formation-banner-frame">
+              <span class="party-formation-banner-rule" aria-hidden="true" />
+              <span class="party-formation-banner-title">Party Formation</span>
+              <span class="party-formation-banner-rule" aria-hidden="true" />
+            </span>
+            <span class="party-formation-banner-hint">
+              Tap a hero card to remove from the formation. Add heroes from the roster below.
+            </span>
+          </div>
+
           {/* Party formation — main focal area */}
           <div class="party-formation">
             <For each={partyFormation()}>
-              {(hero) => {
+              {(hero, index) => {
                 if (hero === null) {
                   return (
-                    <div class="party-slot party-slot--empty">
-                      <div class="party-slot-empty-icon">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                          <circle cx="12" cy="8" r="4" />
-                          <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                    <div class="party-slot party-slot--empty" data-slot-index={index()}>
+                      <span class="party-slot-empty-marker" aria-hidden="true">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                          <line x1="12" y1="5" x2="12" y2="19" />
+                          <line x1="5" y1="12" x2="19" y2="12" />
                         </svg>
-                      </div>
-                      <span class="party-slot-empty-label">Open</span>
+                      </span>
+                      <span class="party-slot-empty-hint">Open Slot</span>
+                      <span class="party-slot-empty-sub">Choose a hero from the roster</span>
                     </div>
                   );
                 }
 
-                const hpInfo = parseHp(hero.hp);
-                const stressNum = Number(hero.stress);
-                const stressMax = Number(hero.maxStress || 200);
                 const showStatus = hero.isWounded || hero.isAfflicted;
+                const portraitUrl = resolveHeroPortrait({
+                  heroId: hero.id,
+                  classLabel: hero.classLabel
+                });
 
                 return (
                   <button
                     class="party-slot party-slot--selected"
                     onClick={() => props.onToggleHeroSelection(hero.id)}
                     title={`Remove ${hero.name} from party`}
+                    data-source-prefab="Assets/Prefabs/UI/PartyInventorySlot.prefab"
                   >
                     {/* Status badge */}
                     {showStatus && (
@@ -203,9 +243,26 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
                     )}
                     {/* Level badge */}
                     <span class="party-slot-level">Lv{hero.level}</span>
-                    {/* Portrait */}
-                    <div class="party-slot-portrait">
-                      <span class="party-slot-initial">{hero.classLabel[0]}</span>
+                    {/* Portrait — original PNG when extracted, CSS letter otherwise */}
+                    <div
+                      class={`party-slot-portrait${portraitUrl ? " party-slot-portrait--image" : " party-slot-portrait--fallback"}`}
+                    >
+                      {portraitUrl ? (
+                        <img
+                          class="party-slot-portrait-image"
+                          src={portraitUrl}
+                          alt=""
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <span
+                          class="party-slot-initial"
+                          data-blocker="BLOCKER-002: portrait sprite not extracted for this hero family"
+                          data-class-label={hero.classLabel}
+                        >
+                          {hero.classLabel[0]}
+                        </span>
+                      )}
                     </div>
                     {/* Name */}
                     <span class="party-slot-name">{hero.name}</span>
@@ -242,51 +299,6 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
               }}
             </For>
           </div>
-
-          {/* ── Party Readiness Panel (game HUD on surface) ── */}
-          {selectedCount() > 0 && (
-            <div class="readiness-panel">
-              <div class="readiness-stat">
-                <span class="readiness-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                    <path d="M2 17l10 5 10-5" />
-                    <path d="M2 12l10 5 10-5" />
-                  </svg>
-                </span>
-                <span class="readiness-label">Supply</span>
-                <span class="readiness-value">{props.viewModel.supplyLevel}</span>
-              </div>
-              <div class="readiness-stat">
-                <span class="readiness-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 6v6l4 2" />
-                  </svg>
-                </span>
-                <span class="readiness-label">Cost</span>
-                <span class="readiness-value">{props.viewModel.provisionCost}</span>
-              </div>
-              <div class="readiness-stat">
-                <span class="readiness-label">Party</span>
-                <span class={`readiness-value ${woundedCount() > 0 || afflictedCount() > 0 ? "readiness-warning" : "readiness-ready"}`}>
-                  {selectedCount()}/{props.viewModel.maxPartySize}
-                </span>
-              </div>
-              {woundedCount() > 0 && (
-                <div class="readiness-stat">
-                  <span class="readiness-label">Wounded</span>
-                  <span class="readiness-value readiness-warning">{woundedCount()}</span>
-                </div>
-              )}
-              {afflictedCount() > 0 && (
-                <div class="readiness-stat">
-                  <span class="readiness-label">Afflicted</span>
-                  <span class="readiness-value readiness-danger">{afflictedCount()}</span>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -296,7 +308,12 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
           class="provisioning-roster-strip"
           data-source-hierarchy="UI_Provision/RosterPanel"
         >
-          <div class="provisioning-roster-label">Available Heroes</div>
+          <div class="provisioning-roster-header">
+            <span class="provisioning-roster-label">Available Heroes</span>
+            <span class="provisioning-roster-count">
+              {unselectedHeroes().length} on standby
+            </span>
+          </div>
           <div class="roster-scroll provisioning-roster-scroll">
             <For each={unselectedHeroes()}>
               {(hero) => {
@@ -304,6 +321,10 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
                 const stressNum = Number(hero.stress);
                 const stressMax = Number(hero.maxStress || 200);
                 const showStatus = hero.isWounded || hero.isAfflicted;
+                const portraitUrl = resolveHeroPortrait({
+                  heroId: hero.id,
+                  classLabel: hero.classLabel
+                });
 
                 return (
                   <button
@@ -315,8 +336,25 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
                   >
                     <div class="roster-hero-portrait">
                       <div class="roster-portrait-frame" />
-                      <div class="roster-portrait-avatar">
-                        <span class="roster-portrait-letter">{hero.classLabel[0]}</span>
+                      <div
+                        class={`roster-portrait-avatar${portraitUrl ? " roster-portrait-avatar--image" : ""}`}
+                      >
+                        {portraitUrl ? (
+                          <img
+                            class="roster-portrait-image"
+                            src={portraitUrl}
+                            alt=""
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <span
+                            class="roster-portrait-letter"
+                            data-blocker="BLOCKER-002: portrait sprite not extracted for this hero family"
+                            data-class-label={hero.classLabel}
+                          >
+                            {hero.classLabel[0]}
+                          </span>
+                        )}
                       </div>
                       <span class="roster-portrait-level">Lv{hero.level}</span>
                       {showStatus && (
@@ -370,8 +408,28 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
       {/* ── Bottom Controls ───────────────────────────────── */}
       <footer class="expedition-controls">
         <div class="expedition-controls-left">
-          <span class="hud-pill" style="font-size: 0.72rem;">
-            {props.viewModel.expeditionSummary}
+          <span
+            class={`expedition-status-pill ${
+              afflictedCount() > 0
+                ? "expedition-status-pill--afflicted"
+                : woundedCount() > 0
+                  ? "expedition-status-pill--wounded"
+                  : isFull()
+                    ? "expedition-status-pill--ready"
+                    : "expedition-status-pill--neutral"
+            }`}
+            data-state={
+              afflictedCount() > 0
+                ? "afflicted"
+                : woundedCount() > 0
+                  ? "wounded"
+                  : isFull()
+                    ? "ready"
+                    : "incomplete"
+            }
+          >
+            <span class="expedition-status-pill-dot" aria-hidden="true" />
+            {partyStatusLabel()}
           </span>
         </div>
         <div class="expedition-controls-right">
