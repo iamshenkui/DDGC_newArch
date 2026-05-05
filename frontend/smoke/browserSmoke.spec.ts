@@ -152,13 +152,14 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page);
 
     // Verify town content from replay fixtures
+    // Note: town shell renders Chinese labels matching the source DDGC game (UIR-005C).
     await expect(
-      page.getByText("Estate"),
-      "Estate label must be visible"
+      page.getByText("城镇中枢"),
+      "Estate eyebrow (城镇中枢) must be visible"
     ).toBeVisible();
     await expect(
-      page.getByText("The Azure Lantern"),
-      "Campaign name must be visible"
+      page.getByRole("heading", { name: "苍灯远征" }),
+      "Replay campaign name (苍灯远征) must be visible"
     ).toBeVisible();
     await expect(page.getByText("1250"), "Gold amount must be visible").toBeVisible();
 
@@ -170,13 +171,22 @@ test.describe("browser smoke: fidelity gates", () => {
       ).toBeVisible();
     }
 
-    // Buildings
-    for (const label of ["Stagecoach", "Guild", "Blacksmith", "Sanitarium"]) {
+    // Buildings — full 11-building screenshot anchor (Chinese display names).
+    const expectedBuildings = [
+      "次元感知塔", "试炼场", "锻造舱", "细胞修复站",
+      "信仰祭坛", "迷情乐园", "英雄档案馆", "天国花园",
+      "遗留塔", "交易市场", "空间分析"
+    ];
+    for (const label of expectedBuildings) {
       await expect(
-        page.getByText(label),
+        page.getByText(label).first(),
         `Building "${label}" must be visible`
       ).toBeVisible();
     }
+    await expect(
+      page.locator(".estate-building-node"),
+      "All 11 building nodes must render in the estate stage"
+    ).toHaveCount(11);
 
     await expectOriginalAssetImage(
       page.locator('.building-icon-image[src*="/original/buildings/"]').first(),
@@ -192,14 +202,15 @@ test.describe("browser smoke: fidelity gates", () => {
     // Fidelity — town is a completed product surface
     await expectFidelity(page.locator(".town-viewport"), "Town screen");
 
-    // Estate layout check — town uses three-zone estate layout from Unity EstateManagement.unity
+    // Estate layout check — town uses three-zone estate layout from Unity EstateManagement.unity.
+    // UIR-005D screenshot anchors: top nameplate, side buttons (6), embark control, currency strip (5), 11 buildings.
     await expect(
       page.locator(".town-viewport"),
       "Town must use .town-viewport for landscape layout"
     ).toBeVisible();
     await expect(
       page.locator(".estate-top-panel"),
-      "Town must have an estate top panel (EstateNameplate + CurrencyPanel)"
+      "Anchor A-NAMEPLATE: top nameplate (EstateNameplate) must be present"
     ).toBeVisible();
     await expect(
       page.locator(".estate-stage-shell"),
@@ -209,6 +220,18 @@ test.describe("browser smoke: fidelity gates", () => {
       page.locator(".estate-bottom-panel"),
       "Town must have an estate bottom panel (EmbarkButton + RosterPanel)"
     ).toBeVisible();
+    await expect(
+      page.locator(".estate-side-button"),
+      "Anchor A-SIDEBUTTONS: 6 side navigation buttons must render"
+    ).toHaveCount(6);
+    await expect(
+      page.locator(".estate-embark-button"),
+      "Anchor A-EMBARK: embark control must be present"
+    ).toBeVisible();
+    await expect(
+      page.locator(".estate-currency-slot"),
+      "Anchor A-CURRENCY: currency strip must contain 5 slots (bust/portrait/deed/crest/gold)"
+    ).toHaveCount(5);
 
     expectNoErrors(pageErrors, consoleErrors, "Phase 2 (town)");
 
@@ -267,10 +290,11 @@ test.describe("browser smoke: fidelity gates", () => {
       page.locator(".building-detail-eyebrow"),
       "Building eyebrow must be visible"
     ).toHaveText("Building");
+    // Building detail names render the source DDGC Chinese display names (UIR-005C).
     await expect(
       page.locator(".building-detail-name"),
-      "Building name must be visible"
-    ).toHaveText("Guild");
+      "Building name must be visible (DDGC display name 试炼场 = Guild)"
+    ).toHaveText("试炼场");
     await expect(
       page.locator(".building-action-card-header").filter({ hasText: "Train Combat Skill" }),
       "Building action must be visible"
@@ -391,12 +415,12 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page);
 
     await expect(
-      page.getByText("Estate"),
+      page.getByText("城镇中枢"),
       "Must be back at town after resume"
     ).toBeVisible();
     await expect(
-      page.getByText("The Azure Lantern"),
-      "Campaign name must persist after loop"
+      page.getByRole("heading", { name: "苍灯远征" }),
+      "Replay campaign name must persist after loop"
     ).toBeVisible();
 
     // Final fidelity and error check for entire loop
@@ -422,11 +446,27 @@ test.describe("browser smoke: fidelity gates", () => {
     await page.waitForSelector(".town-viewport", { timeout: 8_000 });
     await settle(page);
 
-    // Verify live-specific content
+    // Verify live-specific content (Chinese labels match source DDGC town shell — UIR-005C).
     await expect(
-      page.getByRole("heading", { name: "Fresh Campaign" }),
-      "Live town campaign name must be visible"
+      page.getByRole("heading", { name: "新档位面" }),
+      "Live town campaign name (新档位面) must be visible"
     ).toBeVisible();
+    await expect(
+      page.getByText("城镇中枢"),
+      "Live town eyebrow (城镇中枢) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".estate-building-node"),
+      "Live town must render all 11 building nodes"
+    ).toHaveCount(11);
+    await expect(
+      page.locator(".estate-side-button"),
+      "Live town side buttons (6) must render"
+    ).toHaveCount(6);
+    await expect(
+      page.locator(".estate-currency-slot"),
+      "Live town currency strip (5 slots) must render"
+    ).toHaveCount(5);
 
     // Live fixture heroes
     for (const name of ["Yuan", "Mei"]) {
@@ -464,10 +504,11 @@ test.describe("browser smoke: fidelity gates", () => {
       page.locator(".building-detail-eyebrow"),
       "Building eyebrow must be visible"
     ).toHaveText("Building");
+    // Building detail names render the source DDGC Chinese display names (UIR-005C).
     await expect(
       page.locator(".building-detail-name"),
-      "Stagecoach building name must be visible"
-    ).toHaveText("Stagecoach");
+      "Stagecoach building name must be visible (DDGC display name 次元感知塔 = Stagecoach)"
+    ).toHaveText("次元感知塔");
     await expectFidelity(
       page.locator(".app-frame"),
       "Live building detail screen"
@@ -536,8 +577,8 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page);
 
     await expect(
-      page.getByText("Estate"),
-      "Must be back at town after resume in live path"
+      page.getByText("城镇中枢"),
+      "Must be back at town (城镇中枢) after resume in live path"
     ).toBeVisible();
 
     // Final fidelity check after live meta-loop

@@ -249,6 +249,22 @@
   opacity: 0.78;
 }
 
+/* ── BottomPanel — full-stretch wrapper (source: UI_Shared/UI_Panels/BottomPanel) ── */
+/* Source RectTransform: anchorMin=(0,0) anchorMax=(1,1) sizeDelta=(0,0) — stretches
+   to fill parent. Used as the geometric grouping for SideButtons + EmbarkButton so
+   the rendered shell mirrors the Unity hierarchy and Playwright can treat the
+   group as a real layout region. */
+.estate-bottom-panel {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.estate-bottom-panel > * {
+  pointer-events: auto;
+}
+
 /* ── Side button panel (source: UI_Shared/UI_Panels/BottomPanel/SideButtons) ── */
 /* Six Unity buttons stacked at overlapping positions (-100,-80), (-220,-80),
    (-340,-80) with 136x136 sizeDelta. Only 3-4 are active at any time based
