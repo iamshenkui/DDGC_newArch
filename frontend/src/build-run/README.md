@@ -85,7 +85,7 @@ The frontend loads the following asset categories:
 
 1. **CSS** — `src/styles.css` (application styles)
 2. **HTML Entry** — `index.html` (mounts `#root` container)
-3. **No external image/font assets** — current phase uses placeholder/text-based rendering
+3. **Original building sprites and hero portraits** — staged in `public/original/` and loaded at runtime via Vite static asset serving
 
 ### Asset Resolution
 

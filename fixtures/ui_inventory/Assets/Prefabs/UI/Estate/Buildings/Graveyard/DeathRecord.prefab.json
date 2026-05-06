@@ -1,0 +1,972 @@
+{
+  "source_file": "Assets/Prefabs/UI/Estate/Buildings/Graveyard/DeathRecord.prefab",
+  "file_kind": "prefab",
+  "hierarchy": [
+    {
+      "file_id": "122142",
+      "name": "DeathRecord",
+      "tag": "Untagged",
+      "active": true,
+      "rect_transform": {
+        "anchor_min": {
+          "x": 0,
+          "y": 0
+        },
+        "anchor_max": {
+          "x": 0,
+          "y": 0
+        },
+        "anchored_position": {
+          "x": 0,
+          "y": 0
+        },
+        "size_delta": {
+          "x": 880,
+          "y": 180
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "local_scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "components": [
+        {
+          "file_id": "11401614",
+          "kind": "DeathRecordSlot",
+          "script": {
+            "file_id": "11500000",
+            "guid": "24bb865d7626bb649b7e6729fc4c45e2",
+            "type": 3,
+            "asset_path": "Assets/Scripts/UI/Slots/DeathRecordSlot.cs"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "24bb865d7626bb649b7e6729fc4c45e2",
+              "type": 3,
+              "asset_path": "Assets/Scripts/UI/Slots/DeathRecordSlot.cs"
+            }
+          }
+        },
+        {
+          "file_id": "11412366",
+          "kind": "MonoBehaviour",
+          "script": {
+            "file_id": "11500000",
+            "guid": "306cc8c2b49d7114eaa3623786fc2126",
+            "type": 3,
+            "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "306cc8c2b49d7114eaa3623786fc2126",
+              "type": 3,
+              "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "file_id": "150544",
+          "name": "HeroName",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": -110,
+              "y": 40
+            },
+            "size_delta": {
+              "x": 360,
+              "y": 40
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "11486340",
+              "kind": "Text",
+              "script": {
+                "file_id": "11500000",
+                "guid": "5f7201a12d95ffc409449d95f23cf332",
+                "type": 3,
+                "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+              },
+              "text": "英雄名称",
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "5f7201a12d95ffc409449d95f23cf332",
+                  "type": 3,
+                  "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                },
+                "m_Font": {
+                  "file_id": "12800000",
+                  "guid": "8b12fbf382bc88047888339a40b569ea",
+                  "type": 3,
+                  "asset_path": "Assets/Fonts/Bak/game.otf"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "159964",
+          "name": "ResolveIcon",
+          "tag": "Untagged",
+          "active": false,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": -360,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 110,
+              "y": 110
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "11437142",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "81cafa13596dda64b87f029975606d75",
+                  "type": 3,
+                  "asset_path": "Assets/Sprites/ui/char_slot.png"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "161422",
+          "name": "Portrait",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": -360,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 105,
+              "y": 105
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "11426034",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "1b8fa6db81737d049b6594547944a720",
+                  "type": 3,
+                  "asset_path": "Assets/Sprites/ui/char_icon.png"
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "file_id": "2390093761791963349",
+              "name": "Frame",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 110,
+                  "y": 110
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "7556374867628777538",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "81cafa13596dda64b87f029975606d75",
+                      "type": 3,
+                      "asset_path": "Assets/Sprites/ui/char_slot.png"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            }
+          ]
+        },
+        {
+          "file_id": "171460",
+          "name": "DeathFactor",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": -110,
+              "y": -15
+            },
+            "size_delta": {
+              "x": 360,
+              "y": 60
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "11415808",
+              "kind": "Text",
+              "script": {
+                "file_id": "11500000",
+                "guid": "5f7201a12d95ffc409449d95f23cf332",
+                "type": 3,
+                "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+              },
+              "text": "死因",
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "5f7201a12d95ffc409449d95f23cf332",
+                  "type": 3,
+                  "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                },
+                "m_Font": {
+                  "file_id": "12800000",
+                  "guid": "8b12fbf382bc88047888339a40b569ea",
+                  "type": 3,
+                  "asset_path": "Assets/Fonts/Bak/game.otf"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "2513391800901707856",
+          "name": "Background",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": -110,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 650,
+              "y": 160
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "7776095364583885161",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "49065c5846da2b748b14239778162e06",
+                  "type": 3,
+                  "asset_path": "Assets/Sprites/ui/hero_slot_bg.png"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "8956807140703931042",
+          "name": "ReviveButton",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 330,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 200,
+              "y": 60
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "1831375588979148017",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "10905",
+                  "guid": "0000000000000000f000000000000000",
+                  "type": 0,
+                  "asset_path": "<unresolved:0000000000000000f000000000000000>"
+                }
+              }
+            },
+            {
+              "file_id": "1266742195905802600",
+              "kind": "Button",
+              "script": {
+                "file_id": "11500000",
+                "guid": "4e29b1a8efbd4b44bb3f3716e73f07ff",
+                "type": 3,
+                "asset_path": "<unresolved:4e29b1a8efbd4b44bb3f3716e73f07ff>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "4e29b1a8efbd4b44bb3f3716e73f07ff",
+                  "type": 3,
+                  "asset_path": "<unresolved:4e29b1a8efbd4b44bb3f3716e73f07ff>"
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "file_id": "1946786912283669756",
+              "name": "Text",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchored_position": {
+                  "x": 30,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 120,
+                  "y": 40
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "7503477702789339829",
+                  "kind": "Text",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "5f7201a12d95ffc409449d95f23cf332",
+                    "type": 3,
+                    "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                  },
+                  "text": "复活英雄",
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "5f7201a12d95ffc409449d95f23cf332",
+                      "type": 3,
+                      "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                    },
+                    "m_Font": {
+                      "file_id": "12800000",
+                      "guid": "8b12fbf382bc88047888339a40b569ea",
+                      "type": 3,
+                      "asset_path": "Assets/Fonts/Bak/game.otf"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            },
+            {
+              "file_id": "8590890509028310495",
+              "name": "Image",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchored_position": {
+                  "x": -65,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 86,
+                  "y": 86
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "5662612721795869348",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "89c04528861e60145b82361347358bed",
+                      "type": 3,
+                      "asset_path": "Assets/Sprites/ui/btn_revive.png"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            }
+          ]
+        },
+        {
+          "file_id": "9091541880181836522",
+          "name": "DeathTime",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 100,
+              "y": 40
+            },
+            "size_delta": {
+              "x": 200,
+              "y": 40
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "1354478739354355863",
+              "kind": "Text",
+              "script": {
+                "file_id": "11500000",
+                "guid": "5f7201a12d95ffc409449d95f23cf332",
+                "type": 3,
+                "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+              },
+              "text": "死亡时间",
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "5f7201a12d95ffc409449d95f23cf332",
+                  "type": 3,
+                  "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                },
+                "m_Font": {
+                  "file_id": "12800000",
+                  "guid": "8b12fbf382bc88047888339a40b569ea",
+                  "type": 3,
+                  "asset_path": "Assets/Fonts/Bak/game.otf"
+                }
+              }
+            }
+          ],
+          "children": []
+        }
+      ]
+    }
+  ],
+  "prefab_instances": [],
+  "text_nodes": [
+    {
+      "game_object_file_id": "150544",
+      "component_file_id": "11486340",
+      "component_kind": "Text",
+      "text": "英雄名称"
+    },
+    {
+      "game_object_file_id": "171460",
+      "component_file_id": "11415808",
+      "component_kind": "Text",
+      "text": "死因"
+    },
+    {
+      "game_object_file_id": "1946786912283669756",
+      "component_file_id": "7503477702789339829",
+      "component_kind": "Text",
+      "text": "复活英雄"
+    },
+    {
+      "game_object_file_id": "9091541880181836522",
+      "component_file_id": "1354478739354355863",
+      "component_kind": "Text",
+      "text": "死亡时间"
+    }
+  ],
+  "asset_references": [
+    {
+      "game_object_file_id": "122142",
+      "component_file_id": "11401614",
+      "component_kind": "DeathRecordSlot",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "24bb865d7626bb649b7e6729fc4c45e2",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Slots/DeathRecordSlot.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "122142",
+      "component_file_id": "11412366",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "150544",
+      "component_file_id": "11486340",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "8b12fbf382bc88047888339a40b569ea",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/game.otf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "159964",
+      "component_file_id": "11437142",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "81cafa13596dda64b87f029975606d75",
+          "type": 3,
+          "asset_path": "Assets/Sprites/ui/char_slot.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "161422",
+      "component_file_id": "11426034",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "1b8fa6db81737d049b6594547944a720",
+          "type": 3,
+          "asset_path": "Assets/Sprites/ui/char_icon.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "171460",
+      "component_file_id": "11415808",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "8b12fbf382bc88047888339a40b569ea",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/game.otf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1946786912283669756",
+      "component_file_id": "7503477702789339829",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "8b12fbf382bc88047888339a40b569ea",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/game.otf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "2390093761791963349",
+      "component_file_id": "7556374867628777538",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "81cafa13596dda64b87f029975606d75",
+          "type": 3,
+          "asset_path": "Assets/Sprites/ui/char_slot.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "2513391800901707856",
+      "component_file_id": "7776095364583885161",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "49065c5846da2b748b14239778162e06",
+          "type": 3,
+          "asset_path": "Assets/Sprites/ui/hero_slot_bg.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "8590890509028310495",
+      "component_file_id": "5662612721795869348",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "89c04528861e60145b82361347358bed",
+          "type": 3,
+          "asset_path": "Assets/Sprites/ui/btn_revive.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "8956807140703931042",
+      "component_file_id": "1831375588979148017",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "10905",
+          "guid": "0000000000000000f000000000000000",
+          "type": 0,
+          "asset_path": "<unresolved:0000000000000000f000000000000000>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "8956807140703931042",
+      "component_file_id": "1266742195905802600",
+      "component_kind": "Button",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "4e29b1a8efbd4b44bb3f3716e73f07ff",
+          "type": 3,
+          "asset_path": "<unresolved:4e29b1a8efbd4b44bb3f3716e73f07ff>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "9091541880181836522",
+      "component_file_id": "1354478739354355863",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "8b12fbf382bc88047888339a40b569ea",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/game.otf"
+        }
+      }
+    }
+  ],
+  "native_game_object_count": 11,
+  "prefab_instance_count": 0
+}

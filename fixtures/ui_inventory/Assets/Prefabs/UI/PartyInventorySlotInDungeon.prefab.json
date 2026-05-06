@@ -1,0 +1,425 @@
+{
+  "source_file": "Assets/Prefabs/UI/PartyInventorySlotInDungeon.prefab",
+  "file_kind": "prefab",
+  "hierarchy": [
+    {
+      "file_id": "8334960961163555992",
+      "name": "PartyInventorySlotInDungeon",
+      "tag": "Untagged",
+      "active": true,
+      "rect_transform": {
+        "anchor_min": {
+          "x": 0,
+          "y": 0
+        },
+        "anchor_max": {
+          "x": 0,
+          "y": 0
+        },
+        "anchored_position": {
+          "x": 0,
+          "y": 0
+        },
+        "size_delta": {
+          "x": 0,
+          "y": 0
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "local_scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "components": [
+        {
+          "file_id": "8357087361025769447",
+          "kind": "InventorySlot",
+          "script": {
+            "file_id": "11500000",
+            "guid": "cd7b3490aa96bc748b2140d32d74bcc6",
+            "type": 3,
+            "asset_path": "Assets/Scripts/UI/Slots/InventorySlot.cs"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "cd7b3490aa96bc748b2140d32d74bcc6",
+              "type": 3,
+              "asset_path": "Assets/Scripts/UI/Slots/InventorySlot.cs"
+            }
+          }
+        },
+        {
+          "file_id": "5115937869036778685",
+          "kind": "MonoBehaviour",
+          "script": {
+            "file_id": "11500000",
+            "guid": "306cc8c2b49d7114eaa3623786fc2126",
+            "type": 3,
+            "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "306cc8c2b49d7114eaa3623786fc2126",
+              "type": 3,
+              "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+            }
+          }
+        },
+        {
+          "file_id": "5875397829010088227",
+          "kind": "Image",
+          "script": {
+            "file_id": "11500000",
+            "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+            "type": 3,
+            "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+              "type": 3,
+              "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+            },
+            "m_Sprite": {
+              "file_id": "21300000",
+              "guid": "e1f94e2727e97ee4aaedfeab315cbbae",
+              "type": 3,
+              "asset_path": "Assets/Sprites/ui/item_slot.png"
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "file_id": "9029228110641566248",
+          "name": "SlotItem",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 0,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 107,
+              "y": 164
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 0.8,
+              "y": 0.8,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "7821316018791924124",
+              "kind": "InventoryItem",
+              "script": {
+                "file_id": "11500000",
+                "guid": "bc71199f09cab52498005d8abe154780",
+                "type": 3,
+                "asset_path": "Assets/Scripts/UI/Inventory/InventoryItem.cs"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "bc71199f09cab52498005d8abe154780",
+                  "type": 3,
+                  "asset_path": "Assets/Scripts/UI/Inventory/InventoryItem.cs"
+                }
+              }
+            },
+            {
+              "file_id": "2533843802865545958",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "file_id": "3339070377342103768",
+              "name": "Text",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 1,
+                  "y": 0
+                },
+                "anchor_max": {
+                  "x": 1,
+                  "y": 0
+                },
+                "anchored_position": {
+                  "x": -30,
+                  "y": 25
+                },
+                "size_delta": {
+                  "x": 40,
+                  "y": 30
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "8363441625721382043",
+                  "kind": "Text",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "5f7201a12d95ffc409449d95f23cf332",
+                    "type": 3,
+                    "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                  },
+                  "text": 150,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "5f7201a12d95ffc409449d95f23cf332",
+                      "type": 3,
+                      "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                    },
+                    "m_Font": {
+                      "file_id": "12800000",
+                      "guid": "ee61792463755b745b5aacaf225b30aa",
+                      "type": 3,
+                      "asset_path": "Assets/Fonts/ZhiYiSongTi-Regular.ttf"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            },
+            {
+              "file_id": "3583378682115139303",
+              "name": "SlotItemIcon",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 106,
+                  "y": 164
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "4969621961511563819",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "01b1b2dd1bcff3646bea057a959c6767",
+                      "type": 3,
+                      "asset_path": "Assets/Resources/Sprites/inv_supply+dark_water.png"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "prefab_instances": [],
+  "text_nodes": [
+    {
+      "game_object_file_id": "3339070377342103768",
+      "component_file_id": "8363441625721382043",
+      "component_kind": "Text",
+      "text": 150
+    }
+  ],
+  "asset_references": [
+    {
+      "game_object_file_id": "3339070377342103768",
+      "component_file_id": "8363441625721382043",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "ee61792463755b745b5aacaf225b30aa",
+          "type": 3,
+          "asset_path": "Assets/Fonts/ZhiYiSongTi-Regular.ttf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "3583378682115139303",
+      "component_file_id": "4969621961511563819",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "01b1b2dd1bcff3646bea057a959c6767",
+          "type": 3,
+          "asset_path": "Assets/Resources/Sprites/inv_supply+dark_water.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "8334960961163555992",
+      "component_file_id": "8357087361025769447",
+      "component_kind": "InventorySlot",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "cd7b3490aa96bc748b2140d32d74bcc6",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Slots/InventorySlot.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "8334960961163555992",
+      "component_file_id": "5115937869036778685",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "8334960961163555992",
+      "component_file_id": "5875397829010088227",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "e1f94e2727e97ee4aaedfeab315cbbae",
+          "type": 3,
+          "asset_path": "Assets/Sprites/ui/item_slot.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "9029228110641566248",
+      "component_file_id": "7821316018791924124",
+      "component_kind": "InventoryItem",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "bc71199f09cab52498005d8abe154780",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Inventory/InventoryItem.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "9029228110641566248",
+      "component_file_id": "2533843802865545958",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        }
+      }
+    }
+  ],
+  "native_game_object_count": 4,
+  "prefab_instance_count": 0
+}

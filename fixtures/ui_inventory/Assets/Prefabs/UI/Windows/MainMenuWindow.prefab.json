@@ -1,0 +1,1462 @@
+{
+  "source_file": "Assets/Prefabs/UI/Windows/MainMenuWindow.prefab",
+  "file_kind": "prefab",
+  "hierarchy": [
+    {
+      "file_id": "150512",
+      "name": "MainMenuWindow",
+      "tag": "Untagged",
+      "active": false,
+      "rect_transform": {
+        "anchor_min": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "anchor_max": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "anchored_position": {
+          "x": 0,
+          "y": 0
+        },
+        "size_delta": {
+          "x": 1023,
+          "y": 740
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "local_scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "components": [
+        {
+          "file_id": "11461292",
+          "kind": "Image",
+          "script": {
+            "file_id": "-765806418",
+            "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+            "type": 3,
+            "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "-765806418",
+              "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+              "type": 3,
+              "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+            },
+            "m_Sprite": {
+              "file_id": "21300000",
+              "guid": "4e780ea66a89c2f4b8bdc4f4b76c290d",
+              "type": 3,
+              "asset_path": "<unresolved:4e780ea66a89c2f4b8bdc4f4b76c290d>"
+            }
+          }
+        },
+        {
+          "file_id": "11485484",
+          "kind": "MainMenuWindow",
+          "script": {
+            "file_id": "11500000",
+            "guid": "05dd000f283abed408736f33983dcd2e",
+            "type": 3,
+            "asset_path": "Assets/Scripts/UI/Windows/MainMenuWindow.cs"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "05dd000f283abed408736f33983dcd2e",
+              "type": 3,
+              "asset_path": "Assets/Scripts/UI/Windows/MainMenuWindow.cs"
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "file_id": "120088",
+          "name": "MenuOptions",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": -4,
+              "y": 19
+            },
+            "size_delta": {
+              "x": 466,
+              "y": 486
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "11437392",
+              "kind": "LayoutGroup",
+              "script": {
+                "file_id": "1297475563",
+                "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                "type": 3,
+                "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "1297475563",
+                  "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                  "type": 3,
+                  "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "file_id": "142434",
+              "name": "Button",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0,
+                  "y": 1
+                },
+                "anchor_max": {
+                  "x": 0,
+                  "y": 1
+                },
+                "anchored_position": {
+                  "x": 233,
+                  "y": -48.600002
+                },
+                "size_delta": {
+                  "x": 466,
+                  "y": 97.200005
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11414512",
+                  "kind": "MonoBehaviour",
+                  "script": {
+                    "file_id": "1679637790",
+                    "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                    "type": 3,
+                    "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "1679637790",
+                      "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                      "type": 3,
+                      "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                    }
+                  }
+                },
+                {
+                  "file_id": "11427912",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "-765806418",
+                    "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                    "type": 3,
+                    "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "-765806418",
+                      "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                      "type": 3,
+                      "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "b14c9d4fa66bc4d45897fba8c866125a",
+                      "type": 3,
+                      "asset_path": "<unresolved:b14c9d4fa66bc4d45897fba8c866125a>"
+                    }
+                  }
+                },
+                {
+                  "file_id": "11443628",
+                  "kind": "Button",
+                  "script": {
+                    "file_id": "1392445389",
+                    "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                    "type": 3,
+                    "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "1392445389",
+                      "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                      "type": 3,
+                      "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "120578",
+                  "name": "Text",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchor_max": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchored_position": {
+                      "x": 0,
+                      "y": 3
+                    },
+                    "size_delta": {
+                      "x": 236,
+                      "y": 43
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11478490",
+                      "kind": "Text",
+                      "script": {
+                        "file_id": "708705254",
+                        "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                        "type": 3,
+                        "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                      },
+                      "text": "Return To Game",
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "708705254",
+                          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                          "type": 3,
+                          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                        },
+                        "m_Font": {
+                          "file_id": "12800000",
+                          "guid": "f930c4496e27b454ebc744aa4b25236e",
+                          "type": 3,
+                          "asset_path": "Assets/Fonts/Bak/Deutsch.ttf"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "file_id": "160486",
+              "name": "Button (2)",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0,
+                  "y": 1
+                },
+                "anchor_max": {
+                  "x": 0,
+                  "y": 1
+                },
+                "anchored_position": {
+                  "x": 233,
+                  "y": -243.00002
+                },
+                "size_delta": {
+                  "x": 466,
+                  "y": 97.200005
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11409510",
+                  "kind": "MonoBehaviour",
+                  "script": {
+                    "file_id": "1679637790",
+                    "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                    "type": 3,
+                    "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "1679637790",
+                      "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                      "type": 3,
+                      "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                    }
+                  }
+                },
+                {
+                  "file_id": "11428194",
+                  "kind": "Button",
+                  "script": {
+                    "file_id": "1392445389",
+                    "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                    "type": 3,
+                    "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "1392445389",
+                      "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                      "type": 3,
+                      "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                    }
+                  }
+                },
+                {
+                  "file_id": "11434518",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "-765806418",
+                    "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                    "type": 3,
+                    "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "-765806418",
+                      "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                      "type": 3,
+                      "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "b14c9d4fa66bc4d45897fba8c866125a",
+                      "type": 3,
+                      "asset_path": "<unresolved:b14c9d4fa66bc4d45897fba8c866125a>"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "127174",
+                  "name": "Text",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchor_max": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchored_position": {
+                      "x": 0,
+                      "y": 3
+                    },
+                    "size_delta": {
+                      "x": 236,
+                      "y": 43
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11423566",
+                      "kind": "Text",
+                      "script": {
+                        "file_id": "708705254",
+                        "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                        "type": 3,
+                        "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                      },
+                      "text": "Options",
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "708705254",
+                          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                          "type": 3,
+                          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                        },
+                        "m_Font": {
+                          "file_id": "12800000",
+                          "guid": "f930c4496e27b454ebc744aa4b25236e",
+                          "type": 3,
+                          "asset_path": "Assets/Fonts/Bak/Deutsch.ttf"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "file_id": "155726",
+              "name": "Button (4)",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0,
+                  "y": 1
+                },
+                "anchor_max": {
+                  "x": 0,
+                  "y": 1
+                },
+                "anchored_position": {
+                  "x": 233,
+                  "y": -437.40002
+                },
+                "size_delta": {
+                  "x": 466,
+                  "y": 97.200005
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11412752",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "-765806418",
+                    "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                    "type": 3,
+                    "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "-765806418",
+                      "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                      "type": 3,
+                      "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "b14c9d4fa66bc4d45897fba8c866125a",
+                      "type": 3,
+                      "asset_path": "<unresolved:b14c9d4fa66bc4d45897fba8c866125a>"
+                    }
+                  }
+                },
+                {
+                  "file_id": "11423370",
+                  "kind": "Button",
+                  "script": {
+                    "file_id": "1392445389",
+                    "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                    "type": 3,
+                    "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "1392445389",
+                      "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                      "type": 3,
+                      "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                    }
+                  }
+                },
+                {
+                  "file_id": "11423794",
+                  "kind": "MonoBehaviour",
+                  "script": {
+                    "file_id": "1679637790",
+                    "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                    "type": 3,
+                    "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "1679637790",
+                      "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                      "type": 3,
+                      "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "129194",
+                  "name": "Text",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchor_max": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchored_position": {
+                      "x": 0,
+                      "y": 3
+                    },
+                    "size_delta": {
+                      "x": 236,
+                      "y": 43
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11489456",
+                      "kind": "Text",
+                      "script": {
+                        "file_id": "708705254",
+                        "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                        "type": 3,
+                        "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                      },
+                      "text": "Return To Desktop",
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "708705254",
+                          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                          "type": 3,
+                          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                        },
+                        "m_Font": {
+                          "file_id": "12800000",
+                          "guid": "f930c4496e27b454ebc744aa4b25236e",
+                          "type": 3,
+                          "asset_path": "Assets/Fonts/Bak/Deutsch.ttf"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "file_id": "162900",
+              "name": "Button (1)",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0,
+                  "y": 1
+                },
+                "anchor_max": {
+                  "x": 0,
+                  "y": 1
+                },
+                "anchored_position": {
+                  "x": 233,
+                  "y": -145.8
+                },
+                "size_delta": {
+                  "x": 466,
+                  "y": 97.200005
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11401654",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "-765806418",
+                    "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                    "type": 3,
+                    "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "-765806418",
+                      "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                      "type": 3,
+                      "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "b14c9d4fa66bc4d45897fba8c866125a",
+                      "type": 3,
+                      "asset_path": "<unresolved:b14c9d4fa66bc4d45897fba8c866125a>"
+                    }
+                  }
+                },
+                {
+                  "file_id": "11410468",
+                  "kind": "Button",
+                  "script": {
+                    "file_id": "1392445389",
+                    "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                    "type": 3,
+                    "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "1392445389",
+                      "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                      "type": 3,
+                      "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                    }
+                  }
+                },
+                {
+                  "file_id": "11442052",
+                  "kind": "MonoBehaviour",
+                  "script": {
+                    "file_id": "1679637790",
+                    "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                    "type": 3,
+                    "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "1679637790",
+                      "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                      "type": 3,
+                      "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "122098",
+                  "name": "Text",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchor_max": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchored_position": {
+                      "x": 0,
+                      "y": 3
+                    },
+                    "size_delta": {
+                      "x": 236,
+                      "y": 43
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11421524",
+                      "kind": "Text",
+                      "script": {
+                        "file_id": "708705254",
+                        "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                        "type": 3,
+                        "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                      },
+                      "text": "Controls",
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "708705254",
+                          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                          "type": 3,
+                          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                        },
+                        "m_Font": {
+                          "file_id": "12800000",
+                          "guid": "f930c4496e27b454ebc744aa4b25236e",
+                          "type": 3,
+                          "asset_path": "Assets/Fonts/Bak/Deutsch.ttf"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "file_id": "123290",
+              "name": "Button (3)",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0,
+                  "y": 1
+                },
+                "anchor_max": {
+                  "x": 0,
+                  "y": 1
+                },
+                "anchored_position": {
+                  "x": 233,
+                  "y": -340.2
+                },
+                "size_delta": {
+                  "x": 466,
+                  "y": 97.200005
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11450098",
+                  "kind": "MonoBehaviour",
+                  "script": {
+                    "file_id": "1679637790",
+                    "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                    "type": 3,
+                    "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "1679637790",
+                      "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                      "type": 3,
+                      "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                    }
+                  }
+                },
+                {
+                  "file_id": "11475228",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "-765806418",
+                    "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                    "type": 3,
+                    "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "-765806418",
+                      "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                      "type": 3,
+                      "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "b14c9d4fa66bc4d45897fba8c866125a",
+                      "type": 3,
+                      "asset_path": "<unresolved:b14c9d4fa66bc4d45897fba8c866125a>"
+                    }
+                  }
+                },
+                {
+                  "file_id": "11483952",
+                  "kind": "Button",
+                  "script": {
+                    "file_id": "1392445389",
+                    "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                    "type": 3,
+                    "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "1392445389",
+                      "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                      "type": 3,
+                      "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "170594",
+                  "name": "Text",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchor_max": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchored_position": {
+                      "x": -3.2,
+                      "y": 3
+                    },
+                    "size_delta": {
+                      "x": 292.4,
+                      "y": 43
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11497114",
+                      "kind": "Text",
+                      "script": {
+                        "file_id": "708705254",
+                        "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                        "type": 3,
+                        "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                      },
+                      "text": "Return To Main Menu",
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "708705254",
+                          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                          "type": 3,
+                          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                        },
+                        "m_Font": {
+                          "file_id": "12800000",
+                          "guid": "f930c4496e27b454ebc744aa4b25236e",
+                          "type": 3,
+                          "asset_path": "Assets/Fonts/Bak/Deutsch.ttf"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "file_id": "158024",
+          "name": "CloseButton",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 339.2,
+              "y": 246
+            },
+            "size_delta": {
+              "x": 32,
+              "y": 32
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "11430734",
+              "kind": "Image",
+              "script": {
+                "file_id": "-765806418",
+                "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                "type": 3,
+                "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "-765806418",
+                  "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                  "type": 3,
+                  "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "769d8277be4c51447a1cb51c5cb91749",
+                  "type": 3,
+                  "asset_path": "<unresolved:769d8277be4c51447a1cb51c5cb91749>"
+                }
+              }
+            },
+            {
+              "file_id": "11477498",
+              "kind": "Button",
+              "script": {
+                "file_id": "1392445389",
+                "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                "type": 3,
+                "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "1392445389",
+                  "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+                  "type": 3,
+                  "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+                }
+              }
+            }
+          ],
+          "children": []
+        }
+      ]
+    }
+  ],
+  "prefab_instances": [],
+  "text_nodes": [
+    {
+      "game_object_file_id": "122098",
+      "component_file_id": "11421524",
+      "component_kind": "Text",
+      "text": "Controls"
+    },
+    {
+      "game_object_file_id": "127174",
+      "component_file_id": "11423566",
+      "component_kind": "Text",
+      "text": "Options"
+    },
+    {
+      "game_object_file_id": "120578",
+      "component_file_id": "11478490",
+      "component_kind": "Text",
+      "text": "Return To Game"
+    },
+    {
+      "game_object_file_id": "129194",
+      "component_file_id": "11489456",
+      "component_kind": "Text",
+      "text": "Return To Desktop"
+    },
+    {
+      "game_object_file_id": "170594",
+      "component_file_id": "11497114",
+      "component_kind": "Text",
+      "text": "Return To Main Menu"
+    }
+  ],
+  "asset_references": [
+    {
+      "game_object_file_id": "162900",
+      "component_file_id": "11401654",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "-765806418",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "b14c9d4fa66bc4d45897fba8c866125a",
+          "type": 3,
+          "asset_path": "<unresolved:b14c9d4fa66bc4d45897fba8c866125a>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "160486",
+      "component_file_id": "11409510",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "1679637790",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "162900",
+      "component_file_id": "11410468",
+      "component_kind": "Button",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "1392445389",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "155726",
+      "component_file_id": "11412752",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "-765806418",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "b14c9d4fa66bc4d45897fba8c866125a",
+          "type": 3,
+          "asset_path": "<unresolved:b14c9d4fa66bc4d45897fba8c866125a>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "142434",
+      "component_file_id": "11414512",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "1679637790",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "122098",
+      "component_file_id": "11421524",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "708705254",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "f930c4496e27b454ebc744aa4b25236e",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/Deutsch.ttf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "155726",
+      "component_file_id": "11423370",
+      "component_kind": "Button",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "1392445389",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "127174",
+      "component_file_id": "11423566",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "708705254",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "f930c4496e27b454ebc744aa4b25236e",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/Deutsch.ttf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "155726",
+      "component_file_id": "11423794",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "1679637790",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "142434",
+      "component_file_id": "11427912",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "-765806418",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "b14c9d4fa66bc4d45897fba8c866125a",
+          "type": 3,
+          "asset_path": "<unresolved:b14c9d4fa66bc4d45897fba8c866125a>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "160486",
+      "component_file_id": "11428194",
+      "component_kind": "Button",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "1392445389",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "158024",
+      "component_file_id": "11430734",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "-765806418",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "769d8277be4c51447a1cb51c5cb91749",
+          "type": 3,
+          "asset_path": "<unresolved:769d8277be4c51447a1cb51c5cb91749>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "160486",
+      "component_file_id": "11434518",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "-765806418",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "b14c9d4fa66bc4d45897fba8c866125a",
+          "type": 3,
+          "asset_path": "<unresolved:b14c9d4fa66bc4d45897fba8c866125a>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "120088",
+      "component_file_id": "11437392",
+      "component_kind": "LayoutGroup",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "1297475563",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "162900",
+      "component_file_id": "11442052",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "1679637790",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "142434",
+      "component_file_id": "11443628",
+      "component_kind": "Button",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "1392445389",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "123290",
+      "component_file_id": "11450098",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "1679637790",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "150512",
+      "component_file_id": "11461292",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "-765806418",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "4e780ea66a89c2f4b8bdc4f4b76c290d",
+          "type": 3,
+          "asset_path": "<unresolved:4e780ea66a89c2f4b8bdc4f4b76c290d>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "123290",
+      "component_file_id": "11475228",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "-765806418",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "b14c9d4fa66bc4d45897fba8c866125a",
+          "type": 3,
+          "asset_path": "<unresolved:b14c9d4fa66bc4d45897fba8c866125a>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "158024",
+      "component_file_id": "11477498",
+      "component_kind": "Button",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "1392445389",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "120578",
+      "component_file_id": "11478490",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "708705254",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "f930c4496e27b454ebc744aa4b25236e",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/Deutsch.ttf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "123290",
+      "component_file_id": "11483952",
+      "component_kind": "Button",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "1392445389",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "150512",
+      "component_file_id": "11485484",
+      "component_kind": "MainMenuWindow",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "05dd000f283abed408736f33983dcd2e",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Windows/MainMenuWindow.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "129194",
+      "component_file_id": "11489456",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "708705254",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "f930c4496e27b454ebc744aa4b25236e",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/Deutsch.ttf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "170594",
+      "component_file_id": "11497114",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "708705254",
+          "guid": "f5f67c52d1564df4a8936ccd202a3bd8",
+          "type": 3,
+          "asset_path": "<unresolved:f5f67c52d1564df4a8936ccd202a3bd8>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "f930c4496e27b454ebc744aa4b25236e",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/Deutsch.ttf"
+        }
+      }
+    }
+  ],
+  "native_game_object_count": 13,
+  "prefab_instance_count": 0
+}

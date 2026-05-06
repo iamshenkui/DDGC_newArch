@@ -17,5 +17,12 @@ export default defineConfig({
   server: {
     port: 4179,
     host: "0.0.0.0"
+  },
+  preview: {
+    port: 4179,
+    host: "0.0.0.0"
+  },
+  test: {
+    exclude: ["node_modules", "dist", "smoke", "smoke-cap"]
   }
 });

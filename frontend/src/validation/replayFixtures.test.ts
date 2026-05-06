@@ -31,6 +31,20 @@ import {
   replaySanitariumBuildingDetailViewModel,
   replayStagecoachBuildingDetailViewModel,
   replayStagecoachBuildingSnapshot,
+  replayAbbeyBuildingDetailViewModel,
+  replayTavernBuildingDetailViewModel,
+  replayGraveyardBuildingDetailViewModel,
+  replayGardenBuildingDetailViewModel,
+  replayLegacyTowerBuildingDetailViewModel,
+  replayMarketBuildingDetailViewModel,
+  replayCampingTrainerBuildingDetailViewModel,
+  replayAbbeyBuildingSnapshot,
+  replayTavernBuildingSnapshot,
+  replayGraveyardBuildingSnapshot,
+  replayGardenBuildingSnapshot,
+  replayLegacyTowerBuildingSnapshot,
+  replayMarketBuildingSnapshot,
+  replayCampingTrainerBuildingSnapshot,
 } from "./replayFixtures";
 
 describe("replay fixtures — hero and campaign state consistency", () => {
@@ -309,6 +323,7 @@ describe("replay fixtures — hero and campaign state consistency", () => {
         for (const hero of result.heroOutcomes) {
           expect(hero.heroId).toBeTruthy();
           expect(hero.heroName).toBeTruthy();
+          expect(hero.classLabel).toBeTruthy();
           expect(["alive", "dead", "stressed"]).toContain(hero.status);
           expect(hero.hpChange).toBeTruthy();
           expect(hero.stressChange).toBeTruthy();
@@ -331,6 +346,9 @@ describe("replay fixtures — hero and campaign state consistency", () => {
         );
         expect(townHero).toBeDefined();
         expect(hero.heroName).toBe(townHero!.name);
+        expect(hero.classLabel).toBeTruthy();
+        expect(hero.hp).toBeTruthy();
+        expect(hero.stress).toBeTruthy();
       }
     });
 
@@ -528,6 +546,13 @@ describe("building fixture consistency with town roster", () => {
       replayBlacksmithBuildingDetailViewModel.buildingId,
       replaySanitariumBuildingDetailViewModel.buildingId,
       replayStagecoachBuildingDetailViewModel.buildingId,
+      replayAbbeyBuildingDetailViewModel.buildingId,
+      replayTavernBuildingDetailViewModel.buildingId,
+      replayGraveyardBuildingDetailViewModel.buildingId,
+      replayGardenBuildingDetailViewModel.buildingId,
+      replayLegacyTowerBuildingDetailViewModel.buildingId,
+      replayMarketBuildingDetailViewModel.buildingId,
+      replayCampingTrainerBuildingDetailViewModel.buildingId,
     ]);
     for (const tb of townBuildings) {
       expect(

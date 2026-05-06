@@ -13,13 +13,14 @@ import type {
   ExpeditionResultViewModel,
   ReturnViewModel,
 } from "./contractTypes";
+import { createTownBuildingSummary } from "../town/buildingCatalog";
 
 const createLiveTownViewModel = (): TownViewModel => ({
   kind: "town",
-  title: "Town Surface — Live Mode",
-  campaignName: "Fresh Campaign",
+  title: "城镇界面",
+  campaignName: "新档位面",
   campaignSummary:
-    "Live runtime boot: DDGC host initialized with fresh campaign state. Roster and building data reflects initial campaign setup.",
+    "实时模式已启动，当前展示的是新战役的城镇主界面与初始编队。",
   heroes: [
     {
       id: "hero-hunter-live-01",
@@ -59,18 +60,17 @@ const createLiveTownViewModel = (): TownViewModel => ({
     }
   ] as ReadonlyArray<TownHeroSummary>,
   buildings: [
-    {
-      id: "stagecoach",
-      label: "Stagecoach",
-      summary: "Recruit new heroes to your party.",
-      status: "ready"
-    },
-    {
-      id: "guild",
-      label: "Guild",
-      summary: "Skill training and party capability review.",
-      status: "ready"
-    }
+    createTownBuildingSummary("stagecoach", "ready"),
+    createTownBuildingSummary("guild", "ready"),
+    createTownBuildingSummary("blacksmith", "ready"),
+    createTownBuildingSummary("sanitarium", "ready"),
+    createTownBuildingSummary("abbey", "ready"),
+    createTownBuildingSummary("tavern", "ready"),
+    createTownBuildingSummary("graveyard", "partial"),
+    createTownBuildingSummary("garden", "partial"),
+    createTownBuildingSummary("legacytower", "partial"),
+    createTownBuildingSummary("market", "partial"),
+    createTownBuildingSummary("campingtrainer", "partial")
   ] as ReadonlyArray<TownBuildingSummary>,
   roster: [
     {
@@ -112,7 +112,7 @@ const createLiveTownViewModel = (): TownViewModel => ({
   ] as ReadonlyArray<TownHeroSummary>,
   gold: 500,
   isFreshVisit: true,
-  nextActionLabel: "Launch Expedition"
+  nextActionLabel: "整备并出发"
 });
 
 const createLiveTownSnapshot = (): DdgcFrontendSnapshot => ({
@@ -131,10 +131,14 @@ const createLiveHeroDetailViewModel = (hero: TownHeroSummary): HeroDetailViewMod
   maxHp: hero.hp.split(" / ")[1] ?? hero.hp.split(" / ")[0],
   stress: hero.stress,
   resolve: "3",
+  resolveLabel: "Heroic",
+  maxStress: "200",
   progression: {
     level: hero.level,
     experience: "0",
-    experienceToNext: "300"
+    experienceToNext: "300",
+    resolveLevel: 1,
+    resolveXP: "0"
   },
   resistances: {
     stun: "40%",
@@ -145,11 +149,29 @@ const createLiveHeroDetailViewModel = (hero: TownHeroSummary): HeroDetailViewMod
     trap: "70%",
     hazard: "20%"
   },
-  combatSkills: ["Skill 1", "Skill 2"],
-  campingSkills: ["Campfire Song"],
-  weapon: "Basic Weapon",
-  armor: "Leather Armor",
-  campNotes: "Hero detail view - live mode placeholder."
+  baseStats: {
+    dmg: "8-12",
+    maxHp: hero.maxHp,
+    crit: "5%",
+    spd: "4",
+    dodge: "10%"
+  },
+  combatSkills: [
+    { name: "Skill 1", level: 1, description: "Combat skill description.", target: "Enemy", hitRating: "80%", critRating: "5%" },
+    { name: "Skill 2", level: 1, description: "Combat skill description.", target: "Self", hitRating: "100%", critRating: "0%" }
+  ],
+  campingSkills: [
+    { name: "Campfire Song", level: 1, description: "Camping skill description.", target: "Party", hitRating: "100%", critRating: "0%" }
+  ],
+  weapon: { name: "Basic Weapon", level: 1 },
+  armor: { name: "Leather Armor", level: 1 },
+  positiveQuirks: [],
+  negativeQuirks: [],
+  diseases: [],
+  isWounded: hero.isWounded,
+  isAfflicted: hero.isAfflicted,
+  heroDescription: "A brave hero ready for adventure.",
+  talent: "Versatile"
 });
 
 const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): BuildingDetailViewModel => {
@@ -290,6 +312,7 @@ const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
     {
       heroId: "hero-hunter-live-01",
       heroName: "Yuan",
+      classLabel: "Hunter",
       status: "alive",
       hpChange: "-2",
       stressChange: "+5"
@@ -297,6 +320,7 @@ const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
     {
       heroId: "hero-white-live-01",
       heroName: "Mei",
+      classLabel: "White",
       status: "alive",
       hpChange: "-3",
       stressChange: "+3"
@@ -319,12 +343,14 @@ const createLiveReturnViewModel = (): ReturnViewModel => ({
     {
       heroId: "hero-hunter-live-01",
       heroName: "Yuan",
+      classLabel: "Hunter",
       hp: "40 / 42",
       stress: "5"
     },
     {
       heroId: "hero-white-live-01",
       heroName: "Mei",
+      classLabel: "White",
       hp: "38 / 41",
       stress: "3"
     }
@@ -414,15 +440,19 @@ export class LiveRuntimeBridge implements RuntimeBridge {
       case "launch-expedition":
         this.snapshot = {
           ...this.snapshot,
-          flowState: "combat",
-          viewModel: createLiveExpeditionViewModel()
+          flowState: "result",
+          viewModel: createLiveResultViewModel()
         };
         break;
       case "return-to-town":
         this.snapshot = createLiveTownSnapshot();
         break;
       case "continue-from-result":
-        this.snapshot = createLiveTownSnapshot();
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "return",
+          viewModel: createLiveReturnViewModel()
+        };
         break;
       case "resume-from-return":
         this.snapshot = createLiveTownSnapshot();

@@ -1,0 +1,360 @@
+{
+  "source_file": "Assets/Prefabs/UI/Estate/PanelWindows/ActivityLog/Goal.prefab",
+  "file_kind": "prefab",
+  "hierarchy": [
+    {
+      "file_id": "1000013270907060",
+      "name": "Goal",
+      "tag": "Untagged",
+      "active": true,
+      "rect_transform": {
+        "anchor_min": {
+          "x": 0,
+          "y": 0
+        },
+        "anchor_max": {
+          "x": 0,
+          "y": 0
+        },
+        "anchored_position": {
+          "x": 0,
+          "y": 0
+        },
+        "size_delta": {
+          "x": 0,
+          "y": 0
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "local_scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "components": [
+        {
+          "file_id": "114000013680284776",
+          "kind": "MonoBehaviour",
+          "script": {
+            "file_id": "11500000",
+            "guid": "306cc8c2b49d7114eaa3623786fc2126",
+            "type": 3,
+            "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "306cc8c2b49d7114eaa3623786fc2126",
+              "type": 3,
+              "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+            }
+          }
+        },
+        {
+          "file_id": "114000012527849756",
+          "kind": "LogQuestGoal",
+          "script": {
+            "file_id": "11500000",
+            "guid": "18c47d39a083f1d4a9a54b2afd7f65fb",
+            "type": 3,
+            "asset_path": "Assets/Scripts/UI/Slots/LogQuestGoal.cs"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "18c47d39a083f1d4a9a54b2afd7f65fb",
+              "type": 3,
+              "asset_path": "Assets/Scripts/UI/Slots/LogQuestGoal.cs"
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "file_id": "1000010850574622",
+          "name": "CheckBox",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 20,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 32,
+              "y": 32
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "114000012726752522",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "f3953fe6290b1624aa36758164855700",
+                  "type": 3,
+                  "asset_path": "<unresolved:f3953fe6290b1624aa36758164855700>"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "1000011192930802",
+          "name": "Text",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": -32.4,
+              "y": -2.9444695e-05
+            },
+            "size_delta": {
+              "x": 886.5,
+              "y": 66.7
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 0.5,
+              "y": 0.6,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "114000012661271612",
+              "kind": "Text",
+              "script": {
+                "file_id": "11500000",
+                "guid": "5f7201a12d95ffc409449d95f23cf332",
+                "type": 3,
+                "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+              },
+              "text": "Defeat the Apprentice Necromancer",
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "5f7201a12d95ffc409449d95f23cf332",
+                  "type": 3,
+                  "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                },
+                "m_Font": {
+                  "file_id": "12800000",
+                  "guid": "2d8b36a1cce4ad241ba35463873e2da8",
+                  "type": 3,
+                  "asset_path": "Assets/Fonts/Bak/DwarvenAxe Dynamic.ttf"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "1000013098065902",
+          "name": "CheckBoxUnchecked",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 20.000004,
+              "y": -3.8146973e-06
+            },
+            "size_delta": {
+              "x": 32,
+              "y": 32
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "114000011086424352",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "11458e228d5f76b469ab61ae187f19f4",
+                  "type": 3,
+                  "asset_path": "<unresolved:11458e228d5f76b469ab61ae187f19f4>"
+                }
+              }
+            }
+          ],
+          "children": []
+        }
+      ]
+    }
+  ],
+  "prefab_instances": [],
+  "text_nodes": [
+    {
+      "game_object_file_id": "1000011192930802",
+      "component_file_id": "114000012661271612",
+      "component_kind": "Text",
+      "text": "Defeat the Apprentice Necromancer"
+    }
+  ],
+  "asset_references": [
+    {
+      "game_object_file_id": "1000010850574622",
+      "component_file_id": "114000012726752522",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "f3953fe6290b1624aa36758164855700",
+          "type": 3,
+          "asset_path": "<unresolved:f3953fe6290b1624aa36758164855700>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1000011192930802",
+      "component_file_id": "114000012661271612",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "2d8b36a1cce4ad241ba35463873e2da8",
+          "type": 3,
+          "asset_path": "Assets/Fonts/Bak/DwarvenAxe Dynamic.ttf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1000013098065902",
+      "component_file_id": "114000011086424352",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "11458e228d5f76b469ab61ae187f19f4",
+          "type": 3,
+          "asset_path": "<unresolved:11458e228d5f76b469ab61ae187f19f4>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1000013270907060",
+      "component_file_id": "114000013680284776",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1000013270907060",
+      "component_file_id": "114000012527849756",
+      "component_kind": "LogQuestGoal",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "18c47d39a083f1d4a9a54b2afd7f65fb",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Slots/LogQuestGoal.cs"
+        }
+      }
+    }
+  ],
+  "native_game_object_count": 4,
+  "prefab_instance_count": 0
+}

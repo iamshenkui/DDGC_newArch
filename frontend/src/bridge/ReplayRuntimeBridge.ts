@@ -4,7 +4,9 @@ import {
   replayHeroDetailViewModel,
   replayBuildingDetailViewModel,
   replayProvisioningViewModel,
-  replayExpeditionViewModel
+  replayExpeditionViewModel,
+  replayResultViewModel,
+  replayReturnViewModel
 } from "../validation/replayFixtures";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
 import type {
@@ -48,7 +50,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
             classLabel: hero.classLabel,
             hp: hero.hp.split(" / ")[0],
             maxHp: hero.hp.split(" / ")[1] ?? hero.hp.split(" / ")[0],
-            stress: hero.stress
+            stress: hero.stress,
+            maxStress: hero.maxStress,
+            positiveQuirks: hero.positiveQuirks,
+            negativeQuirks: hero.negativeQuirks,
+            diseases: hero.diseases,
+            isWounded: hero.isWounded,
+            isAfflicted: hero.isAfflicted
           }
         };
         break;
@@ -109,8 +117,8 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       case "launch-expedition":
         this.snapshot = {
           ...this.snapshot,
-          flowState: "combat",
-          viewModel: replayExpeditionViewModel as ExpeditionSetupViewModel
+          flowState: "result",
+          viewModel: replayResultViewModel as ExpeditionResultViewModel
         };
         break;
       case "return-to-town":
@@ -120,7 +128,11 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         this.snapshot = replayReadySnapshot;
         break;
       case "continue-from-result":
-        this.snapshot = replayReadySnapshot;
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "return",
+          viewModel: replayReturnViewModel as ReturnViewModel
+        };
         break;
       case "resume-from-return":
         this.snapshot = replayReadySnapshot;

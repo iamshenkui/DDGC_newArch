@@ -1,0 +1,387 @@
+{
+  "source_file": "Assets/Prefabs/UI/Raid/Map/RoomSlot.prefab",
+  "file_kind": "prefab",
+  "hierarchy": [
+    {
+      "file_id": "178988",
+      "name": "RoomSlot",
+      "tag": "Untagged",
+      "active": true,
+      "rect_transform": {
+        "anchor_min": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "anchor_max": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "anchored_position": {
+          "x": 0,
+          "y": 0
+        },
+        "size_delta": {
+          "x": 0,
+          "y": 0
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "local_scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "components": [
+        {
+          "file_id": "11461696",
+          "kind": "MonoBehaviour",
+          "script": {
+            "file_id": "11500000",
+            "guid": "306cc8c2b49d7114eaa3623786fc2126",
+            "type": 3,
+            "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "306cc8c2b49d7114eaa3623786fc2126",
+              "type": 3,
+              "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "file_id": "152500",
+          "name": "Room",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 0,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 64,
+              "y": 64
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "11464848",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "825e255b079b593488e9687867619d7a",
+                  "type": 3,
+                  "asset_path": "<unresolved:825e255b079b593488e9687867619d7a>"
+                }
+              }
+            },
+            {
+              "file_id": "11435464",
+              "kind": "MonoBehaviour",
+              "script": {
+                "file_id": "11500000",
+                "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                "type": 3,
+                "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "306cc8c2b49d7114eaa3623786fc2126",
+                  "type": 3,
+                  "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+                }
+              }
+            },
+            {
+              "file_id": "114000011090582588",
+              "kind": "RaidMapRoomSlot",
+              "script": {
+                "file_id": "11500000",
+                "guid": "936ec55b6c1c2144888bf06ec1b0a37c",
+                "type": 3,
+                "asset_path": "Assets/Scripts/UI/Slots/RaidMapRoomSlot.cs"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "936ec55b6c1c2144888bf06ec1b0a37c",
+                  "type": 3,
+                  "asset_path": "Assets/Scripts/UI/Slots/RaidMapRoomSlot.cs"
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "file_id": "120482",
+              "name": "Marker",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0,
+                  "y": 0
+                },
+                "anchor_max": {
+                  "x": 1,
+                  "y": 1
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 0,
+                  "y": 0
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "11408996",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "f2141e03dd9c27c4da91cac6ffc9d41a",
+                      "type": 3,
+                      "asset_path": "<unresolved:f2141e03dd9c27c4da91cac6ffc9d41a>"
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "file_id": "196268",
+                  "name": "Indicator",
+                  "tag": "Untagged",
+                  "active": true,
+                  "rect_transform": {
+                    "anchor_min": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchor_max": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "anchored_position": {
+                      "x": -0.00024414062,
+                      "y": 5.340576e-05
+                    },
+                    "size_delta": {
+                      "x": 36,
+                      "y": 36
+                    },
+                    "pivot": {
+                      "x": 0.5,
+                      "y": 0.5
+                    },
+                    "local_scale": {
+                      "x": 1,
+                      "y": 1,
+                      "z": 1
+                    }
+                  },
+                  "components": [
+                    {
+                      "file_id": "11459202",
+                      "kind": "Image",
+                      "script": {
+                        "file_id": "11500000",
+                        "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                        "type": 3,
+                        "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                      },
+                      "text": null,
+                      "asset_refs": {
+                        "m_Script": {
+                          "file_id": "11500000",
+                          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                          "type": 3,
+                          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                        },
+                        "m_Sprite": {
+                          "file_id": "21300000",
+                          "guid": "c32e9be6acf96ac4699b7bc66d47dec1",
+                          "type": 3,
+                          "asset_path": "Assets/Resources/Sprites/location_icon.png"
+                        }
+                      }
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "prefab_instances": [],
+  "text_nodes": [],
+  "asset_references": [
+    {
+      "game_object_file_id": "120482",
+      "component_file_id": "11408996",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "f2141e03dd9c27c4da91cac6ffc9d41a",
+          "type": 3,
+          "asset_path": "<unresolved:f2141e03dd9c27c4da91cac6ffc9d41a>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "152500",
+      "component_file_id": "11464848",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "825e255b079b593488e9687867619d7a",
+          "type": 3,
+          "asset_path": "<unresolved:825e255b079b593488e9687867619d7a>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "152500",
+      "component_file_id": "11435464",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "152500",
+      "component_file_id": "114000011090582588",
+      "component_kind": "RaidMapRoomSlot",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "936ec55b6c1c2144888bf06ec1b0a37c",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Slots/RaidMapRoomSlot.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "178988",
+      "component_file_id": "11461696",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "196268",
+      "component_file_id": "11459202",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "c32e9be6acf96ac4699b7bc66d47dec1",
+          "type": 3,
+          "asset_path": "Assets/Resources/Sprites/location_icon.png"
+        }
+      }
+    }
+  ],
+  "native_game_object_count": 4,
+  "prefab_instance_count": 0
+}

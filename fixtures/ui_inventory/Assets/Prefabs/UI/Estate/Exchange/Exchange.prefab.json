@@ -1,0 +1,536 @@
+{
+  "source_file": "Assets/Prefabs/UI/Estate/Exchange/Exchange.prefab",
+  "file_kind": "prefab",
+  "hierarchy": [
+    {
+      "file_id": "1000014146684296",
+      "name": "Exchange",
+      "tag": "Untagged",
+      "active": true,
+      "rect_transform": {
+        "anchor_min": {
+          "x": 0,
+          "y": 0
+        },
+        "anchor_max": {
+          "x": 0,
+          "y": 0
+        },
+        "anchored_position": {
+          "x": 0,
+          "y": 0
+        },
+        "size_delta": {
+          "x": 0,
+          "y": 0
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "local_scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "components": [
+        {
+          "file_id": "114000013602159322",
+          "kind": "MonoBehaviour",
+          "script": {
+            "file_id": "11500000",
+            "guid": "306cc8c2b49d7114eaa3623786fc2126",
+            "type": 3,
+            "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "306cc8c2b49d7114eaa3623786fc2126",
+              "type": 3,
+              "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+            }
+          }
+        },
+        {
+          "file_id": "114000010545716958",
+          "kind": "ExchangeEntry",
+          "script": {
+            "file_id": "11500000",
+            "guid": "03bd55fc8455c9849afbe8ed7222764f",
+            "type": 3,
+            "asset_path": "Assets/Scripts/UI/Controls/ExchangeEntry.cs"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "03bd55fc8455c9849afbe8ed7222764f",
+              "type": 3,
+              "asset_path": "Assets/Scripts/UI/Controls/ExchangeEntry.cs"
+            }
+          }
+        },
+        {
+          "file_id": "114000011869832994",
+          "kind": "Image",
+          "script": {
+            "file_id": "11500000",
+            "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+            "type": 3,
+            "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+              "type": 3,
+              "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "file_id": "1000012857087556",
+          "name": "ToHeirloom_Frame",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 0,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 189,
+              "y": 56
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "114000010103783270",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "6ce4c14624c818149a843351d26d9eb4",
+                  "type": 3,
+                  "asset_path": "<unresolved:6ce4c14624c818149a843351d26d9eb4>"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "1000013116529466",
+          "name": "ToHeirloom",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": -63.1,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 36,
+              "y": 36
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "114000012614205400",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "8f2d44a0e8044aa46a9e4c0393a0a527",
+                  "type": 3,
+                  "asset_path": "<unresolved:8f2d44a0e8044aa46a9e4c0393a0a527>"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "1000013595053082",
+          "name": "ToAmount",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": -11,
+              "y": 0.9
+            },
+            "size_delta": {
+              "x": 53.3,
+              "y": 65.2
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 0.40000004,
+              "y": 0.40000004,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "114000010732943750",
+              "kind": "Text",
+              "script": {
+                "file_id": "11500000",
+                "guid": "5f7201a12d95ffc409449d95f23cf332",
+                "type": 3,
+                "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+              },
+              "text": 3,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "5f7201a12d95ffc409449d95f23cf332",
+                  "type": 3,
+                  "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                },
+                "m_Font": {
+                  "file_id": "10102",
+                  "guid": "0000000000000000e000000000000000",
+                  "type": 0,
+                  "asset_path": "<unresolved:0000000000000000e000000000000000>"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "1000013810457192",
+          "name": "ConfirmButton",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": 51.8,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 48,
+              "y": 24
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "114000011052206402",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "ffdb25685d5962348890684d6df4bba7",
+                  "type": 3,
+                  "asset_path": "<unresolved:ffdb25685d5962348890684d6df4bba7>"
+                }
+              }
+            },
+            {
+              "file_id": "114000012190686920",
+              "kind": "Button",
+              "script": {
+                "file_id": "11500000",
+                "guid": "4e29b1a8efbd4b44bb3f3716e73f07ff",
+                "type": 3,
+                "asset_path": "<unresolved:4e29b1a8efbd4b44bb3f3716e73f07ff>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "4e29b1a8efbd4b44bb3f3716e73f07ff",
+                  "type": 3,
+                  "asset_path": "<unresolved:4e29b1a8efbd4b44bb3f3716e73f07ff>"
+                }
+              }
+            },
+            {
+              "file_id": "114000012497633850",
+              "kind": "QuickMouseover",
+              "script": {
+                "file_id": "11500000",
+                "guid": "e07756c9f561c314ab56067689bb6ee5",
+                "type": 3,
+                "asset_path": "Assets/Scripts/UI/Controls/QuickMouseover.cs"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "e07756c9f561c314ab56067689bb6ee5",
+                  "type": 3,
+                  "asset_path": "Assets/Scripts/UI/Controls/QuickMouseover.cs"
+                }
+              }
+            }
+          ],
+          "children": []
+        }
+      ]
+    }
+  ],
+  "prefab_instances": [],
+  "text_nodes": [
+    {
+      "game_object_file_id": "1000013595053082",
+      "component_file_id": "114000010732943750",
+      "component_kind": "Text",
+      "text": 3
+    }
+  ],
+  "asset_references": [
+    {
+      "game_object_file_id": "1000012857087556",
+      "component_file_id": "114000010103783270",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "6ce4c14624c818149a843351d26d9eb4",
+          "type": 3,
+          "asset_path": "<unresolved:6ce4c14624c818149a843351d26d9eb4>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1000013116529466",
+      "component_file_id": "114000012614205400",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "8f2d44a0e8044aa46a9e4c0393a0a527",
+          "type": 3,
+          "asset_path": "<unresolved:8f2d44a0e8044aa46a9e4c0393a0a527>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1000013595053082",
+      "component_file_id": "114000010732943750",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "10102",
+          "guid": "0000000000000000e000000000000000",
+          "type": 0,
+          "asset_path": "<unresolved:0000000000000000e000000000000000>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1000013810457192",
+      "component_file_id": "114000011052206402",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "ffdb25685d5962348890684d6df4bba7",
+          "type": 3,
+          "asset_path": "<unresolved:ffdb25685d5962348890684d6df4bba7>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1000013810457192",
+      "component_file_id": "114000012190686920",
+      "component_kind": "Button",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "4e29b1a8efbd4b44bb3f3716e73f07ff",
+          "type": 3,
+          "asset_path": "<unresolved:4e29b1a8efbd4b44bb3f3716e73f07ff>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1000013810457192",
+      "component_file_id": "114000012497633850",
+      "component_kind": "QuickMouseover",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "e07756c9f561c314ab56067689bb6ee5",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Controls/QuickMouseover.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1000014146684296",
+      "component_file_id": "114000013602159322",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1000014146684296",
+      "component_file_id": "114000010545716958",
+      "component_kind": "ExchangeEntry",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "03bd55fc8455c9849afbe8ed7222764f",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Controls/ExchangeEntry.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1000014146684296",
+      "component_file_id": "114000011869832994",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        }
+      }
+    }
+  ],
+  "native_game_object_count": 5,
+  "prefab_instance_count": 0
+}

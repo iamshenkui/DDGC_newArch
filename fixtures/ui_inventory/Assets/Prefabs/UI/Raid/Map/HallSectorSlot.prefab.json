@@ -1,0 +1,274 @@
+{
+  "source_file": "Assets/Prefabs/UI/Raid/Map/HallSectorSlot.prefab",
+  "file_kind": "prefab",
+  "hierarchy": [
+    {
+      "file_id": "1000012230165406",
+      "name": "HallSectorSlot",
+      "tag": "Untagged",
+      "active": true,
+      "rect_transform": {
+        "anchor_min": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "anchor_max": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "anchored_position": {
+          "x": 0,
+          "y": 0
+        },
+        "size_delta": {
+          "x": 0,
+          "y": 0
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "local_scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "components": [
+        {
+          "file_id": "114000014273775970",
+          "kind": "MonoBehaviour",
+          "script": {
+            "file_id": "11500000",
+            "guid": "306cc8c2b49d7114eaa3623786fc2126",
+            "type": 3,
+            "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "306cc8c2b49d7114eaa3623786fc2126",
+              "type": 3,
+              "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+            }
+          }
+        },
+        {
+          "file_id": "114000010694554958",
+          "kind": "RaidMapHallSectorSlot",
+          "script": {
+            "file_id": "11500000",
+            "guid": "ea16ca1970ca6d44aad33962ac2a6712",
+            "type": 3,
+            "asset_path": "Assets/Scripts/UI/Slots/RaidMapHallSectorSlot.cs"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "ea16ca1970ca6d44aad33962ac2a6712",
+              "type": 3,
+              "asset_path": "Assets/Scripts/UI/Slots/RaidMapHallSectorSlot.cs"
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "file_id": "1000014165993160",
+          "name": "Hall",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchored_position": {
+              "x": -7.6293945e-05,
+              "y": -1.9073486e-05
+            },
+            "size_delta": {
+              "x": 24,
+              "y": 24
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "114000014070559584",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "bfc9722735fde8d4d8c4e7bcc29fc0f2",
+                  "type": 3,
+                  "asset_path": "Assets/Resources/Sprites/hall_dark.png"
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "file_id": "1000011252529134",
+              "name": "Marker",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchored_position": {
+                  "x": 0,
+                  "y": 0
+                },
+                "size_delta": {
+                  "x": 24,
+                  "y": 24
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "114000010413104402",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "47f4cb975053c534daac56be6e2f861b",
+                      "type": 3,
+                      "asset_path": "Assets/Resources/Sprites/hall_clear.png"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "prefab_instances": [],
+  "text_nodes": [],
+  "asset_references": [
+    {
+      "game_object_file_id": "1000011252529134",
+      "component_file_id": "114000010413104402",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "47f4cb975053c534daac56be6e2f861b",
+          "type": 3,
+          "asset_path": "Assets/Resources/Sprites/hall_clear.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1000012230165406",
+      "component_file_id": "114000014273775970",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1000012230165406",
+      "component_file_id": "114000010694554958",
+      "component_kind": "RaidMapHallSectorSlot",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "ea16ca1970ca6d44aad33962ac2a6712",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Slots/RaidMapHallSectorSlot.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1000014165993160",
+      "component_file_id": "114000014070559584",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "bfc9722735fde8d4d8c4e7bcc29fc0f2",
+          "type": 3,
+          "asset_path": "Assets/Resources/Sprites/hall_dark.png"
+        }
+      }
+    }
+  ],
+  "native_game_object_count": 3,
+  "prefab_instance_count": 0
+}

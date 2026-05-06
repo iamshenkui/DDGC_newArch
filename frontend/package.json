@@ -5,16 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "build": "vite build",
     "test": "vitest run",
     "smoke": "vitest run src/validation src/build-run",
-    "smoke-build": "npm run build && vitest run src/validation src/build-run"
+    "smoke-browser": "playwright test",
+    "smoke-build": "npm run build && vitest run src/validation src/build-run && playwright test"
   },
   "dependencies": {
     "solid-js": "^1.9.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/node": "^22.10.2",
     "jsdom": "^25.0.1",
     "typescript": "^5.7.2",

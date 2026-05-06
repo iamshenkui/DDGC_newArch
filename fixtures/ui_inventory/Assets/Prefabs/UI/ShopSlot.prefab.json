@@ -1,0 +1,558 @@
+{
+  "source_file": "Assets/Prefabs/UI/ShopSlot.prefab",
+  "file_kind": "prefab",
+  "hierarchy": [
+    {
+      "file_id": "1551009943149907581",
+      "name": "ShopSlot",
+      "tag": "Untagged",
+      "active": true,
+      "rect_transform": {
+        "anchor_min": {
+          "x": 0,
+          "y": 0
+        },
+        "anchor_max": {
+          "x": 0,
+          "y": 0
+        },
+        "anchored_position": {
+          "x": 0,
+          "y": 0
+        },
+        "size_delta": {
+          "x": 0,
+          "y": 0
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "local_scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "components": [
+        {
+          "file_id": "8511835784789854803",
+          "kind": "ShopSlot",
+          "script": {
+            "file_id": "11500000",
+            "guid": "1c19e814c1db2964887b149fa1c44cbd",
+            "type": 3,
+            "asset_path": "Assets/Scripts/UI/Slots/ShopSlot.cs"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "1c19e814c1db2964887b149fa1c44cbd",
+              "type": 3,
+              "asset_path": "Assets/Scripts/UI/Slots/ShopSlot.cs"
+            }
+          }
+        },
+        {
+          "file_id": "2990059307071528311",
+          "kind": "MonoBehaviour",
+          "script": {
+            "file_id": "11500000",
+            "guid": "306cc8c2b49d7114eaa3623786fc2126",
+            "type": 3,
+            "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "306cc8c2b49d7114eaa3623786fc2126",
+              "type": 3,
+              "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+            }
+          }
+        },
+        {
+          "file_id": "7758688273339030908",
+          "kind": "Button",
+          "script": {
+            "file_id": "11500000",
+            "guid": "4e29b1a8efbd4b44bb3f3716e73f07ff",
+            "type": 3,
+            "asset_path": "<unresolved:4e29b1a8efbd4b44bb3f3716e73f07ff>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "4e29b1a8efbd4b44bb3f3716e73f07ff",
+              "type": 3,
+              "asset_path": "<unresolved:4e29b1a8efbd4b44bb3f3716e73f07ff>"
+            }
+          }
+        },
+        {
+          "file_id": "5252730524767239195",
+          "kind": "Image",
+          "script": {
+            "file_id": "11500000",
+            "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+            "type": 3,
+            "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+          },
+          "text": null,
+          "asset_refs": {
+            "m_Script": {
+              "file_id": "11500000",
+              "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+              "type": 3,
+              "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+            },
+            "m_Sprite": {
+              "file_id": "21300000",
+              "guid": "e1f94e2727e97ee4aaedfeab315cbbae",
+              "type": 3,
+              "asset_path": "Assets/Sprites/ui/item_slot.png"
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "file_id": "941773686033420686",
+          "name": "ShopItemIcon",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 1
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 1
+            },
+            "anchored_position": {
+              "x": 0,
+              "y": 0
+            },
+            "size_delta": {
+              "x": 106,
+              "y": 164
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 1
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "4353542295069493055",
+              "kind": "Image",
+              "script": {
+                "file_id": "11500000",
+                "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                "type": 3,
+                "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+              },
+              "text": null,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                  "type": 3,
+                  "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                },
+                "m_Sprite": {
+                  "file_id": "21300000",
+                  "guid": "e401bf9b9275ede4aa2ff50d13cc6207",
+                  "type": 3,
+                  "asset_path": "Assets/Resources/Sprites/inv_supply+rattle_drum.png"
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "file_id": "1910597488016398796",
+          "name": "CostFrame",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 0.5,
+              "y": 0
+            },
+            "anchor_max": {
+              "x": 0.5,
+              "y": 0
+            },
+            "anchored_position": {
+              "x": 0,
+              "y": -25
+            },
+            "size_delta": {
+              "x": 72,
+              "y": 30
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [],
+          "children": [
+            {
+              "file_id": "2294320426470239693",
+              "name": "GoldAmount",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchored_position": {
+                  "x": 9.2,
+                  "y": 2.2999992
+                },
+                "size_delta": {
+                  "x": 48,
+                  "y": 27.1
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "5518770312312989830",
+                  "kind": "Text",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "5f7201a12d95ffc409449d95f23cf332",
+                    "type": 3,
+                    "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                  },
+                  "text": 150,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "5f7201a12d95ffc409449d95f23cf332",
+                      "type": 3,
+                      "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                    },
+                    "m_Font": {
+                      "file_id": "12800000",
+                      "guid": "ee61792463755b745b5aacaf225b30aa",
+                      "type": 3,
+                      "asset_path": "Assets/Fonts/ZhiYiSongTi-Regular.ttf"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            },
+            {
+              "file_id": "3684153986819520473",
+              "name": "GoldIcon",
+              "tag": "Untagged",
+              "active": true,
+              "rect_transform": {
+                "anchor_min": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchor_max": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "anchored_position": {
+                  "x": -24,
+                  "y": 0.7500076
+                },
+                "size_delta": {
+                  "x": 24,
+                  "y": 24
+                },
+                "pivot": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "local_scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+                }
+              },
+              "components": [
+                {
+                  "file_id": "4054188650754296021",
+                  "kind": "Image",
+                  "script": {
+                    "file_id": "11500000",
+                    "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                    "type": 3,
+                    "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                  },
+                  "text": null,
+                  "asset_refs": {
+                    "m_Script": {
+                      "file_id": "11500000",
+                      "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+                      "type": 3,
+                      "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+                    },
+                    "m_Sprite": {
+                      "file_id": "21300000",
+                      "guid": "c97f5a3fa7898024b9213f24c6818359",
+                      "type": 3,
+                      "asset_path": "Assets/Resources/Sprites/gold.png"
+                    }
+                  }
+                }
+              ],
+              "children": []
+            }
+          ]
+        },
+        {
+          "file_id": "2624497327698405233",
+          "name": "ItemAmount",
+          "tag": "Untagged",
+          "active": true,
+          "rect_transform": {
+            "anchor_min": {
+              "x": 1,
+              "y": 0
+            },
+            "anchor_max": {
+              "x": 1,
+              "y": 0
+            },
+            "anchored_position": {
+              "x": -30,
+              "y": 25
+            },
+            "size_delta": {
+              "x": 40,
+              "y": 30
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "local_scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          },
+          "components": [
+            {
+              "file_id": "144411946835910000",
+              "kind": "Text",
+              "script": {
+                "file_id": "11500000",
+                "guid": "5f7201a12d95ffc409449d95f23cf332",
+                "type": 3,
+                "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+              },
+              "text": 150,
+              "asset_refs": {
+                "m_Script": {
+                  "file_id": "11500000",
+                  "guid": "5f7201a12d95ffc409449d95f23cf332",
+                  "type": 3,
+                  "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+                },
+                "m_Font": {
+                  "file_id": "12800000",
+                  "guid": "ee61792463755b745b5aacaf225b30aa",
+                  "type": 3,
+                  "asset_path": "Assets/Fonts/ZhiYiSongTi-Regular.ttf"
+                }
+              }
+            }
+          ],
+          "children": []
+        }
+      ]
+    }
+  ],
+  "prefab_instances": [],
+  "text_nodes": [
+    {
+      "game_object_file_id": "2294320426470239693",
+      "component_file_id": "5518770312312989830",
+      "component_kind": "Text",
+      "text": 150
+    },
+    {
+      "game_object_file_id": "2624497327698405233",
+      "component_file_id": "144411946835910000",
+      "component_kind": "Text",
+      "text": 150
+    }
+  ],
+  "asset_references": [
+    {
+      "game_object_file_id": "941773686033420686",
+      "component_file_id": "4353542295069493055",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "e401bf9b9275ede4aa2ff50d13cc6207",
+          "type": 3,
+          "asset_path": "Assets/Resources/Sprites/inv_supply+rattle_drum.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1551009943149907581",
+      "component_file_id": "8511835784789854803",
+      "component_kind": "ShopSlot",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "1c19e814c1db2964887b149fa1c44cbd",
+          "type": 3,
+          "asset_path": "Assets/Scripts/UI/Slots/ShopSlot.cs"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1551009943149907581",
+      "component_file_id": "2990059307071528311",
+      "component_kind": "MonoBehaviour",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "306cc8c2b49d7114eaa3623786fc2126",
+          "type": 3,
+          "asset_path": "<unresolved:306cc8c2b49d7114eaa3623786fc2126>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1551009943149907581",
+      "component_file_id": "7758688273339030908",
+      "component_kind": "Button",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "4e29b1a8efbd4b44bb3f3716e73f07ff",
+          "type": 3,
+          "asset_path": "<unresolved:4e29b1a8efbd4b44bb3f3716e73f07ff>"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "1551009943149907581",
+      "component_file_id": "5252730524767239195",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "e1f94e2727e97ee4aaedfeab315cbbae",
+          "type": 3,
+          "asset_path": "Assets/Sprites/ui/item_slot.png"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "2294320426470239693",
+      "component_file_id": "5518770312312989830",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "ee61792463755b745b5aacaf225b30aa",
+          "type": 3,
+          "asset_path": "Assets/Fonts/ZhiYiSongTi-Regular.ttf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "2624497327698405233",
+      "component_file_id": "144411946835910000",
+      "component_kind": "Text",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "5f7201a12d95ffc409449d95f23cf332",
+          "type": 3,
+          "asset_path": "<unresolved:5f7201a12d95ffc409449d95f23cf332>"
+        },
+        "m_Font": {
+          "file_id": "12800000",
+          "guid": "ee61792463755b745b5aacaf225b30aa",
+          "type": 3,
+          "asset_path": "Assets/Fonts/ZhiYiSongTi-Regular.ttf"
+        }
+      }
+    },
+    {
+      "game_object_file_id": "3684153986819520473",
+      "component_file_id": "4054188650754296021",
+      "component_kind": "Image",
+      "asset_refs": {
+        "m_Script": {
+          "file_id": "11500000",
+          "guid": "fe87c0e1cc204ed48ad3b37840f39efc",
+          "type": 3,
+          "asset_path": "<unresolved:fe87c0e1cc204ed48ad3b37840f39efc>"
+        },
+        "m_Sprite": {
+          "file_id": "21300000",
+          "guid": "c97f5a3fa7898024b9213f24c6818359",
+          "type": 3,
+          "asset_path": "Assets/Resources/Sprites/gold.png"
+        }
+      }
+    }
+  ],
+  "native_game_object_count": 6,
+  "prefab_instance_count": 0
+}

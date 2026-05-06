@@ -159,16 +159,16 @@ pub fn town_from_campaign(
 
     Ok(crate::contracts::viewmodels::TownViewModel {
         kind: "town".to_string(),
-        title: "Town Surface".to_string(),
-        campaign_name: "Campaign".to_string(),
-        campaign_summary: "Town visit with roster and building access.".to_string(),
+        title: "城镇界面".to_string(),
+        campaign_name: "当前战役".to_string(),
+        campaign_summary: "当前处于城镇访问阶段，可查看名册并进入各建筑服务。".to_string(),
         gold: campaign.gold,
         heirlooms,
         buildings,
         heroes: roster.clone(),
         roster,
         available_activities,
-        next_action_label: "Provision Expedition".to_string(),
+        next_action_label: "整备远征".to_string(),
         is_fresh_visit: true,
         error: None,
     })

@@ -1,0 +1,166 @@
+{
+  "source_root": "DreamDeveloperGame-Crossover/Assets",
+  "targets": [
+    {
+      "source_file": "Assets/Scenes/Intro.unity",
+      "output_file": "fixtures/ui_inventory/Assets/Scenes/Intro.unity.json",
+      "text_node_count": 1,
+      "asset_reference_count": 13,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Scenes/EstateManagement.unity",
+      "output_file": "fixtures/ui_inventory/Assets/Scenes/EstateManagement.unity.json",
+      "text_node_count": 424,
+      "asset_reference_count": 2693,
+      "prefab_instance_count": 364
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/Windows/MainMenuWindow.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Windows/MainMenuWindow.prefab.json",
+      "text_node_count": 5,
+      "asset_reference_count": 25,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/Windows/CharacterWindow.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Windows/CharacterWindow.prefab.json",
+      "text_node_count": 95,
+      "asset_reference_count": 442,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/HeroSlot.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/HeroSlot.prefab.json",
+      "text_node_count": 2,
+      "asset_reference_count": 12,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/TreatmentHeroSlot.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/TreatmentHeroSlot.prefab.json",
+      "text_node_count": 1,
+      "asset_reference_count": 9,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/MarketSlot.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/MarketSlot.prefab.json",
+      "text_node_count": 1,
+      "asset_reference_count": 8,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/ShopSlot.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/ShopSlot.prefab.json",
+      "text_node_count": 2,
+      "asset_reference_count": 8,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/SkillUpgradeSlot.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/SkillUpgradeSlot.prefab.json",
+      "text_node_count": 1,
+      "asset_reference_count": 8,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/UpgradeSlot.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/UpgradeSlot.prefab.json",
+      "text_node_count": 2,
+      "asset_reference_count": 11,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/EquipmentUpgradeSlot.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/EquipmentUpgradeSlot.prefab.json",
+      "text_node_count": 1,
+      "asset_reference_count": 9,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/PartyInventorySlot.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/PartyInventorySlot.prefab.json",
+      "text_node_count": 1,
+      "asset_reference_count": 8,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/PartyInventorySlotInDungeon.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/PartyInventorySlotInDungeon.prefab.json",
+      "text_node_count": 1,
+      "asset_reference_count": 7,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/Controls/GameSetup.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Controls/GameSetup.prefab.json",
+      "text_node_count": 0,
+      "asset_reference_count": 1,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/Controls/HeroSlot.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Controls/HeroSlot.prefab.json",
+      "text_node_count": 10,
+      "asset_reference_count": 53,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/Controls/PartyHeroSlot.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Controls/PartyHeroSlot.prefab.json",
+      "text_node_count": 8,
+      "asset_reference_count": 23,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/Controls/TrinketRow.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Controls/TrinketRow.prefab.json",
+      "text_node_count": 4,
+      "asset_reference_count": 30,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/Estate/Buildings/Graveyard/DeathRecord.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Estate/Buildings/Graveyard/DeathRecord.prefab.json",
+      "text_node_count": 4,
+      "asset_reference_count": 13,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/Estate/Exchange/Exchange.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Estate/Exchange/Exchange.prefab.json",
+      "text_node_count": 1,
+      "asset_reference_count": 9,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/Estate/PanelWindows/ActivityLog/ActivityRecord.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Estate/PanelWindows/ActivityLog/ActivityRecord.prefab.json",
+      "text_node_count": 1,
+      "asset_reference_count": 9,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/Estate/PanelWindows/ActivityLog/Goal.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Estate/PanelWindows/ActivityLog/Goal.prefab.json",
+      "text_node_count": 1,
+      "asset_reference_count": 5,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/Estate/PanelWindows/ActivityLog/WeekBlock.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Estate/PanelWindows/ActivityLog/WeekBlock.prefab.json",
+      "text_node_count": 36,
+      "asset_reference_count": 246,
+      "prefab_instance_count": 0
+    },
+    {
+      "source_file": "Assets/Prefabs/UI/Estate/PanelWindows/Glossary/GlossaryRecord.prefab",
+      "output_file": "fixtures/ui_inventory/Assets/Prefabs/UI/Estate/PanelWindows/Glossary/GlossaryRecord.prefab.json",
+      "text_node_count": 0,
+      "asset_reference_count": 5,
+      "prefab_instance_count": 0
+    }
+  ]
+}

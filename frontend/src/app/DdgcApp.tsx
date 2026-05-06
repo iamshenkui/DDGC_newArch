@@ -187,9 +187,6 @@ export function DdgcApp() {
             onResumeTown={() => {
               void dispatchIntent(bridge, { type: "resume-from-return" });
             }}
-            onReturnToTown={() => {
-              void dispatchIntent(bridge, { type: "return-to-town" });
-            }}
           />
         </Match>
         <Match

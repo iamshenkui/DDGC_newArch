@@ -2,6 +2,8 @@ import { render } from "solid-js/web";
 
 import { DdgcApp } from "./app/DdgcApp";
 import "./styles.css";
+import "./originalAssets.css";
+import "./townEstateLayout.css";
 
 const root = document.getElementById("root");
 
