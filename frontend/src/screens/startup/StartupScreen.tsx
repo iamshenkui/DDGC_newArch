@@ -1,4 +1,5 @@
 import type { Component } from "solid-js";
+import { resolveStartupAsset } from "../../assets/originalAssetPaths";
 
 interface StartupScreenProps {
   onReplayBoot: () => void;
@@ -9,87 +10,90 @@ interface StartupScreenProps {
 }
 
 /**
- * Title / main-menu page rewritten from the original DDGC MainMenuWindow.prefab
- * hierarchy (fixtures/ui_inventory/Assets/Prefabs/UI/Windows/MainMenuWindow.prefab.json).
+ * Title screen rebuilt from the original kuajiyuanqi (跨纪元契约)
+ * CampaignSelection.unity scene. Phase 1 scope: background, frame,
+ * title/logo, and landscape screen sizing only — boot buttons remain
+ * as the existing runtime entry points without save/settings polish.
  *
- * Layout mirrors the Unity prefab:
- *   MainMenuWindow (centered canvas) → background layer → MenuOptions → Buttons
- *
- * Source-backed chrome:
- *   - menu_bg.png (GUID 4e780ea66a89c2f4b8bdc4f4b76c290d)
- *   - btn_menu_primary.png (GUID b14c9d4fa66bc4d45897fba8c866125a)
- *   - Deutsch.ttf (GUID f930c4496e27b454ebc744aa4b25236e)
- *
- * Original sprites not yet extracted (BLOCKER-004); CSS approximations used.
+ * Source assets (KUI-P1-003): scene_bg.png · dialog07.png · game_logo.png ·
+ * btn_red.png · ZhiYiSongTi-Regular.ttf, all from CampaignSelection.unity.
  */
 export const StartupScreen: Component<StartupScreenProps> = (props) => {
+  const sceneBg = resolveStartupAsset("startupBackground");
+  const titleWordmark = resolveStartupAsset("startupTitleWordmark");
+  const dialogFrame = resolveStartupAsset("startupParchmentDialog");
+
   return (
     <main
-      class="title-page"
-      data-source-prefab="Assets/Prefabs/UI/Windows/MainMenuWindow.prefab"
+      class="startup-screen"
+      data-source-scene="Assets/Scenes/CampaignSelection.unity"
+      style={{ "background-image": `url(${sceneBg})` }}
     >
-      {/* Background layer — mirrors MainMenuWindow root Image component (menu_bg.png) */}
       <div
-        class="title-page-backdrop"
-        data-source-sprite="Assets/Sprites/ui/menu_bg.png"
-        data-source-guid="4e780ea66a89c2f4b8bdc4f4b76c290d"
-      />
-
-      <div
-        class="title-page-dialog"
-        data-source-component="MainMenuWindow"
+        class="startup-stage"
+        data-source-component="CampaignSelectionCanvas"
       >
-        {/* Game branding header */}
-        <header class="title-page-header">
-          <div class="title-page-ornament" aria-hidden="true" />
-          <h1 class="title-page-game-title">DDGC</h1>
-          <p class="title-page-game-subtitle">暗黑地牢: 降龙</p>
-        </header>
-
-        <div class="title-page-divider" aria-hidden="true" />
-
-        {/* MenuOptions container — mirrors MainMenuWindow → MenuOptions LayoutGroup */}
-        <nav
-          class="title-page-menu"
-          data-source-component="MenuOptions"
-          data-source-font="Assets/Fonts/Bak/Deutsch.ttf"
-          data-source-button-sprite="Assets/Sprites/ui/btn_menu_primary.png"
+        <h1
+          class="startup-title"
+          data-source-sprite="Assets/Sprites/ui/game_logo.png"
         >
-          <span class="title-page-menu-label">Main Menu</span>
+          <img
+            class="startup-title-wordmark"
+            src={titleWordmark}
+            alt="跨纪元契约"
+            draggable={false}
+          />
+        </h1>
 
-          <button
-            class="title-page-button"
-            data-source-sprite="Assets/Sprites/ui/btn_menu_primary.png"
-            onClick={props.onNewCampaign}
+        <section
+          class="startup-frame"
+          data-source-sprite="Assets/Sprites/ui/dialog07.png"
+          style={{ "background-image": `url(${dialogFrame})` }}
+        >
+          <nav
+            class="startup-menu"
+            data-source-component="MenuOptions"
+            data-source-button-sprite="Assets/Sprites/ui/btn_red.png"
+            aria-label="跨纪元契约 主菜单"
           >
-            New Campaign
-          </button>
+            <button
+              class="startup-menu-button"
+              data-source-sprite="Assets/Sprites/ui/btn_red.png"
+              type="button"
+              onClick={props.onNewCampaign}
+            >
+              New Campaign
+            </button>
 
-          <button
-            class="title-page-button"
-            data-source-sprite="Assets/Sprites/ui/btn_menu_primary.png"
-            onClick={props.onLoadCampaign}
-            disabled={!props.hasSavedCampaign}
-          >
-            Load Campaign
-          </button>
+            <button
+              class="startup-menu-button"
+              data-source-sprite="Assets/Sprites/ui/btn_red.png"
+              type="button"
+              onClick={props.onLoadCampaign}
+              disabled={!props.hasSavedCampaign}
+            >
+              Load Campaign
+            </button>
 
-          <button
-            class="title-page-button"
-            data-source-sprite="Assets/Sprites/ui/btn_menu_primary.png"
-            onClick={props.onReplayBoot}
-          >
-            Boot Replay
-          </button>
+            <button
+              class="startup-menu-button"
+              data-source-sprite="Assets/Sprites/ui/btn_red.png"
+              type="button"
+              onClick={props.onReplayBoot}
+            >
+              Boot Replay
+            </button>
 
-          <button
-            class="title-page-button"
-            data-source-sprite="Assets/Sprites/ui/btn_menu_primary.png"
-            onClick={props.onLiveBoot}
-          >
-            Boot Live
-          </button>
-        </nav>
+            <button
+              class="startup-menu-button"
+              data-source-sprite="Assets/Sprites/ui/btn_red.png"
+              type="button"
+              onClick={props.onLiveBoot}
+            >
+              Boot Live
+            </button>
+          </nav>
+        </section>
       </div>
     </main>
   );

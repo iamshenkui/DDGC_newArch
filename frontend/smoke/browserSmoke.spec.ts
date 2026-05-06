@@ -137,9 +137,15 @@ test.describe("browser smoke: fidelity gates", () => {
     await page.waitForLoadState("networkidle");
 
     // ── Phase 1: Startup screen ────────────────────────────
+    // KUI-P1-004: title is the game_logo.png wordmark (跨纪元契约) — its
+    // alt-text becomes the heading's accessible name.
     await expect(
-      page.getByRole("heading", { name: "DDGC" }),
-      "Startup title must be visible"
+      page.getByRole("heading", { name: "跨纪元契约" }),
+      "Startup title wordmark must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.startup-title-wordmark[src*="/original/startup/game_logo.png"]'),
+      "Startup title wordmark must use staged game_logo.png asset"
     ).toBeVisible();
 
     await expect(
