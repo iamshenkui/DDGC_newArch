@@ -27,6 +27,7 @@ export const StartupScreen: Component<StartupScreenProps> = (props) => {
     <main
       class="startup-screen"
       data-source-scene="Assets/Scenes/CampaignSelection.unity"
+      data-source-asset-key="startupBackground"
       style={{ "background-image": `url(${sceneBg})` }}
     >
       <div
@@ -36,6 +37,7 @@ export const StartupScreen: Component<StartupScreenProps> = (props) => {
         <h1
           class="startup-title"
           data-source-sprite="Assets/Sprites/ui/game_logo.png"
+          data-source-asset-key="startupTitleWordmark"
         >
           <img
             class="startup-title-wordmark"
@@ -48,6 +50,8 @@ export const StartupScreen: Component<StartupScreenProps> = (props) => {
         <section
           class="startup-frame"
           data-source-sprite="Assets/Sprites/ui/dialog07.png"
+          data-source-asset-key="startupParchmentDialog"
+          aria-label="跨纪元契约 主菜单 frame"
           style={{ "background-image": `url(${dialogFrame})` }}
         >
           <nav
