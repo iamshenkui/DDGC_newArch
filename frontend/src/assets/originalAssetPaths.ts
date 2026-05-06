@@ -10,6 +10,9 @@
  *   chrome/     10 shell chrome sprites (nameplate, buttons, embark, gold,
  *               building label/icon backgrounds)
  *   heroes/     3 hunter family portraits (base, white, black variants)
+ *   startup/    6 startup sprites + 1 font (background, title wordmark, title
+ *               bg, parchment dialogs, menu button, CJK display font)
+ *   fonts/      ZhiYiSongTi-Regular.ttf (CJK display font from CampaignSelection.unity)
  *   All other hero families (alchemist, diviner, shaman, tank) — not yet extracted
  *
  * See asset-manifest.json for the full inventory with GUIDs and deferred items.
@@ -33,6 +36,33 @@ const buildingImageById: Record<string, string> = {
   market: "/original/buildings/building_market.png",
   campingtrainer: "/original/buildings/building_space_analysis.png"
 };
+
+// ── Startup / title-screen assets (KUI-P1-003) ─────────────────────────────
+// Source: Assets/Scenes/CampaignSelection.unity
+// Staged in frontend/public/original/startup/
+
+const startupPaths = {
+  // Full-bleed stone-wall background
+  startupBackground: "/original/startup/scene_bg.png",
+  // Title wordmark "跨纪元契约" with integrated sword/cross ornament
+  startupTitleWordmark: "/original/startup/game_logo.png",
+  // Title background underlay
+  startupTitleBg: "/original/startup/save_title_bg.png",
+  // Parchment menu dialog (main menu panel)
+  startupParchmentDialog: "/original/startup/dialog07.png",
+  // Parchment save-frame dialog (save slot picker)
+  startupSaveFrameDialog: "/original/startup/dialog02.png",
+  // Menu button sprite (shared by all four menu items)
+  startupMenuButton: "/original/startup/btn_red.png",
+  // CJK display font used by CampaignSelection.unity text components
+  startupFont: "/fonts/ZhiYiSongTi-Regular.ttf"
+} as const;
+
+export type StartupAssetKey = keyof typeof startupPaths;
+
+export function resolveStartupAsset(key: StartupAssetKey): string {
+  return startupPaths[key];
+}
 
 // ── Shell chrome sprites (UIR-005B) ────────────────────────────────────────
 // Town screen shell chrome staged in frontend/public/original/chrome/.
