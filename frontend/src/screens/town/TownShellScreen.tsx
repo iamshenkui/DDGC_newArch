@@ -246,11 +246,15 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
               {/* ── Top-right command row — source-backed text glyphs
                    Reference 公会界面.png shows three small square text buttons
                    (饰品仓库, 英雄, 设置) floating directly on the sky. The Unity
-                   source has six SideButtons children but only three are active:
-                   RealmInventoryButton, HeroButton, SettingsButton. Each uses
-                   btn_white.png (GUID 5536faf88204cc54985b146b5ceb03f6) as its
-                   Image sprite. Lifted out of BottomPanel so z-index stacks
-                   above the nameplate. ── */}
+                   source SideButtons group has six children rendered in source
+                   order: ActivityLog, RealmInventory, Hero, TownEvent, Settings,
+                   Glossary. Of these, only RealmInventoryButton, HeroButton, and
+                   SettingsButton are active in the reference frame; the other
+                   three are kept in markup with data-source-active="false" and
+                   the .estate-side-button-inactive class so the source grouping
+                   is preserved while the inactive quick commands remain hidden.
+                   All six children share btn_white.png (GUID 5536faf88204cc54985b146b5ceb03f6)
+                   as their Image sprite — a hand-drawn parchment square. ── */}
               <nav
                 class="estate-side-panel"
                 aria-label="顶部命令栏"
@@ -259,24 +263,40 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                 data-source-rect="anchorMin=(0,0) anchorMax=(1,1) pivot=(0.5,0.5)"
               >
                 <button
+                  class="estate-side-button-inactive"
+                  type="button"
+                  hidden
+                  aria-hidden="true"
+                  tabindex={-1}
+                  data-source-prefab="UI_Shared/UI_MidWindows/UI_Panels/BottomPanel/SideButtons/ActivityLogButton"
+                  data-source-rect="anchorMin=(1,1) anchorMax=(1,1) pivot=(0.5,0.5) anchoredPosition=(-100,-80) sizeDelta=(136,136)"
+                  data-source-sprite="btn_white.png"
+                  data-source-guid="5536faf88204cc54985b146b5ceb03f6"
+                  data-source-active="false"
+                />
+                <button
                   class="estate-side-button"
+                  type="button"
                   title="饰品仓库"
                   aria-label="饰品仓库"
                   data-source-prefab="UI_Shared/UI_MidWindows/UI_Panels/BottomPanel/SideButtons/RealmInventoryButton"
                   data-source-rect="anchorMin=(1,1) anchorMax=(1,1) pivot=(0.5,0.5) anchoredPosition=(-340,-80) sizeDelta=(136,136)"
                   data-source-sprite="btn_white.png"
                   data-source-guid="5536faf88204cc54985b146b5ceb03f6"
+                  data-source-active="true"
                 >
                   <span class="estate-side-button-label">饰品仓库</span>
                 </button>
                 <button
                   class="estate-side-button"
+                  type="button"
                   title="英雄"
                   aria-label="英雄"
                   data-source-prefab="UI_Shared/UI_MidWindows/UI_Panels/BottomPanel/SideButtons/HeroButton"
                   data-source-rect="anchorMin=(1,1) anchorMax=(1,1) pivot=(0.5,0.5) anchoredPosition=(-220,-80) sizeDelta=(136,136)"
                   data-source-sprite="btn_white.png"
                   data-source-guid="5536faf88204cc54985b146b5ceb03f6"
+                  data-source-active="true"
                   onClick={() => {
                     const firstHero = props.viewModel.heroes[0] ?? props.viewModel.roster[0];
                     if (firstHero) props.onOpenHero(firstHero.id);
@@ -285,16 +305,42 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                   <span class="estate-side-button-label">英雄</span>
                 </button>
                 <button
+                  class="estate-side-button-inactive"
+                  type="button"
+                  hidden
+                  aria-hidden="true"
+                  tabindex={-1}
+                  data-source-prefab="UI_Shared/UI_MidWindows/UI_Panels/BottomPanel/SideButtons/TownEventButton"
+                  data-source-rect="anchorMin=(1,1) anchorMax=(1,1) pivot=(0.5,0.5) anchoredPosition=(-100,-80) sizeDelta=(136,136)"
+                  data-source-sprite="btn_white.png"
+                  data-source-guid="5536faf88204cc54985b146b5ceb03f6"
+                  data-source-active="false"
+                />
+                <button
                   class="estate-side-button"
+                  type="button"
                   title="设置"
                   aria-label="设置"
                   data-source-prefab="UI_Shared/UI_MidWindows/UI_Panels/BottomPanel/SideButtons/SettingsButton"
                   data-source-rect="anchorMin=(1,1) anchorMax=(1,1) pivot=(0.5,0.5) anchoredPosition=(-100,-80) sizeDelta=(136,136)"
                   data-source-sprite="btn_white.png"
                   data-source-guid="5536faf88204cc54985b146b5ceb03f6"
+                  data-source-active="true"
                 >
                   <span class="estate-side-button-label">设置</span>
                 </button>
+                <button
+                  class="estate-side-button-inactive"
+                  type="button"
+                  hidden
+                  aria-hidden="true"
+                  tabindex={-1}
+                  data-source-prefab="UI_Shared/UI_MidWindows/UI_Panels/BottomPanel/SideButtons/GlossaryButton"
+                  data-source-rect="anchorMin=(1,1) anchorMax=(1,1) pivot=(0.5,0.5) anchoredPosition=(-220,-80) sizeDelta=(136,136)"
+                  data-source-sprite="btn_white.png"
+                  data-source-guid="5536faf88204cc54985b146b5ceb03f6"
+                  data-source-active="false"
+                />
               </nav>
 
               {/* ── UI_Panels/BottomPanel — bottom panel grouping (Unity UI_Shared/UI_Panels/BottomPanel) ── */}

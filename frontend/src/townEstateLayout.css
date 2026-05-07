@@ -389,13 +389,15 @@
 /* ── Top-right command row (source: UI_Shared/UI_MidWindows/UI_Panels/BottomPanel/SideButtons) ── */
 /* Reference 公会界面.png shows three small square text buttons (饰品仓库, 英雄, 设置)
    floating directly on the dark sky at the upper-right corner. The Unity source
-   has six SideButtons children (ActivityLog, RealmInventory, Hero, TownEvent,
-   Settings, Glossary) but only RealmInventory, Hero, Settings are active in the
-   reference frame. All three use btn_white.png (GUID 5536faf88204cc54985b146b5ceb03f6)
-   as their Image sprite — a hand-drawn parchment square. The frontend renders
-   these as compact square buttons backed by btn_white.png at low opacity so the
-   sprite reads as a faint frame against the painterly backdrop, matching the
-   reference's text-on-sky composition. */
+   has six SideButtons children rendered in source order (ActivityLog, RealmInventory,
+   Hero, TownEvent, Settings, Glossary) but only RealmInventory, Hero, Settings are
+   active in the reference frame; the other three remain in markup with the
+   .estate-side-button-inactive class so the source grouping is preserved while the
+   inactive quick commands stay hidden from layout. All six children use btn_white.png
+   (GUID 5536faf88204cc54985b146b5ceb03f6) as their Image sprite — a hand-drawn
+   parchment square. The active buttons are rendered as compact 64×64 squares
+   backed by btn_white.png at low opacity so the sprite reads as a faint frame
+   against the painterly backdrop, matching the reference's text-on-sky composition. */
 .estate-side-panel {
   position: absolute;
   top: 28px;
@@ -447,6 +449,13 @@
 .estate-side-button:active {
   filter: brightness(0.5) saturate(0.5);
   transform: translateY(1px);
+}
+
+/* Source-inactive SideButtons children (ActivityLog, TownEvent, Glossary) are
+   kept in markup to mirror Unity's BottomPanel/SideButtons grouping but hidden
+   from layout so they cannot receive focus or take flex space. */
+.estate-side-button-inactive {
+  display: none;
 }
 
 /* ── Building nodes (source: EstateManagement.unity / Estate/BuildingSlot prefab) ── */
