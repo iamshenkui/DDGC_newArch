@@ -154,6 +154,19 @@ describe("replay fixtures — hero and campaign state consistency", () => {
       expect(replayTownViewModel.isFreshVisit).toBe(true);
     });
 
+    it("has all five currency fields as non-negative numbers", () => {
+      expect(typeof replayTownViewModel.gold).toBe("number");
+      expect(typeof replayTownViewModel.bust).toBe("number");
+      expect(typeof replayTownViewModel.portrait).toBe("number");
+      expect(typeof replayTownViewModel.deed).toBe("number");
+      expect(typeof replayTownViewModel.crest).toBe("number");
+      expect(replayTownViewModel.gold).toBeGreaterThanOrEqual(0);
+      expect(replayTownViewModel.bust).toBeGreaterThanOrEqual(0);
+      expect(replayTownViewModel.portrait).toBeGreaterThanOrEqual(0);
+      expect(replayTownViewModel.deed).toBeGreaterThanOrEqual(0);
+      expect(replayTownViewModel.crest).toBeGreaterThanOrEqual(0);
+    });
+
     it("has roster field matching heroes", () => {
       expect(replayTownViewModel.roster.length).toBe(replayTownViewModel.heroes.length);
       expect(replayTownViewModel.roster[0].id).toBe("hero-hunter-01");

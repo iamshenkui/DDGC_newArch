@@ -96,6 +96,10 @@ export const replayTownViewModel: TownViewModel = {
   ],
   roster: townHeroes,
   gold: 1250,
+  bust: 100,
+  portrait: 100,
+  deed: 100,
+  crest: 200,
   isFreshVisit: true,
   nextActionLabel: "整备远征"
 };
@@ -960,6 +964,10 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!Array.isArray(vm.buildings)) { e.push("TownViewModel: buildings is not an array"); } else if (vm.buildings.length === 0) { e.push("TownViewModel: buildings array is empty"); }
       if (!Array.isArray(vm.roster)) e.push("TownViewModel: roster is not an array");
       if (typeof vm.gold !== "number") e.push("TownViewModel: gold is not a number");
+      if (typeof vm.bust !== "number") e.push("TownViewModel: bust is not a number");
+      if (typeof vm.portrait !== "number") e.push("TownViewModel: portrait is not a number");
+      if (typeof vm.deed !== "number") e.push("TownViewModel: deed is not a number");
+      if (typeof vm.crest !== "number") e.push("TownViewModel: crest is not a number");
       if (typeof vm.isFreshVisit !== "boolean") e.push("TownViewModel: isFreshVisit is not a boolean");
       if (!vm.campaignName || typeof vm.campaignName !== "string") e.push("TownViewModel: campaignName is missing");
       if (vm.nextActionLabel === undefined || typeof vm.nextActionLabel !== "string") e.push("TownViewModel: nextActionLabel is missing or not a string");

@@ -111,6 +111,10 @@ const createLiveTownViewModel = (): TownViewModel => ({
     }
   ] as ReadonlyArray<TownHeroSummary>,
   gold: 500,
+  bust: 100,
+  portrait: 100,
+  deed: 100,
+  crest: 200,
   isFreshVisit: true,
   nextActionLabel: "整备并出发"
 });

@@ -221,21 +221,21 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                 data-source-prefab="UI_Shared/UI_TopWindows/CurrencyPanel"
                 data-source-rect="anchorMin=(1,0) anchorMax=(1,0) pivot=(1,0) anchoredPosition=(-140,20) sizeDelta=(1000,80)"
               >
-                <span class="estate-currency-slot" data-source-sprite="currency_bust.png" data-source-layer="deferred-heirloom">
+                <span class="estate-currency-slot" data-source-sprite="bust.png">
                   <img class="estate-currency-icon" src={resolveChromeAsset("bustIcon")} alt="" aria-hidden="true" />
-                  <span class="estate-currency-value">100</span>
+                  <span class="estate-currency-value">{props.viewModel.bust}</span>
                 </span>
-                <span class="estate-currency-slot" data-source-sprite="currency_portrait.png" data-source-layer="deferred-heirloom">
+                <span class="estate-currency-slot" data-source-sprite="portrait.png">
                   <img class="estate-currency-icon" src={resolveChromeAsset("portraitIcon")} alt="" aria-hidden="true" />
-                  <span class="estate-currency-value">100</span>
+                  <span class="estate-currency-value">{props.viewModel.portrait}</span>
                 </span>
-                <span class="estate-currency-slot" data-source-sprite="currency_deed.png" data-source-layer="deferred-heirloom">
+                <span class="estate-currency-slot" data-source-sprite="deed.png">
                   <img class="estate-currency-icon" src={resolveChromeAsset("deedIcon")} alt="" aria-hidden="true" />
-                  <span class="estate-currency-value">100</span>
+                  <span class="estate-currency-value">{props.viewModel.deed}</span>
                 </span>
-                <span class="estate-currency-slot" data-source-sprite="currency_crest.png" data-source-layer="deferred-heirloom">
+                <span class="estate-currency-slot" data-source-sprite="crest.png">
                   <img class="estate-currency-icon" src={resolveChromeAsset("crestIcon")} alt="" aria-hidden="true" />
-                  <span class="estate-currency-value">200</span>
+                  <span class="estate-currency-value">{props.viewModel.crest}</span>
                 </span>
                 <span class="estate-currency-slot estate-currency-slot-gold" data-source-sprite="gold.png">
                   <img class="estate-currency-icon" src={resolveChromeAsset("goldIcon")} alt="" aria-hidden="true" />

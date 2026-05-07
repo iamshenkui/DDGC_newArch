@@ -156,6 +156,10 @@ export interface TownViewModel {
   roster: ReadonlyArray<TownHeroSummary>;
   buildings: ReadonlyArray<TownBuildingSummary>;
   gold: number;
+  bust: number;
+  portrait: number;
+  deed: number;
+  crest: number;
   isFreshVisit: boolean;
   nextActionLabel: string;
 }
