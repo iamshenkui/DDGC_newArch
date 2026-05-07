@@ -85,6 +85,18 @@ export function DdgcApp() {
     }
   };
 
+  const handleDeleteCampaign = () => {
+    saveLoad.delete();
+  };
+
+  const handleQuit = () => {
+    setBooted(false);
+    setActiveMode(DEFAULT_RUNTIME_MODE);
+    if (typeof window !== "undefined" && typeof window.close === "function") {
+      window.close();
+    }
+  };
+
   const snapshot = createMemo(() => session.snapshot());
   const screen = createMemo(() => (booted() ? resolveScreen(snapshot()) : "startup"));
 
@@ -97,6 +109,8 @@ export function DdgcApp() {
             onLiveBoot={() => runBoot("live")}
             onNewCampaign={handleNewCampaign}
             onLoadCampaign={handleLoadCampaign}
+            onDeleteCampaign={handleDeleteCampaign}
+            onQuit={handleQuit}
             hasSavedCampaign={saveLoad.hasSavedCampaign()}
           />
         </Match>

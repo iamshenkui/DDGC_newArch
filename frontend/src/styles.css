@@ -3305,3 +3305,476 @@ button {
   cursor: not-allowed;
   opacity: 0.65;
 }
+
+/* ── Save selection panel (KUI-P1-005) ──────────────────────────────────────
+ * dialog02.png parchment scaled wide to host the SaveSlotList. Mirrors
+ * 存档界面.png composition: back arrow, centered title, vertical list of
+ * SaveSlotRow entries with checkbox, label/rank summary, and trash/+ action.
+ */
+.startup-frame-save {
+  width: clamp(560px, 64vw, 880px);
+  aspect-ratio: 1131 / 720;
+  background-image: url("/original/startup/dialog02.png");
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: clamp(28px, 4.5vh, 56px) clamp(48px, 6vw, 96px);
+  gap: clamp(12px, 2vh, 24px);
+}
+
+.startup-panel-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: clamp(36px, 5vh, 56px);
+}
+
+.startup-panel-back {
+  position: absolute;
+  left: clamp(-32px, -2vw, -8px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: clamp(32px, 3vw, 44px);
+  height: clamp(32px, 3vw, 44px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(28, 18, 8, 0.55);
+  border: 1px solid rgba(255, 235, 180, 0.35);
+  border-radius: 50%;
+  color: #f8e7bd;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.12s ease;
+}
+
+.startup-panel-back:hover {
+  filter: brightness(1.1);
+}
+
+.startup-panel-back:active {
+  transform: translateY(calc(-50% + 1px));
+}
+
+.startup-panel-back-icon {
+  font-size: clamp(1.3rem, 2.5vw, 1.9rem);
+  line-height: 1;
+  color: #f8e7bd;
+}
+
+.startup-panel-title {
+  margin: 0;
+  font-family: inherit;
+  font-size: clamp(1.1rem, 2.2vw, 1.6rem);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #2a1c0c;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-position: center center;
+  padding: clamp(6px, 1vh, 14px) clamp(28px, 3vw, 56px);
+  text-shadow: 0 1px 0 rgba(255, 247, 215, 0.45);
+}
+
+.startup-panel-title-centered {
+  background-image: none;
+  color: #3a2510;
+  text-shadow: none;
+  letter-spacing: 0.22em;
+}
+
+.startup-panel-close {
+  position: absolute;
+  right: clamp(-18px, -1.4vw, -2px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: clamp(28px, 2.4vw, 36px);
+  height: clamp(28px, 2.4vw, 36px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #b13d2f;
+  border: 0;
+  border-radius: 4px;
+  color: #fbecbe;
+  font-size: clamp(0.9rem, 1.4vw, 1.1rem);
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.startup-panel-close:hover {
+  filter: brightness(1.1);
+}
+
+.startup-panel-close:active {
+  transform: translateY(calc(-50% + 1px));
+}
+
+.startup-save-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1.4vh, 16px);
+  width: 100%;
+  overflow-y: auto;
+}
+
+.startup-save-slot {
+  display: block;
+  width: 100%;
+}
+
+.startup-save-slot-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  gap: clamp(6px, 0.8vw, 12px);
+  width: 100%;
+}
+
+.startup-save-slot-select {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: clamp(10px, 1.5vw, 18px);
+  width: 100%;
+  padding: clamp(8px, 1.2vh, 16px) clamp(14px, 1.6vw, 22px);
+  background: rgba(20, 14, 6, 0.62);
+  border: 1px solid rgba(255, 235, 180, 0.32);
+  border-radius: 4px;
+  color: #f3e3bf;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: clamp(0.9rem, 1.35vw, 1.05rem);
+  text-align: left;
+  transition: filter 0.15s ease, border-color 0.15s ease;
+}
+
+.startup-save-slot-select:hover {
+  filter: brightness(1.08);
+  border-color: rgba(255, 235, 180, 0.55);
+}
+
+.startup-save-slot-select:focus-visible {
+  outline: 2px solid rgba(255, 235, 180, 0.7);
+  outline-offset: 2px;
+}
+
+.startup-save-slot[data-slot-placeholder="true"] .startup-save-slot-select {
+  background: rgba(20, 14, 6, 0.42);
+  border-style: dashed;
+}
+
+.startup-save-slot-checkbox {
+  width: clamp(18px, 1.4vw, 22px);
+  height: clamp(18px, 1.4vw, 22px);
+  border: 1px solid rgba(255, 235, 180, 0.55);
+  border-radius: 2px;
+  background: rgba(20, 14, 6, 0.5);
+  flex: 0 0 auto;
+}
+
+.startup-save-slot-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.startup-save-slot-title {
+  font-size: clamp(0.95rem, 1.4vw, 1.15rem);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #f8e7bd;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.startup-save-slot[data-slot-placeholder="true"] .startup-save-slot-title {
+  color: #c9b48a;
+  font-weight: 500;
+  font-style: italic;
+}
+
+.startup-save-slot-rank {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: clamp(0.75rem, 1vw, 0.85rem);
+  color: #d8c294;
+}
+
+.startup-save-slot-rank-label {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.startup-save-slot-rank-value {
+  font-weight: 600;
+  color: #f3e3bf;
+}
+
+.startup-save-slot-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(34px, 3vw, 46px);
+  height: 100%;
+  min-height: clamp(34px, 3vw, 46px);
+  font-size: clamp(0.95rem, 1.5vw, 1.15rem);
+  color: #f8e7bd;
+  background: rgba(20, 14, 6, 0.62);
+  border: 1px solid rgba(255, 235, 180, 0.32);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: filter 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  font-family: inherit;
+}
+
+.startup-save-slot-action:hover {
+  background: rgba(255, 235, 180, 0.12);
+  border-color: rgba(255, 235, 180, 0.55);
+}
+
+.startup-save-slot-action:focus-visible {
+  outline: 2px solid rgba(255, 235, 180, 0.7);
+  outline-offset: 2px;
+}
+
+/* ── Settings panel (KUI-P1-005) ────────────────────────────────────────────
+ * Re-uses dialog07.png parchment but renders the SettingsRows list
+ * (mirrors 设置界面.png) with sliders for audio levels and selects for
+ * resolution/language/window/vsync rows.
+ */
+.startup-frame-settings {
+  width: clamp(560px, 60vw, 820px);
+  aspect-ratio: 1131 / 720;
+  background-image: url("/original/startup/dialog07.png");
+  background-size: 100% 100%;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: clamp(28px, 4.5vh, 56px) clamp(48px, 6vw, 96px);
+  gap: clamp(12px, 2vh, 24px);
+}
+
+.startup-settings-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1.4vh, 16px);
+  width: 100%;
+  overflow-y: auto;
+}
+
+.startup-settings-row {
+  display: grid;
+  grid-template-columns: minmax(96px, 24%) 1fr;
+  align-items: center;
+  gap: clamp(12px, 1.6vw, 24px);
+  padding: clamp(4px, 0.8vh, 10px) 0;
+  font-size: clamp(0.9rem, 1.35vw, 1.05rem);
+}
+
+.startup-settings-label {
+  color: #2a1c0c;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-align: left;
+}
+
+.startup-settings-slider {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: clamp(6px, 0.8vw, 12px);
+}
+
+.startup-settings-slider-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(26px, 2vw, 32px);
+  height: clamp(26px, 2vw, 32px);
+  background: rgba(20, 14, 6, 0.55);
+  border: 1px solid rgba(58, 37, 16, 0.45);
+  border-radius: 3px;
+  color: #fbecbe;
+  font-size: clamp(0.9rem, 1.3vw, 1.05rem);
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.12s ease;
+}
+
+.startup-settings-slider-step:hover {
+  filter: brightness(1.1);
+}
+
+.startup-settings-slider-step:active {
+  transform: translateY(1px);
+}
+
+.startup-settings-slider-input {
+  width: 100%;
+  height: 6px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(58, 37, 16, 0.45);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.startup-settings-slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fbecbe;
+  border: 1px solid #3a2510;
+  cursor: pointer;
+}
+
+.startup-settings-slider-input::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fbecbe;
+  border: 1px solid #3a2510;
+  cursor: pointer;
+}
+
+.startup-settings-select {
+  width: 100%;
+  padding: clamp(4px, 0.8vh, 8px) clamp(10px, 1.2vw, 16px);
+  background: rgba(20, 14, 6, 0.55);
+  color: #fbecbe;
+  border: 1px solid rgba(58, 37, 16, 0.55);
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: clamp(0.85rem, 1.25vw, 1rem);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #fbecbe 50%),
+                    linear-gradient(135deg, #fbecbe 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%;
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: clamp(28px, 3vw, 36px);
+}
+
+/* ── Region transition (KUI-P1-005) ─────────────────────────────────────────
+ * 转场.png — Zhuque continent intro overlay. Phase 1 surfaces the region
+ * label, flavor copy, and continue prompt over the staged scene background.
+ * Click or press Space/Enter advances to onNewCampaign.
+ */
+.startup-frame-transition {
+  width: 100%;
+  height: 100%;
+  background-image: none;
+  background-color: rgba(8, 4, 2, 0.55);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-items: stretch;
+  justify-items: center;
+  padding: clamp(36px, 6vh, 80px) clamp(40px, 6vw, 100px);
+  cursor: pointer;
+  outline: none;
+  aspect-ratio: auto;
+}
+
+.startup-frame-transition:focus-visible {
+  outline: 2px solid rgba(255, 235, 180, 0.6);
+  outline-offset: -8px;
+}
+
+.startup-transition-title {
+  margin: 0;
+  font-family: inherit;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 700;
+  letter-spacing: 0.4em;
+  color: #d6442f;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+}
+
+.startup-transition-flavor {
+  margin: 0;
+  align-self: end;
+  justify-self: end;
+  max-width: 50%;
+  font-size: clamp(0.9rem, 1.4vw, 1.15rem);
+  color: #f3e3bf;
+  letter-spacing: 0.1em;
+  text-align: right;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
+}
+
+.startup-transition-hint {
+  margin: 0;
+  font-size: clamp(0.85rem, 1.2vw, 1rem);
+  color: #c9b48a;
+  letter-spacing: 0.16em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+
+/* ── Footer / version label (KUI-P1-005) ────────────────────────────────────
+ * Mirrors V 1.0 anchor at the bottom-right of the source title screen and
+ * persists across all menu states.
+ */
+.startup-footer {
+  position: absolute;
+  right: clamp(20px, 3vw, 48px);
+  bottom: clamp(12px, 2vh, 28px);
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.startup-version {
+  font-size: clamp(0.75rem, 1.1vw, 0.95rem);
+  color: rgba(243, 227, 191, 0.65);
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+/* ── Developer boot dock ────────────────────────────────────────────────────
+ * Retained outside the source-faithful frame so the runtime test harness
+ * can still reach the live/replay bridge entry points without polluting
+ * the Unity-faithful menu.
+ */
+.startup-dev-dock {
+  position: absolute;
+  left: clamp(12px, 1.6vw, 24px);
+  bottom: clamp(12px, 2vh, 24px);
+  display: flex;
+  gap: 8px;
+  z-index: 2;
+}
+
+.startup-dev-button {
+  font-family: inherit;
+  font-size: clamp(0.7rem, 1vw, 0.85rem);
+  letter-spacing: 0.06em;
+  color: rgba(243, 227, 191, 0.85);
+  background: rgba(20, 14, 6, 0.55);
+  border: 1px solid rgba(243, 227, 191, 0.35);
+  border-radius: 3px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.startup-dev-button:hover {
+  filter: brightness(1.15);
+}
+

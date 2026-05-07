@@ -148,14 +148,26 @@ test.describe("browser smoke: fidelity gates", () => {
       "Startup title wordmark must use staged game_logo.png asset"
     ).toBeVisible();
 
+    // KUI-P1-005: menu controls must use source-faithful Chinese labels
+    // and route to the four CampaignSelection.unity menu states.
     await expect(
-      page.getByRole("button", { name: "New Campaign" }),
-      "New Campaign button must be present"
+      page.getByRole("button", { name: "新游戏" }),
+      "新游戏 menu button must be present"
     ).toBeVisible();
 
     await expect(
-      page.getByRole("button", { name: "Load Campaign" }),
-      "Load Campaign button must be present"
+      page.getByRole("button", { name: "继续游戏 / 读取存档" }),
+      "继续游戏/读取存档 menu button must be present"
+    ).toBeVisible();
+
+    await expect(
+      page.getByRole("button", { name: "设置" }),
+      "设置 menu button must be present"
+    ).toBeVisible();
+
+    await expect(
+      page.getByRole("button", { name: "退出游戏" }),
+      "退出游戏 menu button must be present"
     ).toBeVisible();
 
     await expect(
@@ -166,6 +178,42 @@ test.describe("browser smoke: fidelity gates", () => {
     await expect(
       page.getByRole("button", { name: "Boot Live" }),
       "Live boot button must be present"
+    ).toBeVisible();
+
+    // Save selection state surface (dialog02.png parchment + slot list).
+    await page.getByRole("button", { name: "继续游戏 / 读取存档" }).click();
+    await settle(page, 200);
+    await expect(
+      page.locator('[data-startup-panel="save-select"]'),
+      "Save selection panel must mount"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "存档选择" }),
+      "存档选择 panel title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.startup-save-slot[data-slot-placeholder="true"]'),
+      "Empty placeholder save slot must render"
+    ).toBeVisible();
+    await page.getByRole("button", { name: "返回主菜单" }).click();
+    await settle(page, 200);
+
+    // Settings state surface (parchment with sliders + selects).
+    await page.getByRole("button", { name: "设置" }).click();
+    await settle(page, 200);
+    await expect(
+      page.locator('[data-startup-panel="settings"]'),
+      "Settings panel must mount"
+    ).toBeVisible();
+    await expect(
+      page.locator('.startup-settings-row'),
+      "Settings rows must render (audio sliders + display selects)"
+    ).toHaveCount(7);
+    await page.getByRole("button", { name: "关闭设置" }).click();
+    await settle(page, 200);
+    await expect(
+      page.locator('[data-startup-panel="main"]'),
+      "Returning to main menu after settings close"
     ).toBeVisible();
 
     // ── Phase 2: Replay boot → Town shell ──────────────────
