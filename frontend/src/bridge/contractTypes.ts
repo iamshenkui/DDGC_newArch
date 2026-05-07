@@ -208,6 +208,7 @@ export interface ExpeditionSetupViewModel {
   kind: "expedition";
   title: string;
   expeditionName: string;
+  dungeonId?: "baihu" | "qinglong" | "xuanwu" | "zhuque";
   partySize: number;
   party: ReadonlyArray<ExpeditionHeroSummary>;
   difficulty: string;

@@ -308,3 +308,18 @@ export type ExpeditionUiAssetKey = keyof typeof expeditionUiPaths;
 export function resolveExpeditionUiAsset(key: ExpeditionUiAssetKey): string {
   return expeditionUiPaths[key];
 }
+
+const dungeonMapBackgrounds: Record<string, ExpeditionUiAssetKey> = {
+  baihu: "map1",
+  qinglong: "map2",
+  xuanwu: "map3",
+  zhuque: "map4"
+};
+
+export function resolveDungeonMapBackground(dungeonId: string): string {
+  const key = dungeonMapBackgrounds[dungeonId];
+  if (key) {
+    return expeditionUiPaths[key];
+  }
+  return expeditionUiPaths.map1;
+}

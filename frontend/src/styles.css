@@ -1584,6 +1584,166 @@ button {
   pointer-events: none;
 }
 
+/* ── Expedition map background (KUI-P1-014) ─────────────────────
+ * Replaces the flat gradient with the source-faithful dungeon
+ * hot-spot background from the staged expedition map assets.
+ */
+.expedition-map-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;
+}
+
+/* ── Expedition map composition layer ───────────────────────────
+ * Holds dungeon hot-spot nodes and quest chrome decorations.
+ * Positioned behind the content overlay but above the map bg.
+ */
+.expedition-map-composition {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Dungeon hot-spot nodes — four quadrants matching Unity UI_Quest/Dungeons */
+.expedition-dungeon-nodes {
+  position: absolute;
+  inset: 0;
+}
+
+.expedition-dungeon-node {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border-radius: var(--radius-lg);
+  background: rgba(6, 10, 8, 0.55);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  backdrop-filter: blur(2px);
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+  min-width: 90px;
+}
+
+.expedition-dungeon-node--tl {
+  top: 8%;
+  left: 6%;
+}
+
+.expedition-dungeon-node--tr {
+  top: 8%;
+  right: 6%;
+}
+
+.expedition-dungeon-node--bl {
+  bottom: 18%;
+  left: 6%;
+}
+
+.expedition-dungeon-node--br {
+  bottom: 18%;
+  right: 6%;
+}
+
+.expedition-dungeon-node--selected {
+  background: rgba(14, 24, 18, 0.75);
+  border-color: rgba(198, 212, 106, 0.45);
+  box-shadow:
+    0 0 24px rgba(198, 212, 106, 0.15),
+    inset 0 1px 0 rgba(198, 212, 106, 0.1);
+  transform: scale(1.08);
+}
+
+.expedition-dungeon-icon {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  display: block;
+}
+
+.expedition-dungeon-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--panel-text);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+
+.expedition-dungeon-node--selected .expedition-dungeon-label {
+  color: var(--panel-accent);
+}
+
+.expedition-dungeon-marker {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+}
+
+.expedition-dungeon-marker img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* ── Quest chrome decorations ───────────────────────────────── */
+.expedition-quest-chrome {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.expedition-title-bg {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  height: 56px;
+  object-fit: contain;
+  opacity: 0.65;
+}
+
+.expedition-flag-decoration {
+  position: absolute;
+  top: 6%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48px;
+  height: auto;
+  object-fit: contain;
+  opacity: 0.5;
+}
+
+.expedition-minimap-frame {
+  position: absolute;
+  bottom: 14%;
+  right: 4%;
+  width: 120px;
+  height: auto;
+  object-fit: contain;
+  opacity: 0.35;
+}
+
+.expedition-line-decoration {
+  position: absolute;
+  bottom: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: auto;
+  object-fit: contain;
+  opacity: 0.25;
+}
+
 .expedition-content {
   position: absolute;
   inset: 0;

@@ -1,7 +1,13 @@
 import { For, type Component } from "solid-js";
 
 import type { ExpeditionSetupViewModel } from "../../bridge/contractTypes";
-import { resolveChromeAsset, resolveHeroPortrait } from "../../assets/originalAssetPaths";
+import {
+  resolveChromeAsset,
+  resolveHeroPortrait,
+  resolveDungeonMapIcon,
+  resolveDungeonMapBackground,
+  resolveExpeditionUiAsset
+} from "../../assets/originalAssetPaths";
 
 interface ExpeditionScreenProps {
   viewModel: ExpeditionSetupViewModel;
@@ -43,6 +49,17 @@ function stressBarColor(stress: string): string {
   return "#ea7767";
 }
 
+const DUNGEON_NODES: Array<{
+  id: "baihu" | "qinglong" | "xuanwu" | "zhuque";
+  label: string;
+  positionClass: string;
+}> = [
+  { id: "baihu", label: "Baihu", positionClass: "expedition-dungeon-node--tl" },
+  { id: "qinglong", label: "Qinglong", positionClass: "expedition-dungeon-node--tr" },
+  { id: "xuanwu", label: "Xuanwu", positionClass: "expedition-dungeon-node--bl" },
+  { id: "zhuque", label: "Zhuque", positionClass: "expedition-dungeon-node--br" }
+];
+
 /**
  * Expedition launch screen — landscape game viewport for pre-launch review.
  *
@@ -60,6 +77,14 @@ function stressBarColor(stress: string): string {
  *                GUID e401bf9b9275ede4aa2ff50d13cc6207.
  *                Not extracted (BLOCKER-001) — pill keeps the explicit blocker
  *                annotation and a CSS fallback swatch.
+ *
+ * Expedition map composition (KUI-P1-014):
+ *   map backgrounds — /original/expedition/ui/map[1-4].png staged in P1-013.
+ *                     Selected by dungeonId via resolveDungeonMapBackground.
+ *   dungeon icons   — /original/expedition/dungeon/dungeon_map_*.png staged in P1-013.
+ *                     All four dungeons rendered as map hot-spot nodes.
+ *   quest chrome    — quest.title.bg.png, quest.flag.png, quest.minimap.png,
+ *                     quest.line.png staged in P1-013. Used as decorative chrome.
  */
 export const ExpeditionScreen: Component<ExpeditionScreenProps> = (props) => {
   const launchStateLabel = () => {
@@ -74,6 +99,9 @@ export const ExpeditionScreen: Component<ExpeditionScreenProps> = (props) => {
     if (props.viewModel.warnings.length > 0) return "expedition-status-pill--wounded";
     return "expedition-status-pill--ready";
   };
+
+  const mapBackgroundUrl = () =>
+    resolveDungeonMapBackground(props.viewModel.dungeonId ?? "baihu");
 
   return (
     <div
@@ -138,8 +166,81 @@ export const ExpeditionScreen: Component<ExpeditionScreenProps> = (props) => {
 
       {/* ── Game Surface ─────────────────────────────────── */}
       <div class="expedition-surface">
-        <div class="expedition-surface-bg" />
+        {/* Map background layer — source-faithful dungeon hot-spot background */}
+        <div
+          class="expedition-map-bg"
+          style={{ "background-image": `url(${mapBackgroundUrl()})` }}
+          data-source-component="UI_Quest_Match_Height/BackGround"
+          data-asset-key={props.viewModel.dungeonId ?? "baihu"}
+        />
         <div class="expedition-surface-mist" />
+
+        {/* Expedition map composition — dungeon nodes + quest chrome */}
+        <div class="expedition-map-composition">
+          {/* Dungeon hot-spot nodes (all four, selected one highlighted) */}
+          <div class="expedition-dungeon-nodes">
+            <For each={DUNGEON_NODES}>
+              {(node) => {
+                const isSelected = node.id === (props.viewModel.dungeonId ?? "baihu");
+                return (
+                  <div
+                    class={`expedition-dungeon-node ${node.positionClass}${isSelected ? " expedition-dungeon-node--selected" : ""}`}
+                    data-dungeon-id={node.id}
+                    data-selected={isSelected}
+                  >
+                    <img
+                      class="expedition-dungeon-icon"
+                      src={resolveDungeonMapIcon(node.id)}
+                      alt=""
+                      aria-hidden="true"
+                    />
+                    <span class="expedition-dungeon-label">{node.label}</span>
+                    {isSelected && (
+                      <span class="expedition-dungeon-marker" aria-hidden="true">
+                        <img
+                          src={resolveExpeditionUiAsset("questStar")}
+                          alt=""
+                          aria-hidden="true"
+                        />
+                      </span>
+                    )}
+                  </div>
+                );
+              }}
+            </For>
+          </div>
+
+          {/* Quest chrome — title strip, flag, minimap frame */}
+          <div class="expedition-quest-chrome">
+            <img
+              class="expedition-title-bg"
+              src={resolveExpeditionUiAsset("questTitleBg")}
+              alt=""
+              aria-hidden="true"
+              data-source-component="SelectedQuestPanel/TitleBg"
+            />
+            <img
+              class="expedition-flag-decoration"
+              src={resolveExpeditionUiAsset("questFlag")}
+              alt=""
+              aria-hidden="true"
+              data-source-component="UI_Quest/QuestFlag"
+            />
+            <img
+              class="expedition-minimap-frame"
+              src={resolveExpeditionUiAsset("questMinimap")}
+              alt=""
+              aria-hidden="true"
+              data-source-component="UI_Quest/QuestMinimap"
+            />
+            <img
+              class="expedition-line-decoration"
+              src={resolveExpeditionUiAsset("questLine")}
+              alt=""
+              aria-hidden="true"
+            />
+          </div>
+        </div>
 
         <div class="expedition-content expedition-launch-content">
           {/* Party vitals row */}

@@ -291,6 +291,7 @@ const createLiveExpeditionViewModel = (): ExpeditionSetupViewModel => ({
   kind: "expedition",
   title: "Expedition Launch",
   expeditionName: "The Azure Lantern Expedition",
+  dungeonId: "qinglong",
   partySize: 2,
   party: [
     { id: "hero-hunter-live-01", name: "Yuan", classLabel: "Hunter", hp: "42 / 42", maxHp: "42", stress: "0", maxStress: "200" },

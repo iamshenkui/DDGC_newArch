@@ -499,6 +499,7 @@ export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
   kind: "expedition",
   title: "Expedition Launch",
   expeditionName: "The Depths Await",
+  dungeonId: "baihu",
   partySize: 2,
   party: [
     { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", stress: "17", maxStress: "200" },
