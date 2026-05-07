@@ -55,7 +55,7 @@ export const TOWN_BUILDING_CATALOG: ReadonlyArray<TownBuildingCatalogEntry> = [
     labelOffsetX: 100, labelOffsetY: -100,
     sourcePrefab: BUILDING_SOURCE.prefab,
     sourceScene: BUILDING_SOURCE.scene,
-    sourceGuid: null
+    sourceGuid: "0353e5ff826c6a5478821d59f19ad3bb"
   },
   {
     id: "blacksmith",
@@ -149,7 +149,7 @@ export const TOWN_BUILDING_CATALOG: ReadonlyArray<TownBuildingCatalogEntry> = [
     labelOffsetX: -100, labelOffsetY: -110,
     sourcePrefab: BUILDING_SOURCE.prefab,
     sourceScene: BUILDING_SOURCE.scene,
-    sourceGuid: null
+    sourceGuid: "81a4db2ce3f89ea418b10edd5b1bddf1"
   }
 ];
 

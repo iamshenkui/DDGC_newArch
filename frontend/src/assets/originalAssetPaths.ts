@@ -70,23 +70,23 @@ export function resolveStartupAsset(key: StartupAssetKey): string {
 // iconography, and building label backgrounds.
 
 const chromePaths = {
-  // Top nameplate
-  estateNameBg: "/original/chrome/estate_name_bg.png",
-  // Currency
+  // Top nameplate — source uses save_name_bg.png (GUID bb3527cffabf75a4fa7daf28392aacc0)
+  estateNameBg: "/original/chrome/save_name_bg.png",
+  // Currency — five distinct heirloom icons from Assets/Resources/Sprites/
   goldIcon: "/original/chrome/gold.png",
-  bustIcon: "/original/chrome/gold.png",
-  portraitIcon: "/original/chrome/gold.png",
-  deedIcon: "/original/chrome/gold.png",
-  crestIcon: "/original/chrome/gold.png",
+  bustIcon: "/original/chrome/bust.png",
+  portraitIcon: "/original/chrome/portrait.png",
+  deedIcon: "/original/chrome/deed.png",
+  crestIcon: "/original/chrome/crest.png",
   // Embark
   embarkButton: "/original/chrome/btn_play.png",
-  // Side navigation (6 buttons from Unity UI_Shared/UI_Panels/BottomPanel/SideButtons)
-  sideActivityLog: "/original/chrome/btn_save_02.png",
-  sideRealmInventory: "/original/chrome/btn_save_02.png",
-  sideHero: "/original/chrome/btn_save_01.png",
-  sideTownEvent: "/original/chrome/btn_save_02.png",
-  sideSettings: "/original/chrome/btn_save_01.png",
-  sideGlossary: "/original/chrome/btn_save_02.png",
+  // Side navigation (all 6 SideButtons use btn_white.png — GUID 5536faf88204cc54985b146b5ceb03f6)
+  sideActivityLog: "/original/chrome/btn_white.png",
+  sideRealmInventory: "/original/chrome/btn_white.png",
+  sideHero: "/original/chrome/btn_white.png",
+  sideTownEvent: "/original/chrome/btn_white.png",
+  sideSettings: "/original/chrome/btn_white.png",
+  sideGlossary: "/original/chrome/btn_white.png",
   sideClose: "/original/chrome/btn_close.png",
   // Quick action buttons
   quickProgress: "/original/chrome/btn_save_02.png",
@@ -95,7 +95,9 @@ const chromePaths = {
   buildingLabelBg: "/original/chrome/building_label_bg01.png",
   buildingIconBg: "/original/chrome/building_icon_bg.png",
   buildingTitleBg: "/original/chrome/building_title_bg.png",
-  buildingInfoBg: "/original/chrome/building_info_bg.png"
+  buildingInfoBg: "/original/chrome/building_info_bg.png",
+  // Estate icon frame (EstateIcon child of EstateNameplate; active:false in source)
+  estateIconFrame: "/original/chrome/estate_icon_frame.png"
 } as const;
 
 export type ChromeAssetKey = keyof typeof chromePaths;

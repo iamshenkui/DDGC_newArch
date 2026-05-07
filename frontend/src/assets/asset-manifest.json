@@ -66,7 +66,7 @@
         },
         "graveyard": {
           "asset_path": "Assets/Sprites/town/buildings/building_hero_archive.png",
-          "guid": null,
+          "guid": "0353e5ff826c6a5478821d59f19ad3bb",
           "frontend_status": "staged — frontend/public/original/buildings/building_hero_archive.png"
         },
         "museum": {
@@ -80,7 +80,7 @@
         },
         "sanctuary": {
           "asset_path": "Assets/Sprites/town/buildings/building_space_analysis.png",
-          "guid": null,
+          "guid": "81a4db2ce3f89ea418b10edd5b1bddf1",
           "frontend_status": "staged — frontend/public/original/buildings/building_space_analysis.png"
         },
         "inn": {
@@ -402,6 +402,34 @@
           "frontend_usage": "TownShellScreen gold display, shop costs",
           "inventory_status": "confirmed",
           "frontend_status": "staged — frontend/public/original/chrome/gold.png (UIR-005B)"
+        },
+        "bust": {
+          "asset_path": "Assets/Resources/Sprites/bust.png",
+          "guid": "b7666e0835352ba4fae1009d7ce9ed57",
+          "frontend_usage": "TownShellScreen currency strip (heirloom slot 1)",
+          "inventory_status": "confirmed",
+          "frontend_status": "staged — frontend/public/original/chrome/bust.png (KUI-P1-008)"
+        },
+        "portrait": {
+          "asset_path": "Assets/Resources/Sprites/portrait.png",
+          "guid": "9ccf58fa045581d429080a83b689da74",
+          "frontend_usage": "TownShellScreen currency strip (heirloom slot 2)",
+          "inventory_status": "confirmed",
+          "frontend_status": "staged — frontend/public/original/chrome/portrait.png (KUI-P1-008)"
+        },
+        "deed": {
+          "asset_path": "Assets/Resources/Sprites/deed.png",
+          "guid": "aef1d8936b40c1949a2b346db35fec2b",
+          "frontend_usage": "TownShellScreen currency strip (heirloom slot 3)",
+          "inventory_status": "confirmed",
+          "frontend_status": "staged — frontend/public/original/chrome/deed.png (KUI-P1-008)"
+        },
+        "crest": {
+          "asset_path": "Assets/Resources/Sprites/crest.png",
+          "guid": "93dcbbb3a0555e944ae0633549929812",
+          "frontend_usage": "TownShellScreen currency strip (heirloom slot 4)",
+          "inventory_status": "confirmed",
+          "frontend_status": "staged — frontend/public/original/chrome/crest.png (KUI-P1-008)"
         }
       }
     },
@@ -476,8 +504,10 @@
         },
         "btn_white": {
           "asset_path": "Assets/Sprites/ui/btn_white.png",
-          "guid": null,
-          "inventory_status": "confirmed"
+          "guid": "5536faf88204cc54985b146b5ceb03f6",
+          "frontend_usage": "TownShellScreen side buttons (all 6 SideButtons)",
+          "inventory_status": "confirmed",
+          "frontend_status": "staged — frontend/public/original/chrome/btn_white.png (KUI-P1-008)"
         },
         "btn_gray": {
           "asset_path": "Assets/Sprites/ui/btn_gray.png",
@@ -535,13 +565,17 @@
         },
         "estate_icon_frame": {
           "asset_path": "Assets/Sprites/ui/estate_icon_frame.png",
-          "guid": null,
-          "inventory_status": "confirmed"
+          "guid": "8631f703d655cb54fb343bf522feb3f9",
+          "frontend_usage": "TownShellScreen EstateNameplate/EstateIcon (active:false in source)",
+          "inventory_status": "confirmed",
+          "frontend_status": "staged — frontend/public/original/chrome/estate_icon_frame.png (KUI-P1-008)"
         },
         "save_name_bg": {
           "asset_path": "Assets/Sprites/ui/save_name_bg.png",
-          "guid": null,
-          "inventory_status": "confirmed"
+          "guid": "bb3527cffabf75a4fa7daf28392aacc0",
+          "frontend_usage": "TownShellScreen top nameplate background",
+          "inventory_status": "confirmed",
+          "frontend_status": "staged — frontend/public/original/chrome/save_name_bg.png (KUI-P1-008)"
         },
         "dialog02": {
           "asset_path": "Assets/Sprites/ui/dialog02.png",
