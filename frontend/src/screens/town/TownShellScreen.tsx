@@ -58,6 +58,7 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
       "--ddgc-chrome-building-title-bg": resolveChromeAsset("buildingTitleBg"),
       "--ddgc-chrome-building-info-bg": resolveChromeAsset("buildingInfoBg"),
       "--ddgc-chrome-embark": resolveChromeAsset("embarkButton"),
+      "--ddgc-chrome-side-button": resolveChromeAsset("sideRealmInventory"),
       "--ddgc-chrome-bust": resolveChromeAsset("bustIcon"),
       "--ddgc-chrome-portrait": resolveChromeAsset("portraitIcon"),
       "--ddgc-chrome-deed": resolveChromeAsset("deedIcon"),
@@ -171,8 +172,16 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
           >
             {/* ── Top-left save-slot tag (reference frame shows "存档9")
                  Hard-coded as a documented fixture until the runtime bridge
-                 exposes the current save slot index. ── */}
-            <div class="estate-corner-tag estate-corner-tag-left" aria-hidden="true">
+                 exposes the current save slot index. Source ownership not
+                 traced in EstateManagement.unity recon — kept as a UI_Shared
+                 sibling overlay anchored to top-left. ── */}
+            <div
+              class="estate-corner-tag estate-corner-tag-left"
+              aria-hidden="true"
+              data-source-scene="EstateManagement.unity"
+              data-source-prefab="UI_Shared/SaveSlotTag"
+              data-source-layer="save-slot-overlay"
+            >
               <span class="estate-corner-tag-text">存档9</span>
             </div>
 
@@ -234,46 +243,57 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                 </span>
               </div>
 
-              {/* ── Top-right utility buttons — source-backed text glyphs
-                   Reference town.png shows three small square text buttons
-                   (好友/邮件, 英雄, 设置) floating directly on the sky.
-                   Lifted out of BottomPanel so z-index stacks above the nameplate. ── */}
+              {/* ── Top-right command row — source-backed text glyphs
+                   Reference 公会界面.png shows three small square text buttons
+                   (饰品仓库, 英雄, 设置) floating directly on the sky. The Unity
+                   source has six SideButtons children but only three are active:
+                   RealmInventoryButton, HeroButton, SettingsButton. Each uses
+                   btn_white.png (GUID 5536faf88204cc54985b146b5ceb03f6) as its
+                   Image sprite. Lifted out of BottomPanel so z-index stacks
+                   above the nameplate. ── */}
               <nav
                 class="estate-side-panel"
-                aria-label="顶部导航"
+                aria-label="顶部命令栏"
                 data-source-scene="EstateManagement.unity"
-                data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons"
+                data-source-prefab="UI_Shared/UI_MidWindows/UI_Panels/BottomPanel/SideButtons"
+                data-source-rect="anchorMin=(0,0) anchorMax=(1,1) pivot=(0.5,0.5)"
               >
                 <button
                   class="estate-side-button"
-                  title="好友/邮件"
-                  aria-label="好友/邮件"
-                  data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons/FriendsMail"
-                  data-source-rect="anchoredPosition=(-340,-80) sizeDelta=(136,136)"
+                  title="饰品仓库"
+                  aria-label="饰品仓库"
+                  data-source-prefab="UI_Shared/UI_MidWindows/UI_Panels/BottomPanel/SideButtons/RealmInventoryButton"
+                  data-source-rect="anchorMin=(1,1) anchorMax=(1,1) pivot=(0.5,0.5) anchoredPosition=(-340,-80) sizeDelta=(136,136)"
+                  data-source-sprite="btn_white.png"
+                  data-source-guid="5536faf88204cc54985b146b5ceb03f6"
                 >
-                  好友/邮件
+                  <span class="estate-side-button-label">饰品仓库</span>
                 </button>
                 <button
                   class="estate-side-button"
                   title="英雄"
                   aria-label="英雄"
-                  data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons/Hero"
-                  data-source-rect="anchoredPosition=(-220,-80) sizeDelta=(136,136)"
+                  data-source-prefab="UI_Shared/UI_MidWindows/UI_Panels/BottomPanel/SideButtons/HeroButton"
+                  data-source-rect="anchorMin=(1,1) anchorMax=(1,1) pivot=(0.5,0.5) anchoredPosition=(-220,-80) sizeDelta=(136,136)"
+                  data-source-sprite="btn_white.png"
+                  data-source-guid="5536faf88204cc54985b146b5ceb03f6"
                   onClick={() => {
                     const firstHero = props.viewModel.heroes[0] ?? props.viewModel.roster[0];
                     if (firstHero) props.onOpenHero(firstHero.id);
                   }}
                 >
-                  英雄
+                  <span class="estate-side-button-label">英雄</span>
                 </button>
                 <button
                   class="estate-side-button"
                   title="设置"
                   aria-label="设置"
-                  data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons/Settings"
-                  data-source-rect="anchoredPosition=(-100,-80) sizeDelta=(136,136)"
+                  data-source-prefab="UI_Shared/UI_MidWindows/UI_Panels/BottomPanel/SideButtons/SettingsButton"
+                  data-source-rect="anchorMin=(1,1) anchorMax=(1,1) pivot=(0.5,0.5) anchoredPosition=(-100,-80) sizeDelta=(136,136)"
+                  data-source-sprite="btn_white.png"
+                  data-source-guid="5536faf88204cc54985b146b5ceb03f6"
                 >
-                  设置
+                  <span class="estate-side-button-label">设置</span>
                 </button>
               </nav>
 
