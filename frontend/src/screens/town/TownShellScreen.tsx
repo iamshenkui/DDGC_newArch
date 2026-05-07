@@ -157,34 +157,9 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
               </For>
             </div>
 
-            {/* ── QuickStart / QuickProgress — utility buttons from Unity UI_Estate/UI_Estate ── */}
-            <div
-              class="estate-quick-buttons"
-              data-source-scene="EstateManagement.unity"
-              data-source-prefab="UI_Estate/UI_Estate"
-              data-source-layer="quick-buttons"
-            >
-              <button
-                class="estate-quick-button"
-                title="快速开始"
-                aria-label="快速开始"
-                data-source-prefab="UI_Estate/UI_Estate/QuickStartButton"
-                data-source-rect="anchoredPosition=(-324,137) sizeDelta=(97,42)"
-              >
-                <img src={resolveChromeAsset("quickStart")} alt="" aria-hidden="true" />
-                <span>快速开始</span>
-              </button>
-              <button
-                class="estate-quick-button"
-                title="快速进度"
-                aria-label="快速进度"
-                data-source-prefab="UI_Estate/UI_Estate/QuickProgressButton"
-                data-source-rect="anchoredPosition=(389,137) sizeDelta=(97,42)"
-              >
-                <img src={resolveChromeAsset("quickProgress")} alt="" aria-hidden="true" />
-                <span>快速进度</span>
-              </button>
-            </div>
+            {/* ── QuickStart / QuickProgress — removed per KUI-P1-008 blocker
+                 (Unity source has these as active:false; they do not appear
+                 in the reference town.png frame). ── */}
           </section>
 
           {/* ═══ UI_Shared — persistent shell chrome from Unity UI_Shared ═══ */}
@@ -194,9 +169,11 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
             data-source-prefab="UI_Shared"
             data-source-rect="anchorMin=(0,0) anchorMax=(1,1) pivot=(0.5,0.5)"
           >
-            {/* ── Top-left campaign tag (mirrors reference "新游戏" eyebrow) ── */}
+            {/* ── Top-left save-slot tag (reference frame shows "存档9")
+                 Hard-coded as a documented fixture until the runtime bridge
+                 exposes the current save slot index. ── */}
             <div class="estate-corner-tag estate-corner-tag-left" aria-hidden="true">
-              <span class="estate-corner-tag-text">新游戏</span>
+              <span class="estate-corner-tag-text">存档9</span>
             </div>
 
             {/* ── UI_Panels — shell chrome panel group (Unity UI_Shared/UI_Panels) ── */}
@@ -259,7 +236,7 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
 
               {/* ── Top-right utility buttons — source-backed text glyphs
                    Reference town.png shows three small square text buttons
-                   (饰品仓库, 英雄, 设置) floating directly on the sky.
+                   (好友/邮件, 英雄, 设置) floating directly on the sky.
                    Lifted out of BottomPanel so z-index stacks above the nameplate. ── */}
               <nav
                 class="estate-side-panel"
@@ -269,12 +246,12 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
               >
                 <button
                   class="estate-side-button"
-                  title="饰品仓库"
-                  aria-label="饰品仓库"
-                  data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons/RealmInventory"
+                  title="好友/邮件"
+                  aria-label="好友/邮件"
+                  data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons/FriendsMail"
                   data-source-rect="anchoredPosition=(-340,-80) sizeDelta=(136,136)"
                 >
-                  饰品仓库
+                  好友/邮件
                 </button>
                 <button
                   class="estate-side-button"
