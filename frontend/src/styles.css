@@ -1608,10 +1608,15 @@ button {
   pointer-events: none;
 }
 
-/* Dungeon hot-spot nodes — four quadrants matching Unity UI_Quest/Dungeons */
+/* Dungeon hot-spot nodes — four quadrants matching Unity UI_Quest/Dungeons.
+ * KUI-P1-015 wires hover and selection states; the parent composition layer
+ * disables pointer events for decorative chrome, so each interactive node
+ * re-enables them and renders as a button (radio role) inside the radiogroup.
+ */
 .expedition-dungeon-nodes {
   position: absolute;
   inset: 0;
+  pointer-events: none;
 }
 
 .expedition-dungeon-node {
@@ -1625,8 +1630,22 @@ button {
   background: rgba(6, 10, 8, 0.55);
   border: 1px solid rgba(160, 204, 188, 0.1);
   backdrop-filter: blur(2px);
-  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease,
+    box-shadow 0.2s ease;
   min-width: 90px;
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.expedition-dungeon-node:disabled {
+  cursor: default;
+}
+
+.expedition-dungeon-node:focus-visible {
+  outline: 2px solid rgba(198, 212, 106, 0.7);
+  outline-offset: 2px;
 }
 
 .expedition-dungeon-node--tl {
@@ -1647,6 +1666,13 @@ button {
 .expedition-dungeon-node--br {
   bottom: 18%;
   right: 6%;
+}
+
+.expedition-dungeon-node--hovered:not(.expedition-dungeon-node--selected) {
+  background: rgba(10, 18, 14, 0.7);
+  border-color: rgba(198, 212, 106, 0.3);
+  transform: scale(1.04);
+  box-shadow: 0 0 14px rgba(198, 212, 106, 0.08);
 }
 
 .expedition-dungeon-node--selected {
@@ -1675,8 +1701,20 @@ button {
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
 }
 
+.expedition-dungeon-source-label {
+  font-size: 0.55rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: rgba(180, 200, 188, 0.7);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
 .expedition-dungeon-node--selected .expedition-dungeon-label {
   color: var(--panel-accent);
+}
+
+.expedition-dungeon-node--selected .expedition-dungeon-source-label {
+  color: rgba(220, 232, 184, 0.85);
 }
 
 .expedition-dungeon-marker {
@@ -1692,6 +1730,31 @@ button {
   height: 100%;
   object-fit: contain;
   display: block;
+}
+
+.expedition-dungeon-route-badge {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(198, 212, 106, 0.95),
+    rgba(160, 178, 70, 0.95)
+  );
+  color: #1a2014;
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  white-space: nowrap;
 }
 
 /* ── Quest chrome decorations ───────────────────────────────── */

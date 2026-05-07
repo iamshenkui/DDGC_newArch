@@ -442,6 +442,15 @@ export class LiveRuntimeBridge implements RuntimeBridge {
           viewModel: createLiveExpeditionViewModel()
         };
         break;
+      case "select-dungeon": {
+        if (this.snapshot.viewModel.kind !== "expedition") break;
+        const expVm = this.snapshot.viewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: { ...expVm, dungeonId: intent.dungeonId }
+        };
+        break;
+      }
       case "launch-expedition":
         this.snapshot = {
           ...this.snapshot,

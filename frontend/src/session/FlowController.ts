@@ -128,6 +128,15 @@ export function canTransition(
       }
       return { allowed: true };
 
+    case "select-dungeon":
+      if (screen !== "expedition") {
+        return { allowed: false, reason: "select-dungeon is only valid in expedition" };
+      }
+      if (snapshot.viewModel.kind !== "expedition") {
+        return { allowed: false, reason: "viewModel is not an expedition view model" };
+      }
+      return { allowed: true };
+
     case "open-hero":
       if (screen !== "town") {
         return { allowed: false, reason: "open-hero is only valid in town" };

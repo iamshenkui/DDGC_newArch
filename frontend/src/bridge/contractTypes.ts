@@ -208,7 +208,7 @@ export interface ExpeditionSetupViewModel {
   kind: "expedition";
   title: string;
   expeditionName: string;
-  dungeonId?: "baihu" | "qinglong" | "xuanwu" | "zhuque";
+  dungeonId?: DungeonId;
   partySize: number;
   party: ReadonlyArray<ExpeditionHeroSummary>;
   difficulty: string;
@@ -289,6 +289,8 @@ export interface DdgcFrontendSnapshot {
   debugMessage?: string;
 }
 
+export type DungeonId = "baihu" | "qinglong" | "xuanwu" | "zhuque";
+
 export type DdgcFrontendIntent =
   | { type: "boot"; mode: RuntimeMode }
   | { type: "open-hero"; heroId: string }
@@ -297,6 +299,7 @@ export type DdgcFrontendIntent =
   | { type: "start-provisioning" }
   | { type: "toggle-hero-selection"; heroId: string }
   | { type: "confirm-provisioning" }
+  | { type: "select-dungeon"; dungeonId: DungeonId }
   | { type: "launch-expedition" }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }

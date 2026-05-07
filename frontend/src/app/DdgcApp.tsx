@@ -178,6 +178,9 @@ export function DdgcApp() {
             onReturnToTown={() => {
               void dispatchIntent(bridge, { type: "return-to-town" });
             }}
+            onSelectDungeon={(dungeonId) => {
+              void dispatchIntent(bridge, { type: "select-dungeon", dungeonId });
+            }}
           />
         </Match>
         <Match

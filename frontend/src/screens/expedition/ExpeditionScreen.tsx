@@ -1,6 +1,6 @@
-import { For, type Component } from "solid-js";
+import { For, createSignal, type Component } from "solid-js";
 
-import type { ExpeditionSetupViewModel } from "../../bridge/contractTypes";
+import type { DungeonId, ExpeditionSetupViewModel } from "../../bridge/contractTypes";
 import {
   resolveChromeAsset,
   resolveHeroPortrait,
@@ -13,6 +13,7 @@ interface ExpeditionScreenProps {
   viewModel: ExpeditionSetupViewModel;
   onLaunchExpedition: () => void;
   onReturnToTown: () => void;
+  onSelectDungeon?: (dungeonId: DungeonId) => void;
 }
 
 function parseHp(hp: string): { current: number; max: number } {
@@ -50,14 +51,15 @@ function stressBarColor(stress: string): string {
 }
 
 const DUNGEON_NODES: Array<{
-  id: "baihu" | "qinglong" | "xuanwu" | "zhuque";
+  id: DungeonId;
   label: string;
+  sourceLabel: string;
   positionClass: string;
 }> = [
-  { id: "baihu", label: "Baihu", positionClass: "expedition-dungeon-node--tl" },
-  { id: "qinglong", label: "Qinglong", positionClass: "expedition-dungeon-node--tr" },
-  { id: "xuanwu", label: "Xuanwu", positionClass: "expedition-dungeon-node--bl" },
-  { id: "zhuque", label: "Zhuque", positionClass: "expedition-dungeon-node--br" }
+  { id: "baihu", label: "Baihu", sourceLabel: "白虎大陆", positionClass: "expedition-dungeon-node--tl" },
+  { id: "qinglong", label: "Qinglong", sourceLabel: "青龙大陆", positionClass: "expedition-dungeon-node--tr" },
+  { id: "xuanwu", label: "Xuanwu", sourceLabel: "玄武大陆", positionClass: "expedition-dungeon-node--bl" },
+  { id: "zhuque", label: "Zhuque", sourceLabel: "朱雀大陆", positionClass: "expedition-dungeon-node--br" }
 ];
 
 /**
@@ -85,8 +87,18 @@ const DUNGEON_NODES: Array<{
  *                     All four dungeons rendered as map hot-spot nodes.
  *   quest chrome    — quest.title.bg.png, quest.flag.png, quest.minimap.png,
  *                     quest.line.png staged in P1-013. Used as decorative chrome.
+ *
+ * Selection states (KUI-P1-015):
+ *   hover/select    — dungeon nodes are interactive buttons. Hover state lifts
+ *                     the node visually; click dispatches select-dungeon intent
+ *                     to update the routed dungeon and refresh the map.
+ *   route handoff   — selected node receives a "→ ROUTE" badge that links the
+ *                     selection to the launch CTA, signaling which dungeon will
+ *                     be entered when the launch button fires.
  */
 export const ExpeditionScreen: Component<ExpeditionScreenProps> = (props) => {
+  const [hoveredDungeon, setHoveredDungeon] = createSignal<DungeonId | null>(null);
+
   const launchStateLabel = () => {
     if (!props.viewModel.isLaunchable) return "Hold — review warnings";
     if (props.viewModel.warnings.length > 0)
@@ -100,8 +112,10 @@ export const ExpeditionScreen: Component<ExpeditionScreenProps> = (props) => {
     return "expedition-status-pill--ready";
   };
 
-  const mapBackgroundUrl = () =>
-    resolveDungeonMapBackground(props.viewModel.dungeonId ?? "baihu");
+  const selectedDungeonId = (): DungeonId =>
+    (props.viewModel.dungeonId ?? "baihu");
+
+  const mapBackgroundUrl = () => resolveDungeonMapBackground(selectedDungeonId());
 
   return (
     <div
@@ -177,16 +191,40 @@ export const ExpeditionScreen: Component<ExpeditionScreenProps> = (props) => {
 
         {/* Expedition map composition — dungeon nodes + quest chrome */}
         <div class="expedition-map-composition">
-          {/* Dungeon hot-spot nodes (all four, selected one highlighted) */}
-          <div class="expedition-dungeon-nodes">
+          {/* Dungeon hot-spot nodes — interactive selection surface
+              (KUI-P1-015). Hover lifts the node; click dispatches the
+              select-dungeon intent that switches the routed dungeon. */}
+          <div class="expedition-dungeon-nodes" role="radiogroup" aria-label="Expedition routes">
             <For each={DUNGEON_NODES}>
               {(node) => {
-                const isSelected = node.id === (props.viewModel.dungeonId ?? "baihu");
+                const isSelected = () => node.id === selectedDungeonId();
+                const isHovered = () => hoveredDungeon() === node.id;
+                const isInteractive = () => Boolean(props.onSelectDungeon);
+                const handleSelect = () => {
+                  if (props.onSelectDungeon && !isSelected()) {
+                    props.onSelectDungeon(node.id);
+                  }
+                };
                 return (
-                  <div
-                    class={`expedition-dungeon-node ${node.positionClass}${isSelected ? " expedition-dungeon-node--selected" : ""}`}
+                  <button
+                    type="button"
+                    class={`expedition-dungeon-node ${node.positionClass}${isSelected() ? " expedition-dungeon-node--selected" : ""}${isHovered() ? " expedition-dungeon-node--hovered" : ""}`}
                     data-dungeon-id={node.id}
-                    data-selected={isSelected}
+                    data-selected={isSelected()}
+                    data-hovered={isHovered()}
+                    role="radio"
+                    aria-checked={isSelected()}
+                    aria-label={`${node.label} (${node.sourceLabel})${isSelected() ? " — selected route" : ""}`}
+                    disabled={!isInteractive()}
+                    onClick={handleSelect}
+                    onMouseEnter={() => setHoveredDungeon(node.id)}
+                    onMouseLeave={() =>
+                      setHoveredDungeon((curr) => (curr === node.id ? null : curr))
+                    }
+                    onFocus={() => setHoveredDungeon(node.id)}
+                    onBlur={() =>
+                      setHoveredDungeon((curr) => (curr === node.id ? null : curr))
+                    }
                   >
                     <img
                       class="expedition-dungeon-icon"
@@ -195,7 +233,10 @@ export const ExpeditionScreen: Component<ExpeditionScreenProps> = (props) => {
                       aria-hidden="true"
                     />
                     <span class="expedition-dungeon-label">{node.label}</span>
-                    {isSelected && (
+                    <span class="expedition-dungeon-source-label" lang="zh-Hans">
+                      {node.sourceLabel}
+                    </span>
+                    {isSelected() && (
                       <span class="expedition-dungeon-marker" aria-hidden="true">
                         <img
                           src={resolveExpeditionUiAsset("questStar")}
@@ -204,7 +245,28 @@ export const ExpeditionScreen: Component<ExpeditionScreenProps> = (props) => {
                         />
                       </span>
                     )}
-                  </div>
+                    {isSelected() && (
+                      <span
+                        class="expedition-dungeon-route-badge"
+                        aria-hidden="true"
+                        data-source-component="SelectedQuestPanel/RouteBadge"
+                      >
+                        <svg
+                          width="10"
+                          height="10"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2.4"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <polyline points="9 6 15 12 9 18" />
+                        </svg>
+                        Route
+                      </span>
+                    )}
+                  </button>
                 );
               }}
             </For>
