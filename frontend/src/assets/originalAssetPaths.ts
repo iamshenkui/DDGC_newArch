@@ -13,6 +13,8 @@
  *   startup/    6 startup sprites + 1 font (background, title wordmark, title
  *               bg, parchment dialogs, menu button, CJK display font)
  *   fonts/      ZhiYiSongTi-Regular.ttf (CJK display font from CampaignSelection.unity)
+ *   expedition/ 74 expedition map assets (4 dungeon icons, 49 quest-select
+ *               sprites, 21 ui_quest atlas sprites)
  *   All other hero families (alchemist, diviner, shaman, tank) — not yet extracted
  *
  * See asset-manifest.json for the full inventory with GUIDs and deferred items.
@@ -233,4 +235,76 @@ export function resolveHeroPortrait(options: HeroPortraitOptions): string | unde
 
   // 4. No portrait available — the caller should render a CSS-letter avatar
   return undefined;
+}
+
+// ── Expedition map assets (KUI-P1-013) ────────────────────────────────────
+// Source: Assets/Resources/Sprites/dungeon_map_*.png
+//         Assets/Resources/Sprites/quest_select_*.png
+//         Assets/Sprites/ui_quest/*.png
+// Staged in frontend/public/original/expedition/
+
+const dungeonMapPaths = {
+  baihu: "/original/expedition/dungeon/dungeon_map_baihu.png",
+  qinglong: "/original/expedition/dungeon/dungeon_map_qinglong.png",
+  xuanwu: "/original/expedition/dungeon/dungeon_map_xuanwu.png",
+  zhuque: "/original/expedition/dungeon/dungeon_map_zhuque.png"
+} as const;
+
+export type DungeonMapKey = keyof typeof dungeonMapPaths;
+
+export function resolveDungeonMapIcon(dungeonId: DungeonMapKey): string {
+  return dungeonMapPaths[dungeonId];
+}
+
+export type QuestSelectType =
+  | "activate" | "cleanse" | "explore" | "gather"
+  | "inventory_activate" | "kill_boss";
+export type QuestSelectDifficulty = 1 | 2 | 3 | 4 | 5 | 6;
+
+export function resolveQuestSelectTypeSprite(
+  type: QuestSelectType,
+  difficulty: QuestSelectDifficulty
+): string {
+  return `/original/expedition/quest/quest_select_${type}_${difficulty}.png`;
+}
+
+export type QuestLength = 0 | 1 | 2 | 3 | 4 | 5;
+export type QuestLengthVariant = "generated" | "plot";
+
+export function resolveQuestSelectLengthSprite(
+  variant: QuestLengthVariant,
+  length: QuestLength
+): string {
+  return `/original/expedition/quest/quest_select_length_${variant}_${length}.png`;
+}
+
+export function resolveQuestSelectSelectedSprite(): string {
+  return "/original/expedition/quest/quest_select_selected.png";
+}
+
+const expeditionUiPaths = {
+  questSelectBackground: "/original/expedition/ui/quest.select.background.png",
+  questBackground: "/original/expedition/ui/quest.background.png",
+  map1: "/original/expedition/ui/map1.png",
+  map2: "/original/expedition/ui/map2.png",
+  map3: "/original/expedition/ui/map3.png",
+  map4: "/original/expedition/ui/map4.png",
+  questSlotSmall: "/original/expedition/ui/quest.slot.small.png",
+  questSlotBig: "/original/expedition/ui/quest.slot.big.png",
+  partySlotBackground: "/original/expedition/ui/partyslot.background.png",
+  questMapInfo: "/original/expedition/ui/quest.map.info.png",
+  questTitleBg: "/original/expedition/ui/quest.title.bg.png",
+  btnStartQuest: "/original/expedition/ui/btn.start.quest.png",
+  questLine: "/original/expedition/ui/quest.line.png",
+  questMinimap: "/original/expedition/ui/quest.minimap.png",
+  questProgressFlag: "/original/expedition/ui/quest.progress.flag.png",
+  questProgressBg: "/original/expedition/ui/quest.progress.bg.png",
+  questFlag: "/original/expedition/ui/quest.flag.png",
+  questStar: "/original/expedition/ui/quest.star.png"
+} as const;
+
+export type ExpeditionUiAssetKey = keyof typeof expeditionUiPaths;
+
+export function resolveExpeditionUiAsset(key: ExpeditionUiAssetKey): string {
+  return expeditionUiPaths[key];
 }

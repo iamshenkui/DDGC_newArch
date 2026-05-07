@@ -612,6 +612,235 @@
       }
     },
 
+    "expedition_map_assets": {
+      "description": "Expedition (quest-select) map assets sourced from Unity UI_Quest hierarchy. Staged by KUI-P1-013.",
+      "inventory_status": "staged (KUI-P1-013)",
+      "dungeon_identity_icons": {
+        "description": "Dungeon map identity art used by SelectedQuestPanel.mapIconImage. Runtime-loaded via DarkestDatabase.Sprites.",
+        "baihu": {
+          "asset_path": "Assets/Resources/Sprites/dungeon_map_baihu.png",
+          "guid": "d914d2f4c06af9044a2051f118e3a081",
+          "frontend_path": "frontend/public/original/expedition/dungeon/dungeon_map_baihu.png",
+          "inventory_status": "staged"
+        },
+        "qinglong": {
+          "asset_path": "Assets/Resources/Sprites/dungeon_map_qinglong.png",
+          "guid": "91ea8b8fad59845448eb3b7ba1faec5f",
+          "frontend_path": "frontend/public/original/expedition/dungeon/dungeon_map_qinglong.png",
+          "inventory_status": "staged"
+        },
+        "xuanwu": {
+          "asset_path": "Assets/Resources/Sprites/dungeon_map_xuanwu.png",
+          "guid": "d72206d884c3da543b99cb99a53ed03f",
+          "frontend_path": "frontend/public/original/expedition/dungeon/dungeon_map_xuanwu.png",
+          "inventory_status": "staged"
+        },
+        "zhuque": {
+          "asset_path": "Assets/Resources/Sprites/dungeon_map_zhuque.png",
+          "guid": "c353fc8dde238a34ea0015056c98e372",
+          "frontend_path": "frontend/public/original/expedition/dungeon/dungeon_map_zhuque.png",
+          "inventory_status": "staged"
+        }
+      },
+      "quest_select_sprites": {
+        "description": "Quest slot type, length, and selected-state sprites. 49 total. Runtime-loaded via DarkestDatabase.Sprites.",
+        "type_difficulty_grid": {
+          "count": 36,
+          "pattern": "quest_select_{type}_{difficulty}.png",
+          "types": ["activate", "cleanse", "explore", "gather", "inventory_activate", "kill_boss"],
+          "difficulties": [1, 2, 3, 4, 5, 6],
+          "frontend_path_pattern": "frontend/public/original/expedition/quest/quest_select_{type}_{difficulty}.png",
+          "inventory_status": "staged"
+        },
+        "length_variants": {
+          "count": 12,
+          "pattern": "quest_select_length_{variant}_{length}.png",
+          "variants": ["generated", "plot"],
+          "lengths": [0, 1, 2, 3, 4, 5],
+          "frontend_path_pattern": "frontend/public/original/expedition/quest/quest_select_length_{variant}_{length}.png",
+          "inventory_status": "staged"
+        },
+        "selected_overlay": {
+          "asset_path": "Assets/Resources/Sprites/quest_select_selected.png",
+          "guid": "7767be19729f9b644bd5423a75852ebb",
+          "frontend_path": "frontend/public/original/expedition/quest/quest_select_selected.png",
+          "inventory_status": "staged"
+        }
+      },
+      "ui_quest_atlas_sprites": {
+        "description": "Individual PNGs extracted from the ui_quest.spriteatlas source folder. 17 of 21 are referenced in EstateManagement.unity.",
+        "atlas_guid": "4af2f0f8155459c47a690a959bb65c32",
+        "atlas_tag": "ui_quest",
+        "scene_referenced": {
+          "quest_select_background": {
+            "sprite_name": "quest.select.background",
+            "guid": "ca4e81c5cef03df4da7460d213fb6355",
+            "source_path": "Assets/Sprites/ui_quest/quest.select.background.png",
+            "frontend_path": "frontend/public/original/expedition/ui/quest.select.background.png",
+            "scene_refs": 1,
+            "role": "BackGround of UI_Quest_Match_Height canvas"
+          },
+          "quest_background": {
+            "sprite_name": "quest.background",
+            "guid": "be6c32d16d9aeaa489ac11ed2b7223b6",
+            "source_path": "Assets/Sprites/ui_quest/quest.background.png",
+            "frontend_path": "frontend/public/original/expedition/ui/quest.background.png",
+            "scene_refs": 1,
+            "role": "Generic quest panel backdrop"
+          },
+          "map1": {
+            "sprite_name": "map1.png",
+            "guid": "abc6c0abc35410c48b7e93203e27f895",
+            "source_path": "Assets/Sprites/ui_quest/map1.png.png",
+            "frontend_path": "frontend/public/original/expedition/ui/map1.png",
+            "scene_refs": 1,
+            "role": "Dungeon hot-spot background (one of four)"
+          },
+          "map2": {
+            "sprite_name": "map2.png",
+            "guid": "4ca52317343b1f2429ef23d7d1b953f2",
+            "source_path": "Assets/Sprites/ui_quest/map2.png.png",
+            "frontend_path": "frontend/public/original/expedition/ui/map2.png",
+            "scene_refs": 1,
+            "role": "Dungeon hot-spot background (one of four)"
+          },
+          "map3": {
+            "sprite_name": "map3.png",
+            "guid": "5ceff8579b37bb04abf05ae4cecb1ecd",
+            "source_path": "Assets/Sprites/ui_quest/map3.png.png",
+            "frontend_path": "frontend/public/original/expedition/ui/map3.png",
+            "scene_refs": 1,
+            "role": "Dungeon hot-spot background (one of four)"
+          },
+          "map4": {
+            "sprite_name": "map4.png",
+            "guid": "9ef6d18d450fcb14897f7aa4d0c3ef71",
+            "source_path": "Assets/Sprites/ui_quest/map4.png.png",
+            "frontend_path": "frontend/public/original/expedition/ui/map4.png",
+            "scene_refs": 1,
+            "role": "Dungeon hot-spot background (one of four)"
+          },
+          "quest_slot_small": {
+            "sprite_name": "quest.slot.small",
+            "guid": "f42d99c3787f80d46a08ed6a70aa2e95",
+            "source_path": "Assets/Sprites/ui_quest/quest.slot.small.png",
+            "frontend_path": "frontend/public/original/expedition/ui/quest.slot.small.png",
+            "scene_refs": "≥18",
+            "role": "Dominant quest slot frame"
+          },
+          "quest_slot_big": {
+            "sprite_name": "quest.slot.big",
+            "guid": "25efad4d368e59a4d98cb13f457a920c",
+            "source_path": "Assets/Sprites/ui_quest/quest.slot.big.png",
+            "frontend_path": "frontend/public/original/expedition/ui/quest.slot.big.png",
+            "scene_refs": 0,
+            "role": "Large quest slot frame (alternate / unused in scene)"
+          },
+          "partyslot_background": {
+            "sprite_name": "partyslot.background",
+            "guid": "2550c4f3cc1ee47459636624e2d4049d",
+            "source_path": "Assets/Sprites/ui_quest/partyslot.background.png",
+            "frontend_path": "frontend/public/original/expedition/ui/partyslot.background.png",
+            "scene_refs": 1,
+            "role": "Party slot frame in RaidPartyPanel / SelectedQuestPanel.PartySlots"
+          },
+          "quest_map_info": {
+            "sprite_name": "quest.map.info",
+            "guid": "3451c154cdd560746acea517e99e0c66",
+            "source_path": "Assets/Sprites/ui_quest/quest.map.info.png",
+            "frontend_path": "frontend/public/original/expedition/ui/quest.map.info.png",
+            "scene_refs": "≥3",
+            "role": "Info-block frame on dungeon map"
+          },
+          "quest_title_bg": {
+            "sprite_name": "quest.title.bg",
+            "guid": "783f04a458a746b4eb54bf793bb22b10",
+            "source_path": "Assets/Sprites/ui_quest/quest.title.bg.png",
+            "frontend_path": "frontend/public/original/expedition/ui/quest.title.bg.png",
+            "scene_refs": "≥2",
+            "role": "Title backdrop strip"
+          },
+          "btn_start_quest": {
+            "sprite_name": "btn.start.quest",
+            "guid": "f18ac95529227a643bd5f15fe367d0e8",
+            "source_path": "Assets/Sprites/ui_quest/btn.start.quest.png",
+            "frontend_path": "frontend/public/original/expedition/ui/btn.start.quest.png",
+            "scene_refs": 1,
+            "role": "ProvisionButton sprite (进入地图)"
+          },
+          "quest_line": {
+            "sprite_name": "quest.line",
+            "guid": "ae3db4a91b5c53e4b8d5245fac5209ad",
+            "source_path": "Assets/Sprites/ui_quest/quest.line.png",
+            "frontend_path": "frontend/public/original/expedition/ui/quest.line.png",
+            "scene_refs": 1,
+            "role": "Divider line"
+          },
+          "quest_minimap": {
+            "sprite_name": "quest.minimap",
+            "guid": "b8a3574a592f9cf4bbf173a04d81a45d",
+            "source_path": "Assets/Sprites/ui_quest/quest.minimap.png",
+            "frontend_path": "frontend/public/original/expedition/ui/quest.minimap.png",
+            "scene_refs": 1,
+            "role": "Mini-map frame"
+          },
+          "quest_progress_flag": {
+            "sprite_name": "quest.progress.flag",
+            "guid": "a2b3a81c7e885ad49af7da8809bf77c8",
+            "source_path": "Assets/Sprites/ui_quest/quest.progress.flag.png",
+            "frontend_path": "frontend/public/original/expedition/ui/quest.progress.flag.png",
+            "scene_refs": "≥3",
+            "role": "Flag/marker on mastery progress bar"
+          },
+          "quest_progress_bg": {
+            "sprite_name": "quest.progress.bg",
+            "guid": "77c6a9b1bfa61804e80e85761fa8dfeb",
+            "source_path": "Assets/Sprites/ui_quest/quest.progress.bg.png",
+            "frontend_path": "frontend/public/original/expedition/ui/quest.progress.bg.png",
+            "scene_refs": "≥3",
+            "role": "Dungeon mastery progress bar background"
+          },
+          "quest_flag": {
+            "sprite_name": "quest.flag",
+            "guid": "db7b36b5ff6661046945ad4d719b0c4d",
+            "source_path": "Assets/Sprites/ui_quest/quest.flag.png",
+            "frontend_path": "frontend/public/original/expedition/ui/quest.flag.png",
+            "scene_refs": "≥2",
+            "role": "Banner/flag art"
+          },
+          "quest_star": {
+            "sprite_name": "quest.star",
+            "guid": "12f1b950c0ba46c43bc7c5761741b6e2",
+            "source_path": "Assets/Sprites/ui_quest/quest.star.png",
+            "frontend_path": "frontend/public/original/expedition/ui/quest.star.png",
+            "scene_refs": "≥4",
+            "role": "Reward star pip / decorator"
+          }
+        },
+        "not_scene_referenced": {
+          "description": "Atlas entries with zero EstateManagement.unity references — runtime-loaded or used by other scenes.",
+          "quest_minimap_icon": {
+            "sprite_name": "quest.minimap.icon",
+            "guid": "767316046056de84eaa476c998fa0364",
+            "source_path": "Assets/Sprites/ui_quest/quest.minimap.icon.png",
+            "role": "Mini-map overlay icon (runtime-loaded via DarkestDatabase)"
+          },
+          "btn_start_quest_underscore": {
+            "sprite_name": "btn_start_quest",
+            "guid": "305d88852bc91be4ebb02c57c4937f81",
+            "source_path": "Assets/Sprites/ui_quest/btn_start_quest.png",
+            "role": "Underscore variant — likely duplicate / hover state, unused"
+          },
+          "panel_quest": {
+            "sprite_name": "panel.quest",
+            "guid": "450e45a5bd01d0d4db428ef75d8e2cef",
+            "source_path": "Assets/Sprites/ui_quest/panel.quest.png",
+            "role": "Panel frame — possibly retained for asset variant, unused in scene"
+          }
+        }
+      }
+    },
+
     "prefab_hierarchy_references": {
       "description": "The 28 Unity prefab/scene files inventoried in fixtures/ui_inventory/Assets/. Each maps to a frontend screen or component.",
       "inventory": [
@@ -810,8 +1039,8 @@
           "blocker": false
         },
         {
-          "item": "dungeon_map_assets",
-          "reason": "Raid map prefabs (HallSectorSlot, HallwaySlot, RoomSlot) expose 12 asset references. Not needed until expedition map UI is designed.",
+          "item": "expedition_map_background_sprites",
+          "reason": "ui_quest.spriteatlas backgrounds (quest.select.background, map1-4.png, quest.background) and dungeon_map_*.png identity icons. Staged by KUI-P1-013.",
           "blocker": false
         }
       ]
@@ -907,8 +1136,8 @@
   },
 
   "summary": {
-    "total_asset_references_catalogued": 99,
-    "sections_added": "title_menu_assets (9 references), enhanced hero_portraits (5 families x 3 variants = 15 portraits, +14), Intro.unity prefab",
+    "total_asset_references_catalogued": 173,
+    "sections_added": "title_menu_assets (9 references), enhanced hero_portraits (5 families x 3 variants = 15 portraits, +14), Intro.unity prefab, expedition_map_assets (74 references)",
     "scoped_buildings": 6,
     "confirmed_building_sprites": 11,
     "confirmed_spine_sources": 5,
@@ -936,13 +1165,36 @@
       "trinket_icon_full_enumeration",
       "provision_icon_full_enumeration",
       "camping_skill_icons",
-      "dungeon_map_assets",
+      "expedition_map_background_sprites (staged KUI-P1-013)",
       "intro_video_and_logo_splash",
       "custom_game_cursor",
       "original_font_extraction"
     ],
-    "blocker_summary": "Town/base shell chrome and building sprites staged by UIR-005B (11 buildings, 10 chrome sprites). BLOCKER-001 partially resolved for town/view. Remaining gaps: non-hunter hero portraits (12 PNGs exist in source), Spine runtime integration (BLOCKER-002), menu background/button sprites (BLOCKER-004), provisioner building has no source sprite. GUID resolution requires manual path mapping (BLOCKER-003).",
+    "blocker_summary": "Town/base shell chrome and building sprites staged by UIR-005B (11 buildings, 10 chrome sprites). Expedition map assets staged by KUI-P1-013 (74 sprites: 4 dungeon icons, 49 quest-select sprites, 21 ui_quest atlas sprites). BLOCKER-001 partially resolved for town/view and expedition. Remaining gaps: non-hunter hero portraits (12 PNGs exist in source), Spine runtime integration (BLOCKER-002), menu background/button sprites (BLOCKER-004), provisioner building has no source sprite. GUID resolution requires manual path mapping (BLOCKER-003).",
     "next_action": "Wire staged shell chrome sprites into TownShellScreen CSS (nameplate, embark button, currency icon). Extract non-hunter hero portrait PNGs (12 sprites from Assets/Resources/Data/Heroes/Sprites/). Extract menu background/button sprites for StartupScreen parity (BLOCKER-004).",
+    "kui_p1_013_complete": {
+      "description": "KUI-P1-013: Stage source-backed expedition map background, node, marker, frame, and icon assets.",
+      "changes": [
+        {
+          "target": "frontend/public/original/expedition/",
+          "change": "Created expedition/ directory with 74 sprites: dungeon/ (4 dungeon_map_*.png identity icons), quest/ (49 quest_select_*.png type/length/selected sprites), ui/ (21 ui_quest atlas sprites including backgrounds, slot frames, buttons, flags, stars, progress bars)"
+        },
+        {
+          "target": "frontend/src/assets/originalAssetPaths.ts",
+          "change": "Added expedition asset resolvers: resolveDungeonMapIcon(), resolveQuestSelectTypeSprite(), resolveQuestSelectLengthSprite(), resolveQuestSelectSelectedSprite(), resolveExpeditionUiAsset() with typed keys for all 17 scene-referenced ui_quest sprites."
+        },
+        {
+          "target": "frontend/src/assets/asset-manifest.json",
+          "change": "Added expedition_map_assets section with full inventory, GUIDs, source paths, frontend paths, and scene reference counts. Updated summary counts and deferred topics."
+        }
+      ],
+      "staged_assets": {
+        "dungeon_identity_icons": "4/4 staged (baihu, qinglong, xuanwu, zhuque)",
+        "quest_select_sprites": "49/49 staged (36 type×difficulty + 12 length variants + 1 selected overlay)",
+        "ui_quest_atlas_sprites": "21/21 staged (17 scene-referenced + 4 runtime/alternate)",
+        "total": "74 expedition map assets staged"
+      }
+    },
     "uir_006_complete": "Roster and hero detail screens now have full prefab hierarchy annotations (HeroSlot/CharacterWindow), game-style panel styling with HP/ST labels, 5-tab layout matching Unity tab order, and documented missing asset paths.",
     "uir_007_complete": {
       "description": "UIR-007: Town building UI migrated with original building sprites and Unity prefab hierarchy references.",
