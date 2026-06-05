@@ -71,6 +71,28 @@ export interface BuildingDetailViewModel {
   upgradeRequirement?: string;
 }
 
+export interface ForgeUseHeroSummary {
+  id: string;
+  name: string;
+  classLabel: string;
+  portrait?: string;
+  weapon: EquipmentItem;
+  armor: EquipmentItem;
+}
+
+export interface ForgeUseViewModel {
+  kind: "forge-use";
+  buildingId: string;
+  label: string;
+  status: "ready" | "partial" | "locked";
+  description: string;
+  npcName: string;
+  npcDescription: string;
+  npcPortrait?: string;
+  heroes: ReadonlyArray<ForgeUseHeroSummary>;
+  gold: number;
+}
+
 export interface HeroProgression {
   level: number;
   experience: string;
@@ -270,6 +292,7 @@ export type DdgcViewModel =
   | TownViewModel
   | HeroDetailViewModel
   | BuildingDetailViewModel
+  | ForgeUseViewModel
   | ProvisioningViewModel
   | ExpeditionSetupViewModel
   | ExpeditionResultViewModel
@@ -289,6 +312,7 @@ export type DdgcFrontendIntent =
   | { type: "open-hero"; heroId: string }
   | { type: "open-building"; buildingId: string }
   | { type: "building-action"; actionId: string }
+  | { type: "open-forge-use"; buildingId: string }
   | { type: "start-provisioning" }
   | { type: "toggle-hero-selection"; heroId: string }
   | { type: "confirm-provisioning" }

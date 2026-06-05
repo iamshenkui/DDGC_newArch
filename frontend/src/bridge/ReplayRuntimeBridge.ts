@@ -1,8 +1,10 @@
 import type { RuntimeMode } from "../app/runtimeMode";
 import {
   replayReadySnapshot,
+  replayTownViewModel,
   replayHeroDetailViewModel,
   replayBuildingDetailViewModel,
+  replayForgeUseViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
@@ -13,6 +15,7 @@ import type {
   DdgcFrontendIntent,
   DdgcFrontendSnapshot,
   TownViewModel,
+  ForgeUseViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
@@ -62,13 +65,26 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "open-building": {
-        const townVm = this.snapshot.viewModel as TownViewModel;
-        const building = townVm.buildings.find((b) => b.id === intent.buildingId) ?? townVm.buildings[0];
+        const building = replayTownViewModel.buildings.find((b) => b.id === intent.buildingId) ?? replayTownViewModel.buildings[0];
         this.snapshot = {
           ...this.snapshot,
           flowState: "town",
           viewModel: {
             ...replayBuildingDetailViewModel,
+            buildingId: building.id,
+            label: building.label,
+            status: building.status
+          }
+        };
+        break;
+      }
+      case "open-forge-use": {
+        const building = replayTownViewModel.buildings.find((b) => b.id === intent.buildingId) ?? replayTownViewModel.buildings[0];
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "town",
+          viewModel: {
+            ...replayForgeUseViewModel,
             buildingId: building.id,
             label: building.label,
             status: building.status

@@ -8,6 +8,7 @@ import type {
   TownBuildingSummary,
   HeroDetailViewModel,
   BuildingDetailViewModel,
+  ForgeUseViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
@@ -172,6 +173,26 @@ const createLiveHeroDetailViewModel = (hero: TownHeroSummary): HeroDetailViewMod
   isAfflicted: hero.isAfflicted,
   heroDescription: "A brave hero ready for adventure.",
   talent: "Versatile"
+});
+
+const createLiveForgeUseViewModel = (building: TownBuildingSummary, heroes: ReadonlyArray<TownHeroSummary>): ForgeUseViewModel => ({
+  kind: "forge-use",
+  buildingId: building.id,
+  label: building.label,
+  status: building.status,
+  description: "The blacksmith forges and upgrades weapons and armor. Manage your heroes' equipment here.",
+  npcName: "黑铁匠",
+  npcDescription: "坚定的守护者，通过锻造与改良让英雄们更具战斗力。稳固前线，反击技能也将在保护队友的同时解除持续威胁。",
+  npcPortrait: undefined,
+  heroes: heroes.map((hero) => ({
+    id: hero.id,
+    name: hero.name,
+    classLabel: hero.classLabel,
+    portrait: undefined,
+    weapon: { name: "Basic Weapon", level: 1 },
+    armor: { name: "Leather Armor", level: 1 }
+  })),
+  gold: 500
 });
 
 const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): BuildingDetailViewModel => {
@@ -390,12 +411,26 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "open-building": {
-        const townVm = this.snapshot.viewModel as TownViewModel;
+        const currentVm = this.snapshot.viewModel;
+        const fallbackVm = createLiveTownViewModel();
+        const townVm = currentVm.kind === "town" ? (currentVm as TownViewModel) : fallbackVm;
         const building = townVm.buildings.find((b) => b.id === intent.buildingId) ?? townVm.buildings[0];
         this.snapshot = {
           ...this.snapshot,
           flowState: "town",
           viewModel: createLiveBuildingDetailViewModel(building)
+        };
+        break;
+      }
+      case "open-forge-use": {
+        const currentVm = this.snapshot.viewModel;
+        const fallbackVm = createLiveTownViewModel();
+        const townVm = currentVm.kind === "town" ? (currentVm as TownViewModel) : fallbackVm;
+        const building = townVm.buildings.find((b) => b.id === intent.buildingId) ?? townVm.buildings[0];
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "town",
+          viewModel: createLiveForgeUseViewModel(building, townVm.heroes)
         };
         break;
       }

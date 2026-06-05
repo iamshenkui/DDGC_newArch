@@ -7,6 +7,7 @@ interface BlacksmithBuildingScreenProps {
   viewModel: BuildingDetailViewModel;
   onReturn: () => void;
   onAction: (actionId: string) => void;
+  onSwitchToUse?: () => void;
 }
 
 /**
@@ -46,6 +47,27 @@ export const BlacksmithBuildingScreen: Component<BlacksmithBuildingScreenProps> 
         sourceSpritePath="Assets/Sprites/town/buildings/building_forging.png"
         sourceGuid="23e01c10f262ddc4ba9977b91314b031"
       />
+
+      {/* ── Tab Navigation ── */}
+      <div class="forge-use-tabs" data-source-component="TabGroup">
+        <button
+          class="forge-use-tab forge-use-tab--active"
+          data-tab-id="upgrade"
+          data-source-component="UpgradeTab"
+        >
+          <span class="forge-use-tab-checkbox forge-use-tab-checkbox--checked">☑</span>
+          <span class="forge-use-tab-label">升级设施</span>
+        </button>
+        <button
+          class="forge-use-tab"
+          onClick={props.onSwitchToUse}
+          data-tab-id="use"
+          data-source-component="UseTab"
+        >
+          <span class="forge-use-tab-checkbox" />
+          <span class="forge-use-tab-label">使用设施</span>
+        </button>
+      </div>
 
       {/* ── Content — mirrors BlacksmithWindow LeftPanel + RightPanel ── */}
       <div class="building-detail-content">

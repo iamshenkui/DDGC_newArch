@@ -10,7 +10,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "forge-use" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -31,6 +31,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "building-detail") {
     return "building-detail";
+  }
+
+  if (snapshot.viewModel.kind === "forge-use") {
+    return "forge-use";
   }
 
   if (snapshot.viewModel.kind === "provisioning") {
@@ -137,6 +141,12 @@ export function canTransition(
     case "open-building":
       if (screen !== "town") {
         return { allowed: false, reason: "open-building is only valid in town" };
+      }
+      return { allowed: true };
+
+    case "open-forge-use":
+      if (screen !== "town" && screen !== "building-detail") {
+        return { allowed: false, reason: "open-forge-use is only valid in town or building-detail" };
       }
       return { allowed: true };
 

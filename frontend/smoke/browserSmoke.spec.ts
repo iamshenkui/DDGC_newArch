@@ -493,6 +493,94 @@ test.describe("browser smoke: fidelity gates", () => {
     expectNoErrors(pageErrors, consoleErrors, "Phase 5 (meta-loop)");
   });
 
+  // ── Forge Use Screen test ─────────────────────────────────
+  test("forge use screen — navigation, tabs, and equipment slots", async ({ page }) => {
+    const { consoleErrors, pageErrors } = setupErrorCollectors(page);
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+
+    // Boot replay
+    await page.getByRole("button", { name: "Boot Replay" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 8_000 });
+    await settle(page);
+
+    // Open blacksmith building
+    await page.locator('[data-building-id="blacksmith"]').click();
+    await settle(page, 800);
+
+    // Verify upgrade tab is active by default
+    await expect(
+      page.locator(".building-detail-name"),
+      "Blacksmith building name must be visible"
+    ).toHaveText("锻造舱");
+
+    // Switch to "使用设施" tab
+    await page.getByRole("button", { name: "使用设施" }).click();
+    await settle(page, 600);
+
+    // Verify forge use screen elements
+    await expect(
+      page.locator(".forge-use-tab--active"),
+      "Use facility tab must be active"
+    ).toContainText("使用设施");
+    await expect(
+      page.locator(".forge-use-npc-desc-name"),
+      "NPC name must be visible"
+    ).toContainText("黑铁匠");
+    await expect(
+      page.locator(".forge-use-section-title"),
+      "Hero section title must be visible"
+    ).toContainText("角色");
+
+    // Verify hero rows with equipment slots
+    const heroRows = page.locator(".forge-use-hero-row");
+    await expect(heroRows, "Must render hero rows from replay fixtures").toHaveCount(3);
+
+    // Verify weapon and armor slots exist
+    await expect(
+      page.locator(".forge-use-slot").filter({ hasText: "武器" }).first(),
+      "Weapon slot label must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".forge-use-slot").filter({ hasText: "护甲" }).first(),
+      "Armor slot label must be visible"
+    ).toBeVisible();
+
+    // Fidelity check
+    await expectFidelity(page.locator(".app-frame"), "Forge use screen");
+    await expectFullPageFidelity(page, "Forge use screen");
+
+    // Landscape viewport check
+    await expect(
+      page.locator(".app-frame"),
+      "Forge use screen must use .app-frame landscape layout"
+    ).toBeVisible();
+
+    // Switch back to upgrade tab
+    await page.getByRole("button", { name: "升级设施" }).first().click();
+    await settle(page, 400);
+
+    await expect(
+      page.locator(".building-action-section-title").filter({ hasText: "Weapon Upgrades" }),
+      "Must be back on upgrade view after tab switch"
+    ).toBeVisible();
+
+    // Return to town via leave button from use tab
+    await page.getByRole("button", { name: "使用设施" }).click();
+    await settle(page, 400);
+    await page.getByRole("button", { name: "离开" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("城镇中枢"),
+      "Must be back at town after leaving forge use"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Forge use screen flow");
+  });
+
   // ── Live boot test ─────────────────────────────────────────
   test("live boot exercises live bridge path", async ({ page }) => {
     const { consoleErrors, pageErrors } = setupErrorCollectors(page);

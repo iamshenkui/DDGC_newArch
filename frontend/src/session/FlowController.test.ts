@@ -14,6 +14,7 @@ import {
   replayReadySnapshot,
   replayHeroDetailSnapshot,
   replayBuildingDetailSnapshot,
+  replayForgeUseSnapshot,
   startupSnapshot,
   provisioningSnapshot,
   expeditionSnapshot,
@@ -69,6 +70,11 @@ describe("FlowController", () => {
       expect(screen).toBe("building-detail");
     });
 
+    it("returns forge-use screen for forge use view model", () => {
+      const screen = resolveScreen(replayForgeUseSnapshot);
+      expect(screen).toBe("forge-use");
+    });
+
     it("returns provisioning screen for provisioning view model", () => {
       const screen = resolveScreen(provisioningSnapshot);
       expect(screen).toBe("provisioning");
@@ -102,7 +108,7 @@ describe("FlowController", () => {
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "forge-use", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -111,6 +117,7 @@ describe("ScreenKey exhaustiveness", () => {
       town: replayReadySnapshot,
       "hero-detail": replayHeroDetailSnapshot,
       "building-detail": replayBuildingDetailSnapshot,
+      "forge-use": replayForgeUseSnapshot,
       provisioning: provisioningSnapshot,
       expedition: expeditionSnapshot,
       result: resultSnapshot,
@@ -389,6 +396,29 @@ describe("canTransition - result and return meta-loop continuation", () => {
       const validation = canTransition(replayReadySnapshot, { type: "building-action", actionId: "train-combat" });
       expect(validation.allowed).toBe(false);
       expect(validation.reason).toContain("only valid in building-detail");
+    });
+  });
+
+  describe("forge-use transitions", () => {
+    it("allows open-forge-use from town", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "open-forge-use", buildingId: "blacksmith" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("allows open-forge-use from building-detail", () => {
+      const validation = canTransition(replayBuildingDetailSnapshot, { type: "open-forge-use", buildingId: "blacksmith" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects open-forge-use when not in town or building-detail", () => {
+      const validation = canTransition(provisioningSnapshot, { type: "open-forge-use", buildingId: "blacksmith" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in town or building-detail");
+    });
+
+    it("allows return-to-town from forge-use", () => {
+      const validation = canTransition(replayForgeUseSnapshot, { type: "return-to-town" });
+      expect(validation.allowed).toBe(true);
     });
   });
 

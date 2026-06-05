@@ -10,6 +10,7 @@ import type {
   ExpeditionResultViewModel,
   ExpeditionSetupViewModel,
   FatalErrorViewModel,
+  ForgeUseViewModel,
   HeroDetailViewModel,
   ProvisioningViewModel,
   ReturnViewModel,
@@ -27,6 +28,7 @@ import { StartupScreen } from "../screens/startup/StartupScreen";
 import { TownShellScreen } from "../screens/town/TownShellScreen";
 import { HeroDetailScreen } from "../screens/town/HeroDetailScreen";
 import { BuildingScreenRouter } from "../screens/town/BuildingScreenRouter";
+import { ForgeUseScreen } from "../screens/town/buildings/ForgeUseScreen";
 import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
@@ -134,6 +136,31 @@ export function DdgcApp() {
             }}
             onAction={(actionId) => {
               void dispatchIntent(bridge, { type: "building-action", actionId });
+            }}
+            onSwitchToForgeUse={() => {
+              void dispatchIntent(bridge, { type: "open-forge-use", buildingId: "blacksmith" });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "forge-use" && snapshot().viewModel.kind === "forge-use"}
+        >
+          <ForgeUseScreen
+            viewModel={snapshot().viewModel as ForgeUseViewModel}
+            onReturn={() => {
+              void dispatchIntent(bridge, { type: "return-to-town" });
+            }}
+            onSwitchToUpgrade={() => {
+              void dispatchIntent(bridge, { type: "open-building", buildingId: "blacksmith" });
+            }}
+            onTalk={() => {
+              void dispatchIntent(bridge, { type: "building-action", actionId: "talk" });
+            }}
+            onUnequipWeapon={(heroId) => {
+              void dispatchIntent(bridge, { type: "building-action", actionId: `unequip-weapon-${heroId}` });
+            }}
+            onUnequipArmor={(heroId) => {
+              void dispatchIntent(bridge, { type: "building-action", actionId: `unequip-armor-${heroId}` });
             }}
           />
         </Match>

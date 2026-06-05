@@ -12,6 +12,7 @@ interface BuildingScreenRouterProps {
   viewModel: BuildingDetailViewModel;
   onReturn: () => void;
   onAction: (actionId: string) => void;
+  onSwitchToForgeUse?: () => void;
 }
 
 export const BuildingScreenRouter: Component<BuildingScreenRouterProps> = (props) => {
@@ -38,6 +39,7 @@ export const BuildingScreenRouter: Component<BuildingScreenRouterProps> = (props
           viewModel={props.viewModel}
           onReturn={props.onReturn}
           onAction={props.onAction}
+          onSwitchToUse={props.onSwitchToForgeUse}
         />
       </Match>
       <Match when={buildingId() === "sanitarium"}>

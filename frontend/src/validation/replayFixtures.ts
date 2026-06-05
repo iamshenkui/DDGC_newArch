@@ -4,6 +4,7 @@ import type {
   DdgcFrontendSnapshot,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
+  ForgeUseViewModel,
   ReturnViewModel,
   FatalErrorViewModel,
   HeroDetailViewModel,
@@ -240,6 +241,44 @@ export const replayBlacksmithBuildingDetailViewModel: BuildingDetailViewModel = 
   ],
   currentUpgrade: "Forge Level 2",
   upgradeRequirement: "Reach Town Level 3 to unlock armor upgrades."
+};
+
+export const replayForgeUseViewModel: ForgeUseViewModel = {
+  kind: "forge-use",
+  buildingId: "blacksmith",
+  label: "锻造舱",
+  status: "ready",
+  description: "The blacksmith forges and upgrades weapons and armor. Manage your heroes' equipment here.",
+  npcName: "黑铁匠",
+  npcDescription: "坚定的守护者，通过锻造与改良让英雄们更具战斗力。稳固前线，反击技能也将在保护队友的同时解除持续威胁。",
+  npcPortrait: undefined,
+  heroes: [
+    {
+      id: "hero-hunter-01",
+      name: "Shen",
+      classLabel: "Hunter",
+      portrait: undefined,
+      weapon: { name: "Hunter's Bow (+2)", level: 3 },
+      armor: { name: "Leather Armor (+1)", level: 2 }
+    },
+    {
+      id: "hero-white-01",
+      name: "Bai Xiu",
+      classLabel: "White",
+      portrait: undefined,
+      weapon: { name: "White Staff", level: 2 },
+      armor: { name: "Cloth Robe", level: 1 }
+    },
+    {
+      id: "hero-black-01",
+      name: "Hei Zhen",
+      classLabel: "Black",
+      portrait: undefined,
+      weapon: { name: "Dark Blade", level: 2 },
+      armor: { name: "Iron Mail", level: 2 }
+    }
+  ],
+  gold: 1250
 };
 
 export const replaySanitariumBuildingDetailViewModel: BuildingDetailViewModel = {
@@ -673,6 +712,13 @@ export const replayBlacksmithBuildingSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing blacksmith building detail."
 };
 
+export const replayForgeUseSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "town",
+  viewModel: replayForgeUseViewModel,
+  debugMessage: "Replay bridge showing forge use facility screen."
+};
+
 export const replaySanitariumBuildingSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
   flowState: "town",
@@ -929,7 +975,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
   const flowStateKindMap: Record<string, string[]> = {
     boot: ["boot-load"],
     load: ["boot-load"],
-    town: ["town", "hero-detail", "building-detail"],
+    town: ["town", "hero-detail", "building-detail", "forge-use"],
     provisioning: ["provisioning"],
     expedition: ["expedition"],
     combat: ["expedition"],
@@ -987,6 +1033,17 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!["ready", "partial", "locked"].includes(vm.status as string)) e.push(`BuildingDetailViewModel: status is "${String(vm.status)}", expected "ready", "partial", or "locked"`);
       if (!vm.description || typeof vm.description !== "string") e.push("BuildingDetailViewModel: description is missing");
       if (!Array.isArray(vm.actions)) { e.push("BuildingDetailViewModel: actions is not an array"); } else if (vm.actions.length === 0) { e.push("BuildingDetailViewModel: actions array is empty"); }
+      break;
+    }
+    case "forge-use": {
+      if (!vm.buildingId || typeof vm.buildingId !== "string") e.push("ForgeUseViewModel: buildingId is missing");
+      if (!vm.label || typeof vm.label !== "string") e.push("ForgeUseViewModel: label is missing");
+      if (!["ready", "partial", "locked"].includes(vm.status as string)) e.push(`ForgeUseViewModel: status is "${String(vm.status)}", expected "ready", "partial", or "locked"`);
+      if (!vm.description || typeof vm.description !== "string") e.push("ForgeUseViewModel: description is missing");
+      if (!vm.npcName || typeof vm.npcName !== "string") e.push("ForgeUseViewModel: npcName is missing");
+      if (!vm.npcDescription || typeof vm.npcDescription !== "string") e.push("ForgeUseViewModel: npcDescription is missing");
+      if (!Array.isArray(vm.heroes)) { e.push("ForgeUseViewModel: heroes is not an array"); }
+      if (typeof vm.gold !== "number") e.push("ForgeUseViewModel: gold is not a number");
       break;
     }
     case "provisioning": {
