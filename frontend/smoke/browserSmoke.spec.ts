@@ -493,6 +493,83 @@ test.describe("browser smoke: fidelity gates", () => {
     expectNoErrors(pageErrors, consoleErrors, "Phase 5 (meta-loop)");
   });
 
+  // ── Sanitarium building upgrade screen test ────────────────
+  test("sanitarium building shows upgrade tab with trees", async ({ page }) => {
+    const { consoleErrors, pageErrors } = setupErrorCollectors(page);
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+
+    await page.getByRole("button", { name: "Boot Replay" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 8_000 });
+    await settle(page);
+
+    // Open sanitarium building
+    await page.locator('[data-building-id="sanitarium"]').click();
+    await settle(page, 800);
+
+    // Verify building name
+    await expect(
+      page.locator(".building-detail-name"),
+      "Sanitarium name (细胞修复站) must be visible"
+    ).toHaveText("细胞修复站");
+
+    // Verify upgrade tab is active by default
+    await expect(
+      page.locator('[data-testid="sanitarium-tab-upgrade"]'),
+      "Upgrade tab must be active by default"
+    ).toHaveClass(/sanitarium-tab-btn--active/);
+
+    // Verify NPC name
+    await expect(
+      page.locator(".sanitarium-npc-name"),
+      "NPC name 梅玲 must be visible"
+    ).toHaveText("梅玲");
+
+    // Verify upgrade trees render
+    const treeCount = await page.locator(".sanitarium-upgrade-tree").count();
+    expect(treeCount, "Must render upgrade trees").toBeGreaterThan(0);
+
+    // Verify at least one tree has checkbox slots
+    const slotCount = await page
+      .locator(".sanitarium-upgrade-tree")
+      .first()
+      .locator(".sanitarium-upgrade-slot")
+      .count();
+    expect(slotCount, "Upgrade tree must have slots").toBeGreaterThan(0);
+
+    // Fidelity check
+    await expectFidelity(page.locator(".app-frame"), "Sanitarium upgrade screen");
+    await expectFullPageFidelity(page, "Sanitarium upgrade screen");
+
+    // Landscape viewport check
+    await expect(
+      page.locator(".app-frame"),
+      "Sanitarium screen must use .app-frame landscape layout"
+    ).toBeVisible();
+
+    // Switch to use tab
+    await page.locator('[data-testid="sanitarium-tab-use"]').click();
+    await settle(page, 400);
+
+    await expect(
+      page.locator('[data-testid="sanitarium-tab-use"]'),
+      "Use tab must be active after click"
+    ).toHaveClass(/sanitarium-tab-btn--active/);
+
+    // Return to town via 离开 button
+    await page.locator(".sanitarium-leave-btn").click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("城镇中枢"),
+      "Must return to town after leaving sanitarium"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Sanitarium upgrade screen");
+  });
+
   // ── Live boot test ─────────────────────────────────────────
   test("live boot exercises live bridge path", async ({ page }) => {
     const { consoleErrors, pageErrors } = setupErrorCollectors(page);

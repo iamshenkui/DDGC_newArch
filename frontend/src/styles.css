@@ -3297,6 +3297,331 @@ button {
   gap: 4px;
 }
 
+/* ── Sanitarium Upgrade Screen ───────────────────────────
+ * Mirrors SanitariumWindow.prefab upgrade view
+ * Reference: 公会界面-细胞修复站-升级.png
+ */
+
+/* Tab bar — mirrors SanitariumWindow/TabBar */
+.sanitarium-tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid rgba(160, 204, 188, 0.1);
+  margin-bottom: 4px;
+}
+
+.sanitarium-tab-btn {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--panel-muted);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  text-transform: none;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.sanitarium-tab-btn:hover {
+  color: var(--panel-text);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.sanitarium-tab-btn--active {
+  color: var(--panel-accent);
+  border-bottom-color: var(--panel-accent);
+}
+
+.sanitarium-tab-check {
+  font-size: 1rem;
+  opacity: 0.85;
+}
+
+/* Content layout — left (portrait + info) + right (upgrade trees / actions) */
+.sanitarium-content {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 920px) {
+  .sanitarium-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Left panel */
+.sanitarium-left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* NPC card — mirrors attendant portrait area */
+.sanitarium-npc-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 14px;
+  border-radius: var(--radius-lg);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  box-shadow: var(--panel-shadow);
+}
+
+.sanitarium-npc-portrait {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.sanitarium-npc-avatar {
+  width: 160px;
+  height: 200px;
+  border-radius: var(--radius-md);
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 25%, rgba(27, 50, 44, 0.5), transparent 70%),
+    radial-gradient(ellipse at center, rgba(6, 12, 10, 0.8), rgba(0, 0, 0, 0.95));
+  border: 2px solid rgba(160, 204, 188, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 60px rgba(0, 0, 0, 0.3);
+}
+
+.sanitarium-npc-avatar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 30%, rgba(198, 212, 106, 0.06), transparent 70%);
+  pointer-events: none;
+}
+
+.sanitarium-npc-avatar::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(160, 204, 188, 0.08);
+  border-radius: calc(var(--radius-md) - 4px);
+  pointer-events: none;
+}
+
+.sanitarium-npc-initial {
+  font-family: var(--heading-font);
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+  opacity: 0.35;
+  text-shadow: 0 0 30px rgba(198, 212, 106, 0.2);
+}
+
+.sanitarium-npc-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.sanitarium-npc-name {
+  font-family: var(--heading-font);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--panel-text);
+}
+
+.sanitarium-npc-title {
+  font-size: 0.72rem;
+  color: var(--panel-muted);
+  letter-spacing: 0.04em;
+}
+
+.sanitarium-leave-btn {
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  color: var(--panel-text);
+  font-family: var(--heading-font);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  margin-top: 4px;
+}
+
+.sanitarium-leave-btn:hover {
+  background: rgba(198, 212, 106, 0.08);
+  border-color: rgba(198, 212, 106, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Right panel */
+.sanitarium-right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 400px;
+}
+
+/* Upgrade view */
+.sanitarium-upgrade-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sanitarium-upgrade-title {
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--panel-accent);
+  font-family: var(--heading-font);
+}
+
+/* Upgrade tree row */
+.sanitarium-upgrade-tree {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.sanitarium-upgrade-tree:hover {
+  border-color: rgba(160, 204, 188, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sanitarium-upgrade-tree-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 160px;
+  flex: 0 0 auto;
+}
+
+.sanitarium-upgrade-tree-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--panel-accent);
+  font-size: 1.1rem;
+}
+
+.sanitarium-upgrade-tree-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--panel-text);
+  white-space: nowrap;
+}
+
+/* Upgrade slots (checkboxes) */
+.sanitarium-upgrade-slots {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.sanitarium-upgrade-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+  min-width: 40px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.sanitarium-upgrade-slot--purchased {
+  background: rgba(91, 189, 110, 0.08);
+  border-color: rgba(91, 189, 110, 0.25);
+}
+
+.sanitarium-upgrade-slot--next {
+  background: rgba(198, 212, 106, 0.06);
+  border-color: rgba(198, 212, 106, 0.2);
+}
+
+.sanitarium-upgrade-slot-box {
+  font-size: 1.1rem;
+  color: var(--panel-muted);
+  line-height: 1;
+}
+
+.sanitarium-upgrade-slot--purchased .sanitarium-upgrade-slot-box {
+  color: #5bbd6e;
+}
+
+.sanitarium-upgrade-slot--next .sanitarium-upgrade-slot-box {
+  color: var(--panel-accent);
+}
+
+.sanitarium-upgrade-slot-cost {
+  font-size: 0.65rem;
+  color: var(--panel-accent);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Blocker note */
+.sanitarium-blocker-note {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(130, 170, 255, 0.04);
+  border: 1px solid rgba(130, 170, 255, 0.1);
+  font-size: 0.72rem;
+  color: var(--panel-muted);
+  line-height: 1.4;
+}
+
+.sanitarium-blocker-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #82aaff;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Use view */
+.sanitarium-use-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 /* ── Responsive: collapse to portrait on narrow screens ─ */
 @media (max-width: 920px) {
   .app-shell {
@@ -3319,5 +3644,16 @@ button {
 
   .viewport-title {
     font-size: 1rem;
+  }
+
+  .sanitarium-upgrade-tree {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .sanitarium-upgrade-slots {
+    justify-content: flex-start;
+    width: 100%;
   }
 }
