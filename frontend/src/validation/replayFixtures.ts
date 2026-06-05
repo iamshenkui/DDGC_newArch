@@ -1,6 +1,7 @@
 import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
+  CombatViewModel,
   DdgcFrontendSnapshot,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
@@ -621,6 +622,123 @@ export const replayPartialResultViewModel: ExpeditionResultViewModel = {
   isContinueAvailable: true
 };
 
+export const replayCombatViewModel: CombatViewModel = {
+  kind: "combat",
+  title: "Dungeon Battle",
+  expeditionName: "The Depths Await",
+  round: 3,
+  turnPhase: "player",
+  party: [
+    {
+      heroId: "hero-hunter-01",
+      name: "Shen",
+      classLabel: "Hunter",
+      hp: "28",
+      maxHp: "42",
+      stress: "24",
+      maxStress: "200",
+      isAlive: true,
+      isSelected: true,
+      position: 1
+    },
+    {
+      heroId: "hero-white-01",
+      name: "Bai Xiu",
+      classLabel: "White",
+      hp: "35",
+      maxHp: "41",
+      stress: "15",
+      maxStress: "200",
+      isAlive: true,
+      isSelected: false,
+      position: 2
+    },
+    {
+      heroId: "hero-black-01",
+      name: "Hei Zhen",
+      classLabel: "Black",
+      hp: "12",
+      maxHp: "40",
+      stress: "38",
+      maxStress: "200",
+      isAlive: true,
+      isSelected: false,
+      position: 3
+    }
+  ],
+  enemies: [
+    {
+      enemyId: "enemy-skeleton-01",
+      name: "Skeleton Warrior",
+      hp: "18",
+      maxHp: "35",
+      isAlive: true,
+      position: 1,
+      threatLevel: "normal"
+    },
+    {
+      enemyId: "enemy-ghoul-01",
+      name: "Ghoul",
+      hp: "8",
+      maxHp: "28",
+      isAlive: true,
+      position: 2,
+      threatLevel: "normal"
+    },
+    {
+      enemyId: "enemy-boss-01",
+      name: "Necromancer",
+      hp: "65",
+      maxHp: "120",
+      isAlive: true,
+      position: 3,
+      threatLevel: "boss"
+    }
+  ],
+  selectedHeroId: "hero-hunter-01",
+  availableSkills: [
+    {
+      skillId: "skill-aimed-shot",
+      name: "Aimed Shot",
+      description: "A precise ranged attack dealing high damage.",
+      targetType: "enemy",
+      isAvailable: true,
+      cooldownRemaining: 0
+    },
+    {
+      skillId: "skill-rapid-shot",
+      name: "Rapid Shot",
+      description: "Fire two quick shots at the target.",
+      targetType: "enemy",
+      isAvailable: true,
+      cooldownRemaining: 0
+    },
+    {
+      skillId: "skill-mark",
+      name: "Marked for Death",
+      description: "Mark a target to take increased damage.",
+      targetType: "enemy",
+      isAvailable: true,
+      cooldownRemaining: 1
+    },
+    {
+      skillId: "skill-buff",
+      name: "Tactical Aid",
+      description: "Grant a random buff to an ally.",
+      targetType: "ally",
+      isAvailable: true,
+      cooldownRemaining: 0
+    }
+  ],
+  isRetreatAvailable: true,
+  combatLog: [
+    "Shen deals 8 damage to Skeleton Warrior.",
+    "Ghoul deals 5 damage to Hei Zhen.",
+    "Necromancer summons a dark flame."
+  ],
+  terrainLabel: "Corrupted Catacombs"
+};
+
 export const replayReturnViewModel: ReturnViewModel = {
   kind: "return",
   title: "Returning to Town",
@@ -827,6 +945,14 @@ export const expeditionSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing expedition launch screen."
 };
 
+// Combat flow snapshot
+export const combatSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "combat",
+  viewModel: replayCombatViewModel,
+  debugMessage: "Replay bridge showing combat screen."
+};
+
 // Result snapshots (success, failure, partial)
 export const resultSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -932,7 +1058,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     town: ["town", "hero-detail", "building-detail"],
     provisioning: ["provisioning"],
     expedition: ["expedition"],
-    combat: ["expedition"],
+    combat: ["combat"],
     result: ["result"],
     return: ["return"],
   };
@@ -1019,6 +1145,19 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!Array.isArray(vm.heroOutcomes)) { e.push("ExpeditionResultViewModel: heroOutcomes is not an array"); } else if (vm.heroOutcomes.length === 0) { e.push("ExpeditionResultViewModel: heroOutcomes array is empty"); }
       if (!vm.resourcesGained || typeof vm.resourcesGained !== "object") e.push("ExpeditionResultViewModel: resourcesGained is missing");
       if (typeof vm.isContinueAvailable !== "boolean") e.push("ExpeditionResultViewModel: isContinueAvailable is not a boolean");
+      break;
+    }
+    case "combat": {
+      if (!vm.title || typeof vm.title !== "string") e.push("CombatViewModel: title is missing");
+      if (!vm.expeditionName || typeof vm.expeditionName !== "string") e.push("CombatViewModel: expeditionName is missing");
+      if (typeof vm.round !== "number") e.push("CombatViewModel: round is not a number");
+      if (vm.turnPhase !== "player" && vm.turnPhase !== "enemy" && vm.turnPhase !== "resolution") e.push(`CombatViewModel: turnPhase is "${String(vm.turnPhase)}", expected "player", "enemy", or "resolution"`);
+      if (!Array.isArray(vm.party)) { e.push("CombatViewModel: party is not an array"); } else if (vm.party.length === 0) { e.push("CombatViewModel: party array is empty"); }
+      if (!Array.isArray(vm.enemies)) { e.push("CombatViewModel: enemies is not an array"); } else if (vm.enemies.length === 0) { e.push("CombatViewModel: enemies array is empty"); }
+      if (!Array.isArray(vm.availableSkills)) e.push("CombatViewModel: availableSkills is not an array");
+      if (typeof vm.isRetreatAvailable !== "boolean") e.push("CombatViewModel: isRetreatAvailable is not a boolean");
+      if (!Array.isArray(vm.combatLog)) e.push("CombatViewModel: combatLog is not an array");
+      if (!vm.terrainLabel || typeof vm.terrainLabel !== "string") e.push("CombatViewModel: terrainLabel is missing");
       break;
     }
     case "return": {

@@ -6,7 +6,8 @@ import {
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
-  replayReturnViewModel
+  replayReturnViewModel,
+  replayCombatViewModel
 } from "../validation/replayFixtures";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
 import type {
@@ -16,7 +17,8 @@ import type {
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
-  ReturnViewModel
+  ReturnViewModel,
+  CombatViewModel
 } from "./contractTypes";
 
 export class ReplayRuntimeBridge implements RuntimeBridge {
@@ -117,10 +119,64 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       case "launch-expedition":
         this.snapshot = {
           ...this.snapshot,
+          flowState: "combat",
+          viewModel: replayCombatViewModel as CombatViewModel
+        };
+        break;
+      case "select-combat-hero": {
+        const combatVm = this.snapshot.viewModel as CombatViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...combatVm,
+            selectedHeroId: intent.heroId,
+            party: combatVm.party.map((h) =>
+              h.heroId === intent.heroId
+                ? { ...h, isSelected: true }
+                : { ...h, isSelected: false }
+            )
+          }
+        };
+        break;
+      }
+      case "use-skill": {
+        const combatVm = this.snapshot.viewModel as CombatViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...combatVm,
+            combatLog: [
+              ...combatVm.combatLog,
+              `Used skill: ${intent.skillId}.`
+            ]
+          }
+        };
+        break;
+      }
+      case "retreat-from-combat":
+        this.snapshot = {
+          ...this.snapshot,
           flowState: "result",
           viewModel: replayResultViewModel as ExpeditionResultViewModel
         };
         break;
+      case "advance-combat": {
+        const combatVm = this.snapshot.viewModel as CombatViewModel;
+        const nextRound = combatVm.round + 1;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...combatVm,
+            round: nextRound,
+            turnPhase: "enemy" as const,
+            combatLog: [
+              ...combatVm.combatLog,
+              `Round ${nextRound} begins — enemy turn.`
+            ]
+          }
+        };
+        break;
+      }
       case "return-to-town":
         this.snapshot = replayReadySnapshot;
         break;
