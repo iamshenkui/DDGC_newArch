@@ -5,6 +5,7 @@ import type {
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
+  SaveLoadViewModel,
   FatalErrorViewModel,
   HeroDetailViewModel,
   ProvisioningViewModel,
@@ -645,6 +646,17 @@ export const replayReturnViewModel: ReturnViewModel = {
   isTownResumeAvailable: true
 };
 
+export const replaySaveLoadViewModel: SaveLoadViewModel = {
+  kind: "save-load",
+  title: "存档选择",
+  version: "1.0",
+  slots: [
+    { id: "slot-1", label: "存档1", status: "empty" },
+    { id: "slot-2", label: "存档8", status: "occupied", campaignName: "苍灯远征", week: 1, saveDate: "2026-06-01" },
+    { id: "slot-3", label: "存档7", status: "occupied", campaignName: "苍灯远征", week: 1, saveDate: "2026-05-28" }
+  ]
+};
+
 export const replayReadySnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
   flowState: "town",
@@ -857,6 +869,14 @@ export const returnSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing return screen."
 };
 
+// Save/load screen snapshot
+export const replaySaveLoadSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "save-load",
+  viewModel: replaySaveLoadViewModel,
+  debugMessage: "Replay bridge showing save-load screen."
+};
+
 // ── Snapshot contract validation ───────────────────────────────────────────────
 
 /**
@@ -877,7 +897,7 @@ export function validateSnapshotContract(snapshot: DdgcFrontendSnapshot): string
   }
 
   // FlowState must be a valid FlowState
-  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "result", "return"];
+  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "result", "return", "save-load"];
   if (!validFlowStates.includes(snapshot.flowState as FlowState)) {
     errors.push(
       `flowState "${String(snapshot.flowState)}" is not a valid FlowState. ` +
@@ -935,6 +955,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     combat: ["expedition"],
     result: ["result"],
     return: ["return"],
+    "save-load": ["save-load"],
   };
   const allowedKinds = flowStateKindMap[flowState];
   if (allowedKinds && !allowedKinds.includes(kind)) {
@@ -1037,6 +1058,12 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
     case "unsupported": {
       if (!vm.title || typeof vm.title !== "string") e.push("UnsupportedViewModel: title is missing");
       if (!vm.reason || typeof vm.reason !== "string") e.push("UnsupportedViewModel: reason is missing");
+      break;
+    }
+    case "save-load": {
+      if (!vm.title || typeof vm.title !== "string") e.push("SaveLoadViewModel: title is missing");
+      if (!Array.isArray(vm.slots)) { e.push("SaveLoadViewModel: slots is not an array"); }
+      if (!vm.version || typeof vm.version !== "string") e.push("SaveLoadViewModel: version is missing");
       break;
     }
     default: {

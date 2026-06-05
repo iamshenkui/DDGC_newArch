@@ -8,7 +8,8 @@ export type FlowState =
   | "expedition"
   | "combat"
   | "result"
-  | "return";
+  | "return"
+  | "save-load";
 
 export type FrontendLifecycle =
   | "booting"
@@ -259,6 +260,22 @@ export interface UnsupportedViewModel {
   reason: string;
 }
 
+export interface SaveLoadSlot {
+  id: string;
+  label: string;
+  status: "empty" | "occupied";
+  campaignName?: string;
+  week?: number;
+  saveDate?: string;
+}
+
+export interface SaveLoadViewModel {
+  kind: "save-load";
+  title: string;
+  slots: ReadonlyArray<SaveLoadSlot>;
+  version: string;
+}
+
 export interface FatalErrorViewModel {
   kind: "fatal";
   title: string;
@@ -274,6 +291,7 @@ export type DdgcViewModel =
   | ExpeditionSetupViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
+  | SaveLoadViewModel
   | UnsupportedViewModel
   | FatalErrorViewModel;
 
@@ -295,4 +313,9 @@ export type DdgcFrontendIntent =
   | { type: "launch-expedition" }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }
-  | { type: "resume-from-return" };
+  | { type: "resume-from-return" }
+  | { type: "open-save-load" }
+  | { type: "select-save-slot"; slotId: string }
+  | { type: "create-new-save"; slotId: string }
+  | { type: "delete-save"; slotId: string }
+  | { type: "return-from-save-load" };

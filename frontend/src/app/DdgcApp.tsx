@@ -13,6 +13,7 @@ import type {
   HeroDetailViewModel,
   ProvisioningViewModel,
   ReturnViewModel,
+  SaveLoadViewModel,
   TownViewModel,
   UnsupportedViewModel
 } from "../bridge/contractTypes";
@@ -31,6 +32,7 @@ import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
 import { ReturnScreen } from "../screens/expedition/ReturnScreen";
+import { SaveLoadScreen } from "../screens/system/SaveLoadScreen";
 
 function createBridge(mode: RuntimeMode): RuntimeBridge {
   return mode === "live" ? new LiveRuntimeBridge() : new ReplayRuntimeBridge();
@@ -100,6 +102,25 @@ export function DdgcApp() {
             hasSavedCampaign={saveLoad.hasSavedCampaign()}
           />
         </Match>
+        <Match
+          when={screen() === "save-load" && snapshot().viewModel.kind === "save-load"}
+        >
+          <SaveLoadScreen
+            viewModel={snapshot().viewModel as SaveLoadViewModel}
+            onSelectSlot={(slotId) => {
+              void dispatchIntent(bridge, { type: "select-save-slot", slotId });
+            }}
+            onCreateNewSave={(slotId) => {
+              void dispatchIntent(bridge, { type: "create-new-save", slotId });
+            }}
+            onDeleteSave={(slotId) => {
+              void dispatchIntent(bridge, { type: "delete-save", slotId });
+            }}
+            onReturn={() => {
+              void dispatchIntent(bridge, { type: "return-from-save-load" });
+            }}
+          />
+        </Match>
         <Match when={screen() === "town" && snapshot().viewModel.kind === "town"}>
           <TownShellScreen
             viewModel={snapshot().viewModel as TownViewModel}
@@ -111,6 +132,9 @@ export function DdgcApp() {
             }}
             onStartProvisioning={() => {
               void dispatchIntent(bridge, { type: "start-provisioning" });
+            }}
+            onOpenSaveLoad={() => {
+              void dispatchIntent(bridge, { type: "open-save-load" });
             }}
           />
         </Match>

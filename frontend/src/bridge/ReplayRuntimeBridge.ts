@@ -6,7 +6,9 @@ import {
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
-  replayReturnViewModel
+  replayReturnViewModel,
+  replaySaveLoadViewModel,
+  replaySaveLoadSnapshot
 } from "../validation/replayFixtures";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
 import type {
@@ -135,6 +137,35 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "resume-from-return":
+        this.snapshot = replayReadySnapshot;
+        break;
+      case "open-save-load":
+        this.snapshot = replaySaveLoadSnapshot;
+        break;
+      case "select-save-slot":
+        this.snapshot = replayReadySnapshot;
+        break;
+      case "create-new-save":
+        this.snapshot = replayReadySnapshot;
+        break;
+      case "delete-save": {
+        // Delete the slot by marking it empty in the view model
+        const saveVm = this.snapshot.viewModel as import("./contractTypes").SaveLoadViewModel;
+        const updatedSlots = saveVm.slots.map((slot) =>
+          slot.id === intent.slotId
+            ? { ...slot, status: "empty" as const, campaignName: undefined, week: undefined, saveDate: undefined }
+            : slot
+        );
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...saveVm,
+            slots: updatedSlots
+          }
+        };
+        break;
+      }
+      case "return-from-save-load":
         this.snapshot = replayReadySnapshot;
         break;
     }

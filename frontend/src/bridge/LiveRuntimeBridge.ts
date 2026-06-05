@@ -12,6 +12,7 @@ import type {
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
+  SaveLoadViewModel,
 } from "./contractTypes";
 import { createTownBuildingSummary } from "../town/buildingCatalog";
 
@@ -358,6 +359,17 @@ const createLiveReturnViewModel = (): ReturnViewModel => ({
   isTownResumeAvailable: true
 });
 
+const createLiveSaveLoadViewModel = (): SaveLoadViewModel => ({
+  kind: "save-load",
+  title: "存档选择",
+  version: "1.0",
+  slots: [
+    { id: "slot-1", label: "存档1", status: "empty" },
+    { id: "slot-2", label: "存档8", status: "occupied", campaignName: "新档位面", week: 1, saveDate: "2026-06-01" },
+    { id: "slot-3", label: "存档7", status: "occupied", campaignName: "新档位面", week: 1, saveDate: "2026-05-28" }
+  ]
+});
+
 export class LiveRuntimeBridge implements RuntimeBridge {
   readonly id = "ddgc-live-bridge";
   readonly mode: RuntimeMode = "live";
@@ -455,6 +467,38 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "resume-from-return":
+        this.snapshot = createLiveTownSnapshot();
+        break;
+      case "open-save-load":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "save-load",
+          viewModel: createLiveSaveLoadViewModel()
+        };
+        break;
+      case "select-save-slot":
+        this.snapshot = createLiveTownSnapshot();
+        break;
+      case "create-new-save":
+        this.snapshot = createLiveTownSnapshot();
+        break;
+      case "delete-save": {
+        const saveVm = this.snapshot.viewModel as SaveLoadViewModel;
+        const updatedSlots = saveVm.slots.map((slot) =>
+          slot.id === intent.slotId
+            ? { ...slot, status: "empty" as const, campaignName: undefined, week: undefined, saveDate: undefined }
+            : slot
+        );
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...saveVm,
+            slots: updatedSlots
+          }
+        };
+        break;
+      }
+      case "return-from-save-load":
         this.snapshot = createLiveTownSnapshot();
         break;
     }

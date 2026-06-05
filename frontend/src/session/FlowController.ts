@@ -10,7 +10,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "save-load" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -47,6 +47,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "return") {
     return "return";
+  }
+
+  if (snapshot.viewModel.kind === "save-load") {
+    return "save-load";
   }
 
   if (snapshot.flowState === "town") {
@@ -89,6 +93,36 @@ export function canTransition(
       }
       if (!snapshot.viewModel.isTownResumeAvailable) {
         return { allowed: false, reason: "town resume is not available" };
+      }
+      return { allowed: true };
+
+    case "open-save-load":
+      if (screen === "save-load" || screen === "startup" || screen === "loading") {
+        return { allowed: false, reason: "already in save-load or transitioning" };
+      }
+      return { allowed: true };
+
+    case "select-save-slot":
+      if (screen !== "save-load") {
+        return { allowed: false, reason: "select-save-slot is only valid on save-load screen" };
+      }
+      return { allowed: true };
+
+    case "create-new-save":
+      if (screen !== "save-load") {
+        return { allowed: false, reason: "create-new-save is only valid on save-load screen" };
+      }
+      return { allowed: true };
+
+    case "delete-save":
+      if (screen !== "save-load") {
+        return { allowed: false, reason: "delete-save is only valid on save-load screen" };
+      }
+      return { allowed: true };
+
+    case "return-from-save-load":
+      if (screen !== "save-load") {
+        return { allowed: false, reason: "return-from-save-load is only valid on save-load screen" };
       }
       return { allowed: true };
 

@@ -687,4 +687,139 @@ test.describe("browser smoke: fidelity gates", () => {
 
     expectNoErrors(pageErrors, consoleErrors, "Live boot flow");
   });
+
+  // ── Save/Load screen test ─────────────────────────────────
+  test("save-load screen: navigation, slots, actions, fidelity", async ({ page }) => {
+    const { consoleErrors, pageErrors } = setupErrorCollectors(page);
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+
+    // Boot replay to reach town
+    await page.getByRole("button", { name: "Boot Replay" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 8_000 });
+    await settle(page);
+
+    // ── Navigate to save-load via settings button ──
+    await page.getByRole("button", { name: "设置", exact: true }).click();
+    await page.waitForSelector(".save-load-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    // ── Verify save-load screen structure ──
+    await expect(
+      page.locator(".save-load-viewport"),
+      "Save-load screen must use .save-load-viewport landscape layout"
+    ).toBeVisible();
+
+    await expect(
+      page.getByRole("heading", { name: "存档选择" }),
+      "Save-load title (存档选择) must be visible"
+    ).toBeVisible();
+
+    await expect(
+      page.getByRole("button", { name: "返回" }),
+      "Back button must be present"
+    ).toBeVisible();
+
+    // Three save slots must render
+    await expect(
+      page.locator(".save-load-slot"),
+      "Must render 3 save slots"
+    ).toHaveCount(3);
+
+    // First slot is empty
+    const firstSlot = page.locator('.save-load-slot[data-slot-id="slot-1"]');
+    await expect(firstSlot, "First slot must be visible").toBeVisible();
+    await expect(
+      firstSlot.locator('.save-load-slot-placeholder'),
+      "Empty slot must show placeholder text"
+    ).toHaveText("点击开始新的冒险...");
+    await expect(
+      firstSlot.locator('button[data-action="create"]'),
+      "Empty slot must have create (+) button"
+    ).toBeVisible();
+
+    // Second slot is occupied
+    const secondSlot = page.locator('.save-load-slot[data-slot-id="slot-2"]');
+    await expect(secondSlot, "Second slot must be visible").toBeVisible();
+    await expect(
+      secondSlot.locator('.save-load-slot-name'),
+      "Occupied slot must show save name"
+    ).toHaveText("存档8");
+    await expect(
+      secondSlot.locator('.save-load-slot-week'),
+      "Occupied slot must show week info"
+    ).toHaveText("第1周");
+    await expect(
+      secondSlot.locator('button[data-action="delete"]'),
+      "Occupied slot must have delete (trash) button"
+    ).toBeVisible();
+    // Occupied slot checkbox is checked
+    await expect(
+      secondSlot.locator('.save-load-slot-checkmark'),
+      "Occupied slot checkbox must be checked"
+    ).toBeVisible();
+
+    // Third slot is occupied
+    const thirdSlot = page.locator('.save-load-slot[data-slot-id="slot-3"]');
+    await expect(thirdSlot, "Third slot must be visible").toBeVisible();
+    await expect(
+      thirdSlot.locator('.save-load-slot-name'),
+      "Third slot must show save name"
+    ).toHaveText("存档7");
+
+    // Version footer
+    await expect(
+      page.locator(".save-load-version"),
+      "Version label must be visible"
+    ).toHaveText("V 1.0");
+
+    // Fidelity — save-load is a completed product surface
+    await expectFidelity(page.locator(".save-load-frame"), "Save-load screen");
+    await expectFullPageFidelity(page, "Save-load screen");
+
+    expectNoErrors(pageErrors, consoleErrors, "Save-load screen initial render");
+
+    // ── Test delete save action ──
+    await secondSlot.locator('button[data-action="delete"]').click();
+    await settle(page);
+
+    // After delete, slot-2 should become empty
+    await expect(
+      secondSlot.locator('.save-load-slot-placeholder'),
+      "Deleted slot must show placeholder text"
+    ).toHaveText("点击开始新的冒险...");
+    await expect(
+      secondSlot.locator('button[data-action="create"]'),
+      "Deleted slot must now have create (+) button"
+    ).toBeVisible();
+
+    // ── Test create new save action ──
+    await firstSlot.locator('button[data-action="create"]').click();
+    await settle(page);
+
+    // After create, should return to town (replay bridge behavior)
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+    await expect(
+      page.getByText("城镇中枢"),
+      "Must return to town after creating new save"
+    ).toBeVisible();
+
+    // ── Navigate back to save-load and test return button ──
+    await page.getByRole("button", { name: "设置", exact: true }).click();
+    await page.waitForSelector(".save-load-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await page.getByRole("button", { name: "返回" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("城镇中枢"),
+      "Must return to town from save-load via back button"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Save-load screen actions");
+  });
 });
