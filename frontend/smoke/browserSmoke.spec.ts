@@ -332,6 +332,53 @@ test.describe("browser smoke: fidelity gates", () => {
 
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
 
+    // ── Phase 4b: Spatial Analysis building detail ───────────
+    // Return to town and open the campingtrainer (空间分析) building
+    await page.getByRole("button", { name: "Return to Town" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await page.locator('[data-building-id="campingtrainer"]').click();
+    await settle(page, 800);
+
+    await expect(
+      page.locator(".building-detail-eyebrow"),
+      "Spatial Analysis building eyebrow must be visible"
+    ).toHaveText("Building");
+    await expect(
+      page.locator(".building-detail-name"),
+      "Spatial Analysis building name must be visible (DDGC display name 空间分析)"
+    ).toHaveText("空间分析");
+    await expect(
+      page.locator(".spatial-analysis-skill-grid"),
+      "Spatial Analysis skill unlock grid must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".spatial-analysis-npc-name"),
+      "Spatial Analysis NPC name (同负人) must be visible"
+    ).toHaveText("同负人");
+    await expect(
+      page.locator('.spatial-analysis-skill-slot[data-skill-id="s1"]'),
+      "Spatial Analysis skill slot must render"
+    ).toBeVisible();
+    await expect(
+      page.locator('.spatial-analysis-skill-slot'),
+      "Spatial Analysis must render 10 skill slots"
+    ).toHaveCount(10);
+    await expect(
+      page.getByRole("button", { name: "对话" }),
+      "Spatial Analysis dialogue button must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "离开" }),
+      "Spatial Analysis leave button must be visible"
+    ).toBeVisible();
+
+    await expectFidelity(page.locator(".app-frame"), "Spatial Analysis building screen");
+    await expectFullPageFidelity(page, "Spatial Analysis building screen");
+
+    expectNoErrors(pageErrors, consoleErrors, "Phase 4b (spatial analysis building)");
+
     // ── Phase 5: Full meta-loop ─────────────────────────────
     // Town → Provisioning → Expedition → Result → Return → Town
 

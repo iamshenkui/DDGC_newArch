@@ -897,6 +897,10 @@ fn building_label_and_description(building_id: &str) -> (String, String) {
             "Campfire".to_string(),
             "The campfire provides a place to rest during expeditions. Camp to heal and buff heroes.".to_string(),
         ),
+        "campingtrainer" => (
+            "Spatial Analysis".to_string(),
+            "The spatial analysis instructor unlocks camping and dungeon traversal skills. Learn new abilities to aid your expeditions.".to_string(),
+        ),
         _ => (
             format!("Building: {}", building_id),
             format!("Town building '{}' - detailed interactions to be implemented.", building_id),
@@ -918,6 +922,8 @@ fn building_upgrade_hint(building_id: &str) -> Option<String> {
         "museum" => Some("Upgrade to expand display capacity and artifact appraisal.".to_string()),
         "provisioner" => Some("Upgrade to expand supply stock and reduce expedition costs.".to_string()),
         "sanctuary" => Some("Upgrade to unlock advanced quirk and disease treatment.".to_string()),
+        "campfire" => Some("Upgrade to improve campfire rest efficiency and unlock new camping skills.".to_string()),
+        "campingtrainer" => Some("Upgrade to unlock advanced spatial analysis skills and reduce unlock costs.".to_string()),
         _ => None,
     }
 }
@@ -928,10 +934,10 @@ fn building_upgrade_hint(building_id: &str) -> Option<String> {
 /// Actions include costs, availability (based on gold and building status), and
 /// unsupported flags for features not yet implemented in the current build.
 ///
-/// Currently covered building types (11 total from registry):
+/// Currently covered building types (12 total from registry):
 /// - Primary: stagecoach, guild, blacksmith, sanitarium, tavern, abbey
 /// - Secondary: inn, graveyard, museum, provisioner, sanctuary
-/// - Special: campfire
+/// - Special: campfire, campingtrainer
 fn generate_building_actions(
     building_id: &str,
     status: &crate::contracts::viewmodels::BuildingStatus,
@@ -1197,6 +1203,24 @@ fn generate_building_actions(
                 description: "Apply a camping skill for buffs during dungeon runs.".to_string(),
                 cost: "Free".to_string(),
                 is_available: true,
+                is_unsupported: false,
+            },
+        ],
+        "campingtrainer" => vec![
+            BuildingAction {
+                id: "unlock-skill".to_string(),
+                label: "Unlock Skill".to_string(),
+                description: "Unlock a new camping or spatial analysis skill for your heroes.".to_string(),
+                cost: "300 Gold".to_string(),
+                is_available: is_ready && current_gold >= 300,
+                is_unsupported: false,
+            },
+            BuildingAction {
+                id: "dialogue".to_string(),
+                label: "Dialogue".to_string(),
+                description: "Speak with the spatial analysis instructor to learn more.".to_string(),
+                cost: "Free".to_string(),
+                is_available: is_ready,
                 is_unsupported: false,
             },
         ],

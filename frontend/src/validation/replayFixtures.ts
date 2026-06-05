@@ -459,19 +459,27 @@ export const replayCampingTrainerBuildingDetailViewModel: BuildingDetailViewMode
   kind: "building-detail",
   buildingId: "campingtrainer",
   label: "空间分析",
-  status: "partial",
-  description: "营火与露营训练相关服务，提升队伍在远征中的生存能力。",
+  status: "ready",
+  description: "The spatial analysis instructor unlocks camping and dungeon traversal skills. Learn new abilities to aid your expeditions.",
   actions: [
     {
-      id: "train-camping",
-      label: "露营训练",
-      description: "训练英雄的露营技能，提高远征中的恢复效果。",
-      cost: "150 Gold",
+      id: "unlock-skill",
+      label: "Unlock Skill",
+      description: "Unlock a new camping or spatial analysis skill for your heroes.",
+      cost: "300 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "dialogue",
+      label: "Dialogue",
+      description: "Speak with the spatial analysis instructor to learn more.",
+      cost: "Free",
       isAvailable: true,
       isUnsupported: false
     }
   ],
-  upgradeRequirement: "Reach Town Level 2 to unlock advanced camping skills."
+  upgradeRequirement: "Upgrade to unlock advanced spatial analysis skills and reduce unlock costs."
 };
 
 export const replayProvisioningViewModel: ProvisioningViewModel = {
