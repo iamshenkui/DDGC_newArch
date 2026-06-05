@@ -344,6 +344,19 @@ impl BuildingStatus {
     }
 }
 
+/// A training slot within the guild building.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GuildTrainingSlot {
+    /// Slot index (0-based).
+    pub slot_index: usize,
+    /// Hero ID if a hero is assigned to this slot.
+    pub hero_id: Option<String>,
+    /// Hero display name if occupied.
+    pub hero_name: Option<String>,
+    /// Whether this slot currently has a hero assigned.
+    pub is_occupied: bool,
+}
+
 /// Building detail view model — full building inspection for town interactions.
 ///
 /// This view model represents the detailed state of a single town building,
@@ -364,6 +377,12 @@ pub struct BuildingDetailViewModel {
     pub actions: Vec<BuildingAction>,
     /// Requirement for upgrading this building (if upgradeable).
     pub upgrade_requirement: Option<String>,
+    /// Guild training slot capacity (derived from building upgrade level).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub slot_count: Option<usize>,
+    /// Training slots with hero assignments (empty when no heroes assigned).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub training_slots: Option<Vec<GuildTrainingSlot>>,
 }
 
 impl BuildingDetailViewModel {
@@ -377,6 +396,8 @@ impl BuildingDetailViewModel {
             description: String::new(),
             actions: Vec::new(),
             upgrade_requirement: None,
+            slot_count: None,
+            training_slots: None,
         }
     }
 }

@@ -614,3 +614,329 @@
     padding: 18px 14px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+ * Guild Building Screen — 公会界面-试炼场-使用空
+ * Mirrors Assets/Prefabs/UI/Estate/Buildings/Guild/GuildWindow.prefab
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Tab bar ── */
+.guild-tab-bar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 14px;
+  background:
+    linear-gradient(180deg, rgba(28, 22, 14, 0.72), rgba(16, 12, 8, 0.78));
+  border: 1px solid rgba(196, 168, 110, 0.22);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 0 rgba(232, 200, 140, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.guild-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  font-family: var(--heading-font);
+  font-size: 0.84rem;
+  letter-spacing: 0.12em;
+  color: rgba(214, 192, 150, 0.7);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.guild-tab-btn:hover {
+  color: rgba(244, 224, 184, 0.9);
+  background: rgba(196, 168, 110, 0.08);
+}
+
+.guild-tab-btn--active {
+  color: rgba(248, 232, 200, 0.96);
+  background:
+    linear-gradient(180deg, rgba(48, 36, 22, 0.65), rgba(24, 18, 10, 0.72));
+  border-color: rgba(196, 168, 110, 0.32);
+  box-shadow:
+    inset 0 1px 0 rgba(232, 200, 140, 0.12),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.guild-tab-check {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* ── Left panel (NPC + controls) ── */
+.guild-left-panel {
+  align-items: center;
+  gap: 12px;
+}
+
+.guild-npc-portrait {
+  position: relative;
+  width: 180px;
+  height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    linear-gradient(180deg, rgba(28, 22, 14, 0.78), rgba(12, 8, 6, 0.86)),
+    var(--ddgc-chrome-building-info-bg, url("/original/chrome/building_info_bg.png"));
+  background-size: cover, 100% 100%;
+  background-position: center, center;
+  background-repeat: no-repeat;
+  border: 1px solid rgba(196, 168, 110, 0.22);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 0 rgba(232, 200, 140, 0.08),
+    inset 0 0 36px rgba(0, 0, 0, 0.4),
+    0 8px 18px rgba(0, 0, 0, 0.4);
+}
+
+.guild-npc-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.guild-npc-label {
+  font-family: var(--heading-font);
+  font-size: 1.1rem;
+  color: rgba(196, 168, 110, 0.55);
+  letter-spacing: 0.2em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.guild-npc-btn {
+  width: 100%;
+  max-width: 180px;
+  padding: 10px 18px;
+  font-family: var(--heading-font);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  border: 1px solid rgba(196, 168, 110, 0.28);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+  box-shadow:
+    inset 0 1px 0 rgba(232, 200, 140, 0.08),
+    0 3px 8px rgba(0, 0, 0, 0.35);
+}
+
+.guild-talk-btn {
+  background:
+    linear-gradient(180deg, rgba(48, 36, 22, 0.72), rgba(20, 14, 8, 0.78));
+  color: rgba(244, 224, 184, 0.9);
+}
+
+.guild-talk-btn:hover {
+  border-color: rgba(232, 200, 140, 0.45);
+  background:
+    linear-gradient(180deg, rgba(60, 46, 28, 0.8), rgba(28, 20, 12, 0.86));
+  transform: translateY(-1px);
+}
+
+.guild-leave-btn {
+  background:
+    linear-gradient(180deg, rgba(60, 28, 22, 0.65), rgba(28, 12, 8, 0.72));
+  color: rgba(232, 180, 160, 0.85);
+}
+
+.guild-leave-btn:hover {
+  border-color: rgba(232, 160, 140, 0.4);
+  background:
+    linear-gradient(180deg, rgba(72, 36, 28, 0.72), rgba(36, 16, 10, 0.78));
+  transform: translateY(-1px);
+}
+
+/* ── Use Facility panel ── */
+.guild-use-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.guild-use-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.guild-slot-info {
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  color: rgba(214, 192, 150, 0.7);
+  text-transform: uppercase;
+}
+
+/* ── Slot grid ── */
+.guild-slot-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.guild-slot-row {
+  display: grid;
+  grid-template-columns: 32px 120px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 5px;
+  border: 1px solid rgba(196, 168, 110, 0.15);
+  background:
+    linear-gradient(180deg, rgba(22, 16, 10, 0.72), rgba(10, 6, 4, 0.78));
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.guild-slot-row:hover {
+  border-color: rgba(214, 184, 124, 0.3);
+  box-shadow:
+    inset 0 1px 0 rgba(232, 200, 140, 0.06),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.guild-slot-row--empty {
+  opacity: 0.85;
+}
+
+.guild-slot-check {
+  font-size: 1rem;
+  color: rgba(196, 168, 110, 0.6);
+  text-align: center;
+}
+
+.guild-slot-hero {
+  font-family: var(--heading-font);
+  font-size: 0.86rem;
+  color: rgba(196, 168, 110, 0.55);
+  letter-spacing: 0.04em;
+}
+
+.guild-slot-row--occupied .guild-slot-hero {
+  color: rgba(248, 232, 200, 0.92);
+}
+
+.guild-skill-slots {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.guild-skill-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-size: 0.72rem;
+  border-radius: 3px;
+  border: 1px solid rgba(196, 168, 110, 0.18);
+  background: rgba(12, 8, 6, 0.55);
+  color: rgba(160, 140, 110, 0.5);
+}
+
+.guild-skill-slot--locked {
+  color: rgba(160, 100, 90, 0.55);
+}
+
+/* ── Empty state hint ── */
+.guild-empty-hint {
+  padding: 14px 18px;
+  text-align: center;
+  border-radius: 5px;
+  border: 1px dashed rgba(196, 168, 110, 0.2);
+  background: rgba(12, 8, 6, 0.4);
+}
+
+.guild-empty-hint p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(214, 192, 150, 0.55);
+  line-height: 1.5;
+}
+
+/* ── Bottom resource strip ── */
+.guild-resource-strip {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  padding: 10px 18px;
+  background:
+    linear-gradient(180deg, rgba(28, 22, 14, 0.68), rgba(14, 10, 6, 0.75));
+  border: 1px solid rgba(196, 168, 110, 0.18);
+  border-radius: 5px;
+  box-shadow:
+    inset 0 1px 0 rgba(232, 200, 140, 0.06),
+    0 3px 10px rgba(0, 0, 0, 0.35);
+}
+
+.guild-resource-slot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+}
+
+.guild-resource-label {
+  color: rgba(214, 192, 150, 0.55);
+  text-transform: uppercase;
+}
+
+.guild-resource-value {
+  color: rgba(248, 232, 200, 0.9);
+  font-weight: 600;
+}
+
+/* ── Responsive: guild screen ── */
+@media (max-width: 920px) {
+  .guild-tab-bar {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .guild-left-panel {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .guild-npc-portrait {
+    width: 140px;
+    height: 180px;
+  }
+
+  .guild-slot-grid {
+    max-height: 240px;
+  }
+
+  .guild-slot-row {
+    grid-template-columns: 28px 1fr;
+    gap: 8px;
+  }
+
+  .guild-skill-slots {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    margin-top: 4px;
+  }
+
+  .guild-resource-strip {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}

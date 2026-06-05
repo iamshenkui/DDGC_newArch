@@ -315,10 +315,54 @@ test.describe("browser smoke: fidelity gates", () => {
       page.locator(".building-detail-name"),
       "Building name must be visible (DDGC display name 试炼场 = Guild)"
     ).toHaveText("试炼场");
+
+    // Guild tab bar must show both 升级设施 and 使用设施 tabs.
+    await expect(
+      page.locator('.guild-tab-btn[data-tab-id="upgrade"]'),
+      "Guild upgrade tab (升级设施) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.guild-tab-btn[data-tab-id="use"]'),
+      "Guild use tab (使用设施) must be visible"
+    ).toBeVisible();
+
+    // Default tab is 使用设施 (Use Facility) — verify empty training slot grid.
+    await expect(
+      page.locator('[data-testid="guild-slot-grid"]'),
+      "Guild training slot grid must be visible on 使用设施 tab"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-testid="guild-slot-row-0"]'),
+      "First training slot row must render"
+    ).toBeVisible();
+
+    // Verify slot count matches fixture (3 slots).
+    await expect(
+      page.locator('.guild-slot-row[data-slot-index]'),
+      "Guild must render 3 training slot rows"
+    ).toHaveCount(3);
+
+    // NPC controls must render.
+    await expect(
+      page.locator('.guild-talk-btn'),
+      "Guild talk button (对话) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.guild-leave-btn'),
+      "Guild leave button (离开) must be visible"
+    ).toBeVisible();
+
+    // Switch to 升级设施 tab and verify upgrade actions.
+    await page.locator('.guild-tab-btn[data-tab-id="upgrade"]').click();
+    await settle(page, 200);
     await expect(
       page.locator(".building-action-card-header").filter({ hasText: "Train Combat Skill" }),
-      "Building action must be visible"
+      "Building action must be visible on upgrade tab"
     ).toBeVisible();
+
+    // Switch back to 使用设施 for screenshot fidelity.
+    await page.locator('.guild-tab-btn[data-tab-id="use"]').click();
+    await settle(page, 200);
 
     // Fidelity — building detail is a completed product surface
     await expectFidelity(page.locator(".app-frame"), "Building detail screen");

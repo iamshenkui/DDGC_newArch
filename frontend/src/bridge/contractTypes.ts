@@ -60,6 +60,13 @@ export interface BuildingAction {
   isUnsupported: boolean;
 }
 
+export interface GuildTrainingSlot {
+  slotIndex: number;
+  heroId?: string;
+  heroName?: string;
+  isOccupied: boolean;
+}
+
 export interface BuildingDetailViewModel {
   kind: "building-detail";
   buildingId: string;
@@ -69,6 +76,10 @@ export interface BuildingDetailViewModel {
   actions: ReadonlyArray<BuildingAction>;
   currentUpgrade?: string;
   upgradeRequirement?: string;
+  /** Guild training slot capacity (derived from building upgrade level). */
+  slotCount?: number;
+  /** Training slots with hero assignments (empty when no heroes assigned). */
+  trainingSlots?: ReadonlyArray<GuildTrainingSlot>;
 }
 
 export interface HeroProgression {

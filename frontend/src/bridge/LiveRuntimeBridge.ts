@@ -187,6 +187,8 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
     }>;
     currentUpgrade?: string;
     upgradeRequirement?: string;
+    slotCount?: number;
+    trainingSlots?: Array<{ slotIndex: number; isOccupied: boolean; heroId?: string; heroName?: string }>;
   }> = {
     stagecoach: {
       description: "The stagecoach offers new recruits from the surrounding region. Recruit heroes to expand your party roster.",
@@ -237,6 +239,12 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
           isAvailable: false,
           isUnsupported: false
         }
+      ],
+      slotCount: 3,
+      trainingSlots: [
+        { slotIndex: 0, isOccupied: false },
+        { slotIndex: 1, isOccupied: false },
+        { slotIndex: 2, isOccupied: false }
       ]
     }
   };
@@ -263,7 +271,9 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
     description: config.description,
     actions: config.actions,
     currentUpgrade: config.currentUpgrade,
-    upgradeRequirement: config.upgradeRequirement
+    upgradeRequirement: config.upgradeRequirement,
+    slotCount: config.slotCount,
+    trainingSlots: config.trainingSlots
   };
 };
 

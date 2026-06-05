@@ -835,6 +835,22 @@ pub fn building_detail_from_campaign(
     // Determine upgrade requirement
     let upgrade_requirement = building_upgrade_hint(building_id);
 
+    // Guild-specific slot data
+    let (slot_count, training_slots) = if building_id == "guild" {
+        let slots = guild_slots_from_level(building_state.current_level);
+        let training_slots: Vec<crate::contracts::viewmodels::GuildTrainingSlot> = (0..slots)
+            .map(|i| crate::contracts::viewmodels::GuildTrainingSlot {
+                slot_index: i,
+                hero_id: None,
+                hero_name: None,
+                is_occupied: false,
+            })
+            .collect();
+        (Some(slots), Some(training_slots))
+    } else {
+        (None, None)
+    };
+
     Ok(BuildingDetailViewModel {
         kind: "building-detail".to_string(),
         building_id: building_id.to_string(),
@@ -843,7 +859,22 @@ pub fn building_detail_from_campaign(
         description,
         actions,
         upgrade_requirement,
+        slot_count,
+        training_slots,
     })
+}
+
+/// Compute guild training slot count from upgrade level.
+/// Matches data/Buildings.json guild_capacity tree.
+fn guild_slots_from_level(level: Option<char>) -> usize {
+    match level {
+        Some('a') => 1,
+        Some('b') => 2,
+        Some('c') => 2,
+        Some('d') => 3,
+        Some(_) => 3,
+        None => 1,
+    }
 }
 
 /// Get the label and description for a building by ID.

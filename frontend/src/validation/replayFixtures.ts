@@ -203,7 +203,14 @@ export const replayBuildingDetailViewModel: BuildingDetailViewModel = {
       isUnsupported: true
     }
   ],
-  upgradeRequirement: "Reach Town Level 2 to unlock weapon and armor upgrades."
+  currentUpgrade: "Training Hall Level 1",
+  upgradeRequirement: "Reach Town Level 2 to unlock weapon and armor upgrades.",
+  slotCount: 3,
+  trainingSlots: [
+    { slotIndex: 0, isOccupied: false },
+    { slotIndex: 1, isOccupied: false },
+    { slotIndex: 2, isOccupied: false }
+  ]
 };
 
 export const replayBlacksmithBuildingDetailViewModel: BuildingDetailViewModel = {
