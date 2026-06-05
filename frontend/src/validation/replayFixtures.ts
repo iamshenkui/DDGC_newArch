@@ -160,50 +160,53 @@ export const replayBuildingDetailViewModel: BuildingDetailViewModel = {
   buildingId: "guild",
   label: "试炼场",
   status: "ready",
-  description: "The guild provides skill training and party capability review. Upgrade your heroes' abilities to better face the challenges ahead.",
+  description: "训练技能并调整队伍战斗能力。在试炼场中选择英雄，升级其战斗技能、露营技能，或强化武器与防具。",
   actions: [
     {
       id: "train-combat",
-      label: "Train Combat Skill",
-      description: "Improve a hero's combat skill proficiency.",
-      cost: "200 Gold",
+      label: "训练战斗技能",
+      description: "提升英雄的战斗技能熟练度，使其在战斗中造成更大伤害或获得额外效果。",
+      cost: "200 金币",
       isAvailable: true,
       isUnsupported: false
     },
     {
       id: "train-camping",
-      label: "Train Camping Skill",
-      description: "Enhance a hero's camping skill for better rest and recovery.",
-      cost: "150 Gold",
+      label: "训练露营技能",
+      description: "增强英雄的露营技能，在远征休息时提供更好的恢复与辅助效果。",
+      cost: "150 金币",
       isAvailable: true,
       isUnsupported: false
     },
     {
       id: "upgrade-weapon",
-      label: "Upgrade Weapon",
-      description: "Enhance a hero's weapon to deal more damage.",
-      cost: "300 Gold",
+      label: "升级武器",
+      description: "强化英雄的武器，提升攻击伤害与暴击几率。",
+      cost: "300 金币",
       isAvailable: false,
       isUnsupported: false
     },
     {
       id: "upgrade-armor",
-      label: "Upgrade Armor",
-      description: "Improve a hero's armor for better protection.",
-      cost: "300 Gold",
+      label: "升级防具",
+      description: "改良英雄的防具，提升护甲值与生存能力。",
+      cost: "300 金币",
       isAvailable: false,
       isUnsupported: false
     },
     {
       id: "rare-recruit",
-      label: "Rare Hero Recruitment",
-      description: "Access the rare hero recruitment pool.",
-      cost: "1000 Gold",
+      label: "稀有英雄招募",
+      description: "访问稀有英雄招募池，获得具有特殊天赋的强力英雄。",
+      cost: "1000 金币",
       isAvailable: false,
       isUnsupported: true
     }
   ],
-  upgradeRequirement: "Reach Town Level 2 to unlock weapon and armor upgrades."
+  currentUpgrade: "试炼场等级 1",
+  upgradeRequirement: "城镇等级达到 2 级以解锁武器与防具升级。",
+  heroes: townHeroes,
+  gold: 1250
 };
 
 export const replayBlacksmithBuildingDetailViewModel: BuildingDetailViewModel = {

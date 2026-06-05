@@ -69,6 +69,10 @@ export interface BuildingDetailViewModel {
   actions: ReadonlyArray<BuildingAction>;
   currentUpgrade?: string;
   upgradeRequirement?: string;
+  /** Heroes available for selection in buildings that need a hero roster (e.g. guild). */
+  heroes?: ReadonlyArray<TownHeroSummary>;
+  /** Current gold amount for resource display in building screens. */
+  gold?: number;
 }
 
 export interface HeroProgression {

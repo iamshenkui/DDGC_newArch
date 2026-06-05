@@ -315,9 +315,51 @@ test.describe("browser smoke: fidelity gates", () => {
       page.locator(".building-detail-name"),
       "Building name must be visible (DDGC display name 试炼场 = Guild)"
     ).toHaveText("试炼场");
+
+    // Guild-specific fidelity anchors (UIR-041)
     await expect(
-      page.locator(".building-action-card-header").filter({ hasText: "Train Combat Skill" }),
-      "Building action must be visible"
+      page.locator(".guild-resource-bar"),
+      "Guild resource bar must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".guild-resource-slot-gold"),
+      "Guild gold resource slot must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".guild-hero-roster"),
+      "Guild hero roster must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".guild-hero-card"),
+      "Guild hero cards must render at least one hero"
+    ).not.toHaveCount(0);
+    await expect(
+      page.locator(".guild-hero-card--selected"),
+      "Guild default-selected hero must be highlighted"
+    ).toBeVisible();
+    await expect(
+      page.locator(".guild-selected-hero-detail"),
+      "Guild selected hero detail panel must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".building-action-card-header").filter({ hasText: "训练战斗技能" }),
+      "Building action (训练战斗技能) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".building-action-card-header").filter({ hasText: "训练露营技能" }),
+      "Building action (训练露营技能) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".building-action-section-title").filter({ hasText: "技能训练" }),
+      "Skill training section title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".building-action-section-title").filter({ hasText: "装备升级" }),
+      "Equipment upgrade section title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "返回城镇" }),
+      "Return to Town button (Chinese) must be visible"
     ).toBeVisible();
 
     // Fidelity — building detail is a completed product surface
@@ -336,7 +378,7 @@ test.describe("browser smoke: fidelity gates", () => {
     // Town → Provisioning → Expedition → Result → Return → Town
 
     // 5a. Return to town
-    await page.getByRole("button", { name: "Return to Town" }).click();
+    await page.getByRole("button", { name: "返回城镇" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
 

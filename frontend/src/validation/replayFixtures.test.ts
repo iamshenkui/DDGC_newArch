@@ -582,7 +582,7 @@ describe("building fixture consistency with town roster", () => {
       replayStagecoachBuildingDetailViewModel,
     ]) {
       for (const action of detail.actions) {
-        expect(action.cost).toMatch(/^\d+ Gold$/);
+        expect(action.cost).toMatch(/^\d+ (?:Gold|金币)$/);
       }
     }
   });

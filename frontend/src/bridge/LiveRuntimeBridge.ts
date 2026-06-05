@@ -174,7 +174,7 @@ const createLiveHeroDetailViewModel = (hero: TownHeroSummary): HeroDetailViewMod
   talent: "Versatile"
 });
 
-const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): BuildingDetailViewModel => {
+const createLiveBuildingDetailViewModel = (building: TownBuildingSummary, townVm: TownViewModel): BuildingDetailViewModel => {
   const buildingConfigs: Record<string, {
     description: string;
     actions: Array<{
@@ -210,30 +210,38 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
       ]
     },
     guild: {
-      description: "The guild provides skill training and party capability review. Upgrade your heroes' abilities.",
-      currentUpgrade: "Training Hall Level 1",
+      description: "训练技能并调整队伍战斗能力。在试炼场中选择英雄，升级其战斗技能、露营技能，或强化武器与防具。",
+      currentUpgrade: "试炼场等级 1",
       actions: [
         {
-          id: "train-skill",
-          label: "Train Skill",
-          description: "Improve a hero's combat or camping skill.",
-          cost: "200 Gold",
+          id: "train-combat",
+          label: "训练战斗技能",
+          description: "提升英雄的战斗技能熟练度，使其在战斗中造成更大伤害或获得额外效果。",
+          cost: "200 金币",
+          isAvailable: true,
+          isUnsupported: false
+        },
+        {
+          id: "train-camping",
+          label: "训练露营技能",
+          description: "增强英雄的露营技能，在远征休息时提供更好的恢复与辅助效果。",
+          cost: "150 金币",
           isAvailable: true,
           isUnsupported: false
         },
         {
           id: "upgrade-weapon",
-          label: "Upgrade Weapon",
-          description: "Enhance a hero's weapon.",
-          cost: "300 Gold",
+          label: "升级武器",
+          description: "强化英雄的武器，提升攻击伤害与暴击几率。",
+          cost: "300 金币",
           isAvailable: false,
           isUnsupported: false
         },
         {
           id: "upgrade-armor",
-          label: "Upgrade Armor",
-          description: "Improve a hero's armor protection.",
-          cost: "300 Gold",
+          label: "升级防具",
+          description: "改良英雄的防具，提升护甲值与生存能力。",
+          cost: "300 金币",
           isAvailable: false,
           isUnsupported: false
         }
@@ -263,7 +271,9 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
     description: config.description,
     actions: config.actions,
     currentUpgrade: config.currentUpgrade,
-    upgradeRequirement: config.upgradeRequirement
+    upgradeRequirement: config.upgradeRequirement,
+    heroes: building.id === "guild" ? townVm.heroes : undefined,
+    gold: townVm.gold
   };
 };
 
@@ -395,7 +405,7 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         this.snapshot = {
           ...this.snapshot,
           flowState: "town",
-          viewModel: createLiveBuildingDetailViewModel(building)
+          viewModel: createLiveBuildingDetailViewModel(building, townVm)
         };
         break;
       }
