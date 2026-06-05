@@ -365,6 +365,96 @@ export const replayTavernBuildingDetailViewModel: BuildingDetailViewModel = {
   ]
 };
 
+export const replayFacilityUsageViewModel = {
+  kind: "facility-usage" as const,
+  facilityId: "tavern",
+  facilityLabel: "迷情乐园",
+  activeTab: "use" as const,
+  heroes: townHeroes.map((h) => ({
+    id: h.id,
+    name: h.name,
+    classLabel: h.classLabel,
+    hp: h.hp,
+    maxHp: h.maxHp,
+    stress: h.stress,
+    maxStress: h.maxStress,
+    level: h.level,
+    isWounded: h.isWounded,
+    isAfflicted: h.isAfflicted,
+  })),
+  selectedHeroId: townHeroes[0]?.id ?? null,
+  activities: [
+    {
+      id: "drink",
+      name: "畅饮",
+      description: "在酒馆畅饮一番，大幅降低压力但可能带来随机效果。",
+      cost: "150 Gold",
+      costType: "gold" as const,
+      isAvailable: true,
+      stressReduction: "-40",
+      duration: "1周",
+    },
+    {
+      id: "gamble",
+      name: "博弈",
+      description: "参与酒馆博弈活动，有机会获得额外金币。",
+      cost: "50 Gold",
+      costType: "gold" as const,
+      isAvailable: true,
+      stressReduction: "-20",
+      duration: "1周",
+    },
+    {
+      id: "meditate",
+      name: "冥想",
+      description: "在安静的角落冥想，恢复精神状态。",
+      cost: "100 Gold",
+      costType: "gold" as const,
+      isAvailable: true,
+      stressReduction: "-30",
+      duration: "1周",
+    },
+    {
+      id: "feast",
+      name: "盛宴",
+      description: "参加酒馆盛宴，恢复体力并降低压力。",
+      cost: "200 Gold",
+      costType: "gold" as const,
+      isAvailable: false,
+      stressReduction: "-50",
+      duration: "1周",
+    },
+    {
+      id: "bard",
+      name: "吟游",
+      description: "聆听吟游诗人演奏，缓解精神压力。",
+      cost: "80 Gold",
+      costType: "gold" as const,
+      isAvailable: true,
+      stressReduction: "-25",
+      duration: "1周",
+    },
+    {
+      id: "private",
+      name: "私享",
+      description: "享受私人空间与服务，全面恢复状态。",
+      cost: "300 Gold",
+      costType: "gold" as const,
+      isAvailable: false,
+      stressReduction: "-60",
+      duration: "1周",
+    },
+  ],
+  selectedActivityId: null,
+  currencies: {
+    bust: 10,
+    portrait: 10,
+    deed: 10,
+    crest: 30,
+    gold: 1250,
+  },
+};
+
 export const replayGraveyardBuildingDetailViewModel: BuildingDetailViewModel = {
   kind: "building-detail",
   buildingId: "graveyard",
@@ -736,6 +826,13 @@ export const replayCampingTrainerBuildingSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing camping trainer building detail."
 };
 
+export const replayFacilityUsageSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "town",
+  viewModel: replayFacilityUsageViewModel,
+  debugMessage: "Replay bridge showing tavern facility usage screen."
+};
+
 const unsupportedViewModel: UnsupportedViewModel = {
   kind: "unsupported",
   title: "Live Runtime Not Wired Yet",
@@ -929,7 +1026,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
   const flowStateKindMap: Record<string, string[]> = {
     boot: ["boot-load"],
     load: ["boot-load"],
-    town: ["town", "hero-detail", "building-detail"],
+    town: ["town", "hero-detail", "building-detail", "facility-usage"],
     provisioning: ["provisioning"],
     expedition: ["expedition"],
     combat: ["expedition"],
@@ -987,6 +1084,15 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!["ready", "partial", "locked"].includes(vm.status as string)) e.push(`BuildingDetailViewModel: status is "${String(vm.status)}", expected "ready", "partial", or "locked"`);
       if (!vm.description || typeof vm.description !== "string") e.push("BuildingDetailViewModel: description is missing");
       if (!Array.isArray(vm.actions)) { e.push("BuildingDetailViewModel: actions is not an array"); } else if (vm.actions.length === 0) { e.push("BuildingDetailViewModel: actions array is empty"); }
+      break;
+    }
+    case "facility-usage": {
+      if (!vm.facilityId || typeof vm.facilityId !== "string") e.push("FacilityUsageViewModel: facilityId is missing");
+      if (!vm.facilityLabel || typeof vm.facilityLabel !== "string") e.push("FacilityUsageViewModel: facilityLabel is missing");
+      if (vm.activeTab !== "upgrade" && vm.activeTab !== "use") e.push(`FacilityUsageViewModel: activeTab is "${String(vm.activeTab)}", expected "upgrade" or "use"`);
+      if (!Array.isArray(vm.heroes)) { e.push("FacilityUsageViewModel: heroes is not an array"); } else if (vm.heroes.length === 0) { e.push("FacilityUsageViewModel: heroes array is empty"); }
+      if (!Array.isArray(vm.activities)) { e.push("FacilityUsageViewModel: activities is not an array"); } else if (vm.activities.length === 0) { e.push("FacilityUsageViewModel: activities array is empty"); }
+      if (!vm.currencies || typeof vm.currencies !== "object") e.push("FacilityUsageViewModel: currencies is missing");
       break;
     }
     case "provisioning": {

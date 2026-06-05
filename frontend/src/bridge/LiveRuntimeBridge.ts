@@ -8,6 +8,7 @@ import type {
   TownBuildingSummary,
   HeroDetailViewModel,
   BuildingDetailViewModel,
+  FacilityUsageViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
@@ -334,6 +335,96 @@ const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
   isContinueAvailable: true
 });
 
+const createLiveFacilityUsageViewModel = (building: TownBuildingSummary, heroes: ReadonlyArray<TownHeroSummary>): FacilityUsageViewModel => ({
+  kind: "facility-usage",
+  facilityId: building.id,
+  facilityLabel: building.label,
+  activeTab: "use",
+  heroes: heroes.map((h) => ({
+    id: h.id,
+    name: h.name,
+    classLabel: h.classLabel,
+    hp: h.hp,
+    maxHp: h.maxHp,
+    stress: h.stress,
+    maxStress: h.maxStress,
+    level: h.level,
+    isWounded: h.isWounded,
+    isAfflicted: h.isAfflicted,
+  })),
+  selectedHeroId: heroes[0]?.id ?? null,
+  activities: [
+    {
+      id: "drink",
+      name: "畅饮",
+      description: "在酒馆畅饮一番，大幅降低压力但可能带来随机效果。",
+      cost: "150 Gold",
+      costType: "gold",
+      isAvailable: true,
+      stressReduction: "-40",
+      duration: "1周",
+    },
+    {
+      id: "gamble",
+      name: "博弈",
+      description: "参与酒馆博弈活动，有机会获得额外金币。",
+      cost: "50 Gold",
+      costType: "gold",
+      isAvailable: true,
+      stressReduction: "-20",
+      duration: "1周",
+    },
+    {
+      id: "meditate",
+      name: "冥想",
+      description: "在安静的角落冥想，恢复精神状态。",
+      cost: "100 Gold",
+      costType: "gold",
+      isAvailable: true,
+      stressReduction: "-30",
+      duration: "1周",
+    },
+    {
+      id: "feast",
+      name: "盛宴",
+      description: "参加酒馆盛宴，恢复体力并降低压力。",
+      cost: "200 Gold",
+      costType: "gold",
+      isAvailable: false,
+      stressReduction: "-50",
+      duration: "1周",
+    },
+    {
+      id: "bard",
+      name: "吟游",
+      description: "聆听吟游诗人演奏，缓解精神压力。",
+      cost: "80 Gold",
+      costType: "gold",
+      isAvailable: true,
+      stressReduction: "-25",
+      duration: "1周",
+    },
+    {
+      id: "private",
+      name: "私享",
+      description: "享受私人空间与服务，全面恢复状态。",
+      cost: "300 Gold",
+      costType: "gold",
+      isAvailable: false,
+      stressReduction: "-60",
+      duration: "1周",
+    },
+  ],
+  selectedActivityId: null,
+  currencies: {
+    bust: 10,
+    portrait: 10,
+    deed: 10,
+    crest: 30,
+    gold: 500,
+  },
+});
+
 const createLiveReturnViewModel = (): ReturnViewModel => ({
   kind: "return",
   title: "Returning to Town",
@@ -392,10 +483,60 @@ export class LiveRuntimeBridge implements RuntimeBridge {
       case "open-building": {
         const townVm = this.snapshot.viewModel as TownViewModel;
         const building = townVm.buildings.find((b) => b.id === intent.buildingId) ?? townVm.buildings[0];
+        if (building.id === "tavern") {
+          this.snapshot = {
+            ...this.snapshot,
+            flowState: "town",
+            viewModel: createLiveFacilityUsageViewModel(building, townVm.heroes)
+          };
+        } else {
+          this.snapshot = {
+            ...this.snapshot,
+            flowState: "town",
+            viewModel: createLiveBuildingDetailViewModel(building)
+          };
+        }
+        break;
+      }
+      case "select-facility-hero": {
+        const facilityVm = this.snapshot.viewModel as FacilityUsageViewModel;
         this.snapshot = {
           ...this.snapshot,
-          flowState: "town",
-          viewModel: createLiveBuildingDetailViewModel(building)
+          viewModel: {
+            ...facilityVm,
+            selectedHeroId: intent.heroId
+          }
+        };
+        break;
+      }
+      case "select-facility-activity": {
+        const facilityVm = this.snapshot.viewModel as FacilityUsageViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...facilityVm,
+            selectedActivityId: intent.activityId
+          }
+        };
+        break;
+      }
+      case "switch-facility-tab": {
+        const facilityVm = this.snapshot.viewModel as FacilityUsageViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...facilityVm,
+            activeTab: intent.tab
+          }
+        };
+        break;
+      }
+      case "confirm-facility-usage": {
+        const facilityVm = this.snapshot.viewModel as FacilityUsageViewModel;
+        const activity = facilityVm.activities.find((a) => a.id === facilityVm.selectedActivityId);
+        this.snapshot = {
+          ...this.snapshot,
+          debugMessage: `Live: facility usage confirmed for hero ${facilityVm.selectedHeroId} with activity ${facilityVm.selectedActivityId} (${activity?.name ?? "unknown"}).`
         };
         break;
       }

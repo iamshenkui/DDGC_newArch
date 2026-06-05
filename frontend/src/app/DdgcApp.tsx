@@ -9,6 +9,7 @@ import type {
   BuildingDetailViewModel,
   ExpeditionResultViewModel,
   ExpeditionSetupViewModel,
+  FacilityUsageViewModel,
   FatalErrorViewModel,
   HeroDetailViewModel,
   ProvisioningViewModel,
@@ -27,6 +28,7 @@ import { StartupScreen } from "../screens/startup/StartupScreen";
 import { TownShellScreen } from "../screens/town/TownShellScreen";
 import { HeroDetailScreen } from "../screens/town/HeroDetailScreen";
 import { BuildingScreenRouter } from "../screens/town/BuildingScreenRouter";
+import { TavernUsageScreen } from "../screens/town/buildings/TavernUsageScreen";
 import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
@@ -134,6 +136,28 @@ export function DdgcApp() {
             }}
             onAction={(actionId) => {
               void dispatchIntent(bridge, { type: "building-action", actionId });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "facility-usage" && snapshot().viewModel.kind === "facility-usage"}
+        >
+          <TavernUsageScreen
+            viewModel={snapshot().viewModel as FacilityUsageViewModel}
+            onReturn={() => {
+              void dispatchIntent(bridge, { type: "return-to-town" });
+            }}
+            onSelectHero={(heroId) => {
+              void dispatchIntent(bridge, { type: "select-facility-hero", heroId });
+            }}
+            onSelectActivity={(activityId) => {
+              void dispatchIntent(bridge, { type: "select-facility-activity", activityId });
+            }}
+            onConfirmUsage={() => {
+              void dispatchIntent(bridge, { type: "confirm-facility-usage" });
+            }}
+            onSwitchTab={(tab) => {
+              void dispatchIntent(bridge, { type: "switch-facility-tab", tab });
             }}
           />
         </Match>

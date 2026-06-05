@@ -10,7 +10,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "facility-usage" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -31,6 +31,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "building-detail") {
     return "building-detail";
+  }
+
+  if (snapshot.viewModel.kind === "facility-usage") {
+    return "facility-usage";
   }
 
   if (snapshot.viewModel.kind === "provisioning") {
@@ -143,6 +147,30 @@ export function canTransition(
     case "building-action":
       if (screen !== "building-detail") {
         return { allowed: false, reason: "building-action is only valid in building-detail" };
+      }
+      return { allowed: true };
+
+    case "select-facility-hero":
+      if (screen !== "facility-usage") {
+        return { allowed: false, reason: "select-facility-hero is only valid in facility-usage" };
+      }
+      return { allowed: true };
+
+    case "select-facility-activity":
+      if (screen !== "facility-usage") {
+        return { allowed: false, reason: "select-facility-activity is only valid in facility-usage" };
+      }
+      return { allowed: true };
+
+    case "confirm-facility-usage":
+      if (screen !== "facility-usage") {
+        return { allowed: false, reason: "confirm-facility-usage is only valid in facility-usage" };
+      }
+      return { allowed: true };
+
+    case "switch-facility-tab":
+      if (screen !== "facility-usage") {
+        return { allowed: false, reason: "switch-facility-tab is only valid in facility-usage" };
       }
       return { allowed: true };
 

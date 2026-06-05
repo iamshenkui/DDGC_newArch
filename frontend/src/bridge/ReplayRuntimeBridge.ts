@@ -3,6 +3,7 @@ import {
   replayReadySnapshot,
   replayHeroDetailViewModel,
   replayBuildingDetailViewModel,
+  replayFacilityUsageViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
@@ -13,6 +14,7 @@ import type {
   DdgcFrontendIntent,
   DdgcFrontendSnapshot,
   TownViewModel,
+  FacilityUsageViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
@@ -64,15 +66,69 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       case "open-building": {
         const townVm = this.snapshot.viewModel as TownViewModel;
         const building = townVm.buildings.find((b) => b.id === intent.buildingId) ?? townVm.buildings[0];
+        if (building.id === "tavern") {
+          this.snapshot = {
+            ...this.snapshot,
+            flowState: "town",
+            viewModel: {
+              ...replayFacilityUsageViewModel,
+              facilityId: building.id,
+              facilityLabel: building.label,
+            } as FacilityUsageViewModel
+          };
+        } else {
+          this.snapshot = {
+            ...this.snapshot,
+            flowState: "town",
+            viewModel: {
+              ...replayBuildingDetailViewModel,
+              buildingId: building.id,
+              label: building.label,
+              status: building.status
+            }
+          };
+        }
+        break;
+      }
+      case "select-facility-hero": {
+        const facilityVm = this.snapshot.viewModel as FacilityUsageViewModel;
         this.snapshot = {
           ...this.snapshot,
-          flowState: "town",
           viewModel: {
-            ...replayBuildingDetailViewModel,
-            buildingId: building.id,
-            label: building.label,
-            status: building.status
+            ...facilityVm,
+            selectedHeroId: intent.heroId
           }
+        };
+        break;
+      }
+      case "select-facility-activity": {
+        const facilityVm = this.snapshot.viewModel as FacilityUsageViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...facilityVm,
+            selectedActivityId: intent.activityId
+          }
+        };
+        break;
+      }
+      case "switch-facility-tab": {
+        const facilityVm = this.snapshot.viewModel as FacilityUsageViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...facilityVm,
+            activeTab: intent.tab
+          }
+        };
+        break;
+      }
+      case "confirm-facility-usage": {
+        const facilityVm = this.snapshot.viewModel as FacilityUsageViewModel;
+        const activity = facilityVm.activities.find((a) => a.id === facilityVm.selectedActivityId);
+        this.snapshot = {
+          ...this.snapshot,
+          debugMessage: `Replay: facility usage confirmed for hero ${facilityVm.selectedHeroId} with activity ${facilityVm.selectedActivityId} (${activity?.name ?? "unknown"}).`
         };
         break;
       }

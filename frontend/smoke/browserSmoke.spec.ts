@@ -332,14 +332,99 @@ test.describe("browser smoke: fidelity gates", () => {
 
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
 
-    // ── Phase 5: Full meta-loop ─────────────────────────────
-    // Town → Provisioning → Expedition → Result → Return → Town
-
-    // 5a. Return to town
+    // ── Phase 4b: Tavern facility usage screen ──────────────
+    // Return to town and open the tavern (迷情乐园)
     await page.getByRole("button", { name: "Return to Town" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
 
+    await page.locator('[data-building-id="tavern"]').click();
+    await page.waitForSelector(".facility-usage-viewport", { timeout: 5_000 });
+    await settle(page, 800);
+
+    // Verify facility usage screen elements
+    await expect(
+      page.locator(".facility-usage-title"),
+      "Tavern facility title (迷情乐园) must be visible"
+    ).toHaveText("迷情乐园");
+
+    await expect(
+      page.locator(".facility-usage-tab--active"),
+      "Active tab must be 使用设施"
+    ).toContainText("使用设施");
+
+    await expect(
+      page.locator(".facility-usage-panel-title").filter({ hasText: "选择人物" }),
+      "Hero selection panel title must be visible"
+    ).toBeVisible();
+
+    // Hero list must contain heroes from the roster
+    await expect(
+      page.locator(".facility-hero-list-item"),
+      "Hero list must contain at least one hero"
+    ).toHaveCount(3);
+
+    // Activity grid must contain activities
+    await expect(
+      page.locator(".facility-activity-card"),
+      "Activity grid must contain 6 activities"
+    ).toHaveCount(6);
+
+    // Select a hero
+    await page.locator('[data-hero-id="hero-hunter-01"]').click();
+    await settle(page, 200);
+
+    await expect(
+      page.locator(".facility-hero-list-item--selected"),
+      "Selected hero must be highlighted"
+    ).toHaveCount(1);
+
+    // Select an activity
+    await page.locator('[data-activity-id="drink"]').click();
+    await settle(page, 200);
+
+    await expect(
+      page.locator(".facility-activity-card--selected"),
+      "Selected activity must be highlighted"
+    ).toHaveCount(1);
+
+    // Currency strip must be visible
+    await expect(
+      page.locator(".facility-usage-currency-strip"),
+      "Currency strip must be visible"
+    ).toBeVisible();
+
+    await expect(
+      page.locator(".facility-usage-currency-item"),
+      "Currency strip must contain 5 currency slots"
+    ).toHaveCount(5);
+
+    // Fidelity — facility usage is a completed product surface
+    await expectFidelity(page.locator(".facility-usage-viewport"), "Facility usage screen");
+    await expectFullPageFidelity(page, "Facility usage screen");
+
+    // Landscape viewport check — facility usage uses .facility-usage-viewport
+    await expect(
+      page.locator(".facility-usage-viewport"),
+      "Facility usage screen must use .facility-usage-viewport landscape layout"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Phase 4b (tavern facility usage)");
+
+    // Close button must work — return to town to continue the meta-loop
+    await page.locator(".facility-usage-close-btn").click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("城镇中枢"),
+      "Must be back at town after closing facility usage"
+    ).toBeVisible();
+
+    // ── Phase 5: Full meta-loop ─────────────────────────────
+    // Town → Provisioning → Expedition → Result → Return → Town
+
+    // 5a. Already in town after closing facility usage — proceed to provisioning
     // 5b. Town → Provisioning
     await page.locator(".estate-embark-button").click();
     await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
@@ -595,11 +680,47 @@ test.describe("browser smoke: fidelity gates", () => {
       "Live building detail screen must use .app-frame landscape layout"
     ).toBeVisible();
 
-    // Full live flow: provisioning → expedition → result → return
+    // Live: Tavern facility usage screen
     await page.getByRole("button", { name: "Return to Town" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
 
+    await page.locator('[data-building-id="tavern"]').click();
+    await page.waitForSelector(".facility-usage-viewport", { timeout: 5_000 });
+    await settle(page, 800);
+
+    await expect(
+      page.locator(".facility-usage-title"),
+      "Live tavern facility title (迷情乐园) must be visible"
+    ).toHaveText("迷情乐园");
+
+    await expect(
+      page.locator(".facility-hero-list-item"),
+      "Live hero list must contain heroes"
+    ).toHaveCount(2);
+
+    await expect(
+      page.locator(".facility-activity-card"),
+      "Live activity grid must contain activities"
+    ).toHaveCount(6);
+
+    await expectFidelity(
+      page.locator(".facility-usage-viewport"),
+      "Live facility usage screen"
+    );
+    await expectFullPageFidelity(page, "Live facility usage screen");
+
+    await expect(
+      page.locator(".facility-usage-viewport"),
+      "Live facility usage screen must use .facility-usage-viewport landscape layout"
+    ).toBeVisible();
+
+    // Return from facility usage — now back in town, continue with expedition flow
+    await page.locator(".facility-usage-close-btn").click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    // Full live flow: provisioning → expedition → result → return
     // Launch expedition from live (button text may differ)
     await page.locator(".estate-embark-button").click();
     await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });

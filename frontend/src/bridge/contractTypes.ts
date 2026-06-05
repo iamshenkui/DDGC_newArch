@@ -60,6 +60,50 @@ export interface BuildingAction {
   isUnsupported: boolean;
 }
 
+export interface FacilityHero {
+  id: string;
+  name: string;
+  classLabel: string;
+  hp: string;
+  maxHp: string;
+  stress: string;
+  maxStress: string;
+  level: number;
+  isWounded: boolean;
+  isAfflicted: boolean;
+  portrait?: string;
+}
+
+export interface FacilityActivity {
+  id: string;
+  name: string;
+  description: string;
+  cost: string;
+  costType: "gold" | "item" | "free";
+  icon?: string;
+  isAvailable: boolean;
+  stressReduction: string;
+  duration: string;
+}
+
+export interface FacilityUsageViewModel {
+  kind: "facility-usage";
+  facilityId: string;
+  facilityLabel: string;
+  activeTab: "upgrade" | "use";
+  heroes: ReadonlyArray<FacilityHero>;
+  selectedHeroId: string | null;
+  activities: ReadonlyArray<FacilityActivity>;
+  selectedActivityId: string | null;
+  currencies: {
+    bust: number;
+    portrait: number;
+    deed: number;
+    crest: number;
+    gold: number;
+  };
+}
+
 export interface BuildingDetailViewModel {
   kind: "building-detail";
   buildingId: string;
@@ -270,6 +314,7 @@ export type DdgcViewModel =
   | TownViewModel
   | HeroDetailViewModel
   | BuildingDetailViewModel
+  | FacilityUsageViewModel
   | ProvisioningViewModel
   | ExpeditionSetupViewModel
   | ExpeditionResultViewModel
@@ -295,4 +340,8 @@ export type DdgcFrontendIntent =
   | { type: "launch-expedition" }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }
-  | { type: "resume-from-return" };
+  | { type: "resume-from-return" }
+  | { type: "select-facility-hero"; heroId: string }
+  | { type: "select-facility-activity"; activityId: string }
+  | { type: "confirm-facility-usage" }
+  | { type: "switch-facility-tab"; tab: "upgrade" | "use" };
