@@ -26,9 +26,10 @@ test("UIR-008: end-to-end provisioning + launch flow without errors", async ({ p
   await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
 
   // Verify provisioning surface basics
-  await expect(page.locator(".party-formation")).toBeVisible();
-  await expect(page.locator(".launch-primary")).toBeVisible();
-  await expect(page.getByText("Return to Town")).toBeVisible();
+  await expect(page.locator('[data-testid="provisioning-left-panel"]')).toBeVisible();
+  await expect(page.locator('[data-testid="provisioning-right-panel"]')).toBeVisible();
+  await expect(page.locator('[data-testid="footer-btn-launch"]')).toBeVisible();
+  await expect(page.locator('[data-testid="footer-btn-return"]')).toBeVisible();
 
   // Add a hero from the roster (if any unselected)
   const rosterHeroes = await page.locator(".provisioning-roster-hero:not([disabled])").count();
@@ -37,13 +38,13 @@ test("UIR-008: end-to-end provisioning + launch flow without errors", async ({ p
   }
 
   // Confirm & Launch should reach the expedition screen
-  await page.getByRole("button", { name: /Confirm & Launch Expedition/ }).click();
+  await page.locator('[data-testid="footer-btn-launch"]').click();
   await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
   // Confirm we have an expedition title
   await expect(page.locator(".expedition-title")).toBeVisible();
 
   // Try to use Return to Town from expedition surface
-  await page.getByRole("button", { name: /Return to Town/ }).click();
+  await page.locator('[data-testid="expedition-btn-return"]').click();
   await page.waitForSelector(".town-viewport", { timeout: 5_000 });
 
   expect(consoleErrors, "no console.error during flow").toEqual([]);

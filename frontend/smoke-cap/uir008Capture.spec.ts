@@ -20,7 +20,7 @@ test("UIR-008: capture provisioning and expedition launch screens", async ({ pag
     fullPage: false
   });
 
-  await page.getByRole("button", { name: "Confirm & Launch Expedition" }).click();
+  await page.locator('[data-testid="footer-btn-launch"]').click();
   await page.waitForTimeout(400);
 
   await page.screenshot({

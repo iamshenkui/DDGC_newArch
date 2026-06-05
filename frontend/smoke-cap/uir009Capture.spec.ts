@@ -23,11 +23,11 @@ test("UIR-009: capture result and return screens", async ({ page }) => {
   await page.waitForTimeout(400);
 
   // Launch expedition
-  await page.getByRole("button", { name: "Confirm & Launch Expedition" }).click();
+  await page.locator('[data-testid="footer-btn-launch"]').click();
   await page.waitForTimeout(400);
 
   // Launch to result
-  await page.getByRole("button", { name: "Launch Expedition" }).click();
+  await page.locator('[data-testid="expedition-btn-launch"]').click();
   await page.waitForTimeout(600);
 
   // Capture result screen (success outcome)

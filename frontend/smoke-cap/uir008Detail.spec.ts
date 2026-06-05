@@ -40,7 +40,7 @@ test("UIR-008: detailed capture for visual review", async ({ page }) => {
   }
 
   // Confirm and Launch
-  await page.getByRole("button", { name: /Confirm & Launch Expedition/ }).click();
+  await page.locator('[data-testid="footer-btn-launch"]').click();
   await page.waitForTimeout(800);
 
   await page.locator(".expedition-viewport").screenshot({

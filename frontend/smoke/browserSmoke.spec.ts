@@ -346,12 +346,32 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page);
 
     await expect(
-      page.getByText("Provisioning"),
-      "Provisioning eyebrow must be visible"
+      page.getByText("远征准备"),
+      "Provisioning eyebrow (远征准备) must be visible"
     ).toBeVisible();
     await expect(
-      page.getByText("Provision Expedition"),
-      "Provisioning title must be visible"
+      page.getByText("战前补给"),
+      "Provisioning title (战前补给) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-testid="provisioning-left-panel"]'),
+      "Provisioning left panel (hero focus) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-testid="provisioning-right-panel"]'),
+      "Provisioning right panel (supply grid) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-testid="supply-grid"]'),
+      "Supply grid must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-testid="btn-return-town"]'),
+      "Return to Town button (返回城镇) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-testid="btn-start-adventure"]'),
+      "Start Adventure button (开始冒险) must be visible"
     ).toBeVisible();
     await expectFidelity(
       page.locator(".expedition-viewport"),
@@ -366,9 +386,7 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toBeVisible();
 
     // 5c. Provisioning → Expedition
-    await page
-      .getByRole("button", { name: "Confirm & Launch Expedition" })
-      .click();
+    await page.locator('[data-testid="footer-btn-launch"]').click();
     await settle(page);
 
     await expect(
@@ -605,7 +623,7 @@ test.describe("browser smoke: fidelity gates", () => {
     await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
     await settle(page);
 
-    await page.getByRole("button", { name: "Confirm & Launch Expedition" }).click();
+    await page.locator('[data-testid="footer-btn-launch"]').click();
     await settle(page);
 
     await expect(
