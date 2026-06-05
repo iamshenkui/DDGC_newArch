@@ -7,6 +7,7 @@ export type FlowState =
   | "provisioning"
   | "expedition"
   | "combat"
+  | "dungeon-items"
   | "result"
   | "return";
 
@@ -253,6 +254,37 @@ export interface ReturnViewModel {
   isTownResumeAvailable: boolean;
 }
 
+export interface DungeonItemEntry {
+  id: string;
+  name: string;
+  description: string;
+  quantity: number;
+  rarity: "common" | "uncommon" | "rare" | "epic";
+  icon?: string;
+}
+
+export interface DungeonItemsHeroSummary {
+  heroId: string;
+  heroName: string;
+  classLabel: string;
+  hp: string;
+  maxHp: string;
+  stress: string;
+  maxStress: string;
+}
+
+export interface DungeonItemsViewModel {
+  kind: "dungeon-items";
+  title: string;
+  expeditionName: string;
+  sceneLabel: string;
+  items: ReadonlyArray<DungeonItemEntry>;
+  party: ReadonlyArray<DungeonItemsHeroSummary>;
+  inventoryCapacity: number;
+  inventoryUsed: number;
+  isContinueAvailable: boolean;
+}
+
 export interface UnsupportedViewModel {
   kind: "unsupported";
   title: string;
@@ -272,6 +304,7 @@ export type DdgcViewModel =
   | BuildingDetailViewModel
   | ProvisioningViewModel
   | ExpeditionSetupViewModel
+  | DungeonItemsViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
   | UnsupportedViewModel
@@ -293,6 +326,8 @@ export type DdgcFrontendIntent =
   | { type: "toggle-hero-selection"; heroId: string }
   | { type: "confirm-provisioning" }
   | { type: "launch-expedition" }
+  | { type: "open-dungeon-items" }
+  | { type: "continue-from-dungeon-items" }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }
   | { type: "resume-from-return" };

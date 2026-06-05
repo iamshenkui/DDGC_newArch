@@ -17,6 +17,7 @@ import {
   startupSnapshot,
   provisioningSnapshot,
   expeditionSnapshot,
+  dungeonItemsSnapshot,
   resultSnapshot,
   failureResultSnapshot,
   partialResultSnapshot,
@@ -79,6 +80,11 @@ describe("FlowController", () => {
       expect(screen).toBe("expedition");
     });
 
+    it("returns dungeon-items screen for dungeon items view model", () => {
+      const screen = resolveScreen(dungeonItemsSnapshot);
+      expect(screen).toBe("dungeon-items");
+    });
+
     it("returns result screen for result view model", () => {
       const screen = resolveScreen(resultSnapshot);
       expect(screen).toBe("result");
@@ -102,7 +108,7 @@ describe("FlowController", () => {
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "dungeon-items", "result", "return", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -113,6 +119,7 @@ describe("ScreenKey exhaustiveness", () => {
       "building-detail": replayBuildingDetailSnapshot,
       provisioning: provisioningSnapshot,
       expedition: expeditionSnapshot,
+      "dungeon-items": dungeonItemsSnapshot,
       result: resultSnapshot,
       return: returnSnapshot,
       unsupported: unsupportedSnapshot,
@@ -256,6 +263,48 @@ describe("canTransition - result and return meta-loop continuation", () => {
     });
   });
 
+  describe("dungeon-items transitions", () => {
+    it("allows open-dungeon-items from expedition", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "open-dungeon-items" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects open-dungeon-items when not in expedition", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "open-dungeon-items" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in expedition");
+    });
+
+    it("allows continue-from-dungeon-items when continue is available", () => {
+      const validation = canTransition(dungeonItemsSnapshot, { type: "continue-from-dungeon-items" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects continue-from-dungeon-items when not in dungeon-items", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "continue-from-dungeon-items" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in dungeon-items");
+    });
+
+    it("rejects continue-from-dungeon-items when continue is not available", () => {
+      const unavailableSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonItemsSnapshot,
+        viewModel: {
+          ...dungeonItemsSnapshot.viewModel,
+          isContinueAvailable: false
+        }
+      };
+      const validation = canTransition(unavailableSnapshot, { type: "continue-from-dungeon-items" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not available");
+    });
+
+    it("allows return-to-town from dungeon-items", () => {
+      const validation = canTransition(dungeonItemsSnapshot, { type: "return-to-town" });
+      expect(validation.allowed).toBe(true);
+    });
+  });
+
   describe("meta-loop continuation validation", () => {
     it("proves meta-loop can continue from result without dead-end states", () => {
       // From result screen, continue-from-result should be allowed
@@ -278,9 +327,10 @@ describe("canTransition - result and return meta-loop continuation", () => {
     });
 
     it("proves full expedition cycle can loop back to provisioning", () => {
-      // Start from provisioning, go through expedition, come back via result
+      // Start from provisioning, go through expedition → dungeon-items → result, come back via return
       expect(canTransition(provisioningSnapshot, { type: "confirm-provisioning" }).allowed).toBe(true);
       expect(canTransition(expeditionSnapshot, { type: "launch-expedition" }).allowed).toBe(true);
+      expect(canTransition(dungeonItemsSnapshot, { type: "continue-from-dungeon-items" }).allowed).toBe(true);
       expect(canTransition(resultSnapshot, { type: "continue-from-result" }).allowed).toBe(true);
 
       // And we should be able to start provisioning again
@@ -406,7 +456,7 @@ describe("canTransition - result and return meta-loop continuation", () => {
     });
 
     it("expedition launch sequence is accessible after all terminal flow states", () => {
-      // After any terminal flow state, town → provisioning → expedition → launch should work
+      // After any terminal flow state, town → provisioning → expedition → dungeon-items → result should work
       const terminalFlows = [failureResultSnapshot, partialResultSnapshot, returnSnapshot];
       for (const snap of terminalFlows) {
         // From terminal state, can reach town via return-to-town
@@ -418,6 +468,8 @@ describe("canTransition - result and return meta-loop continuation", () => {
         expect(canTransition(provisioningSnapshot, { type: "confirm-provisioning" }).allowed).toBe(true);
         // Expedition can launch
         expect(canTransition(expeditionSnapshot, { type: "launch-expedition" }).allowed).toBe(true);
+        // Dungeon items can continue to result
+        expect(canTransition(dungeonItemsSnapshot, { type: "continue-from-dungeon-items" }).allowed).toBe(true);
       }
     });
 

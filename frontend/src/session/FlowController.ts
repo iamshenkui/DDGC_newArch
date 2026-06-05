@@ -10,7 +10,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "dungeon-items" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -39,6 +39,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "expedition") {
     return "expedition";
+  }
+
+  if (snapshot.viewModel.kind === "dungeon-items") {
+    return "dungeon-items";
   }
 
   if (snapshot.viewModel.kind === "result") {
@@ -125,6 +129,24 @@ export function canTransition(
       }
       if (!snapshot.viewModel.isLaunchable) {
         return { allowed: false, reason: "expedition is not launchable" };
+      }
+      return { allowed: true };
+
+    case "open-dungeon-items":
+      if (screen !== "expedition") {
+        return { allowed: false, reason: "open-dungeon-items is only valid in expedition" };
+      }
+      return { allowed: true };
+
+    case "continue-from-dungeon-items":
+      if (screen !== "dungeon-items") {
+        return { allowed: false, reason: "continue-from-dungeon-items is only valid in dungeon-items" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-items") {
+        return { allowed: false, reason: "viewModel is not a dungeon-items view model" };
+      }
+      if (!snapshot.viewModel.isContinueAvailable) {
+        return { allowed: false, reason: "continue is not available from dungeon items" };
       }
       return { allowed: true };
 

@@ -516,6 +516,26 @@ export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
   isLaunchable: true
 };
 
+export const replayDungeonItemsViewModel = {
+  kind: "dungeon-items" as const,
+  title: "Dungeon Items",
+  expeditionName: "The Depths Await",
+  sceneLabel: "副本场景-物品",
+  items: [
+    { id: "item-gold-01", name: "Ancient Gold Coin", description: "A weathered coin from a forgotten era.", quantity: 3, rarity: "common" as const },
+    { id: "item-gem-01", name: "Mysterious Gemstone", description: "Glows faintly in the darkness of the dungeon.", quantity: 1, rarity: "rare" as const },
+    { id: "item-relic-01", name: "Forgotten Relic", description: "An artifact of unknown origin and power.", quantity: 1, rarity: "epic" as const },
+    { id: "item-supply-01", name: "Torch", description: "Provides light in the darkest corridors.", quantity: 4, rarity: "common" as const }
+  ],
+  party: [
+    { heroId: "hero-hunter-01", heroName: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", stress: "17", maxStress: "200" },
+    { heroId: "hero-white-01", heroName: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "8", maxStress: "200" }
+  ],
+  inventoryCapacity: 20,
+  inventoryUsed: 9,
+  isContinueAvailable: true
+};
+
 export const replayResultViewModel: ExpeditionResultViewModel = {
   kind: "result",
   title: "Expedition Complete",
@@ -827,6 +847,14 @@ export const expeditionSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing expedition launch screen."
 };
 
+// Dungeon items flow snapshot
+export const dungeonItemsSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "dungeon-items",
+  viewModel: replayDungeonItemsViewModel,
+  debugMessage: "Replay bridge showing dungeon items screen."
+};
+
 // Result snapshots (success, failure, partial)
 export const resultSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -877,7 +905,7 @@ export function validateSnapshotContract(snapshot: DdgcFrontendSnapshot): string
   }
 
   // FlowState must be a valid FlowState
-  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "result", "return"];
+  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "dungeon-items", "result", "return"];
   if (!validFlowStates.includes(snapshot.flowState as FlowState)) {
     errors.push(
       `flowState "${String(snapshot.flowState)}" is not a valid FlowState. ` +
@@ -932,7 +960,8 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     town: ["town", "hero-detail", "building-detail"],
     provisioning: ["provisioning"],
     expedition: ["expedition"],
-    combat: ["expedition"],
+    combat: ["expedition", "dungeon-items"],
+    "dungeon-items": ["dungeon-items"],
     result: ["result"],
     return: ["return"],
   };
@@ -1010,6 +1039,17 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (typeof vm.isLaunchable !== "boolean") e.push("ExpeditionSetupViewModel: isLaunchable is not a boolean");
       if (!vm.supplyLevel || typeof vm.supplyLevel !== "string") e.push("ExpeditionSetupViewModel: supplyLevel is missing");
       if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ExpeditionSetupViewModel: provisionCost is missing");
+      break;
+    }
+    case "dungeon-items": {
+      if (!vm.title || typeof vm.title !== "string") e.push("DungeonItemsViewModel: title is missing");
+      if (!vm.expeditionName || typeof vm.expeditionName !== "string") e.push("DungeonItemsViewModel: expeditionName is missing");
+      if (!vm.sceneLabel || typeof vm.sceneLabel !== "string") e.push("DungeonItemsViewModel: sceneLabel is missing");
+      if (!Array.isArray(vm.items)) e.push("DungeonItemsViewModel: items is not an array");
+      if (!Array.isArray(vm.party)) { e.push("DungeonItemsViewModel: party is not an array"); } else if (vm.party.length === 0) { e.push("DungeonItemsViewModel: party array is empty"); }
+      if (typeof vm.inventoryCapacity !== "number") e.push("DungeonItemsViewModel: inventoryCapacity is not a number");
+      if (typeof vm.inventoryUsed !== "number") e.push("DungeonItemsViewModel: inventoryUsed is not a number");
+      if (typeof vm.isContinueAvailable !== "boolean") e.push("DungeonItemsViewModel: isContinueAvailable is not a boolean");
       break;
     }
     case "result": {

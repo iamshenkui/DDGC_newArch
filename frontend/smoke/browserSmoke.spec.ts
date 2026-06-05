@@ -399,8 +399,40 @@ test.describe("browser smoke: fidelity gates", () => {
       "Expedition launch screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5d. Expedition → Result (success)
+    // 5d. Expedition → Dungeon Items
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await settle(page);
+
+    await expect(
+      page.locator(".eyebrow").filter({ hasText: "副本场景-物品" }),
+      "Dungeon items eyebrow must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Dungeon Items" }),
+      "Dungeon items title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".item-card"),
+      "Item cards must be visible"
+    ).toHaveCount(4);
+    await expect(
+      page.locator(".party-status-card"),
+      "Party status cards must be visible"
+    ).toHaveCount(2);
+    await expectFidelity(
+      page.locator(".expedition-viewport"),
+      "Dungeon items screen"
+    );
+    await expectFullPageFidelity(page, "Dungeon items screen");
+
+    // Landscape viewport check for dungeon items
+    await expect(
+      page.locator(".expedition-viewport"),
+      "Dungeon items screen must use .expedition-viewport landscape layout"
+    ).toBeVisible();
+
+    // 5e. Dungeon Items → Result
+    await page.getByRole("button", { name: "Continue Expedition" }).click();
     await settle(page);
 
     await expect(
@@ -431,7 +463,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Result screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5e. Result → Return
+    // 5f. Result → Return
     await page.getByRole("button", { name: "Proceed to Return" }).click();
     await settle(page);
 
@@ -459,7 +491,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Return screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5f. Return → Town (back to the meta-loop)
+    // 5g. Return → Town (back to the meta-loop)
     await page.getByRole("button", { name: "Resume Town Activities" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
@@ -614,6 +646,14 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await settle(page);
+
+    await expect(
+      page.locator(".eyebrow").filter({ hasText: "副本场景-物品" }),
+      "Live dungeon items eyebrow must be visible"
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "Continue Expedition" }).click();
     await settle(page);
 
     await expect(

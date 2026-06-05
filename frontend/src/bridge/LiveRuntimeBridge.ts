@@ -10,6 +10,7 @@ import type {
   BuildingDetailViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  DungeonItemsViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
 } from "./contractTypes";
@@ -334,6 +335,26 @@ const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
   isContinueAvailable: true
 });
 
+const createLiveDungeonItemsViewModel = (): DungeonItemsViewModel => ({
+  kind: "dungeon-items",
+  title: "Dungeon Items",
+  expeditionName: "The Azure Lantern Expedition",
+  sceneLabel: "副本场景-物品",
+  items: [
+    { id: "item-gold-01", name: "Ancient Gold Coin", description: "A weathered coin from a forgotten era.", quantity: 3, rarity: "common" },
+    { id: "item-gem-01", name: "Mysterious Gemstone", description: "Glows faintly in the darkness of the dungeon.", quantity: 1, rarity: "rare" },
+    { id: "item-relic-01", name: "Forgotten Relic", description: "An artifact of unknown origin and power.", quantity: 1, rarity: "epic" },
+    { id: "item-supply-01", name: "Torch", description: "Provides light in the darkest corridors.", quantity: 4, rarity: "common" }
+  ],
+  party: [
+    { heroId: "hero-hunter-live-01", heroName: "Yuan", classLabel: "Hunter", hp: "40 / 42", maxHp: "42", stress: "5", maxStress: "200" },
+    { heroId: "hero-white-live-01", heroName: "Mei", classLabel: "White", hp: "38 / 41", maxHp: "41", stress: "3", maxStress: "200" }
+  ],
+  inventoryCapacity: 20,
+  inventoryUsed: 9,
+  isContinueAvailable: true
+});
+
 const createLiveReturnViewModel = (): ReturnViewModel => ({
   kind: "return",
   title: "Returning to Town",
@@ -438,6 +459,20 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "launch-expedition":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-items",
+          viewModel: createLiveDungeonItemsViewModel()
+        };
+        break;
+      case "open-dungeon-items":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-items",
+          viewModel: createLiveDungeonItemsViewModel()
+        };
+        break;
+      case "continue-from-dungeon-items":
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",
