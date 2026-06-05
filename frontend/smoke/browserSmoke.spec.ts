@@ -399,8 +399,45 @@ test.describe("browser smoke: fidelity gates", () => {
       "Expedition launch screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5d. Expedition → Result (success)
+    // 5d. Expedition → Combat
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await page.waitForSelector(".combat-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.locator(".eyebrow").filter({ hasText: "Combat" }),
+      "Combat screen eyebrow must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Dungeon Battle" }),
+      "Combat title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".combat-actor-card[data-actor-type='hero']"),
+      "Party hero cards must render"
+    ).toHaveCount(2);
+    await expect(
+      page.locator(".combat-actor-card[data-actor-type='enemy']"),
+      "Enemy cards must render"
+    ).toHaveCount(2);
+    await expect(
+      page.getByRole("button", { name: "Next Turn" }),
+      "Next Turn button must be visible"
+    ).toBeVisible();
+    await expectFidelity(
+      page.locator(".combat-viewport"),
+      "Combat screen"
+    );
+    await expectFullPageFidelity(page, "Combat screen");
+
+    // Landscape viewport check for combat screen
+    await expect(
+      page.locator(".combat-viewport"),
+      "Combat screen must use .combat-viewport landscape layout"
+    ).toBeVisible();
+
+    // 5e. Combat → Result (auto-resolve)
+    await page.getByRole("button", { name: "Auto" }).click();
     await settle(page);
 
     await expect(
@@ -614,6 +651,23 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await page.waitForSelector(".combat-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.locator(".eyebrow").filter({ hasText: "Combat" }),
+      "Live combat screen eyebrow must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".combat-actor-card[data-actor-type='hero']"),
+      "Live party hero cards must render"
+    ).toHaveCount(2);
+    await expect(
+      page.locator(".combat-actor-card[data-actor-type='enemy']"),
+      "Live enemy cards must render"
+    ).toHaveCount(2);
+
+    await page.getByRole("button", { name: "Auto" }).click();
     await settle(page);
 
     await expect(

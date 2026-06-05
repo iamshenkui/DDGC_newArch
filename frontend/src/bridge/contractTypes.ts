@@ -253,6 +253,50 @@ export interface ReturnViewModel {
   isTownResumeAvailable: boolean;
 }
 
+export interface CombatHeroSummary {
+  id: string;
+  name: string;
+  classLabel: string;
+  hp: string;
+  maxHp: string;
+  stress: string;
+  maxStress: string;
+  isAlive: boolean;
+  isActive: boolean;
+}
+
+export interface CombatEnemySummary {
+  id: string;
+  name: string;
+  hp: string;
+  maxHp: string;
+  isAlive: boolean;
+  isActive: boolean;
+}
+
+export interface CombatSkillOption {
+  id: string;
+  name: string;
+  description: string;
+  target: string;
+  isAvailable: boolean;
+}
+
+export interface CombatViewModel {
+  kind: "combat";
+  title: string;
+  encounterName: string;
+  round: number;
+  turn: "party" | "enemy";
+  activeActorName: string;
+  party: ReadonlyArray<CombatHeroSummary>;
+  enemies: ReadonlyArray<CombatEnemySummary>;
+  availableSkills: ReadonlyArray<CombatSkillOption>;
+  combatLog: ReadonlyArray<string>;
+  isFleeAvailable: boolean;
+  isAutoResolveAvailable: boolean;
+}
+
 export interface UnsupportedViewModel {
   kind: "unsupported";
   title: string;
@@ -274,6 +318,7 @@ export type DdgcViewModel =
   | ExpeditionSetupViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
+  | CombatViewModel
   | UnsupportedViewModel
   | FatalErrorViewModel;
 
@@ -295,4 +340,8 @@ export type DdgcFrontendIntent =
   | { type: "launch-expedition" }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }
-  | { type: "resume-from-return" };
+  | { type: "resume-from-return" }
+  | { type: "use-skill"; skillId: string }
+  | { type: "flee-combat" }
+  | { type: "auto-resolve-combat" }
+  | { type: "next-turn" };

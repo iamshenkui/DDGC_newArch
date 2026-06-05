@@ -10,6 +10,7 @@ import type {
   BuildingDetailViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  CombatViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
 } from "./contractTypes";
@@ -301,6 +302,35 @@ const createLiveExpeditionViewModel = (): ExpeditionSetupViewModel => ({
   isLaunchable: true
 });
 
+const createLiveCombatViewModel = (): CombatViewModel => ({
+  kind: "combat",
+  title: "Dungeon Battle",
+  encounterName: "Corridor Ambush",
+  round: 1,
+  turn: "party",
+  activeActorName: "Yuan",
+  party: [
+    { id: "hero-hunter-live-01", name: "Yuan", classLabel: "Hunter", hp: "42 / 42", maxHp: "42", stress: "0", maxStress: "200", isAlive: true, isActive: true },
+    { id: "hero-white-live-01", name: "Mei", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "0", maxStress: "200", isAlive: true, isActive: false }
+  ],
+  enemies: [
+    { id: "enemy-live-01", name: "Bone Soldier", hp: "24 / 30", maxHp: "30", isAlive: true, isActive: false },
+    { id: "enemy-live-02", name: "Shadow Cultist", hp: "18 / 22", maxHp: "22", isAlive: true, isActive: false }
+  ],
+  availableSkills: [
+    { id: "skill-01", name: "Hunting Bow", description: "Ranged attack that marks the target.", target: "Enemy", isAvailable: true },
+    { id: "skill-02", name: "Rapid Shot", description: "Fire two quick shots at the target.", target: "Enemy", isAvailable: true },
+    { id: "skill-03", name: "Marked for Death", description: "Mark a target to take increased damage.", target: "Enemy", isAvailable: true },
+    { id: "skill-04", name: "Batty Advice", description: "Grant a random buff to an ally.", target: "Ally", isAvailable: true }
+  ],
+  combatLog: [
+    "Encounter started: Corridor Ambush",
+    "Round 1 begins."
+  ],
+  isFleeAvailable: true,
+  isAutoResolveAvailable: true
+});
+
 const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
   kind: "result",
   title: "Expedition Complete",
@@ -440,10 +470,62 @@ export class LiveRuntimeBridge implements RuntimeBridge {
       case "launch-expedition":
         this.snapshot = {
           ...this.snapshot,
+          flowState: "combat",
+          viewModel: createLiveCombatViewModel()
+        };
+        break;
+      case "use-skill": {
+        const combatVm = this.snapshot.viewModel as CombatViewModel;
+        const skill = combatVm.availableSkills.find((s) => s.id === intent.skillId);
+        const skillName = skill?.name ?? intent.skillId;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...combatVm,
+            combatLog: [
+              ...combatVm.combatLog,
+              `${combatVm.activeActorName} uses ${skillName}.`
+            ]
+          }
+        };
+        break;
+      }
+      case "flee-combat":
+        this.snapshot = {
+          ...this.snapshot,
           flowState: "result",
           viewModel: createLiveResultViewModel()
         };
         break;
+      case "auto-resolve-combat":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "result",
+          viewModel: createLiveResultViewModel()
+        };
+        break;
+      case "next-turn": {
+        const combatVm = this.snapshot.viewModel as CombatViewModel;
+        const nextTurn = combatVm.turn === "party" ? "enemy" : "party";
+        const nextRound = nextTurn === "party" ? combatVm.round + 1 : combatVm.round;
+        const nextActor = nextTurn === "party"
+          ? combatVm.party.find((h) => h.isAlive)?.name ?? "Party"
+          : combatVm.enemies.find((e) => e.isAlive)?.name ?? "Enemies";
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...combatVm,
+            round: nextRound,
+            turn: nextTurn,
+            activeActorName: nextActor,
+            combatLog: [
+              ...combatVm.combatLog,
+              `--- ${nextTurn === "party" ? "Party" : "Enemy"} turn ---`
+            ]
+          }
+        };
+        break;
+      }
       case "return-to-town":
         this.snapshot = createLiveTownSnapshot();
         break;

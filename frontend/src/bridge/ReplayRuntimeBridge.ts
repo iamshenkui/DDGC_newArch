@@ -5,6 +5,7 @@ import {
   replayBuildingDetailViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
+  replayCombatViewModel,
   replayResultViewModel,
   replayReturnViewModel
 } from "../validation/replayFixtures";
@@ -15,6 +16,7 @@ import type {
   TownViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  CombatViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel
 } from "./contractTypes";
@@ -117,10 +119,62 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       case "launch-expedition":
         this.snapshot = {
           ...this.snapshot,
+          flowState: "combat",
+          viewModel: replayCombatViewModel as CombatViewModel
+        };
+        break;
+      case "use-skill": {
+        const combatVm = this.snapshot.viewModel as CombatViewModel;
+        const skill = combatVm.availableSkills.find((s) => s.id === intent.skillId);
+        const skillName = skill?.name ?? intent.skillId;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...combatVm,
+            combatLog: [
+              ...combatVm.combatLog,
+              `${combatVm.activeActorName} uses ${skillName}.`
+            ]
+          }
+        };
+        break;
+      }
+      case "flee-combat":
+        this.snapshot = {
+          ...this.snapshot,
           flowState: "result",
           viewModel: replayResultViewModel as ExpeditionResultViewModel
         };
         break;
+      case "auto-resolve-combat":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "result",
+          viewModel: replayResultViewModel as ExpeditionResultViewModel
+        };
+        break;
+      case "next-turn": {
+        const combatVm = this.snapshot.viewModel as CombatViewModel;
+        const nextTurn = combatVm.turn === "party" ? "enemy" : "party";
+        const nextRound = nextTurn === "party" ? combatVm.round + 1 : combatVm.round;
+        const nextActor = nextTurn === "party"
+          ? combatVm.party.find((h) => h.isAlive)?.name ?? "Party"
+          : combatVm.enemies.find((e) => e.isAlive)?.name ?? "Enemies";
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...combatVm,
+            round: nextRound,
+            turn: nextTurn,
+            activeActorName: nextActor,
+            combatLog: [
+              ...combatVm.combatLog,
+              `--- ${nextTurn === "party" ? "Party" : "Enemy"} turn ---`
+            ]
+          }
+        };
+        break;
+      }
       case "return-to-town":
         this.snapshot = replayReadySnapshot;
         break;

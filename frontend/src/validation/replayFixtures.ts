@@ -1,6 +1,7 @@
 import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
+  CombatViewModel,
   DdgcFrontendSnapshot,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
@@ -516,6 +517,35 @@ export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
   isLaunchable: true
 };
 
+export const replayCombatViewModel: CombatViewModel = {
+  kind: "combat",
+  title: "Dungeon Battle",
+  encounterName: "Corridor Ambush",
+  round: 1,
+  turn: "party",
+  activeActorName: "Shen",
+  party: [
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", stress: "17", maxStress: "200", isAlive: true, isActive: true },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "8", maxStress: "200", isAlive: true, isActive: false }
+  ],
+  enemies: [
+    { id: "enemy-01", name: "Bone Soldier", hp: "24 / 30", maxHp: "30", isAlive: true, isActive: false },
+    { id: "enemy-02", name: "Shadow Cultist", hp: "18 / 22", maxHp: "22", isAlive: true, isActive: false }
+  ],
+  availableSkills: [
+    { id: "skill-01", name: "Hunting Bow", description: "Ranged attack that marks the target.", target: "Enemy", isAvailable: true },
+    { id: "skill-02", name: "Rapid Shot", description: "Fire two quick shots at the target.", target: "Enemy", isAvailable: true },
+    { id: "skill-03", name: "Marked for Death", description: "Mark a target to take increased damage.", target: "Enemy", isAvailable: true },
+    { id: "skill-04", name: "Batty Advice", description: "Grant a random buff to an ally.", target: "Ally", isAvailable: true }
+  ],
+  combatLog: [
+    "Encounter started: Corridor Ambush",
+    "Round 1 begins."
+  ],
+  isFleeAvailable: true,
+  isAutoResolveAvailable: true
+};
+
 export const replayResultViewModel: ExpeditionResultViewModel = {
   kind: "result",
   title: "Expedition Complete",
@@ -827,6 +857,14 @@ export const expeditionSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing expedition launch screen."
 };
 
+// Combat flow snapshot
+export const combatSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "combat",
+  viewModel: replayCombatViewModel,
+  debugMessage: "Replay bridge showing combat screen."
+};
+
 // Result snapshots (success, failure, partial)
 export const resultSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -932,7 +970,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     town: ["town", "hero-detail", "building-detail"],
     provisioning: ["provisioning"],
     expedition: ["expedition"],
-    combat: ["expedition"],
+    combat: ["combat"],
     result: ["result"],
     return: ["return"],
   };
@@ -1010,6 +1048,20 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (typeof vm.isLaunchable !== "boolean") e.push("ExpeditionSetupViewModel: isLaunchable is not a boolean");
       if (!vm.supplyLevel || typeof vm.supplyLevel !== "string") e.push("ExpeditionSetupViewModel: supplyLevel is missing");
       if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ExpeditionSetupViewModel: provisionCost is missing");
+      break;
+    }
+    case "combat": {
+      if (!vm.title || typeof vm.title !== "string") e.push("CombatViewModel: title is missing");
+      if (!vm.encounterName || typeof vm.encounterName !== "string") e.push("CombatViewModel: encounterName is missing");
+      if (typeof vm.round !== "number") e.push("CombatViewModel: round is not a number");
+      if (vm.turn !== "party" && vm.turn !== "enemy") e.push(`CombatViewModel: turn is "${String(vm.turn)}", expected "party" or "enemy"`);
+      if (!vm.activeActorName || typeof vm.activeActorName !== "string") e.push("CombatViewModel: activeActorName is missing");
+      if (!Array.isArray(vm.party)) { e.push("CombatViewModel: party is not an array"); } else if (vm.party.length === 0) { e.push("CombatViewModel: party array is empty"); }
+      if (!Array.isArray(vm.enemies)) { e.push("CombatViewModel: enemies is not an array"); } else if (vm.enemies.length === 0) { e.push("CombatViewModel: enemies array is empty"); }
+      if (!Array.isArray(vm.availableSkills)) e.push("CombatViewModel: availableSkills is not an array");
+      if (!Array.isArray(vm.combatLog)) e.push("CombatViewModel: combatLog is not an array");
+      if (typeof vm.isFleeAvailable !== "boolean") e.push("CombatViewModel: isFleeAvailable is not a boolean");
+      if (typeof vm.isAutoResolveAvailable !== "boolean") e.push("CombatViewModel: isAutoResolveAvailable is not a boolean");
       break;
     }
     case "result": {
