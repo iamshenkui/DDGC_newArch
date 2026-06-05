@@ -145,6 +145,7 @@ export interface HeroDetailViewModel {
   isAfflicted: boolean;
   heroDescription: string;
   talent: string;
+  roster: ReadonlyArray<TownHeroSummary>;
 }
 
 export interface TownViewModel {

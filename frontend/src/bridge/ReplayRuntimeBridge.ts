@@ -56,7 +56,8 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
             negativeQuirks: hero.negativeQuirks,
             diseases: hero.diseases,
             isWounded: hero.isWounded,
-            isAfflicted: hero.isAfflicted
+            isAfflicted: hero.isAfflicted,
+            roster: townVm.heroes
           }
         };
         break;

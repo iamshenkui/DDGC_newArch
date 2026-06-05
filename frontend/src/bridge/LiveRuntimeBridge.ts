@@ -122,7 +122,7 @@ const createLiveTownSnapshot = (): DdgcFrontendSnapshot => ({
   debugMessage: "Live runtime bridge booted: fresh campaign initialized through DdgcHost::boot_live()."
 });
 
-const createLiveHeroDetailViewModel = (hero: TownHeroSummary): HeroDetailViewModel => ({
+const createLiveHeroDetailViewModel = (hero: TownHeroSummary, allHeroes: ReadonlyArray<TownHeroSummary>): HeroDetailViewModel => ({
   kind: "hero-detail",
   heroId: hero.id,
   name: hero.name,
@@ -171,7 +171,8 @@ const createLiveHeroDetailViewModel = (hero: TownHeroSummary): HeroDetailViewMod
   isWounded: hero.isWounded,
   isAfflicted: hero.isAfflicted,
   heroDescription: "A brave hero ready for adventure.",
-  talent: "Versatile"
+  talent: "Versatile",
+  roster: allHeroes
 });
 
 const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): BuildingDetailViewModel => {
@@ -385,7 +386,7 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         this.snapshot = {
           ...this.snapshot,
           flowState: "town",
-          viewModel: createLiveHeroDetailViewModel(hero)
+          viewModel: createLiveHeroDetailViewModel(hero, townVm.heroes)
         };
         break;
       }

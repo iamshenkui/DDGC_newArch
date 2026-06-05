@@ -122,6 +122,9 @@ export function DdgcApp() {
             onReturn={() => {
               void dispatchIntent(bridge, { type: "return-to-town" });
             }}
+            onSelectHero={(heroId) => {
+              void dispatchIntent(bridge, { type: "open-hero", heroId });
+            }}
           />
         </Match>
         <Match
