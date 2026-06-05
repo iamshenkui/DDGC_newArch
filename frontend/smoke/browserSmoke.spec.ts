@@ -493,6 +493,105 @@ test.describe("browser smoke: fidelity gates", () => {
     expectNoErrors(pageErrors, consoleErrors, "Phase 5 (meta-loop)");
   });
 
+  // ── Tavern building screen test ─────────────────────────────
+  test("tavern building screen renders facility slots and actions", async ({ page }) => {
+    const { consoleErrors, pageErrors } = setupErrorCollectors(page);
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+
+    // Boot replay
+    await page.getByRole("button", { name: "Boot Replay" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 8_000 });
+    await settle(page);
+
+    // Open tavern building
+    await page.locator('[data-building-id="tavern"]').click();
+    await page.waitForSelector(".tavern-building-screen", { timeout: 5_000 });
+    await settle(page, 800);
+
+    // Verify tavern-specific content
+    await expect(
+      page.locator(".building-detail-name"),
+      "Tavern building name must be visible (DDGC display name 迷情乐园)"
+    ).toHaveText("迷情乐园");
+
+    // Left panel: hostess + talk/leave buttons
+    await expect(
+      page.locator(".tavern-hostess-portrait"),
+      "Tavern hostess portrait must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "对话" }),
+      "Talk button must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "离开" }),
+      "Leave button must be visible"
+    ).toBeVisible();
+
+    // Right panel: "使用设施" tab active
+    await expect(
+      page.locator(".tavern-tab--active").filter({ hasText: "使用设施" }),
+      "Use Facility tab must be active"
+    ).toBeVisible();
+
+    // Three facility cards
+    await expect(
+      page.locator(".tavern-facility-card"),
+      "Three facility cards must render"
+    ).toHaveCount(3);
+
+    // Facility names
+    await expect(
+      page.getByText("迷幻酒吧"),
+      "Bar facility name must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("猩红轮盘"),
+      "Gambling facility name must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("秘密舞池"),
+      "Dance floor facility name must be visible"
+    ).toBeVisible();
+
+    // Hero slots (4 per facility = 12 total)
+    await expect(
+      page.locator(".tavern-slot"),
+      "Tavern slots must render (4 per facility)"
+    ).toHaveCount(12);
+
+    // At least one occupied slot (first slot of first facility)
+    await expect(
+      page.locator(".tavern-slot--occupied").first(),
+      "At least one slot must show as occupied"
+    ).toBeVisible();
+
+    // Cost labels on facility footers
+    await expect(
+      page.locator(".tavern-facility-footer").first(),
+      "Facility footer with cost must be visible"
+    ).toBeVisible();
+
+    // Fidelity — check while still on tavern screen
+    await expectFidelity(page.locator(".tavern-building-screen"), "Tavern building screen");
+    await expectFullPageFidelity(page, "Tavern building screen");
+
+    // Return to town
+    await page.getByRole("button", { name: "Return to Town" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    // Landscape viewport
+    await expect(
+      page.locator(".town-viewport"),
+      "Town must be visible after returning from tavern"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Tavern building screen");
+  });
+
   // ── Live boot test ─────────────────────────────────────────
   test("live boot exercises live bridge path", async ({ page }) => {
     const { consoleErrors, pageErrors } = setupErrorCollectors(page);

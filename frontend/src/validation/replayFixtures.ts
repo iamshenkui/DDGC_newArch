@@ -344,23 +344,39 @@ export const replayTavernBuildingDetailViewModel: BuildingDetailViewModel = {
   buildingId: "tavern",
   label: "迷情乐园",
   status: "ready",
-  description: "通过酒馆活动缓解压力并恢复状态，在轻松的氛围中重整队伍。",
+  description: "饮酒消遣以安抚疲惫紧张的身心。通过酒馆活动缓解压力并恢复状态，在轻松的氛围中重整队伍。",
   actions: [
     {
-      id: "drink",
+      id: "bar-drink",
       label: "畅饮",
-      description: "在酒馆畅饮一番，大幅降低压力但可能带来随机效果。",
-      cost: "150 Gold",
+      description: "在迷幻酒吧畅饮一番，大幅降低压力但可能带来随机效果。",
+      cost: "1000 Gold",
       isAvailable: true,
       isUnsupported: false
     },
     {
-      id: "gamble",
-      label: "博弈",
-      description: "参与酒馆博弈活动，有机会获得额外金币。",
-      cost: "50 Gold",
+      id: "gambling-roulette",
+      label: "轮盘博弈",
+      description: "参与猩红轮盘博弈活动，在酒局中缓解焦虑。",
+      cost: "1250 Gold",
       isAvailable: true,
       isUnsupported: false
+    },
+    {
+      id: "brothel-dance",
+      label: "舞池放松",
+      description: "在秘密舞池中寻找片刻宁静，缓解精神压力。",
+      cost: "1500 Gold",
+      isAvailable: false,
+      isUnsupported: false
+    },
+    {
+      id: "bar-upgrade",
+      label: "升级酒吧",
+      description: "提升迷幻酒吧的设施等级，增加槽位并降低费用。",
+      cost: "200 Gold",
+      isAvailable: true,
+      isUnsupported: true
     }
   ]
 };
