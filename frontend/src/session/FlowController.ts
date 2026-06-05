@@ -10,7 +10,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "dungeon-hint" | "expedition" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -35,6 +35,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "provisioning") {
     return "provisioning";
+  }
+
+  if (snapshot.viewModel.kind === "dungeon-hint") {
+    return "dungeon-hint";
   }
 
   if (snapshot.viewModel.kind === "expedition") {
@@ -113,6 +117,18 @@ export function canTransition(
       }
       if (!snapshot.viewModel.isReadyToLaunch) {
         return { allowed: false, reason: "not ready to launch expedition" };
+      }
+      return { allowed: true };
+
+    case "accept-dungeon-hint":
+      if (screen !== "dungeon-hint") {
+        return { allowed: false, reason: "accept-dungeon-hint is only valid in dungeon-hint" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-hint") {
+        return { allowed: false, reason: "viewModel is not a dungeon-hint view model" };
+      }
+      if (!snapshot.viewModel.isEnterable) {
+        return { allowed: false, reason: "dungeon is not enterable" };
       }
       return { allowed: true };
 

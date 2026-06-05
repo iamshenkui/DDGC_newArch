@@ -5,6 +5,7 @@ export type FlowState =
   | "load"
   | "town"
   | "provisioning"
+  | "dungeon-hint"
   | "expedition"
   | "combat"
   | "result"
@@ -200,6 +201,24 @@ export interface ExpeditionHeroSummary {
   maxStress: string;
 }
 
+export interface DungeonHintViewModel {
+  kind: "dungeon-hint";
+  title: string;
+  expeditionName: string;
+  dungeonDescription: string;
+  recommendedLevel: string;
+  partySize: number;
+  difficulty: string;
+  estimatedDuration: string;
+  tips: ReadonlyArray<string>;
+  warnings: ReadonlyArray<string>;
+  expectedEnemies: ReadonlyArray<string>;
+  rewardPreview: ReadonlyArray<string>;
+  supplyLevel: string;
+  provisionCost: string;
+  isEnterable: boolean;
+}
+
 export interface ExpeditionSetupViewModel {
   kind: "expedition";
   title: string;
@@ -271,6 +290,7 @@ export type DdgcViewModel =
   | HeroDetailViewModel
   | BuildingDetailViewModel
   | ProvisioningViewModel
+  | DungeonHintViewModel
   | ExpeditionSetupViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
@@ -292,6 +312,7 @@ export type DdgcFrontendIntent =
   | { type: "start-provisioning" }
   | { type: "toggle-hero-selection"; heroId: string }
   | { type: "confirm-provisioning" }
+  | { type: "accept-dungeon-hint" }
   | { type: "launch-expedition" }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }

@@ -8,6 +8,7 @@ import type {
 } from "../bridge/contractTypes";
 import {
   provisioningSnapshot,
+  dungeonHintSnapshot,
   expeditionSnapshot,
   resultSnapshot,
   returnSnapshot,
@@ -105,6 +106,41 @@ describe("Provisioning → Expedition → Launch flow validation", () => {
     }
   });
 
+  // ── Dungeon hint flow ─────────────────────────────────────────────
+
+  it("allows accept-dungeon-hint when dungeon-hint is enterable", () => {
+    const validation = canTransition(dungeonHintSnapshot, { type: "accept-dungeon-hint" });
+    expect(validation.allowed).toBe(true);
+  });
+
+  it("rejects accept-dungeon-hint when dungeon-hint vm indicates not enterable", () => {
+    const notEnterableSnapshot: DdgcFrontendSnapshot = {
+      ...dungeonHintSnapshot,
+      viewModel: {
+        ...dungeonHintSnapshot.viewModel,
+        isEnterable: false,
+      } as import("../bridge/contractTypes").DungeonHintViewModel,
+    };
+    const validation = canTransition(notEnterableSnapshot, { type: "accept-dungeon-hint" });
+    expect(validation.allowed).toBe(false);
+    expect(validation.reason).toContain("not enterable");
+  });
+
+  it("rejects accept-dungeon-hint from non-dungeon-hint screens", () => {
+    const notDungeonHint: DdgcFrontendSnapshot[] = [
+      replayReadySnapshot,
+      provisioningSnapshot,
+      expeditionSnapshot,
+      resultSnapshot,
+      returnSnapshot,
+    ];
+
+    for (const snap of notDungeonHint) {
+      const validation = canTransition(snap, { type: "accept-dungeon-hint" });
+      expect(validation.allowed).toBe(false);
+    }
+  });
+
   // ── Expedition launch flow ────────────────────────────────────────
 
   it("allows launch-expedition when expedition is launchable", () => {
@@ -146,6 +182,11 @@ describe("Provisioning → Expedition → Launch flow validation", () => {
     expect(validation.allowed).toBe(true);
   });
 
+  it("allows return-to-town from dungeon-hint screen", () => {
+    const validation = canTransition(dungeonHintSnapshot, { type: "return-to-town" });
+    expect(validation.allowed).toBe(true);
+  });
+
   it("allows return-to-town from expedition screen", () => {
     const validation = canTransition(expeditionSnapshot, { type: "return-to-town" });
     expect(validation.allowed).toBe(true);
@@ -161,6 +202,11 @@ describe("Provisioning → Expedition → Launch flow validation", () => {
   it("resolves provisioning screen for provisioning view model", () => {
     const screen = resolveScreen(provisioningSnapshot);
     expect(screen).toBe("provisioning");
+  });
+
+  it("resolves dungeon-hint screen for dungeon-hint view model", () => {
+    const screen = resolveScreen(dungeonHintSnapshot);
+    expect(screen).toBe("dungeon-hint");
   });
 
   it("resolves expedition screen for expedition view model", () => {
@@ -180,26 +226,29 @@ describe("Provisioning → Expedition → Launch flow validation", () => {
     expect(resolveScreen(provisioningSnapshot)).toBe("provisioning");
   });
 
-  it("proves expedition flow from provisioning screen", () => {
+  it("proves dungeon-hint flow from provisioning screen", () => {
     // Start from provisioning
     expect(resolveScreen(provisioningSnapshot)).toBe("provisioning");
 
-    // Verify confirm-provisioning leads to expedition
+    // Verify confirm-provisioning leads to dungeon-hint
     const confirmValidation = canTransition(provisioningSnapshot, { type: "confirm-provisioning" });
     expect(confirmValidation.allowed).toBe(true);
 
-    // Verify expedition screen would resolve
-    expect(resolveScreen(expeditionSnapshot)).toBe("expedition");
+    // Verify dungeon-hint screen would resolve
+    expect(resolveScreen(dungeonHintSnapshot)).toBe("dungeon-hint");
   });
 
-  it("proves complete town → provision → expedition → launch path", () => {
+  it("proves complete town → provision → dungeon-hint → expedition → launch path", () => {
     // Step 1: Town can start provisioning
     expect(canTransition(replayReadySnapshot, { type: "start-provisioning" }).allowed).toBe(true);
 
-    // Step 2: Provisioning can confirm
+    // Step 2: Provisioning can confirm → dungeon-hint
     expect(canTransition(provisioningSnapshot, { type: "confirm-provisioning" }).allowed).toBe(true);
 
-    // Step 3: Expedition can launch
+    // Step 3: Dungeon-hint can accept → expedition
+    expect(canTransition(dungeonHintSnapshot, { type: "accept-dungeon-hint" }).allowed).toBe(true);
+
+    // Step 4: Expedition can launch
     expect(canTransition(expeditionSnapshot, { type: "launch-expedition" }).allowed).toBe(true);
   });
 

@@ -4,6 +4,7 @@ import {
   replayHeroDetailViewModel,
   replayBuildingDetailViewModel,
   replayProvisioningViewModel,
+  replayDungeonHintViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
   replayReturnViewModel
@@ -108,6 +109,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "confirm-provisioning":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-hint",
+          viewModel: replayDungeonHintViewModel
+        };
+        break;
+      case "accept-dungeon-hint":
         this.snapshot = {
           ...this.snapshot,
           flowState: "expedition",

@@ -187,12 +187,26 @@ describe("provisioning and expedition launch flow", () => {
     expect(hunter?.isSelected).toBe(false);
   });
 
-  it("replay confirm-provisioning transitions to expedition state", async () => {
+  it("replay confirm-provisioning transitions to dungeon-hint state", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
 
     const snapshot = await bridge.dispatchIntent({ type: "confirm-provisioning" });
+
+    expect(snapshot.flowState).toBe("dungeon-hint");
+    expect(snapshot.viewModel.kind).toBe("dungeon-hint");
+    const hintVm = snapshot.viewModel as import("../bridge/contractTypes").DungeonHintViewModel;
+    expect(hintVm.isEnterable).toBe(true);
+  });
+
+  it("replay accept-dungeon-hint transitions to expedition state", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
 
     expect(snapshot.flowState).toBe("expedition");
     expect(snapshot.viewModel.kind).toBe("expedition");
@@ -205,6 +219,7 @@ describe("provisioning and expedition launch flow", () => {
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
 
     const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
 
@@ -238,12 +253,24 @@ describe("provisioning and expedition launch flow", () => {
     expect(provVm.party.length).toBeGreaterThan(0);
   });
 
-  it("live confirm-provisioning transitions to expedition state", async () => {
+  it("live confirm-provisioning transitions to dungeon-hint state", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
 
     const snapshot = await bridge.dispatchIntent({ type: "confirm-provisioning" });
+
+    expect(snapshot.flowState).toBe("dungeon-hint");
+    expect(snapshot.viewModel.kind).toBe("dungeon-hint");
+  });
+
+  it("live accept-dungeon-hint transitions to expedition state", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
 
     expect(snapshot.flowState).toBe("expedition");
     expect(snapshot.viewModel.kind).toBe("expedition");
@@ -254,6 +281,7 @@ describe("provisioning and expedition launch flow", () => {
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
 
     const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
 
@@ -263,7 +291,7 @@ describe("provisioning and expedition launch flow", () => {
     expect(resultVm.outcome).toBe("success");
   });
 
-  it("town -> provision -> launch path is reproducible in replay", async () => {
+  it("town -> provision -> dungeon-hint -> launch path is reproducible in replay", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
 
@@ -275,7 +303,11 @@ describe("provisioning and expedition launch flow", () => {
     expect(provSnapshot.flowState).toBe("provisioning");
     expect(provSnapshot.viewModel.kind).toBe("provisioning");
 
-    const expSnapshot = await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    const hintSnapshot = await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    expect(hintSnapshot.flowState).toBe("dungeon-hint");
+    expect(hintSnapshot.viewModel.kind).toBe("dungeon-hint");
+
+    const expSnapshot = await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
     expect(expSnapshot.flowState).toBe("expedition");
     expect(expSnapshot.viewModel.kind).toBe("expedition");
 
@@ -284,7 +316,7 @@ describe("provisioning and expedition launch flow", () => {
     expect(launchSnapshot.viewModel.kind).toBe("result");
   });
 
-  it("town -> provision -> launch path is reproducible in live", async () => {
+  it("town -> provision -> dungeon-hint -> launch path is reproducible in live", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
 
@@ -296,7 +328,11 @@ describe("provisioning and expedition launch flow", () => {
     expect(provSnapshot.flowState).toBe("provisioning");
     expect(provSnapshot.viewModel.kind).toBe("provisioning");
 
-    const expSnapshot = await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    const hintSnapshot = await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    expect(hintSnapshot.flowState).toBe("dungeon-hint");
+    expect(hintSnapshot.viewModel.kind).toBe("dungeon-hint");
+
+    const expSnapshot = await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
     expect(expSnapshot.flowState).toBe("expedition");
     expect(expSnapshot.viewModel.kind).toBe("expedition");
 
@@ -354,6 +390,7 @@ describe("result and return meta-loop continuation", () => {
     // Go through expedition flow
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
     await bridge.dispatchIntent({ type: "launch-expedition" });
 
     // Continue from result — transitions to return screen
@@ -379,6 +416,7 @@ describe("result and return meta-loop continuation", () => {
     // Go through expedition flow
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
     await bridge.dispatchIntent({ type: "launch-expedition" });
 
     // Resume from return

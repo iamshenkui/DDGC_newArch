@@ -7,6 +7,7 @@ import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 import type { RuntimeBridge } from "../bridge/RuntimeBridge";
 import type {
   BuildingDetailViewModel,
+  DungeonHintViewModel,
   ExpeditionResultViewModel,
   ExpeditionSetupViewModel,
   FatalErrorViewModel,
@@ -28,6 +29,7 @@ import { TownShellScreen } from "../screens/town/TownShellScreen";
 import { HeroDetailScreen } from "../screens/town/HeroDetailScreen";
 import { BuildingScreenRouter } from "../screens/town/BuildingScreenRouter";
 import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
+import { DungeonHintScreen } from "../screens/expedition/DungeonHintScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
 import { ReturnScreen } from "../screens/expedition/ReturnScreen";
@@ -147,6 +149,19 @@ export function DdgcApp() {
             }}
             onConfirmProvisioning={() => {
               void dispatchIntent(bridge, { type: "confirm-provisioning" });
+            }}
+            onReturnToTown={() => {
+              void dispatchIntent(bridge, { type: "return-to-town" });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "dungeon-hint" && snapshot().viewModel.kind === "dungeon-hint"}
+        >
+          <DungeonHintScreen
+            viewModel={snapshot().viewModel as DungeonHintViewModel}
+            onEnterDungeon={() => {
+              void dispatchIntent(bridge, { type: "accept-dungeon-hint" });
             }}
             onReturnToTown={() => {
               void dispatchIntent(bridge, { type: "return-to-town" });
