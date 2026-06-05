@@ -10,7 +10,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "dungeon-settlement" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -39,6 +39,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "expedition") {
     return "expedition";
+  }
+
+  if (snapshot.viewModel.kind === "dungeon-settlement") {
+    return "dungeon-settlement";
   }
 
   if (snapshot.viewModel.kind === "result") {
@@ -125,6 +129,27 @@ export function canTransition(
       }
       if (!snapshot.viewModel.isLaunchable) {
         return { allowed: false, reason: "expedition is not launchable" };
+      }
+      return { allowed: true };
+
+    case "show-dungeon-settlement":
+      if (screen !== "expedition") {
+        return { allowed: false, reason: "show-dungeon-settlement is only valid in expedition" };
+      }
+      if (snapshot.viewModel.kind !== "expedition") {
+        return { allowed: false, reason: "viewModel is not an expedition view model" };
+      }
+      return { allowed: true };
+
+    case "continue-from-dungeon-settlement":
+      if (screen !== "dungeon-settlement") {
+        return { allowed: false, reason: "continue-from-dungeon-settlement is only valid on dungeon-settlement screen" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-settlement") {
+        return { allowed: false, reason: "viewModel is not a dungeon-settlement view model" };
+      }
+      if (!snapshot.viewModel.isContinueAvailable) {
+        return { allowed: false, reason: "continue is not available" };
       }
       return { allowed: true };
 

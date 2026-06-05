@@ -7,6 +7,7 @@ import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 import type { RuntimeBridge } from "../bridge/RuntimeBridge";
 import type {
   BuildingDetailViewModel,
+  DungeonSettlementViewModel,
   ExpeditionResultViewModel,
   ExpeditionSetupViewModel,
   FatalErrorViewModel,
@@ -29,6 +30,7 @@ import { HeroDetailScreen } from "../screens/town/HeroDetailScreen";
 import { BuildingScreenRouter } from "../screens/town/BuildingScreenRouter";
 import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
+import { DungeonSettlementScreen } from "../screens/dungeon/DungeonSettlementScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
 import { ReturnScreen } from "../screens/expedition/ReturnScreen";
 
@@ -160,6 +162,22 @@ export function DdgcApp() {
             viewModel={snapshot().viewModel as ExpeditionSetupViewModel}
             onLaunchExpedition={() => {
               void dispatchIntent(bridge, { type: "launch-expedition" });
+            }}
+            onShowDungeonSettlement={() => {
+              void dispatchIntent(bridge, { type: "show-dungeon-settlement" });
+            }}
+            onReturnToTown={() => {
+              void dispatchIntent(bridge, { type: "return-to-town" });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "dungeon-settlement" && snapshot().viewModel.kind === "dungeon-settlement"}
+        >
+          <DungeonSettlementScreen
+            viewModel={snapshot().viewModel as DungeonSettlementViewModel}
+            onContinue={() => {
+              void dispatchIntent(bridge, { type: "continue-from-dungeon-settlement" });
             }}
             onReturnToTown={() => {
               void dispatchIntent(bridge, { type: "return-to-town" });

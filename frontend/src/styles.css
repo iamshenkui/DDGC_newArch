@@ -3321,3 +3321,434 @@ button {
     font-size: 1rem;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * Dungeon Settlement Screen (副本结算)
+ * Book-style parchment layout matching the reference image.
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+
+.dungeon-settlement-viewport {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: #0b0f14;
+}
+
+.dungeon-settlement-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1;
+}
+
+/* Book-like twin-page layout */
+.settlement-book {
+  display: flex;
+  width: 100%;
+  max-width: 960px;
+  min-height: 520px;
+  max-height: 80vh;
+  background:
+    linear-gradient(180deg,
+      #e8e0d0 0%,
+      #ddd5c5 50%,
+      #d4cbb8 100%
+    );
+  border-radius: 8px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px rgba(139, 119, 89, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.settlement-book::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    rgba(139, 119, 89, 0.25) 10%,
+    rgba(139, 119, 89, 0.35) 50%,
+    rgba(139, 119, 89, 0.25) 90%,
+    transparent 100%
+  );
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.settlement-page {
+  flex: 1 1 50%;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+.settlement-page--left {
+  border-right: 1px solid rgba(139, 119, 89, 0.15);
+}
+
+.settlement-page--right {
+  border-left: 1px solid rgba(139, 119, 89, 0.15);
+}
+
+/* Outcome badge */
+.settlement-outcome {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.2) 100%);
+  border: 1px solid rgba(139, 119, 89, 0.25);
+}
+
+.settlement-outcome--victory {
+  background: linear-gradient(135deg, rgba(91, 189, 110, 0.15) 0%, rgba(91, 189, 110, 0.05) 100%);
+  border-color: rgba(91, 189, 110, 0.3);
+}
+
+.settlement-outcome--defeat {
+  background: linear-gradient(135deg, rgba(234, 119, 103, 0.15) 0%, rgba(234, 119, 103, 0.05) 100%);
+  border-color: rgba(234, 119, 103, 0.3);
+}
+
+.settlement-outcome--retreat {
+  background: linear-gradient(135deg, rgba(232, 168, 56, 0.15) 0%, rgba(232, 168, 56, 0.05) 100%);
+  border-color: rgba(232, 168, 56, 0.3);
+}
+
+.settlement-outcome-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #8b7759 0%, #6b5a42 100%);
+  color: #f0ebe0;
+  font-family: var(--heading-font);
+  font-size: 1.4rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.settlement-outcome-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settlement-outcome-label {
+  font-family: var(--heading-font);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #4a3f2f;
+}
+
+.settlement-outcome-dungeon {
+  font-size: 0.8rem;
+  color: #6b5a42;
+}
+
+.settlement-summary {
+  font-size: 0.85rem;
+  color: #5a4d3a;
+  line-height: 1.5;
+  margin: 0;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.35);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(139, 119, 89, 0.15);
+}
+
+/* Section blocks */
+.settlement-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settlement-section-title {
+  font-family: var(--heading-font);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #4a3f2f;
+  margin: 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(139, 119, 89, 0.2);
+}
+
+/* Reward progress bar */
+.settlement-reward-bar {
+  display: flex;
+  height: 18px;
+  border-radius: 9px;
+  overflow: hidden;
+  background: rgba(139, 119, 89, 0.15);
+  border: 1px solid rgba(139, 119, 89, 0.2);
+}
+
+.settlement-reward-segment {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.settlement-reward-legend {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px 16px;
+  font-size: 0.75rem;
+}
+
+.settlement-reward-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #5a4d3a;
+}
+
+.settlement-reward-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.settlement-reward-legend-label {
+  flex: 1;
+}
+
+.settlement-reward-legend-value {
+  font-weight: 600;
+  color: #4a3f2f;
+}
+
+.settlement-reward-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.3);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  color: #5a4d3a;
+}
+
+.settlement-reward-total-value {
+  font-weight: 700;
+  color: #4a3f2f;
+  font-family: var(--heading-font);
+}
+
+/* Treasure row */
+.settlement-treasure-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.35);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(139, 119, 89, 0.15);
+}
+
+.settlement-treasure-icon {
+  color: #c9a84c;
+  display: flex;
+  align-items: center;
+}
+
+.settlement-treasure-label {
+  flex: 1;
+  font-size: 0.85rem;
+  color: #5a4d3a;
+}
+
+.settlement-treasure-value {
+  font-family: var(--heading-font);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #c9a84c;
+}
+
+/* Heirloom grid */
+.settlement-heirloom-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.settlement-heirloom-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.3);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(139, 119, 89, 0.15);
+  font-size: 0.8rem;
+  color: #5a4d3a;
+}
+
+.settlement-heirloom-icon {
+  color: #8b7759;
+  display: flex;
+  align-items: center;
+}
+
+.settlement-heirloom-type {
+  flex: 1;
+}
+
+.settlement-heirloom-count {
+  font-weight: 700;
+  color: #4a3f2f;
+  font-family: var(--heading-font);
+}
+
+/* Party list */
+.settlement-party-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settlement-party-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.35);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(139, 119, 89, 0.15);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.settlement-party-card:hover {
+  border-color: rgba(139, 119, 89, 0.3);
+  background: rgba(255,255,255,0.45);
+}
+
+.settlement-party-portrait {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(139, 119, 89, 0.25);
+  flex-shrink: 0;
+}
+
+.settlement-party-portrait--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #8b7759 0%, #6b5a42 100%);
+  color: #f0ebe0;
+  font-family: var(--heading-font);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.settlement-party-portrait-letter {
+  line-height: 1;
+}
+
+.settlement-party-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.settlement-party-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #4a3f2f;
+}
+
+.settlement-party-class {
+  font-size: 0.72rem;
+  color: #6b5a42;
+}
+
+.settlement-party-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.settlement-hero-status {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.settlement-hero-status--alive {
+  background: rgba(91, 189, 110, 0.15);
+  color: #3a8a4a;
+}
+
+.settlement-hero-status--wounded {
+  background: rgba(232, 168, 56, 0.15);
+  color: #a07828;
+}
+
+.settlement-hero-status--stressed {
+  background: rgba(107, 155, 199, 0.15);
+  color: #3a6a9a;
+}
+
+.settlement-hero-status--dead {
+  background: rgba(234, 119, 103, 0.15);
+  color: #b04030;
+}
+
+.settlement-party-xp {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #c9a84c;
+}
+
+/* Responsive: stack pages on narrow screens */
+@media (max-width: 768px) {
+  .settlement-book {
+    flex-direction: column;
+    max-height: 90vh;
+  }
+
+  .settlement-book::before {
+    display: none;
+  }
+
+  .settlement-page {
+    flex: none;
+    padding: 20px 24px;
+  }
+
+  .settlement-page--left {
+    border-right: none;
+    border-bottom: 1px solid rgba(139, 119, 89, 0.15);
+  }
+
+  .settlement-page--right {
+    border-left: none;
+    border-top: 1px solid rgba(139, 119, 89, 0.15);
+  }
+}
+}

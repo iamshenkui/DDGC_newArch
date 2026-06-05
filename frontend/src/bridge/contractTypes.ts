@@ -7,6 +7,7 @@ export type FlowState =
   | "provisioning"
   | "expedition"
   | "combat"
+  | "dungeon-settlement"
   | "result"
   | "return";
 
@@ -253,6 +254,43 @@ export interface ReturnViewModel {
   isTownResumeAvailable: boolean;
 }
 
+export interface DungeonSettlementHeroOutcome {
+  heroId: string;
+  heroName: string;
+  classLabel: string;
+  portrait?: string;
+  status: "alive" | "dead" | "wounded" | "stressed";
+  level: number;
+  xpGained: number;
+}
+
+export interface DungeonSettlementRewardSegment {
+  label: string;
+  value: number;
+  max: number;
+  color: string;
+}
+
+export interface DungeonSettlementViewModel {
+  kind: "dungeon-settlement";
+  title: string;
+  dungeonName: string;
+  outcome: "victory" | "defeat" | "retreat";
+  summary: string;
+  rewardsLabel: string;
+  rewardSegments: ReadonlyArray<DungeonSettlementRewardSegment>;
+  treasuresLabel: string;
+  goldCollected: number;
+  heirloomsLabel: string;
+  heirlooms: ReadonlyArray<{
+    type: string;
+    count: number;
+    icon?: string;
+  }>;
+  partyOutcomes: ReadonlyArray<DungeonSettlementHeroOutcome>;
+  isContinueAvailable: boolean;
+}
+
 export interface UnsupportedViewModel {
   kind: "unsupported";
   title: string;
@@ -272,6 +310,7 @@ export type DdgcViewModel =
   | BuildingDetailViewModel
   | ProvisioningViewModel
   | ExpeditionSetupViewModel
+  | DungeonSettlementViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
   | UnsupportedViewModel
@@ -293,6 +332,8 @@ export type DdgcFrontendIntent =
   | { type: "toggle-hero-selection"; heroId: string }
   | { type: "confirm-provisioning" }
   | { type: "launch-expedition" }
+  | { type: "show-dungeon-settlement" }
+  | { type: "continue-from-dungeon-settlement" }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }
   | { type: "resume-from-return" };

@@ -6,6 +6,7 @@ import { resolveChromeAsset, resolveHeroPortrait } from "../../assets/originalAs
 interface ExpeditionScreenProps {
   viewModel: ExpeditionSetupViewModel;
   onLaunchExpedition: () => void;
+  onShowDungeonSettlement?: () => void;
   onReturnToTown: () => void;
 }
 
@@ -323,6 +324,14 @@ export const ExpeditionScreen: Component<ExpeditionScreenProps> = (props) => {
           <button class="action-secondary" onClick={props.onReturnToTown}>
             Return to Town
           </button>
+          {props.onShowDungeonSettlement && (
+            <button
+              class="action-secondary"
+              onClick={props.onShowDungeonSettlement}
+            >
+              副本结算
+            </button>
+          )}
           <button
             class="action-primary launch-primary"
             onClick={props.onLaunchExpedition}

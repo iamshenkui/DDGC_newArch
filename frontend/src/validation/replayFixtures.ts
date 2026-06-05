@@ -2,6 +2,7 @@ import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
   DdgcFrontendSnapshot,
+  DungeonSettlementViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
@@ -516,6 +517,57 @@ export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
   isLaunchable: true
 };
 
+export const replayDungeonSettlementViewModel: DungeonSettlementViewModel = {
+  kind: "dungeon-settlement",
+  title: "副本结算",
+  dungeonName: "深渊试炼",
+  outcome: "victory",
+  summary: "队伍成功完成了副本探索，收集到了珍贵的奖励与宝藏。",
+  rewardsLabel: "收集的奖励",
+  rewardSegments: [
+    { label: "战斗", value: 85, max: 100, color: "#ea7767" },
+    { label: "探索", value: 60, max: 100, color: "#5bbd6e" },
+    { label: "宝藏", value: 40, max: 100, color: "#e8a838" },
+    { label: "特殊", value: 20, max: 100, color: "#6b9bc7" }
+  ],
+  treasuresLabel: "收集的宝藏",
+  goldCollected: 480,
+  heirloomsLabel: "收集的传家宝",
+  heirlooms: [
+    { type: "画像", count: 0 },
+    { type: "徽章", count: 0 },
+    { type: "文献", count: 0 },
+    { type: "遗物", count: 0 }
+  ],
+  partyOutcomes: [
+    {
+      heroId: "hero-hunter-01",
+      heroName: "Shen",
+      classLabel: "Hunter",
+      status: "alive",
+      level: 2,
+      xpGained: 120
+    },
+    {
+      heroId: "hero-white-01",
+      heroName: "Bai Xiu",
+      classLabel: "White",
+      status: "alive",
+      level: 2,
+      xpGained: 120
+    },
+    {
+      heroId: "hero-black-01",
+      heroName: "Hei Zhen",
+      classLabel: "Black",
+      status: "wounded",
+      level: 1,
+      xpGained: 80
+    }
+  ],
+  isContinueAvailable: true
+};
+
 export const replayResultViewModel: ExpeditionResultViewModel = {
   kind: "result",
   title: "Expedition Complete",
@@ -827,6 +879,14 @@ export const expeditionSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing expedition launch screen."
 };
 
+// Dungeon settlement snapshot
+export const dungeonSettlementSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "dungeon-settlement",
+  viewModel: replayDungeonSettlementViewModel,
+  debugMessage: "Replay bridge showing dungeon settlement screen."
+};
+
 // Result snapshots (success, failure, partial)
 export const resultSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -877,7 +937,7 @@ export function validateSnapshotContract(snapshot: DdgcFrontendSnapshot): string
   }
 
   // FlowState must be a valid FlowState
-  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "result", "return"];
+  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "dungeon-settlement", "result", "return"];
   if (!validFlowStates.includes(snapshot.flowState as FlowState)) {
     errors.push(
       `flowState "${String(snapshot.flowState)}" is not a valid FlowState. ` +
@@ -933,6 +993,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     provisioning: ["provisioning"],
     expedition: ["expedition"],
     combat: ["expedition"],
+    "dungeon-settlement": ["dungeon-settlement"],
     result: ["result"],
     return: ["return"],
   };
@@ -1010,6 +1071,18 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (typeof vm.isLaunchable !== "boolean") e.push("ExpeditionSetupViewModel: isLaunchable is not a boolean");
       if (!vm.supplyLevel || typeof vm.supplyLevel !== "string") e.push("ExpeditionSetupViewModel: supplyLevel is missing");
       if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ExpeditionSetupViewModel: provisionCost is missing");
+      break;
+    }
+    case "dungeon-settlement": {
+      if (!vm.title || typeof vm.title !== "string") e.push("DungeonSettlementViewModel: title is missing");
+      if (!vm.dungeonName || typeof vm.dungeonName !== "string") e.push("DungeonSettlementViewModel: dungeonName is missing");
+      if (vm.outcome !== "victory" && vm.outcome !== "defeat" && vm.outcome !== "retreat") e.push(`DungeonSettlementViewModel: outcome is "${String(vm.outcome)}", expected "victory", "defeat", or "retreat"`);
+      if (!vm.summary || typeof vm.summary !== "string") e.push("DungeonSettlementViewModel: summary is missing");
+      if (!Array.isArray(vm.rewardSegments)) e.push("DungeonSettlementViewModel: rewardSegments is not an array");
+      if (typeof vm.goldCollected !== "number") e.push("DungeonSettlementViewModel: goldCollected is not a number");
+      if (!Array.isArray(vm.heirlooms)) e.push("DungeonSettlementViewModel: heirlooms is not an array");
+      if (!Array.isArray(vm.partyOutcomes)) { e.push("DungeonSettlementViewModel: partyOutcomes is not an array"); } else if (vm.partyOutcomes.length === 0) { e.push("DungeonSettlementViewModel: partyOutcomes array is empty"); }
+      if (typeof vm.isContinueAvailable !== "boolean") e.push("DungeonSettlementViewModel: isContinueAvailable is not a boolean");
       break;
     }
     case "result": {

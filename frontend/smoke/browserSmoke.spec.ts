@@ -493,6 +493,103 @@ test.describe("browser smoke: fidelity gates", () => {
     expectNoErrors(pageErrors, consoleErrors, "Phase 5 (meta-loop)");
   });
 
+  // ── Dungeon settlement screen test ─────────────────────────
+  test("dungeon settlement screen renders with book layout and party outcomes", async ({ page }) => {
+    const { consoleErrors, pageErrors } = setupErrorCollectors(page);
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+
+    // Boot replay and navigate to expedition
+    await page.getByRole("button", { name: "Boot Replay" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 8_000 });
+    await settle(page);
+
+    // Town → Provisioning → Expedition
+    await page.locator(".estate-embark-button").click();
+    await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await page.getByRole("button", { name: "Confirm & Launch Expedition" }).click();
+    await settle(page);
+
+    // Expedition → Dungeon Settlement
+    await page.getByRole("button", { name: "副本结算" }).click();
+    await page.waitForSelector(".dungeon-settlement-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    // Verify dungeon settlement content (Chinese labels matching reference image)
+    await expect(
+      page.locator(".eyebrow").filter({ hasText: "副本结算" }),
+      "Dungeon settlement eyebrow must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".settlement-outcome-label").filter({ hasText: "胜利" }),
+      "Victory outcome label must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("收集的奖励"),
+      "Rewards section title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("收集的宝藏"),
+      "Treasures section title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("收集的传家宝"),
+      "Heirlooms section title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("队伍状态"),
+      "Party status section title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("金币"),
+      "Gold label must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".settlement-party-card"),
+      "Party outcome cards must render"
+    ).toHaveCount(3);
+    await expect(
+      page.locator(".settlement-book"),
+      "Book layout must be present"
+    ).toBeVisible();
+    await expect(
+      page.locator(".settlement-page--left"),
+      "Left page must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".settlement-page--right"),
+      "Right page must be visible"
+    ).toBeVisible();
+
+    // Fidelity — dungeon settlement is a completed product surface
+    await expectFidelity(
+      page.locator(".dungeon-settlement-viewport"),
+      "Dungeon settlement screen"
+    );
+    await expectFullPageFidelity(page, "Dungeon settlement screen");
+
+    // Landscape viewport check for dungeon settlement
+    await expect(
+      page.locator(".dungeon-settlement-viewport"),
+      "Dungeon settlement screen must use .dungeon-settlement-viewport landscape layout"
+    ).toBeVisible();
+
+    // Continue to result screen
+    await page.getByRole("button", { name: "点击继续" }).click();
+    await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByRole("heading", { name: "Expedition Complete" }),
+      "Result screen must be reachable after dungeon settlement"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Dungeon settlement flow");
+  });
+
   // ── Live boot test ─────────────────────────────────────────
   test("live boot exercises live bridge path", async ({ page }) => {
     const { consoleErrors, pageErrors } = setupErrorCollectors(page);

@@ -5,6 +5,7 @@ import type {
   DdgcFrontendSnapshot,
   ExpeditionResultViewModel,
   ReturnViewModel,
+  DungeonSettlementViewModel,
 } from "../../bridge/contractTypes";
 import {
   resultSnapshot,
@@ -14,6 +15,7 @@ import {
   replayReadySnapshot,
   provisioningSnapshot,
   expeditionSnapshot,
+  dungeonSettlementSnapshot,
   startupSnapshot,
   fatalSnapshot,
   unsupportedSnapshot,
@@ -21,6 +23,51 @@ import {
   replayHeroDetailSnapshot,
   replayBuildingDetailSnapshot,
 } from "../../validation/replayFixtures";
+
+describe("Dungeon settlement view model contract validation", () => {
+  it("validates dungeon settlement view model fields", () => {
+    const vm = dungeonSettlementSnapshot.viewModel as DungeonSettlementViewModel;
+    expect(vm.kind).toBe("dungeon-settlement");
+    expect(vm).toHaveProperty("title");
+    expect(vm).toHaveProperty("dungeonName");
+    expect(vm).toHaveProperty("outcome");
+    expect(vm).toHaveProperty("summary");
+    expect(vm).toHaveProperty("rewardSegments");
+    expect(vm).toHaveProperty("goldCollected");
+    expect(vm).toHaveProperty("heirlooms");
+    expect(vm).toHaveProperty("partyOutcomes");
+    expect(vm).toHaveProperty("isContinueAvailable");
+  });
+
+  it("validates dungeon settlement party outcome fields", () => {
+    const vm = dungeonSettlementSnapshot.viewModel as DungeonSettlementViewModel;
+    for (const hero of vm.partyOutcomes) {
+      expect(hero).toHaveProperty("heroId");
+      expect(hero).toHaveProperty("heroName");
+      expect(hero).toHaveProperty("classLabel");
+      expect(hero).toHaveProperty("status");
+      expect(["alive", "dead", "wounded", "stressed"]).toContain(hero.status);
+      expect(hero).toHaveProperty("level");
+      expect(hero).toHaveProperty("xpGained");
+    }
+  });
+
+  it("validates dungeon settlement reward segments", () => {
+    const vm = dungeonSettlementSnapshot.viewModel as DungeonSettlementViewModel;
+    expect(vm.rewardSegments.length).toBeGreaterThan(0);
+    for (const seg of vm.rewardSegments) {
+      expect(seg).toHaveProperty("label");
+      expect(seg).toHaveProperty("value");
+      expect(seg).toHaveProperty("max");
+      expect(seg).toHaveProperty("color");
+    }
+  });
+
+  it("validates dungeon settlement outcome values", () => {
+    const vm = dungeonSettlementSnapshot.viewModel as DungeonSettlementViewModel;
+    expect(["victory", "defeat", "retreat"]).toContain(vm.outcome);
+  });
+});
 
 describe("Result screen view model contract validation", () => {
   it("validates success result view model fields", () => {
@@ -113,6 +160,68 @@ describe("Return screen view model contract validation", () => {
   });
 });
 
+describe("Dungeon settlement screen resolution", () => {
+  it("resolves dungeon-settlement screen for dungeon settlement view model", () => {
+    const screen = resolveScreen(dungeonSettlementSnapshot);
+    expect(screen).toBe("dungeon-settlement");
+  });
+});
+
+describe("Dungeon settlement transition validation", () => {
+  it("allows show-dungeon-settlement from expedition screen", () => {
+    const validation = canTransition(expeditionSnapshot, { type: "show-dungeon-settlement" });
+    expect(validation.allowed).toBe(true);
+  });
+
+  it("rejects show-dungeon-settlement from non-expedition screens", () => {
+    const nonExpeditionScreens: DdgcFrontendSnapshot[] = [
+      replayReadySnapshot,
+      provisioningSnapshot,
+      resultSnapshot,
+      returnSnapshot,
+      dungeonSettlementSnapshot,
+      startupSnapshot,
+      replayLoadingSnapshot,
+      replayHeroDetailSnapshot,
+      replayBuildingDetailSnapshot,
+    ];
+
+    for (const snap of nonExpeditionScreens) {
+      const validation = canTransition(snap, { type: "show-dungeon-settlement" });
+      expect(validation.allowed).toBe(false);
+    }
+  });
+
+  it("allows continue-from-dungeon-settlement from dungeon-settlement screen", () => {
+    const validation = canTransition(dungeonSettlementSnapshot, { type: "continue-from-dungeon-settlement" });
+    expect(validation.allowed).toBe(true);
+  });
+
+  it("rejects continue-from-dungeon-settlement from non-dungeon-settlement screens", () => {
+    const nonDungeonSettlementScreens: DdgcFrontendSnapshot[] = [
+      replayReadySnapshot,
+      provisioningSnapshot,
+      expeditionSnapshot,
+      resultSnapshot,
+      returnSnapshot,
+      startupSnapshot,
+      replayLoadingSnapshot,
+      replayHeroDetailSnapshot,
+      replayBuildingDetailSnapshot,
+    ];
+
+    for (const snap of nonDungeonSettlementScreens) {
+      const validation = canTransition(snap, { type: "continue-from-dungeon-settlement" });
+      expect(validation.allowed).toBe(false);
+    }
+  });
+
+  it("allows return-to-town from dungeon-settlement screen as fallback", () => {
+    const validation = canTransition(dungeonSettlementSnapshot, { type: "return-to-town" });
+    expect(validation.allowed).toBe(true);
+  });
+});
+
 describe("Result screen resolution", () => {
   it("resolves result screen for success result view model", () => {
     const screen = resolveScreen(resultSnapshot);
@@ -146,6 +255,7 @@ describe("Result screen transition validation", () => {
       replayReadySnapshot,
       provisioningSnapshot,
       expeditionSnapshot,
+      dungeonSettlementSnapshot,
       returnSnapshot,
       startupSnapshot,
       replayLoadingSnapshot,
@@ -188,6 +298,7 @@ describe("Return screen transition validation", () => {
       replayReadySnapshot,
       provisioningSnapshot,
       expeditionSnapshot,
+      dungeonSettlementSnapshot,
       resultSnapshot,
       failureResultSnapshot,
       partialResultSnapshot,
@@ -261,6 +372,7 @@ describe("Result return meta-loop continuation proof", () => {
       { label: "result (success)", snapshot: resultSnapshot },
       { label: "result (failure)", snapshot: failureResultSnapshot },
       { label: "result (partial)", snapshot: partialResultSnapshot },
+      { label: "dungeon-settlement", snapshot: dungeonSettlementSnapshot },
       { label: "return", snapshot: returnSnapshot },
     ];
 
@@ -269,6 +381,18 @@ describe("Result return meta-loop continuation proof", () => {
       const townReturn = canTransition(snapshot, { type: "return-to-town" });
       expect(townReturn.allowed).toBe(true);
     }
+  });
+
+  it("proves dungeon-settlement can continue to result and close the loop", () => {
+    // Given: dungeon settlement screen
+    expect(resolveScreen(dungeonSettlementSnapshot)).toBe("dungeon-settlement");
+
+    // When: continue-from-dungeon-settlement is allowed
+    expect(canTransition(dungeonSettlementSnapshot, { type: "continue-from-dungeon-settlement" }).allowed).toBe(true);
+
+    // Then: after reaching result, the meta-loop can continue back to town
+    expect(canTransition(resultSnapshot, { type: "continue-from-result" }).allowed).toBe(true);
+    expect(canTransition(replayReadySnapshot, { type: "start-provisioning" }).allowed).toBe(true);
   });
 
   it("proves full expedition cycle closes without dead-end", () => {

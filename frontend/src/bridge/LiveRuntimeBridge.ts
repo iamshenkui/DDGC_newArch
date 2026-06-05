@@ -10,6 +10,7 @@ import type {
   BuildingDetailViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  DungeonSettlementViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
 } from "./contractTypes";
@@ -358,6 +359,49 @@ const createLiveReturnViewModel = (): ReturnViewModel => ({
   isTownResumeAvailable: true
 });
 
+const createLiveDungeonSettlementViewModel = (): DungeonSettlementViewModel => ({
+  kind: "dungeon-settlement",
+  title: "副本结算",
+  dungeonName: "深渊试炼",
+  outcome: "victory",
+  summary: "队伍成功完成了副本探索，收集到了珍贵的奖励与宝藏。",
+  rewardsLabel: "收集的奖励",
+  rewardSegments: [
+    { label: "战斗", value: 80, max: 100, color: "#ea7767" },
+    { label: "探索", value: 55, max: 100, color: "#5bbd6e" },
+    { label: "宝藏", value: 35, max: 100, color: "#e8a838" },
+    { label: "特殊", value: 15, max: 100, color: "#6b9bc7" }
+  ],
+  treasuresLabel: "收集的宝藏",
+  goldCollected: 360,
+  heirloomsLabel: "收集的传家宝",
+  heirlooms: [
+    { type: "画像", count: 0 },
+    { type: "徽章", count: 0 },
+    { type: "文献", count: 0 },
+    { type: "遗物", count: 0 }
+  ],
+  partyOutcomes: [
+    {
+      heroId: "hero-hunter-live-01",
+      heroName: "Yuan",
+      classLabel: "Hunter",
+      status: "alive",
+      level: 1,
+      xpGained: 100
+    },
+    {
+      heroId: "hero-white-live-01",
+      heroName: "Mei",
+      classLabel: "White",
+      status: "alive",
+      level: 1,
+      xpGained: 100
+    }
+  ],
+  isContinueAvailable: true
+});
+
 export class LiveRuntimeBridge implements RuntimeBridge {
   readonly id = "ddgc-live-bridge";
   readonly mode: RuntimeMode = "live";
@@ -438,6 +482,20 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "launch-expedition":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "result",
+          viewModel: createLiveResultViewModel()
+        };
+        break;
+      case "show-dungeon-settlement":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-settlement",
+          viewModel: createLiveDungeonSettlementViewModel()
+        };
+        break;
+      case "continue-from-dungeon-settlement":
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",
