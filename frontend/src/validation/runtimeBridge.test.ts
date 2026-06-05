@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, ExpeditionResultViewModel, ReturnViewModel } from "../bridge/contractTypes";
+import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, ExpeditionResultViewModel, ReturnViewModel, DungeonInteractionViewModel } from "../bridge/contractTypes";
 import { LiveRuntimeBridge } from "../bridge/LiveRuntimeBridge";
 import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 
@@ -200,7 +200,7 @@ describe("provisioning and expedition launch flow", () => {
     expect(expVm.isLaunchable).toBe(true);
   });
 
-  it("replay launch-expedition transitions to result state", async () => {
+  it("replay launch-expedition transitions to dungeon-interaction state", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
@@ -208,11 +208,54 @@ describe("provisioning and expedition launch flow", () => {
 
     const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
 
+    expect(snapshot.flowState).toBe("dungeon-interaction");
+    expect(snapshot.viewModel.kind).toBe("dungeon-interaction");
+    const dungeonVm = snapshot.viewModel as DungeonInteractionViewModel;
+    expect(dungeonVm.kind).toBe("dungeon-interaction");
+    expect(dungeonVm.party.length).toBeGreaterThan(0);
+    expect(dungeonVm.isProceedAvailable).toBe(true);
+  });
+
+  it("replay proceed-dungeon transitions to result state", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "proceed-dungeon" });
+
     expect(snapshot.flowState).toBe("result");
     expect(snapshot.viewModel.kind).toBe("result");
     const resultVm = snapshot.viewModel as ExpeditionResultViewModel;
     expect(resultVm.kind).toBe("result");
     expect(["success", "failure", "partial"]).toContain(resultVm.outcome);
+  });
+
+  it("replay interact-room intent is handled without error", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "interact-room", interactionId: "investigate" });
+
+    expect(snapshot.viewModel.kind).toBe("dungeon-interaction");
+    expect(snapshot.debugMessage).toContain("investigate");
+  });
+
+  it("replay retreat-dungeon transitions to result state", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "retreat-dungeon" });
+
+    expect(snapshot.flowState).toBe("result");
+    expect(snapshot.viewModel.kind).toBe("result");
   });
 
   it("replay return-to-town from provisioning returns to town", async () => {
@@ -249,13 +292,28 @@ describe("provisioning and expedition launch flow", () => {
     expect(snapshot.viewModel.kind).toBe("expedition");
   });
 
-  it("live launch-expedition transitions to result state", async () => {
+  it("live launch-expedition transitions to dungeon-interaction state", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
 
     const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    expect(snapshot.flowState).toBe("dungeon-interaction");
+    expect(snapshot.viewModel.kind).toBe("dungeon-interaction");
+    const dungeonVm = snapshot.viewModel as DungeonInteractionViewModel;
+    expect(dungeonVm.isProceedAvailable).toBe(true);
+  });
+
+  it("live proceed-dungeon transitions to result state", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "proceed-dungeon" });
 
     expect(snapshot.flowState).toBe("result");
     expect(snapshot.viewModel.kind).toBe("result");
@@ -280,8 +338,8 @@ describe("provisioning and expedition launch flow", () => {
     expect(expSnapshot.viewModel.kind).toBe("expedition");
 
     const launchSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
-    expect(launchSnapshot.flowState).toBe("result");
-    expect(launchSnapshot.viewModel.kind).toBe("result");
+    expect(launchSnapshot.flowState).toBe("dungeon-interaction");
+    expect(launchSnapshot.viewModel.kind).toBe("dungeon-interaction");
   });
 
   it("town -> provision -> launch path is reproducible in live", async () => {
@@ -301,8 +359,8 @@ describe("provisioning and expedition launch flow", () => {
     expect(expSnapshot.viewModel.kind).toBe("expedition");
 
     const launchSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
-    expect(launchSnapshot.flowState).toBe("result");
-    expect(launchSnapshot.viewModel.kind).toBe("result");
+    expect(launchSnapshot.flowState).toBe("dungeon-interaction");
+    expect(launchSnapshot.viewModel.kind).toBe("dungeon-interaction");
   });
 });
 
@@ -355,6 +413,7 @@ describe("result and return meta-loop continuation", () => {
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
     await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "proceed-dungeon" });
 
     // Continue from result — transitions to return screen
     const returnSnap = await bridge.dispatchIntent({ type: "continue-from-result" });
@@ -380,6 +439,7 @@ describe("result and return meta-loop continuation", () => {
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
     await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "proceed-dungeon" });
 
     // Resume from return
     const returnSnapshot = await bridge.dispatchIntent({ type: "resume-from-return" });

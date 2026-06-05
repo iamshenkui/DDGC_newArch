@@ -5,6 +5,7 @@ import {
   replayBuildingDetailViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
+  replayDungeonInteractionViewModel,
   replayResultViewModel,
   replayReturnViewModel
 } from "../validation/replayFixtures";
@@ -16,7 +17,8 @@ import type {
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
-  ReturnViewModel
+  ReturnViewModel,
+  DungeonInteractionViewModel
 } from "./contractTypes";
 
 export class ReplayRuntimeBridge implements RuntimeBridge {
@@ -115,6 +117,26 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "launch-expedition":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-interaction",
+          viewModel: replayDungeonInteractionViewModel as DungeonInteractionViewModel
+        };
+        break;
+      case "proceed-dungeon":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "result",
+          viewModel: replayResultViewModel as ExpeditionResultViewModel
+        };
+        break;
+      case "interact-room":
+        this.snapshot = {
+          ...this.snapshot,
+          debugMessage: `Replay: room interaction intent received for ${intent.interactionId}.`
+        };
+        break;
+      case "retreat-dungeon":
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",

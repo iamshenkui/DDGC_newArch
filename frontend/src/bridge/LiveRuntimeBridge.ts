@@ -12,6 +12,7 @@ import type {
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
+  DungeonInteractionViewModel,
 } from "./contractTypes";
 import { createTownBuildingSummary } from "../town/buildingCatalog";
 
@@ -301,6 +302,32 @@ const createLiveExpeditionViewModel = (): ExpeditionSetupViewModel => ({
   isLaunchable: true
 });
 
+const createLiveDungeonInteractionViewModel = (): DungeonInteractionViewModel => ({
+  kind: "dungeon-interaction",
+  title: "Dungeon Interaction",
+  dungeonName: "The Azure Lantern Expedition",
+  roomType: "event",
+  roomLabel: "Ancient Altar",
+  roomDescription: "An ancient altar stands before you, covered in moss and faintly glowing runes. Something about it feels both inviting and dangerous.",
+  progress: {
+    currentRoom: 3,
+    totalRooms: 9,
+    roomsCleared: 2
+  },
+  party: [
+    { id: "hero-hunter-live-01", name: "Yuan", classLabel: "Hunter", hp: "42 / 42", maxHp: "42", stress: "0", maxStress: "200" },
+    { id: "hero-white-live-01", name: "Mei", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "0", maxStress: "200" }
+  ],
+  interactions: [
+    { id: "investigate", label: "Investigate", description: "Examine the altar closely for clues or hidden mechanisms.", isAvailable: true },
+    { id: "use-item", label: "Use Item", description: "Attempt to use a provision or tool on the altar.", isAvailable: true },
+    { id: "pray", label: "Pray", description: "Offer a prayer at the altar. The outcome is uncertain.", isAvailable: true },
+    { id: "ignore", label: "Ignore", description: "Leave the altar untouched and proceed.", isAvailable: true }
+  ],
+  isProceedAvailable: true,
+  isRetreatAvailable: true
+});
+
 const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
   kind: "result",
   title: "Expedition Complete",
@@ -438,6 +465,26 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "launch-expedition":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-interaction",
+          viewModel: createLiveDungeonInteractionViewModel()
+        };
+        break;
+      case "proceed-dungeon":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "result",
+          viewModel: createLiveResultViewModel()
+        };
+        break;
+      case "interact-room":
+        this.snapshot = {
+          ...this.snapshot,
+          debugMessage: `Live: room interaction intent received for ${intent.interactionId}.`
+        };
+        break;
+      case "retreat-dungeon":
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",

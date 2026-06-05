@@ -399,8 +399,53 @@ test.describe("browser smoke: fidelity gates", () => {
       "Expedition launch screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5d. Expedition → Result (success)
+    // 5d. Expedition → Dungeon Interaction
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await page.waitForSelector(".dungeon-interaction-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByRole("heading", { name: "Dungeon Interaction" }),
+      "Dungeon interaction title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".dungeon-room-label"),
+      "Room label must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".dungeon-room-description"),
+      "Room description must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".dungeon-progress"),
+      "Progress bar must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".dungeon-interactions-panel"),
+      "Interactions panel must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".dungeon-interaction-btn"),
+      "At least one interaction button must be visible"
+    ).toHaveCount(4);
+    await expect(
+      page.locator(".dungeon-hero-card"),
+      "Party hero cards must be visible"
+    ).toHaveCount(2);
+    await expectFidelity(
+      page.locator(".expedition-viewport"),
+      "Dungeon interaction screen"
+    );
+    await expectFullPageFidelity(page, "Dungeon interaction screen");
+
+    // Landscape viewport check for dungeon interaction
+    await expect(
+      page.locator(".expedition-viewport"),
+      "Dungeon interaction screen must use .expedition-viewport landscape layout"
+    ).toBeVisible();
+
+    // 5e. Dungeon Interaction → Result (success)
+    await page.getByRole("button", { name: "Proceed", exact: true }).click();
     await settle(page);
 
     await expect(
@@ -614,6 +659,19 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await page.waitForSelector(".dungeon-interaction-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByRole("heading", { name: "Dungeon Interaction" }),
+      "Live dungeon interaction title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".dungeon-interactions-panel"),
+      "Live interactions panel must be visible"
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "Proceed", exact: true }).click();
     await settle(page);
 
     await expect(

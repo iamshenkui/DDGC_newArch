@@ -10,7 +10,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "dungeon-interaction" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -39,6 +39,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "expedition") {
     return "expedition";
+  }
+
+  if (snapshot.viewModel.kind === "dungeon-interaction") {
+    return "dungeon-interaction";
   }
 
   if (snapshot.viewModel.kind === "result") {
@@ -125,6 +129,39 @@ export function canTransition(
       }
       if (!snapshot.viewModel.isLaunchable) {
         return { allowed: false, reason: "expedition is not launchable" };
+      }
+      return { allowed: true };
+
+    case "proceed-dungeon":
+      if (screen !== "dungeon-interaction") {
+        return { allowed: false, reason: "proceed-dungeon is only valid in dungeon-interaction" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-interaction") {
+        return { allowed: false, reason: "viewModel is not a dungeon-interaction view model" };
+      }
+      if (!snapshot.viewModel.isProceedAvailable) {
+        return { allowed: false, reason: "proceed is not available" };
+      }
+      return { allowed: true };
+
+    case "interact-room":
+      if (screen !== "dungeon-interaction") {
+        return { allowed: false, reason: "interact-room is only valid in dungeon-interaction" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-interaction") {
+        return { allowed: false, reason: "viewModel is not a dungeon-interaction view model" };
+      }
+      return { allowed: true };
+
+    case "retreat-dungeon":
+      if (screen !== "dungeon-interaction") {
+        return { allowed: false, reason: "retreat-dungeon is only valid in dungeon-interaction" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-interaction") {
+        return { allowed: false, reason: "viewModel is not a dungeon-interaction view model" };
+      }
+      if (!snapshot.viewModel.isRetreatAvailable) {
+        return { allowed: false, reason: "retreat is not available" };
       }
       return { allowed: true };
 

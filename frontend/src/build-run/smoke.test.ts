@@ -120,14 +120,18 @@ describe("build-run smoke: flow state transitions", () => {
     const expVm = expSnap.viewModel as ExpeditionSetupViewModel;
     expect(expVm.isLaunchable).toBe(true);
 
-    const resultSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    const dungeonSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    expect(dungeonSnap.flowState).toBe("dungeon-interaction");
+    expect(dungeonSnap.viewModel.kind).toBe("dungeon-interaction");
+
+    const resultSnap = await bridge.dispatchIntent({ type: "proceed-dungeon" });
     expect(resultSnap.flowState).toBe("result");
     expect(resultSnap.viewModel.kind).toBe("result");
     const resultVm = resultSnap.viewModel as ExpeditionResultViewModel;
     expect(resultVm.outcome).toBe("success");
   });
 
-  it("live: town → provisioning → expedition → result", async () => {
+  it("live: town → provisioning → expedition → dungeon-interaction → result", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
 
@@ -139,7 +143,11 @@ describe("build-run smoke: flow state transitions", () => {
     expect(expSnap.flowState).toBe("expedition");
     expect(expSnap.viewModel.kind).toBe("expedition");
 
-    const resultSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    const dungeonSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    expect(dungeonSnap.flowState).toBe("dungeon-interaction");
+    expect(dungeonSnap.viewModel.kind).toBe("dungeon-interaction");
+
+    const resultSnap = await bridge.dispatchIntent({ type: "proceed-dungeon" });
     expect(resultSnap.flowState).toBe("result");
     expect(resultSnap.viewModel.kind).toBe("result");
   });
@@ -200,6 +208,7 @@ describe("build-run smoke: meta-loop continuation", () => {
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
     await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "proceed-dungeon" });
 
     const returnSnap = await bridge.dispatchIntent({ type: "continue-from-result" });
     expect(returnSnap.flowState).toBe("return");
