@@ -3321,3 +3321,597 @@ button {
     font-size: 1rem;
   }
 }
+
+/* ════════════════════════════════════════════════════════════
+ *  Hero Detail Screen — Reference-matched layout
+ *  英雄面板-战斗技能 page fidelity update
+ * ════════════════════════════════════════════════════════════ */
+
+/* Override the base layout for 3-column reference layout:
+   sidebar (hero list) | center (portrait + info) | right (tabs + content) */
+.hero-detail-layout {
+  display: grid;
+  grid-template-columns: 72px 280px 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+  position: relative;
+  min-height: 560px;
+}
+
+/* ── Left sidebar: hero roster list ── */
+.hero-detail-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hero-sidebar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hero-sidebar-item {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(160, 204, 188, 0.12);
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.hero-sidebar-item:hover {
+  border-color: rgba(160, 204, 188, 0.35);
+  transform: translateY(-1px);
+}
+
+.hero-sidebar-item--active {
+  border-color: rgba(198, 212, 106, 0.55);
+  box-shadow: 0 0 8px rgba(198, 212, 106, 0.15);
+}
+
+.hero-sidebar-portrait {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-sidebar-portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+.hero-sidebar-portrait-letter {
+  font-family: var(--heading-font);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+  opacity: 0.6;
+}
+
+.hero-sidebar-check {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--panel-accent);
+  color: #15200b;
+  font-size: 0.6rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(198, 212, 106, 0.5);
+}
+
+/* ── Center column: portrait + info ── */
+.hero-detail-center {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+
+.hero-nav-arrows {
+  position: absolute;
+  top: 50%;
+  left: -12px;
+  right: -12px;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.hero-nav-arrow {
+  width: 28px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(160, 204, 188, 0.15);
+  border-radius: 6px;
+  color: var(--panel-muted);
+  font-size: 0.7rem;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.hero-nav-arrow:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.7);
+  border-color: rgba(198, 212, 106, 0.4);
+  color: var(--panel-accent);
+}
+
+.hero-nav-arrow:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.hero-portrait-area--large {
+  flex: 1;
+  min-height: 320px;
+}
+
+.hero-portrait-frame--large {
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  border-radius: var(--radius-md);
+}
+
+.hero-portrait-image--large {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+/* Hero info panel below portrait */
+.hero-info-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+}
+
+.hero-info-name {
+  margin: 0;
+  font-family: var(--heading-font);
+  font-size: 1.1rem;
+  color: var(--panel-text);
+  letter-spacing: 0.02em;
+}
+
+.hero-info-desc {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--panel-muted);
+  line-height: 1.45;
+}
+
+.hero-talent-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hero-talent-label {
+  font-size: 0.65rem;
+  color: var(--panel-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+.hero-talent-text {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--panel-muted);
+  line-height: 1.4;
+}
+
+.hero-exile-btn {
+  margin-top: 4px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(234, 119, 103, 0.12);
+  border: 1px solid rgba(234, 119, 103, 0.25);
+  color: #ea7767;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  align-self: flex-start;
+}
+
+.hero-exile-btn:hover {
+  background: rgba(234, 119, 103, 0.2);
+  border-color: rgba(234, 119, 103, 0.4);
+}
+
+/* ── Right area: vertical tabs + content ── */
+.hero-detail-right {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 12px;
+  min-height: 480px;
+}
+
+.hero-tab-bar--vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-bottom: none;
+  border-right: 2px solid rgba(160, 204, 188, 0.1);
+  padding-right: 2px;
+}
+
+.hero-tab-btn--vertical {
+  flex: none;
+  padding: 10px 8px;
+  text-align: center;
+  border-bottom: none;
+  border-right: 2px solid transparent;
+  margin-bottom: 0;
+  margin-right: -2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.hero-tab-btn--vertical:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.hero-tab-btn--active.hero-tab-btn--vertical {
+  border-right-color: var(--panel-accent);
+  border-bottom-color: transparent;
+  background: rgba(198, 212, 106, 0.05);
+}
+
+.hero-tab-label-cn {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.hero-tab-label-en {
+  font-size: 0.6rem;
+  font-weight: 400;
+  opacity: 0.6;
+}
+
+.hero-panel-wrapper {
+  min-height: 0;
+  overflow-y: auto;
+  max-height: 520px;
+}
+
+/* ── Combat Skills Panel (reference-matched) ── */
+.hero-panel--combat-skills {
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.combat-skills-layout {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 16px;
+  height: 100%;
+  min-height: 400px;
+}
+
+.skill-icon-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 4px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+}
+
+.skill-icon-btn {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.skill-icon-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(160, 204, 188, 0.25);
+  transform: translateY(-1px);
+}
+
+.skill-icon-btn--active {
+  background: rgba(198, 212, 106, 0.1);
+  border-color: rgba(198, 212, 106, 0.4);
+  box-shadow: 0 0 10px rgba(198, 212, 106, 0.1);
+}
+
+.skill-icon-btn--locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.skill-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.skill-icon-letter {
+  font-family: var(--heading-font);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+}
+
+.skill-icon-lock {
+  font-size: 1rem;
+  opacity: 0.6;
+}
+
+.skill-icon-active-bar {
+  position: absolute;
+  left: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 24px;
+  background: var(--panel-accent);
+  border-radius: 2px;
+}
+
+/* Skill detail card — mirrors the parchment/card in the reference */
+.skill-detail-card {
+  padding: 18px;
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, rgba(14, 24, 20, 0.9) 0%, rgba(8, 14, 10, 0.95) 100%);
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(160, 204, 188, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skill-detail-name {
+  margin: 0;
+  font-family: var(--heading-font);
+  font-size: 1.1rem;
+  color: var(--panel-text);
+  letter-spacing: 0.02em;
+}
+
+.skill-detail-rank {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.skill-detail-rank-label {
+  font-size: 0.65rem;
+  color: var(--panel-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.skill-rank-pips {
+  display: flex;
+  gap: 4px;
+}
+
+.skill-rank-pip {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #5bbd6e;
+  border: 1px solid rgba(91, 189, 110, 0.4);
+  box-shadow: 0 0 4px rgba(91, 189, 110, 0.3);
+}
+
+.skill-detail-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(160, 204, 188, 0.06);
+}
+
+.skill-detail-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.skill-detail-stat-label {
+  color: var(--panel-muted);
+}
+
+.skill-detail-stat-value {
+  color: var(--panel-accent);
+  font-weight: 600;
+}
+
+.skill-detail-effect {
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.skill-detail-effect-label {
+  color: var(--panel-muted);
+}
+
+.skill-detail-effect-text {
+  color: var(--panel-text);
+}
+
+.skill-detail-base {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.skill-detail-base-stat {
+  font-size: 0.7rem;
+  color: var(--panel-muted);
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.skill-detail-desc {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--panel-muted);
+  line-height: 1.5;
+}
+
+/* ── Bottom resource bar ── */
+.hero-resource-bar {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+  margin-bottom: 12px;
+}
+
+.resource-slot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.resource-slot-icon {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.resource-slot-value {
+  font-weight: 600;
+  color: var(--panel-text);
+}
+
+.resource-slot--gold .resource-slot-value {
+  color: #e8c84a;
+}
+
+/* ── Responsive for hero detail ── */
+@media (max-width: 1024px) {
+  .hero-detail-layout {
+    grid-template-columns: 64px 220px 1fr;
+    gap: 12px;
+  }
+
+  .hero-portrait-area--large {
+    min-height: 260px;
+  }
+
+  .hero-portrait-frame--large {
+    min-height: 260px;
+  }
+
+  .combat-skills-layout {
+    grid-template-columns: 56px 1fr;
+    gap: 12px;
+  }
+
+  .skill-icon-btn {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-detail-layout {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .hero-detail-sidebar {
+    flex-direction: row;
+  }
+
+  .hero-sidebar-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .hero-detail-right {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .hero-tab-bar--vertical {
+    flex-direction: row;
+    border-right: none;
+    border-bottom: 2px solid rgba(160, 204, 188, 0.1);
+    padding-right: 0;
+    padding-bottom: 2px;
+  }
+
+  .hero-tab-btn--vertical {
+    border-right: none;
+    border-bottom: 2px solid transparent;
+    margin-right: 0;
+    margin-bottom: -2px;
+    flex: 1;
+  }
+
+  .hero-tab-btn--active.hero-tab-btn--vertical {
+    border-right-color: transparent;
+    border-bottom-color: var(--panel-accent);
+  }
+
+  .combat-skills-layout {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .skill-icon-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}

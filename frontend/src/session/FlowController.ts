@@ -134,6 +134,13 @@ export function canTransition(
       }
       return { allowed: true };
 
+    case "prev-hero":
+    case "next-hero":
+      if (screen !== "hero-detail") {
+        return { allowed: false, reason: "hero navigation is only valid in hero-detail" };
+      }
+      return { allowed: true };
+
     case "open-building":
       if (screen !== "town") {
         return { allowed: false, reason: "open-building is only valid in town" };

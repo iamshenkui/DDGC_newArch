@@ -135,10 +135,67 @@ export const replayHeroDetailViewModel: HeroDetailViewModel = {
     dodge: "12%"
   },
   combatSkills: [
-    { name: "Hunting Bow", level: 2, description: "Ranged attack that marks the target.", target: "Enemy", hitRating: "85%", critRating: "7%" },
-    { name: "Rapid Shot", level: 2, description: "Fire two quick shots at the target.", target: "Enemy", hitRating: "75%", critRating: "5%" },
-    { name: "Marked for Death", level: 1, description: "Mark a target to take increased damage.", target: "Enemy", hitRating: "100%", critRating: "0%" },
-    { name: "Batty Advice", level: 1, description: "Grant a random buff to an ally.", target: "Ally", hitRating: "100%", critRating: "0%" }
+    {
+      name: "铁壁",
+      level: 2,
+      description: "进入防御姿态，大幅提升自身物理防御并有概率保护队友。",
+      target: "Self",
+      hitRating: "100%",
+      critRating: "0%",
+      rankPips: 3,
+      statBonuses: [
+        { label: "命中概率", value: "+100%" },
+        { label: "物理防御", value: "+100%" }
+      ],
+      effectDescription: "使己方任意一位目标被保护，持续3回合。"
+    },
+    {
+      name: "Hunting Bow",
+      level: 2,
+      description: "Ranged attack that marks the target.",
+      target: "Enemy",
+      hitRating: "85%",
+      critRating: "7%",
+      rankPips: 2
+    },
+    {
+      name: "Rapid Shot",
+      level: 2,
+      description: "Fire two quick shots at the target.",
+      target: "Enemy",
+      hitRating: "75%",
+      critRating: "5%",
+      rankPips: 2
+    },
+    {
+      name: "Marked for Death",
+      level: 1,
+      description: "Mark a target to take increased damage.",
+      target: "Enemy",
+      hitRating: "100%",
+      critRating: "0%",
+      rankPips: 1
+    },
+    {
+      name: "Batty Advice",
+      level: 1,
+      description: "Grant a random buff to an ally.",
+      target: "Ally",
+      hitRating: "100%",
+      critRating: "0%",
+      isLocked: true,
+      rankPips: 1
+    },
+    {
+      name: "Snare Trap",
+      level: 1,
+      description: "Place a trap that stuns the first enemy to move.",
+      target: "Enemy",
+      hitRating: "100%",
+      critRating: "0%",
+      isLocked: true,
+      rankPips: 1
+    }
   ],
   campingSkills: [
     { name: "Campfire Song", level: 2, description: "Restores party stress during camp.", target: "Party", hitRating: "100%", critRating: "0%" },
@@ -152,7 +209,19 @@ export const replayHeroDetailViewModel: HeroDetailViewModel = {
   isWounded: true,
   isAfflicted: false,
   heroDescription: "An expert hunter with keen eyes and deadly aim.",
-  talent: "Natural Marksman"
+  talent: "Natural Marksman",
+  roster: [
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", isSelected: true },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", isSelected: false },
+    { id: "hero-black-01", name: "Hei Zhen", classLabel: "Black", isSelected: false },
+    { id: "hero-hunter-02", name: "Lin", classLabel: "Hunter", isSelected: false }
+  ],
+  resources: {
+    gold: 1250,
+    gems: 10,
+    crystals: 10,
+    shards: 145
+  }
 };
 
 export const replayBuildingDetailViewModel: BuildingDetailViewModel = {

@@ -116,6 +116,28 @@ export interface SkillDetail {
   target: string;
   hitRating: string;
   critRating: string;
+  /** Skill rank / cost pips shown as green circles in the reference UI */
+  rankPips?: number;
+  /** Whether the skill is locked and cannot be used */
+  isLocked?: boolean;
+  /** Optional stat bonuses shown in the detail card (e.g. 命中概率 +100%) */
+  statBonuses?: ReadonlyArray<{ label: string; value: string }>;
+  /** Optional effect description shown below stat bonuses */
+  effectDescription?: string;
+}
+
+export interface HeroRosterEntry {
+  id: string;
+  name: string;
+  classLabel: string;
+  isSelected?: boolean;
+}
+
+export interface HeroResources {
+  gold: number;
+  gems: number;
+  crystals: number;
+  shards: number;
 }
 
 export interface HeroDetailViewModel {
@@ -145,6 +167,10 @@ export interface HeroDetailViewModel {
   isAfflicted: boolean;
   heroDescription: string;
   talent: string;
+  /** Optional roster list for the left sidebar (英雄面板 navigation) */
+  roster?: ReadonlyArray<HeroRosterEntry>;
+  /** Optional resources for the bottom bar */
+  resources?: HeroResources;
 }
 
 export interface TownViewModel {
@@ -287,6 +313,8 @@ export interface DdgcFrontendSnapshot {
 export type DdgcFrontendIntent =
   | { type: "boot"; mode: RuntimeMode }
   | { type: "open-hero"; heroId: string }
+  | { type: "prev-hero" }
+  | { type: "next-hero" }
   | { type: "open-building"; buildingId: string }
   | { type: "building-action"; actionId: string }
   | { type: "start-provisioning" }

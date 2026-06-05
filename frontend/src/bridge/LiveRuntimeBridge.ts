@@ -364,6 +364,14 @@ export class LiveRuntimeBridge implements RuntimeBridge {
 
   private listeners = new Set<RuntimeBridgeListener>();
   private snapshot = createLiveTownSnapshot();
+  /** Last known town snapshot for hero/building lookups when not in town. */
+  private lastTownSnapshot = createLiveTownSnapshot();
+
+  private getTownVm(): TownViewModel {
+    const vm = this.snapshot.viewModel;
+    if (vm.kind === "town") return vm as TownViewModel;
+    return this.lastTownSnapshot.viewModel as TownViewModel;
+  }
 
   async boot(): Promise<DdgcFrontendSnapshot> {
     this.emit(this.snapshot);
@@ -378,17 +386,46 @@ export class LiveRuntimeBridge implements RuntimeBridge {
     switch (intent.type) {
       case "boot":
         this.snapshot = createLiveTownSnapshot();
+        this.lastTownSnapshot = createLiveTownSnapshot();
         break;
       case "open-hero": {
-        const townVm = this.snapshot.viewModel as TownViewModel;
+        const townVm = this.getTownVm();
         const hero = townVm.heroes.find((h) => h.id === intent.heroId) ?? townVm.heroes[0];
+        const heroDetailVm = createLiveHeroDetailViewModel(hero);
+        const heroRoster = townVm.heroes.map((h) => ({
+          id: h.id,
+          name: h.name,
+          classLabel: h.classLabel,
+          isSelected: h.id === hero.id
+        }));
         this.snapshot = {
           ...this.snapshot,
           flowState: "town",
-          viewModel: createLiveHeroDetailViewModel(hero)
+          viewModel: {
+            ...heroDetailVm,
+            roster: heroRoster,
+            resources: {
+              gold: townVm.gold,
+              gems: 5,
+              crystals: 5,
+              shards: 100
+            }
+          }
         };
         break;
       }
+      case "prev-hero":
+      case "next-hero": {
+        const currentVm = this.snapshot.viewModel as HeroDetailViewModel;
+        const roster = currentVm.roster ?? [];
+        if (roster.length === 0) break;
+        const currentIndex = roster.findIndex((h) => h.id === currentVm.heroId);
+        const delta = intent.type === "prev-hero" ? -1 : 1;
+        const nextIndex = (currentIndex + delta + roster.length) % roster.length;
+        const nextHeroId = roster[nextIndex].id;
+        return this.dispatchIntent({ type: "open-hero", heroId: nextHeroId });
+      }
+
       case "open-building": {
         const townVm = this.snapshot.viewModel as TownViewModel;
         const building = townVm.buildings.find((b) => b.id === intent.buildingId) ?? townVm.buildings[0];
@@ -446,6 +483,7 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         break;
       case "return-to-town":
         this.snapshot = createLiveTownSnapshot();
+        this.lastTownSnapshot = createLiveTownSnapshot();
         break;
       case "continue-from-result":
         this.snapshot = {
