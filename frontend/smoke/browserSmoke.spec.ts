@@ -493,6 +493,71 @@ test.describe("browser smoke: fidelity gates", () => {
     expectNoErrors(pageErrors, consoleErrors, "Phase 5 (meta-loop)");
   });
 
+  // ── Legacy Tower building detail test ────────────────────
+  test("legacy tower building detail screen renders correctly", async ({ page }) => {
+    const { consoleErrors, pageErrors } = setupErrorCollectors(page);
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+
+    // Boot replay to reach town
+    await page.getByRole("button", { name: "Boot Replay" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 8_000 });
+    await settle(page);
+
+    // Open the Legacy Tower building
+    await page.locator('[data-building-id="legacytower"]').click();
+    await settle(page, 800);
+
+    // Verify building detail screen renders with correct name
+    await expect(
+      page.locator(".building-detail-eyebrow"),
+      "Building eyebrow must be visible"
+    ).toHaveText("Building");
+    await expect(
+      page.locator(".building-detail-name"),
+      "Legacy Tower building name must be visible (DDGC display name 维度灯塔 = Legacy Tower)"
+    ).toHaveText("维度灯塔");
+
+    // Verify the dedicated legacy tower screen renders (not generic fallback)
+    await expect(
+      page.locator('[data-source-hierarchy="LegacyTowerWindow/LeftPanel"]'),
+      "Legacy Tower left panel must be present"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-source-hierarchy="LegacyTowerWindow/RightPanel/UpgradeWindow"]'),
+      "Legacy Tower right panel must be present"
+    ).toBeVisible();
+
+    // Verify building status card is present
+    await expect(
+      page.locator(".building-info-card-title").filter({ hasText: "Building Status" }),
+      "Building Status card must be visible"
+    ).toBeVisible();
+
+    // Fidelity — legacy tower detail is a completed product surface
+    await expectFidelity(page.locator(".app-frame"), "Legacy Tower building detail screen");
+    await expectFullPageFidelity(page, "Legacy Tower building detail screen");
+
+    // Landscape viewport check
+    await expect(
+      page.locator(".app-frame"),
+      "Legacy Tower building detail screen must use .app-frame landscape layout"
+    ).toBeVisible();
+
+    // Return to town
+    await page.getByRole("button", { name: "Return to Town" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("城镇中枢"),
+      "Must be back at town after returning from Legacy Tower"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Legacy Tower building detail");
+  });
+
   // ── Live boot test ─────────────────────────────────────────
   test("live boot exercises live bridge path", async ({ page }) => {
     const { consoleErrors, pageErrors } = setupErrorCollectors(page);
