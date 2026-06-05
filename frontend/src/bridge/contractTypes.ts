@@ -116,6 +116,9 @@ export interface SkillDetail {
   target: string;
   hitRating: string;
   critRating: string;
+  icon?: string;
+  timeCost?: number;
+  useLimit?: number;
 }
 
 export interface HeroDetailViewModel {

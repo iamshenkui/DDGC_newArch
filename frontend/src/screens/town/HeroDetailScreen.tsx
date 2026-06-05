@@ -3,6 +3,7 @@ import { createSignal, For, type Component } from "solid-js";
 import { resolveHeroPortrait } from "../../assets/originalAssetPaths";
 import type { HeroDetailViewModel } from "../../bridge/contractTypes";
 import { AppFrame } from "../../components/layout/AppFrame";
+import { CampingSkillsPanel } from "./CampingSkillsPanel";
 
 type TabKey = "equipment" | "combat-skills" | "state" | "info" | "camping-skills";
 
@@ -476,28 +477,11 @@ export const HeroDetailScreen: Component<HeroDetailScreenProps> = (props) => {
           {/* ── Camping Skills Panel (mirrors CharacterWindow/Panels/CampingSkillsPanel) ── */}
           {activeTab() === "camping-skills" && (
             <div
-              class="hero-panel hero-panel--skills"
+              class="hero-panel hero-panel--camping-skills"
               data-source-component="CampingSkillsPanel"
               data-source-hierarchy="CharacterWindow/Panels/CampingSkillsPanel"
             >
-              <h3 class="hero-panel-heading">Camping Skills</h3>
-              <div class="skills-list">
-                <For each={props.viewModel.campingSkills}>
-                  {(skill) => (
-                    <div class="skill-card skill-card--camping" data-source-component="Skill">
-                      <div class="skill-card-header">
-                        <span class="skill-card-name" data-source-component="SkillName">{skill.name}</span>
-                        <span class="skill-card-level">
-                          Lv{skill.level}
-                        </span>
-                      </div>
-                      <div class="skill-card-body" data-source-component="SkillDesc">
-                        <span class="skill-card-desc">{skill.description}</span>
-                      </div>
-                    </div>
-                  )}
-                </For>
-              </div>
+              <CampingSkillsPanel skills={props.viewModel.campingSkills} />
             </div>
           )}
         </div>

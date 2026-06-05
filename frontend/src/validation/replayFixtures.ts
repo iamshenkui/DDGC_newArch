@@ -141,8 +141,10 @@ export const replayHeroDetailViewModel: HeroDetailViewModel = {
     { name: "Batty Advice", level: 1, description: "Grant a random buff to an ally.", target: "Ally", hitRating: "100%", critRating: "0%" }
   ],
   campingSkills: [
-    { name: "Campfire Song", level: 2, description: "Restores party stress during camp.", target: "Party", hitRating: "100%", critRating: "0%" },
-    { name: "Warrior's Restore", level: 1, description: "Heal a hero during camp rest.", target: "Self", hitRating: "100%", critRating: "0%" }
+    { name: "放松", level: 2, description: "缓解自身压力，恢复部分理智值。在扎营期间使用，消耗 2 点时间。", target: "Self", hitRating: "100%", critRating: "0%", timeCost: 2, useLimit: 1 },
+    { name: "营火之歌", level: 2, description: "为全队恢复少量压力值。需要队友在附近才能生效。", target: "Party", hitRating: "100%", critRating: "0%", timeCost: 3, useLimit: 1 },
+    { name: "战士休整", level: 1, description: "在扎营期间为自己恢复少量生命值。", target: "Self", hitRating: "100%", critRating: "0%", timeCost: 2, useLimit: 2 },
+    { name: "警戒哨岗", level: 1, description: "降低队伍在扎营期间遭遇伏击的概率。", target: "Party", hitRating: "100%", critRating: "0%", timeCost: 2, useLimit: 1 }
   ],
   weapon: { name: "Hunter's Bow (+2)", level: 3 },
   armor: { name: "Leather Armor (+1)", level: 2 },
