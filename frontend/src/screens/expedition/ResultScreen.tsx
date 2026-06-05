@@ -1,7 +1,7 @@
 import { For, type Component } from "solid-js";
 
 import type { ExpeditionResultViewModel } from "../../bridge/contractTypes";
-import { resolveChromeAsset, resolveHeroPortrait } from "../../assets/originalAssetPaths";
+import { resolveHeroPortrait } from "../../assets/originalAssetPaths";
 
 interface ResultScreenProps {
   viewModel: ExpeditionResultViewModel;
@@ -10,83 +10,62 @@ interface ResultScreenProps {
 }
 
 /**
- * Expedition result screen — landscape viewport layout.
+ * Dungeon settlement screen — book/ledger layout.
  *
  * Displays expedition outcome with hero outcomes, loot, and resources gained.
  * References original Unity prefab structure from:
- *   Assets/Prefabs/UI/ExpeditionResultWindow.prefab
+ *   Assets/Prefabs/UI/DungeonSettlementWindow.prefab
  *
- * Source hierarchy: UI_Expedition/ExpeditionResultWindow
- *   OutcomeBannerPanel → OutcomeLabel + OutcomeIcon
- *   HeroOutcomePanel → HeroOutcomeCard × 4
- *   RewardsPanel → GoldLabel + LootGrid + ResourceLine
- *   CloseButton → navigate to return/flow
+ * Source hierarchy: UI_Dungeon/DungeonSettlementWindow
+ *   LeftPage → GradeBadge + DungeonName + OutcomeLabel + RewardsBar + TreasureCount
+ *   RightPage → HeirloomCounts + HeroRoster
+ *   ContinueHint → navigate to return/flow
  */
 export const ResultScreen: Component<ResultScreenProps> = (props) => {
-  const outcomeLabel = () => {
+  const outcomeColor = () => {
     switch (props.viewModel.outcome) {
       case "success":
-        return "Victory";
+        return "#5bbd6e";
       case "failure":
-        return "Defeat";
+        return "#ea7767";
       case "partial":
-        return "Partial Success";
+        return "#e8a838";
     }
   };
 
-  const outcomeBannerClass = () => {
-    switch (props.viewModel.outcome) {
-      case "success":
-        return "outcome-banner outcome-banner--success";
-      case "failure":
-        return "outcome-banner outcome-banner--failure";
-      case "partial":
-        return "outcome-banner outcome-banner--partial";
-    }
-  };
-
-  const heroOutcomeStatusClass = (status: string) => {
+  const heroStatusIcon = (status: string) => {
     switch (status) {
       case "dead":
-        return "hero-outcome-status--dead";
+        return "✕";
       case "stressed":
-        return "hero-outcome-status--stressed";
+        return "!";
       default:
-        return "hero-outcome-status--alive";
+        return "✓";
     }
   };
 
-  const heroOutcomeStatusLabel = (status: string) => {
+  const heroStatusClass = (status: string) => {
     switch (status) {
       case "dead":
-        return "Deceased";
+        return "settlement-hero-status settlement-hero-status--dead";
       case "stressed":
-        return "Stressed";
+        return "settlement-hero-status settlement-hero-status--stressed";
       default:
-        return "Alive";
+        return "settlement-hero-status settlement-hero-status--alive";
     }
   };
-
-  const heroCardExtraClass = (status: string) => {
-    return status === "dead" ? "hero-outcome-card hero-outcome-card--dead" : "hero-outcome-card";
-  };
-
-  const heroHasCasualties = () =>
-    props.viewModel.heroOutcomes.some((h) => h.status === "dead");
-
-  const isFailure = () => props.viewModel.outcome === "failure";
-  const isPartial = () => props.viewModel.outcome === "partial";
 
   return (
     <div
       class="expedition-viewport"
-      data-source-scene="UI_Expedition/ExpeditionResultWindow"
-      data-source-prefab="Assets/Prefabs/UI/ExpeditionResultWindow.prefab"
+      data-source-scene="UI_Dungeon/DungeonSettlementWindow"
+      data-source-prefab="Assets/Prefabs/UI/DungeonSettlementWindow.prefab"
+      data-testid="dungeon-settlement-screen"
     >
       {/* ── Top HUD ─────────────────────────────────────── */}
       <header class="expedition-hud">
         <span class="expedition-hud-left">
-          <span class="eyebrow">Expedition Complete</span>
+          <span class="eyebrow">副本结算</span>
           <h1 class="expedition-title">{props.viewModel.title}</h1>
         </span>
         <span class="expedition-hud-center">
@@ -99,123 +78,113 @@ export const ResultScreen: Component<ResultScreenProps> = (props) => {
         <div class="expedition-surface-bg" />
         <div class="expedition-surface-mist" />
 
-        <div class="expedition-content">
-          {/* Outcome banner */}
-          <div class={outcomeBannerClass()}>
-            <div class="outcome-banner-ornament" />
-            <h2 class="outcome-banner-title">{outcomeLabel()}</h2>
-            <p class="outcome-banner-subtitle">{props.viewModel.summary}</p>
-            {isFailure() && (
-              <p class="outcome-banner-detail outcome-detail--failure">
-                The expedition has ended in defeat. Rally what remains — the Estate endures.
-              </p>
-            )}
-            {isPartial() && (
-              <p class="outcome-banner-detail outcome-detail--partial">
-                The expedition achieved partial objectives. Tend to the wounded before the next venture.
-              </p>
-            )}
-            {!isFailure() && !isPartial() && (
-              <p class="outcome-banner-detail outcome-detail--success">
-                The expedition concluded successfully. Your heroes stand ready for the next challenge.
-              </p>
-            )}
-          </div>
+        <div class="expedition-content settlement-content">
+          {/* Book / Ledger container */}
+          <div class="settlement-ledger">
+            {/* Spine fold */}
+            <div class="settlement-spine" />
 
-          {/* Hero outcomes */}
-          <div class="hero-outcome-row">
-            <For each={props.viewModel.heroOutcomes}>
-              {(hero) => {
-                const portraitUrl = resolveHeroPortrait({ heroId: hero.heroId, classLabel: hero.classLabel });
-                return (
-                  <div class={heroCardExtraClass(hero.status)}>
-                    {portraitUrl ? (
-                      <img
-                        class="hero-outcome-portrait"
-                        src={portraitUrl}
-                        alt={hero.heroName}
-                      />
-                    ) : (
-                      <div class="hero-outcome-portrait hero-outcome-portrait--fallback">
-                        <span class="hero-outcome-portrait-letter">
-                          {hero.heroName[0]}
-                        </span>
+            {/* Left Page */}
+            <div class="settlement-page settlement-page--left">
+              {/* Grade badge */}
+              <div class="settlement-grade">
+                <span
+                  class="settlement-grade-letter"
+                  style={{ color: outcomeColor() }}
+                >
+                  {props.viewModel.grade}
+                </span>
+              </div>
+
+              {/* Dungeon name */}
+              <div class="settlement-dungeon-name">{props.viewModel.expeditionName}</div>
+
+              {/* Outcome label */}
+              <div
+                class="settlement-outcome"
+                style={{ color: outcomeColor() }}
+              >
+                {props.viewModel.outcomeLabel}
+              </div>
+
+              {/* Rewards section */}
+              <div class="settlement-section">
+                <div class="settlement-section-title">获得的奖励</div>
+                <div class="settlement-rewards-bar">
+                  <div
+                    class="settlement-rewards-fill"
+                    style={{ width: "60%", background: outcomeColor() }}
+                  />
+                </div>
+              </div>
+
+              {/* Treasure section */}
+              <div class="settlement-section">
+                <div class="settlement-section-title">收集的宝藏</div>
+                <div class="settlement-treasure">
+                  <span class="settlement-treasure-icon" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <path d="M12 2L4 6v6c0 5 3.4 9.4 8 10 4.6-.6 8-5 8-10V6l-8-4z" />
+                    </svg>
+                  </span>
+                  <span class="settlement-treasure-value">{props.viewModel.resourcesGained.gold}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Page */}
+            <div class="settlement-page settlement-page--right">
+              {/* Heirlooms section */}
+              <div class="settlement-section">
+                <div class="settlement-section-title">收集的传家宝</div>
+                <div class="settlement-heirlooms">
+                  <For each={props.viewModel.heirlooms}>
+                    {(heirloom) => (
+                      <div class="settlement-heirloom">
+                        <span class="settlement-heirloom-label">{heirloom.label}</span>
+                        <span class="settlement-heirloom-count">{heirloom.count}</span>
                       </div>
                     )}
-                    <div class="hero-outcome-name">{hero.heroName}</div>
-                    <span class={`hero-outcome-status ${heroOutcomeStatusClass(hero.status)}`}>
-                      {heroOutcomeStatusLabel(hero.status)}
-                    </span>
-                    {hero.status !== "dead" && (
-                      <div class="hero-outcome-changes">
-                        <div class="hero-outcome-change">
-                          <span class="hero-outcome-change-label">HP</span>
-                          <span class={`hero-outcome-change-value ${hero.hpChange.startsWith("-") ? "change-negative" : "change-positive"}`}>
-                            {hero.hpChange}
-                          </span>
-                        </div>
-                        <div class="hero-outcome-change">
-                          <span class="hero-outcome-change-label">Stress</span>
-                          <span class={`hero-outcome-change-value ${hero.stressChange.startsWith("+") ? "change-stress" : "change-positive"}`}>
-                            {hero.stressChange}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              }}
-            </For>
-          </div>
+                  </For>
+                </div>
+              </div>
 
-          {/* Resources gained */}
-          <div class="resources-panel">
-            <div class="resource-item">
-              <span class="resource-label">Gold</span>
-              <span class="resource-value resource-value--positive result-gold-value">
-                <img
-                  class="gold-icon-image"
-                  src={resolveChromeAsset("goldIcon")}
-                  alt=""
-                  aria-hidden="true"
-                />
-                +{props.viewModel.resourcesGained.gold}
-              </span>
-            </div>
-            <div class="resource-item">
-              <span class="resource-label">Supplies</span>
-              <span class={`resource-value ${props.viewModel.resourcesGained.supplies >= 0 ? "resource-value--positive" : "resource-value--negative"}`}>
-                {props.viewModel.resourcesGained.supplies >= 0 ? "+" : ""}{props.viewModel.resourcesGained.supplies}
-              </span>
-            </div>
-            <div class="resource-item">
-              <span class="resource-label">Experience</span>
-              <span class="resource-value resource-value--positive">
-                +{props.viewModel.resourcesGained.experience}
-              </span>
+              {/* Hero roster */}
+              <div class="settlement-section">
+                <div class="settlement-section-title settlement-heroes-title">远征队伍</div>
+                <div class="settlement-heroes">
+                  <For each={props.viewModel.heroOutcomes}>
+                    {(hero) => {
+                      const portraitUrl = resolveHeroPortrait({ heroId: hero.heroId, classLabel: hero.classLabel });
+                      return (
+                        <div class="settlement-hero">
+                          <div class="settlement-hero-portrait-wrap">
+                            {portraitUrl ? (
+                              <img
+                                class="settlement-hero-portrait"
+                                src={portraitUrl}
+                                alt={hero.heroName}
+                              />
+                            ) : (
+                              <div class="settlement-hero-portrait settlement-hero-portrait--fallback">
+                                <span class="settlement-hero-portrait-letter">
+                                  {hero.heroName[0]}
+                                </span>
+                              </div>
+                            )}
+                            <span class={heroStatusClass(hero.status)}>
+                              {heroStatusIcon(hero.status)}
+                            </span>
+                          </div>
+                          <span class="settlement-hero-name">{hero.heroName}</span>
+                        </div>
+                      );
+                    }}
+                  </For>
+                </div>
+              </div>
             </div>
           </div>
-
-          {/* Loot */}
-          {props.viewModel.lootAcquired.length > 0 && (
-            <div class="loot-panel">
-              <div class="loot-title">Loot Acquired</div>
-              <For each={props.viewModel.lootAcquired}>
-                {(item) => (
-                  <div class="loot-item">{item}</div>
-                )}
-              </For>
-            </div>
-          )}
-
-          {/* Casualty warning */}
-          {heroHasCasualties() && (
-            <div class="details-overlay" style="border-color: rgba(234, 119, 103, 0.3);">
-              <p class="casualty-message">
-                <strong>Casualties sustained.</strong> Some heroes did not return. Visit the Stagecoach to recruit new party members.
-              </p>
-            </div>
-          )}
         </div>
       </div>
 
@@ -224,16 +193,17 @@ export const ResultScreen: Component<ResultScreenProps> = (props) => {
         <div class="expedition-controls-left" />
         <div class="expedition-controls-right">
           <button class="action-secondary" onClick={props.onReturnToTown}>
-            Return to Town
+            返回城镇
           </button>
           <button
             class="action-primary launch-primary"
             onClick={props.onContinue}
             disabled={!props.viewModel.isContinueAvailable}
+            data-testid="settlement-continue-btn"
           >
             {props.viewModel.isContinueAvailable
-              ? "Proceed to Return"
-              : "Awaiting Resolution"}
+              ? "点击继续"
+              : "等待结算"}
           </button>
         </div>
       </footer>

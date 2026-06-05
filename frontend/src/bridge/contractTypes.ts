@@ -215,11 +215,19 @@ export interface ExpeditionSetupViewModel {
   isLaunchable: boolean;
 }
 
+export interface HeirloomEntry {
+  label: string;
+  count: number;
+  icon?: string;
+}
+
 export interface ExpeditionResultViewModel {
   kind: "result";
   title: string;
   expeditionName: string;
   outcome: "success" | "failure" | "partial";
+  outcomeLabel: string;
+  grade: string;
   summary: string;
   lootAcquired: ReadonlyArray<string>;
   heroOutcomes: ReadonlyArray<{
@@ -235,6 +243,7 @@ export interface ExpeditionResultViewModel {
     supplies: number;
     experience: number;
   };
+  heirlooms: ReadonlyArray<HeirloomEntry>;
   isContinueAvailable: boolean;
 }
 

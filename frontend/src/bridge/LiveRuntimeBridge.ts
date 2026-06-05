@@ -303,9 +303,11 @@ const createLiveExpeditionViewModel = (): ExpeditionSetupViewModel => ({
 
 const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
   kind: "result",
-  title: "Expedition Complete",
-  expeditionName: "The Azure Lantern Expedition",
+  title: "副本结算",
+  expeditionName: "毅和",
   outcome: "success",
+  outcomeLabel: "逃跑",
+  grade: "C",
   summary: "Your expedition has returned. Review the outcomes and continue your campaign.",
   lootAcquired: ["Gold Coin x2", "Ancient Relic"],
   heroOutcomes: [
@@ -327,10 +329,16 @@ const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
     }
   ],
   resourcesGained: {
-    gold: 150,
+    gold: 480,
     supplies: -30,
     experience: 100
   },
+  heirlooms: [
+    { label: "Deed", count: 2 },
+    { label: "Portrait", count: 0 },
+    { label: "Crest", count: 0 },
+    { label: "Bust", count: 0 }
+  ],
   isContinueAvailable: true
 });
 

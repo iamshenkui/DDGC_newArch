@@ -518,9 +518,11 @@ export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
 
 export const replayResultViewModel: ExpeditionResultViewModel = {
   kind: "result",
-  title: "Expedition Complete",
-  expeditionName: "The Depths Await",
+  title: "副本结算",
+  expeditionName: "毅和",
   outcome: "success",
+  outcomeLabel: "逃跑",
+  grade: "C",
   summary: "Your party has returned victorious from the expedition. The depths have been conquered and valuable treasures have been recovered.",
   lootAcquired: [
     "Ancient Gold Coin x3",
@@ -530,7 +532,7 @@ export const replayResultViewModel: ExpeditionResultViewModel = {
   heroOutcomes: [
     {
       heroId: "hero-hunter-01",
-      heroName: "Shen",
+      heroName: "艾潞",
       classLabel: "Hunter",
       status: "alive",
       hpChange: "-4",
@@ -538,32 +540,56 @@ export const replayResultViewModel: ExpeditionResultViewModel = {
     },
     {
       heroId: "hero-white-01",
-      heroName: "Bai Xiu",
+      heroName: "听风",
       classLabel: "White",
       status: "alive",
       hpChange: "-8",
       stressChange: "+8"
+    },
+    {
+      heroId: "hero-black-01",
+      heroName: "河北人测试1",
+      classLabel: "Black",
+      status: "alive",
+      hpChange: "-6",
+      stressChange: "+10"
+    },
+    {
+      heroId: "hero-hunter-02",
+      heroName: "纵剖官测试1",
+      classLabel: "Hunter",
+      status: "alive",
+      hpChange: "-2",
+      stressChange: "+5"
     }
   ],
   resourcesGained: {
-    gold: 250,
+    gold: 480,
     supplies: -50,
     experience: 180
   },
+  heirlooms: [
+    { label: "Deed", count: 2 },
+    { label: "Portrait", count: 0 },
+    { label: "Crest", count: 0 },
+    { label: "Bust", count: 0 }
+  ],
   isContinueAvailable: true
 };
 
 export const replayFailureResultViewModel: ExpeditionResultViewModel = {
   kind: "result",
-  title: "Expedition Failed",
-  expeditionName: "The Depths Await",
+  title: "副本结算",
+  expeditionName: "毅和",
   outcome: "failure",
+  outcomeLabel: "失败",
+  grade: "F",
   summary: "Your expedition has been utterly defeated. The party was overwhelmed and forced to retreat in disarray.",
   lootAcquired: [],
   heroOutcomes: [
     {
       heroId: "hero-hunter-01",
-      heroName: "Shen",
+      heroName: "艾潞",
       classLabel: "Hunter",
       status: "alive",
       hpChange: "-18",
@@ -571,7 +597,7 @@ export const replayFailureResultViewModel: ExpeditionResultViewModel = {
     },
     {
       heroId: "hero-white-01",
-      heroName: "Bai Xiu",
+      heroName: "听风",
       classLabel: "White",
       status: "dead",
       hpChange: "-41",
@@ -583,14 +609,22 @@ export const replayFailureResultViewModel: ExpeditionResultViewModel = {
     supplies: -100,
     experience: 50
   },
+  heirlooms: [
+    { label: "Deed", count: 0 },
+    { label: "Portrait", count: 0 },
+    { label: "Crest", count: 0 },
+    { label: "Bust", count: 0 }
+  ],
   isContinueAvailable: true
 };
 
 export const replayPartialResultViewModel: ExpeditionResultViewModel = {
   kind: "result",
-  title: "Expedition Partial Success",
-  expeditionName: "The Depths Await",
+  title: "副本结算",
+  expeditionName: "毅和",
   outcome: "partial",
+  outcomeLabel: "部分完成",
+  grade: "D",
   summary: "Your party returned with mixed results. Some objectives were achieved but at significant cost.",
   lootAcquired: [
     "Ancient Gold Coin x1"
@@ -598,7 +632,7 @@ export const replayPartialResultViewModel: ExpeditionResultViewModel = {
   heroOutcomes: [
     {
       heroId: "hero-hunter-01",
-      heroName: "Shen",
+      heroName: "艾潞",
       classLabel: "Hunter",
       status: "alive",
       hpChange: "-12",
@@ -606,7 +640,7 @@ export const replayPartialResultViewModel: ExpeditionResultViewModel = {
     },
     {
       heroId: "hero-white-01",
-      heroName: "Bai Xiu",
+      heroName: "听风",
       classLabel: "White",
       status: "stressed",
       hpChange: "-15",
@@ -618,6 +652,12 @@ export const replayPartialResultViewModel: ExpeditionResultViewModel = {
     supplies: -75,
     experience: 100
   },
+  heirlooms: [
+    { label: "Deed", count: 1 },
+    { label: "Portrait", count: 0 },
+    { label: "Crest", count: 0 },
+    { label: "Bust", count: 0 }
+  ],
   isContinueAvailable: true
 };
 
@@ -1015,9 +1055,12 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
     case "result": {
       if (!vm.title || typeof vm.title !== "string") e.push("ExpeditionResultViewModel: title is missing");
       if (vm.outcome !== "success" && vm.outcome !== "failure" && vm.outcome !== "partial") e.push(`ExpeditionResultViewModel: outcome is "${String(vm.outcome)}", expected "success", "failure", or "partial"`);
+      if (!vm.outcomeLabel || typeof vm.outcomeLabel !== "string") e.push("ExpeditionResultViewModel: outcomeLabel is missing");
+      if (!vm.grade || typeof vm.grade !== "string") e.push("ExpeditionResultViewModel: grade is missing");
       if (!vm.summary || typeof vm.summary !== "string") e.push("ExpeditionResultViewModel: summary is missing");
       if (!Array.isArray(vm.heroOutcomes)) { e.push("ExpeditionResultViewModel: heroOutcomes is not an array"); } else if (vm.heroOutcomes.length === 0) { e.push("ExpeditionResultViewModel: heroOutcomes array is empty"); }
       if (!vm.resourcesGained || typeof vm.resourcesGained !== "object") e.push("ExpeditionResultViewModel: resourcesGained is missing");
+      if (!Array.isArray(vm.heirlooms)) e.push("ExpeditionResultViewModel: heirlooms is not an array");
       if (typeof vm.isContinueAvailable !== "boolean") e.push("ExpeditionResultViewModel: isContinueAvailable is not a boolean");
       break;
     }
