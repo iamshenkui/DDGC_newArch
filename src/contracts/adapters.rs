@@ -897,6 +897,10 @@ fn building_label_and_description(building_id: &str) -> (String, String) {
             "Campfire".to_string(),
             "The campfire provides a place to rest during expeditions. Camp to heal and buff heroes.".to_string(),
         ),
+        "market" => (
+            "Trading Market".to_string(),
+            "Purchase expedition supplies, equipment, and rare trinkets. Stock rotates as the shop levels up.".to_string(),
+        ),
         _ => (
             format!("Building: {}", building_id),
             format!("Town building '{}' - detailed interactions to be implemented.", building_id),
@@ -918,6 +922,7 @@ fn building_upgrade_hint(building_id: &str) -> Option<String> {
         "museum" => Some("Upgrade to expand display capacity and artifact appraisal.".to_string()),
         "provisioner" => Some("Upgrade to expand supply stock and reduce expedition costs.".to_string()),
         "sanctuary" => Some("Upgrade to unlock advanced quirk and disease treatment.".to_string()),
+        "market" => Some("Upgrade to expand stock and unlock equipment and trinket shops.".to_string()),
         _ => None,
     }
 }
@@ -1200,6 +1205,76 @@ fn generate_building_actions(
                 is_unsupported: false,
             },
         ],
+        "market" => {
+            let can_buy_equipment = current_level.map_or(false, |l| l >= 'b');
+            let can_buy_trinkets = current_level.map_or(false, |l| l >= 'c');
+            vec![
+                BuildingAction {
+                    id: "buy-supplies-food".to_string(),
+                    label: "Rations".to_string(),
+                    description: "Basic food to restore hero stamina during short expeditions.".to_string(),
+                    cost: "50 Gold".to_string(),
+                    is_available: is_ready && current_gold >= 50,
+                    is_unsupported: false,
+                },
+                BuildingAction {
+                    id: "buy-supplies-torch".to_string(),
+                    label: "Torch".to_string(),
+                    description: "Essential tool to illuminate dark areas and dispel some environmental effects.".to_string(),
+                    cost: "30 Gold".to_string(),
+                    is_available: is_ready && current_gold >= 30,
+                    is_unsupported: false,
+                },
+                BuildingAction {
+                    id: "buy-supplies-medicine".to_string(),
+                    label: "Medicinal Herbs".to_string(),
+                    description: "Common herbs for treating light wounds and diseases.".to_string(),
+                    cost: "80 Gold".to_string(),
+                    is_available: is_ready && current_gold >= 80,
+                    is_unsupported: false,
+                },
+                BuildingAction {
+                    id: "buy-equipment-weapon".to_string(),
+                    label: "Steel Shortsword".to_string(),
+                    description: "Standard-issue weapon from the guild workshop.".to_string(),
+                    cost: "250 Gold".to_string(),
+                    is_available: is_ready && can_buy_equipment && current_gold >= 250,
+                    is_unsupported: false,
+                },
+                BuildingAction {
+                    id: "buy-equipment-armor".to_string(),
+                    label: "Leather Armor".to_string(),
+                    description: "Light armor providing basic protection without hindering hero mobility.".to_string(),
+                    cost: "200 Gold".to_string(),
+                    is_available: is_ready && can_buy_equipment && current_gold >= 200,
+                    is_unsupported: false,
+                },
+                BuildingAction {
+                    id: "buy-trinket-lucky-charm".to_string(),
+                    label: "Lucky Charm".to_string(),
+                    description: "Small accessory that boosts critical hit rate.".to_string(),
+                    cost: "350 Gold".to_string(),
+                    is_available: is_ready && can_buy_trinkets && current_gold >= 350,
+                    is_unsupported: false,
+                },
+                BuildingAction {
+                    id: "buy-trinket-resistance-ring".to_string(),
+                    label: "Resistance Ring".to_string(),
+                    description: "Rare accessory that boosts elemental resistance.".to_string(),
+                    cost: "500 Gold".to_string(),
+                    is_available: false,
+                    is_unsupported: true,
+                },
+                BuildingAction {
+                    id: "buy-special-map".to_string(),
+                    label: "Treasure Map Fragment".to_string(),
+                    description: "Mysterious map fragments occasionally circulating in the guild black market.".to_string(),
+                    cost: "1000 Gold".to_string(),
+                    is_available: false,
+                    is_unsupported: true,
+                },
+            ]
+        }
         _ => vec![BuildingAction {
             id: "interact".to_string(),
             label: "Interact".to_string(),

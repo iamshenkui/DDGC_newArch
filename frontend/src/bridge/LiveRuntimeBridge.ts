@@ -238,6 +238,77 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
           isUnsupported: false
         }
       ]
+    },
+    market: {
+      description: "Purchase expedition supplies, equipment, and rare trinkets. Stock rotates as the shop levels up.",
+      currentUpgrade: "Market Level 1",
+      actions: [
+        {
+          id: "buy-supplies-food",
+          label: "Rations",
+          description: "Basic food to restore hero stamina during short expeditions.",
+          cost: "50 Gold",
+          isAvailable: true,
+          isUnsupported: false
+        },
+        {
+          id: "buy-supplies-torch",
+          label: "Torch",
+          description: "Essential tool to illuminate dark areas and dispel some environmental effects.",
+          cost: "30 Gold",
+          isAvailable: true,
+          isUnsupported: false
+        },
+        {
+          id: "buy-supplies-medicine",
+          label: "Medicinal Herbs",
+          description: "Common herbs for treating light wounds and diseases. Expedition essential.",
+          cost: "80 Gold",
+          isAvailable: true,
+          isUnsupported: false
+        },
+        {
+          id: "buy-equipment-weapon",
+          label: "Steel Shortsword",
+          description: "Standard-issue weapon from the guild workshop. Moderate attack power.",
+          cost: "250 Gold",
+          isAvailable: false,
+          isUnsupported: false
+        },
+        {
+          id: "buy-equipment-armor",
+          label: "Leather Armor",
+          description: "Light armor providing basic protection without hindering hero mobility.",
+          cost: "200 Gold",
+          isAvailable: false,
+          isUnsupported: false
+        },
+        {
+          id: "buy-trinket-lucky-charm",
+          label: "Lucky Charm",
+          description: "Small accessory that boosts critical hit rate. Limited guild merchant stock.",
+          cost: "350 Gold",
+          isAvailable: false,
+          isUnsupported: false
+        },
+        {
+          id: "buy-trinket-resistance-ring",
+          label: "Resistance Ring",
+          description: "Rare accessory that boosts elemental resistance. Requires higher shop level.",
+          cost: "500 Gold",
+          isAvailable: false,
+          isUnsupported: true
+        },
+        {
+          id: "buy-special-map",
+          label: "Treasure Map Fragment",
+          description: "Mysterious map fragments occasionally circulating in the guild black market.",
+          cost: "1000 Gold",
+          isAvailable: false,
+          isUnsupported: true
+        }
+      ],
+      upgradeRequirement: "Reach Town Level 2 to unlock equipment shop; Level 3 for trinkets."
     }
   };
 

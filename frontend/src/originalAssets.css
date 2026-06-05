@@ -588,6 +588,164 @@
   outline-offset: 2px;
 }
 
+/* ── Market (交易市场) Purchase Screen ─────────────────────────
+ * Source prefab: Assets/Prefabs/UI/Estate/Buildings/Market/MarketWindow.prefab
+ * Related: ShopItemSlot.prefab, ShopCategoryTab.prefab
+ */
+
+.market-tab-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.market-tab-btn {
+  padding: 8px 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(160, 204, 188, 0.2);
+  background: rgba(14, 23, 31, 0.6);
+  color: rgba(218, 198, 168, 0.7);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.market-tab-btn:hover {
+  background: rgba(20, 35, 30, 0.8);
+  border-color: rgba(198, 212, 106, 0.35);
+  color: rgba(242, 244, 239, 0.9);
+}
+
+.market-tab-btn--active {
+  background: rgba(198, 212, 106, 0.12);
+  border-color: rgba(198, 212, 106, 0.45);
+  color: var(--panel-accent);
+}
+
+.market-item-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.market-item-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  background:
+    linear-gradient(135deg, rgba(160, 204, 188, 0.04), rgba(14, 23, 31, 0.5)),
+    rgba(10, 18, 14, 0.65);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.market-item-card:hover {
+  border-color: rgba(198, 212, 106, 0.3);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  transform: translateY(-1px);
+}
+
+.market-item-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.market-item-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--panel-text);
+  letter-spacing: 0.02em;
+}
+
+.market-item-badges {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.market-item-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(218, 198, 168, 0.6);
+  line-height: 1.45;
+  flex: 1 1 auto;
+}
+
+.market-item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.market-item-cost {
+  font-size: 0.82rem;
+  color: rgba(218, 198, 168, 0.7);
+}
+
+.market-item-cost strong {
+  color: var(--panel-accent);
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.market-item-cost--unavailable {
+  color: rgba(218, 198, 168, 0.35);
+}
+
+.market-item-cost--unavailable strong {
+  color: rgba(198, 212, 106, 0.35);
+}
+
+.market-item-cost-label {
+  font-size: 0.75rem;
+  color: rgba(218, 198, 168, 0.5);
+}
+
+.market-item-btn {
+  padding: 7px 18px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  border: 0;
+  transition: background 0.15s ease, transform 0.1s ease, filter 0.1s ease;
+  white-space: nowrap;
+}
+
+.market-item-btn--primary {
+  background: rgba(198, 212, 106, 0.14);
+  color: var(--panel-accent);
+  border: 1px solid rgba(198, 212, 106, 0.35);
+}
+
+.market-item-btn--primary:hover {
+  background: rgba(198, 212, 106, 0.22);
+  border-color: rgba(198, 212, 106, 0.55);
+  transform: translateY(-1px);
+}
+
+.market-item-btn--primary:active {
+  transform: translateY(0);
+}
+
+.market-item-btn--disabled,
+.market-item-btn:disabled {
+  background: rgba(160, 204, 188, 0.06);
+  color: rgba(160, 204, 188, 0.3);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  cursor: not-allowed;
+}
+
 /* ── Responsive: collapse to single column on narrow screens ── */
 @media (max-width: 920px) {
   .building-detail-header {

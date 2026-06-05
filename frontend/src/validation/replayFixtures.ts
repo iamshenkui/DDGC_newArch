@@ -436,23 +436,71 @@ export const replayMarketBuildingDetailViewModel: BuildingDetailViewModel = {
   description: "购买补给、物资与商店类服务，为远征做好物资准备。",
   actions: [
     {
-      id: "buy-supplies",
-      label: "购买补给",
-      description: "购买远征所需的各类补给品和物资。",
-      cost: "100 Gold",
+      id: "buy-supplies-food",
+      label: "干粮",
+      description: "恢复英雄体力的基础食物，适合短途远征携带。",
+      cost: "50 Gold",
       isAvailable: true,
       isUnsupported: false
     },
     {
-      id: "buy-trinket",
-      label: "购买饰品",
-      description: "浏览并购买英雄可装备的饰品。",
-      cost: "300 Gold",
+      id: "buy-supplies-torch",
+      label: "火把",
+      description: "照亮黑暗区域的必备工具，可驱散部分环境 debuff。",
+      cost: "30 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "buy-supplies-medicine",
+      label: "草药",
+      description: "治疗轻伤与疾病的常见草药， expedition 必备物资。",
+      cost: "80 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "buy-equipment-weapon",
+      label: "精钢短剑",
+      description: " Guild 工坊出品的制式武器，攻击力适中，适合新手英雄。",
+      cost: "250 Gold",
       isAvailable: false,
       isUnsupported: false
+    },
+    {
+      id: "buy-equipment-armor",
+      label: "皮革护甲",
+      description: "提供基础防护的轻型护甲，不影响英雄的行动速度。",
+      cost: "200 Gold",
+      isAvailable: false,
+      isUnsupported: false
+    },
+    {
+      id: "buy-trinket-lucky-charm",
+      label: "幸运符",
+      description: "提升暴击率的小型饰品， Guild 商人限量供应。",
+      cost: "350 Gold",
+      isAvailable: false,
+      isUnsupported: false
+    },
+    {
+      id: "buy-trinket-resistance-ring",
+      label: "抗性指环",
+      description: "提升元素抗性的稀有饰品，需要更高商店等级才能解锁。",
+      cost: "500 Gold",
+      isAvailable: false,
+      isUnsupported: true
+    },
+    {
+      id: "buy-special-map",
+      label: "藏宝图碎片",
+      description: " Guild 黑市偶尔流通的神秘地图碎片，指向未知宝藏。",
+      cost: "1000 Gold",
+      isAvailable: false,
+      isUnsupported: true
     }
   ],
-  upgradeRequirement: "Reach Town Level 2 to unlock trinket shop."
+  upgradeRequirement: "城镇等级达到 2 级可解锁装备商店；等级 3 级解锁饰品商店。"
 };
 
 export const replayCampingTrainerBuildingDetailViewModel: BuildingDetailViewModel = {

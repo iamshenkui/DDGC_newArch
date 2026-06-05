@@ -3,6 +3,7 @@ import {
   replayReadySnapshot,
   replayHeroDetailViewModel,
   replayBuildingDetailViewModel,
+  replayMarketBuildingDetailViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
@@ -64,11 +65,16 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       case "open-building": {
         const townVm = this.snapshot.viewModel as TownViewModel;
         const building = townVm.buildings.find((b) => b.id === intent.buildingId) ?? townVm.buildings[0];
+        const buildingVmMap: Record<string, typeof replayBuildingDetailViewModel> = {
+          guild: replayBuildingDetailViewModel,
+          market: replayMarketBuildingDetailViewModel,
+        };
+        const baseVm = buildingVmMap[building.id] ?? replayBuildingDetailViewModel;
         this.snapshot = {
           ...this.snapshot,
           flowState: "town",
           viewModel: {
-            ...replayBuildingDetailViewModel,
+            ...baseVm,
             buildingId: building.id,
             label: building.label,
             status: building.status

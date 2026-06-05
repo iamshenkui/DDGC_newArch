@@ -687,4 +687,182 @@ test.describe("browser smoke: fidelity gates", () => {
 
     expectNoErrors(pageErrors, consoleErrors, "Live boot flow");
   });
+
+  // ── Market building purchase screen test ───────────────────
+  test("market building purchase screen renders with tabs and items", async ({ page }) => {
+    const { consoleErrors, pageErrors } = setupErrorCollectors(page);
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+
+    // Boot replay
+    await page.getByRole("button", { name: "Boot Replay" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 8_000 });
+    await settle(page);
+
+    // Open the Market building (交易市场)
+    await page.locator('[data-building-id="market"]').click();
+    await settle(page, 800);
+
+    // Verify market building header
+    await expect(
+      page.locator(".building-detail-eyebrow"),
+      "Market building eyebrow must be visible"
+    ).toHaveText("Building");
+    await expect(
+      page.locator(".building-detail-name"),
+      "Market building name must be visible (DDGC display name 交易市场)"
+    ).toHaveText("交易市场");
+
+    // Verify market-specific tabs are present
+    await expect(
+      page.locator('.market-tab-btn[data-tab-id="supplies"]'),
+      "Supplies tab must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.market-tab-btn[data-tab-id="equipment"]'),
+      "Equipment tab must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.market-tab-btn[data-tab-id="trinkets"]'),
+      "Trinkets tab must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.market-tab-btn[data-tab-id="special"]'),
+      "Special tab must be visible"
+    ).toBeVisible();
+
+    // Verify default active tab (supplies) shows items
+    await expect(
+      page.locator('.market-tab-btn--active[data-tab-id="supplies"]'),
+      "Supplies tab should be active by default"
+    ).toBeVisible();
+
+    // Verify purchase items are visible in supplies tab
+    await expect(
+      page.locator('.market-item-card').filter({ hasText: "干粮" }),
+      "Food item (干粮) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.market-item-card').filter({ hasText: "火把" }),
+      "Torch item (火把) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.market-item-card').filter({ hasText: "草药" }),
+      "Medicine item (草药) must be visible"
+    ).toBeVisible();
+
+    // Verify item cards have purchase buttons
+    const purchaseButtons = page.locator('.market-item-btn--primary');
+    await expect(purchaseButtons.first(), "At least one purchase button must be visible").toBeVisible();
+
+    // Verify item cost labels
+    await expect(
+      page.locator('.market-item-cost').filter({ hasText: "50 Gold" }).first(),
+      "Item cost must be visible"
+    ).toBeVisible();
+
+    // Switch to equipment tab
+    await page.locator('.market-tab-btn[data-tab-id="equipment"]').click();
+    await settle(page, 300);
+
+    await expect(
+      page.locator('.market-tab-btn--active[data-tab-id="equipment"]'),
+      "Equipment tab should be active after click"
+    ).toBeVisible();
+
+    // Equipment items should show unavailable state (since market is partial)
+    await expect(
+      page.locator('.market-item-card').filter({ hasText: "精钢短剑" }),
+      "Weapon item (精钢短剑) must be visible in equipment tab"
+    ).toBeVisible();
+
+    // Switch to trinkets tab
+    await page.locator('.market-tab-btn[data-tab-id="trinkets"]').click();
+    await settle(page, 300);
+
+    await expect(
+      page.locator('.market-tab-btn--active[data-tab-id="trinkets"]'),
+      "Trinkets tab should be active after click"
+    ).toBeVisible();
+
+    // Switch to special tab
+    await page.locator('.market-tab-btn[data-tab-id="special"]').click();
+    await settle(page, 300);
+
+    await expect(
+      page.locator('.market-tab-btn--active[data-tab-id="special"]'),
+      "Special tab should be active after click"
+    ).toBeVisible();
+
+    // Verify market screen uses app-frame landscape layout
+    await expect(
+      page.locator(".app-frame"),
+      "Market building screen must use .app-frame landscape layout"
+    ).toBeVisible();
+
+    // Fidelity — market screen is a completed product surface
+    await expectFidelity(page.locator(".app-frame"), "Market building screen");
+    await expectFullPageFidelity(page, "Market building screen");
+
+    // Return to town
+    await page.getByRole("button", { name: "返回城镇" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("城镇中枢"),
+      "Must be back at town after returning from market"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Market building purchase screen flow");
+  });
+
+  // ── Live boot market building test ─────────────────────────
+  test("live boot → market building purchase screen", async ({ page }) => {
+    const { consoleErrors, pageErrors } = setupErrorCollectors(page);
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+
+    await page.getByRole("button", { name: "Boot Live" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 8_000 });
+    await settle(page);
+
+    // Open market from live boot
+    await page.locator('[data-building-id="market"]').click();
+    await settle(page, 800);
+
+    await expect(
+      page.locator(".building-detail-name"),
+      "Live market building name must be visible"
+    ).toHaveText("交易市场");
+
+    // Verify tabs render in live mode
+    await expect(
+      page.locator('.market-tab-btn[data-tab-id="supplies"]'),
+      "Live supplies tab must be visible"
+    ).toBeVisible();
+
+    // Live market items use English labels
+    await expect(
+      page.locator('.market-item-card').filter({ hasText: "Rations" }),
+      "Live food item (Rations) must be visible"
+    ).toBeVisible();
+
+    await expectFidelity(page.locator(".app-frame"), "Live market building screen");
+    await expectFullPageFidelity(page, "Live market building screen");
+
+    // Return to town
+    await page.getByRole("button", { name: "返回城镇" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("城镇中枢"),
+      "Must be back at town after live market"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Live market building screen flow");
+  });
 });
