@@ -5,6 +5,7 @@ import {
   replayBuildingDetailViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
+  replayDungeonAssistViewModel,
   replayResultViewModel,
   replayReturnViewModel
 } from "../validation/replayFixtures";
@@ -15,6 +16,7 @@ import type {
   TownViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  DungeonAssistViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel
 } from "./contractTypes";
@@ -115,6 +117,49 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "launch-expedition":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-assist",
+          viewModel: replayDungeonAssistViewModel as DungeonAssistViewModel
+        };
+        break;
+      case "enter-dungeon-assist":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-assist",
+          viewModel: replayDungeonAssistViewModel as DungeonAssistViewModel
+        };
+        break;
+      case "select-assist-hero": {
+        const assistVm = this.snapshot.viewModel as DungeonAssistViewModel;
+        const updatedParty = assistVm.party.map((hero) =>
+          hero.id === intent.heroId
+            ? { ...hero, isSelected: true }
+            : { ...hero, isSelected: false }
+        );
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...assistVm,
+            party: updatedParty,
+            selectedHeroId: intent.heroId
+          }
+        };
+        break;
+      }
+      case "use-assist-action": {
+        const assistVm = this.snapshot.viewModel as DungeonAssistViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...assistVm,
+            canContinue: true
+          },
+          debugMessage: `Replay: assist action ${intent.actionId} used.`
+        };
+        break;
+      }
+      case "continue-from-dungeon":
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",

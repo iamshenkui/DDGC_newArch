@@ -10,6 +10,7 @@ import type {
   BuildingDetailViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  DungeonAssistViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
 } from "./contractTypes";
@@ -301,6 +302,26 @@ const createLiveExpeditionViewModel = (): ExpeditionSetupViewModel => ({
   isLaunchable: true
 });
 
+const createLiveDungeonAssistViewModel = (): DungeonAssistViewModel => ({
+  kind: "dungeon-assist",
+  title: "Dungeon Assist",
+  dungeonName: "The Azure Lantern Expedition",
+  roomNumber: 1,
+  party: [
+    { id: "hero-hunter-live-01", name: "Yuan", classLabel: "Hunter", hp: "42 / 42", maxHp: "42", stress: "0", maxStress: "200", level: 1, isSelected: true },
+    { id: "hero-white-live-01", name: "Mei", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "0", maxStress: "200", level: 1, isSelected: false }
+  ],
+  selectedHeroId: "hero-hunter-live-01",
+  assistActions: [
+    { id: "heal-wound", label: "Heal", description: "Restore health to selected hero", iconType: "heal", isAvailable: true },
+    { id: "reduce-stress", label: "Calm", description: "Reduce stress of selected hero", iconType: "calm", isAvailable: true },
+    { id: "apply-buff", label: "Buff", description: "Apply a combat buff", iconType: "buff", isAvailable: false },
+    { id: "remove-debuff", label: "Cleanse", description: "Remove negative status", iconType: "cleanse", isAvailable: false },
+    { id: "guard-ally", label: "Guard", description: "Guard an ally", iconType: "guard", isAvailable: false }
+  ],
+  canContinue: false
+});
+
 const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
   kind: "result",
   title: "Expedition Complete",
@@ -438,6 +459,42 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "launch-expedition":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-assist",
+          viewModel: createLiveDungeonAssistViewModel()
+        };
+        break;
+      case "select-assist-hero": {
+        const assistVm = this.snapshot.viewModel as DungeonAssistViewModel;
+        const updatedParty = assistVm.party.map((hero) =>
+          hero.id === intent.heroId
+            ? { ...hero, isSelected: true }
+            : { ...hero, isSelected: false }
+        );
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...assistVm,
+            party: updatedParty,
+            selectedHeroId: intent.heroId
+          }
+        };
+        break;
+      }
+      case "use-assist-action": {
+        const assistVm = this.snapshot.viewModel as DungeonAssistViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...assistVm,
+            canContinue: true
+          },
+          debugMessage: `Live: assist action ${intent.actionId} used.`
+        };
+        break;
+      }
+      case "continue-from-dungeon":
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",

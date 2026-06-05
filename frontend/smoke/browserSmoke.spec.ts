@@ -399,8 +399,48 @@ test.describe("browser smoke: fidelity gates", () => {
       "Expedition launch screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5d. Expedition → Result (success)
+    // 5d. Expedition → Dungeon Assist
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await settle(page);
+
+    await expect(
+      page.locator("[data-testid='dungeon-assist-screen']"),
+      "Dungeon assist screen must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("Dungeon Assist"),
+      "Dungeon assist eyebrow must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("QingLong Depths"),
+      "Dungeon name must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator("[data-testid='hero-detail-panel']"),
+      "Hero detail panel must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator("[data-testid='assist-action-panel']"),
+      "Assist action panel must be visible"
+    ).toBeVisible();
+    await expectFidelity(
+      page.locator(".dungeon-assist-viewport"),
+      "Dungeon assist screen"
+    );
+    await expectFullPageFidelity(page, "Dungeon assist screen");
+
+    // Landscape viewport check for dungeon-assist screen
+    await expect(
+      page.locator(".dungeon-assist-viewport"),
+      "Dungeon assist screen must use .dungeon-assist-viewport landscape layout"
+    ).toBeVisible();
+
+    // Use an assist action to enable continue
+    await page.locator("[data-testid='assist-action-heal-wound']").click();
+    await settle(page);
+
+    // 5e. Dungeon Assist → Result (success)
+    await page.getByRole("button", { name: "Continue Expedition" }).click();
     await settle(page);
 
     await expect(
@@ -431,7 +471,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Result screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5e. Result → Return
+    // 5f. Result → Return
     await page.getByRole("button", { name: "Proceed to Return" }).click();
     await settle(page);
 
@@ -459,7 +499,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Return screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5f. Return → Town (back to the meta-loop)
+    // 5g. Return → Town (back to the meta-loop)
     await page.getByRole("button", { name: "Resume Town Activities" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
@@ -614,6 +654,21 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await settle(page);
+
+    await expect(
+      page.locator("[data-testid='dungeon-assist-screen']"),
+      "Live dungeon assist screen must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("Dungeon Assist"),
+      "Live dungeon assist eyebrow must be visible"
+    ).toBeVisible();
+
+    await page.locator("[data-testid='assist-action-heal-wound']").click();
+    await settle(page);
+
+    await page.getByRole("button", { name: "Continue Expedition" }).click();
     await settle(page);
 
     await expect(

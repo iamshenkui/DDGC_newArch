@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, ExpeditionResultViewModel, ReturnViewModel } from "../bridge/contractTypes";
+import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, DungeonAssistViewModel, ExpeditionResultViewModel, ReturnViewModel } from "../bridge/contractTypes";
 import { LiveRuntimeBridge } from "../bridge/LiveRuntimeBridge";
 import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 
@@ -200,13 +200,30 @@ describe("provisioning and expedition launch flow", () => {
     expect(expVm.isLaunchable).toBe(true);
   });
 
-  it("replay launch-expedition transitions to result state", async () => {
+  it("replay launch-expedition transitions to dungeon-assist state", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
 
     const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    expect(snapshot.flowState).toBe("dungeon-assist");
+    expect(snapshot.viewModel.kind).toBe("dungeon-assist");
+    const assistVm = snapshot.viewModel as DungeonAssistViewModel;
+    expect(assistVm.party.length).toBeGreaterThan(0);
+    expect(assistVm.canContinue).toBe(false);
+  });
+
+  it("replay continue-from-dungeon transitions to result state", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "continue-from-dungeon" });
 
     expect(snapshot.flowState).toBe("result");
     expect(snapshot.viewModel.kind).toBe("result");
@@ -249,7 +266,7 @@ describe("provisioning and expedition launch flow", () => {
     expect(snapshot.viewModel.kind).toBe("expedition");
   });
 
-  it("live launch-expedition transitions to result state", async () => {
+  it("live launch-expedition transitions to dungeon-assist state", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
@@ -257,10 +274,10 @@ describe("provisioning and expedition launch flow", () => {
 
     const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
 
-    expect(snapshot.flowState).toBe("result");
-    expect(snapshot.viewModel.kind).toBe("result");
-    const resultVm = snapshot.viewModel as ExpeditionResultViewModel;
-    expect(resultVm.outcome).toBe("success");
+    expect(snapshot.flowState).toBe("dungeon-assist");
+    expect(snapshot.viewModel.kind).toBe("dungeon-assist");
+    const assistVm = snapshot.viewModel as DungeonAssistViewModel;
+    expect(assistVm.party.length).toBeGreaterThan(0);
   });
 
   it("town -> provision -> launch path is reproducible in replay", async () => {
@@ -280,8 +297,8 @@ describe("provisioning and expedition launch flow", () => {
     expect(expSnapshot.viewModel.kind).toBe("expedition");
 
     const launchSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
-    expect(launchSnapshot.flowState).toBe("result");
-    expect(launchSnapshot.viewModel.kind).toBe("result");
+    expect(launchSnapshot.flowState).toBe("dungeon-assist");
+    expect(launchSnapshot.viewModel.kind).toBe("dungeon-assist");
   });
 
   it("town -> provision -> launch path is reproducible in live", async () => {
@@ -301,8 +318,8 @@ describe("provisioning and expedition launch flow", () => {
     expect(expSnapshot.viewModel.kind).toBe("expedition");
 
     const launchSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
-    expect(launchSnapshot.flowState).toBe("result");
-    expect(launchSnapshot.viewModel.kind).toBe("result");
+    expect(launchSnapshot.flowState).toBe("dungeon-assist");
+    expect(launchSnapshot.viewModel.kind).toBe("dungeon-assist");
   });
 });
 
@@ -355,6 +372,12 @@ describe("result and return meta-loop continuation", () => {
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
     await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+
+    // Continue from dungeon-assist -> result
+    const resultSnap = await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    expect(resultSnap.flowState).toBe("result");
+    expect(resultSnap.viewModel.kind).toBe("result");
 
     // Continue from result — transitions to return screen
     const returnSnap = await bridge.dispatchIntent({ type: "continue-from-result" });
@@ -380,11 +403,14 @@ describe("result and return meta-loop continuation", () => {
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
     await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
 
-    // Resume from return
-    const returnSnapshot = await bridge.dispatchIntent({ type: "resume-from-return" });
-    expect(returnSnapshot.flowState).toBe("town");
-    expect(returnSnapshot.viewModel.kind).toBe("town");
+    // Continue from dungeon-assist -> result -> return -> town
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    await bridge.dispatchIntent({ type: "continue-from-result" });
+    const townSnapshot = await bridge.dispatchIntent({ type: "resume-from-return" });
+    expect(townSnapshot.flowState).toBe("town");
+    expect(townSnapshot.viewModel.kind).toBe("town");
 
     // Can restart provisioning after returning
     const provSnapshot = await bridge.dispatchIntent({ type: "start-provisioning" });

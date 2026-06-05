@@ -17,6 +17,7 @@ import {
   startupSnapshot,
   provisioningSnapshot,
   expeditionSnapshot,
+  dungeonAssistSnapshot,
   resultSnapshot,
   failureResultSnapshot,
   partialResultSnapshot,
@@ -79,6 +80,11 @@ describe("FlowController", () => {
       expect(screen).toBe("expedition");
     });
 
+    it("returns dungeon-assist screen for dungeon assist view model", () => {
+      const screen = resolveScreen(dungeonAssistSnapshot);
+      expect(screen).toBe("dungeon-assist");
+    });
+
     it("returns result screen for result view model", () => {
       const screen = resolveScreen(resultSnapshot);
       expect(screen).toBe("result");
@@ -102,7 +108,7 @@ describe("FlowController", () => {
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "dungeon-assist", "result", "return", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -113,6 +119,7 @@ describe("ScreenKey exhaustiveness", () => {
       "building-detail": replayBuildingDetailSnapshot,
       provisioning: provisioningSnapshot,
       expedition: expeditionSnapshot,
+      "dungeon-assist": dungeonAssistSnapshot,
       result: resultSnapshot,
       return: returnSnapshot,
       unsupported: unsupportedSnapshot,
@@ -306,6 +313,64 @@ describe("canTransition - result and return meta-loop continuation", () => {
       // After continuing, we should be in town where start-provisioning is allowed
       const provValidation = canTransition(replayReadySnapshot, { type: "start-provisioning" });
       expect(provValidation.allowed).toBe(true);
+    });
+  });
+
+  describe("dungeon-assist flow transitions", () => {
+    it("allows enter-dungeon-assist from expedition", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "enter-dungeon-assist" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects enter-dungeon-assist when not in expedition", () => {
+      const validation = canTransition(provisioningSnapshot, { type: "enter-dungeon-assist" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in expedition");
+    });
+
+    it("allows select-assist-hero in dungeon-assist", () => {
+      const validation = canTransition(dungeonAssistSnapshot, { type: "select-assist-hero", heroId: "hero-hunter-01" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects select-assist-hero when not in dungeon-assist", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "select-assist-hero", heroId: "hero-hunter-01" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in dungeon-assist");
+    });
+
+    it("allows use-assist-action in dungeon-assist", () => {
+      const validation = canTransition(dungeonAssistSnapshot, { type: "use-assist-action", actionId: "heal-wound" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects use-assist-action when not in dungeon-assist", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "use-assist-action", actionId: "heal-wound" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in dungeon-assist");
+    });
+
+    it("rejects continue-from-dungeon when canContinue is false", () => {
+      const validation = canTransition(dungeonAssistSnapshot, { type: "continue-from-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("cannot continue");
+    });
+
+    it("allows continue-from-dungeon when canContinue is true", () => {
+      const readySnapshot: DdgcFrontendSnapshot = {
+        ...dungeonAssistSnapshot,
+        viewModel: {
+          ...dungeonAssistSnapshot.viewModel,
+          canContinue: true
+        } as DdgcFrontendSnapshot["viewModel"]
+      };
+      const validation = canTransition(readySnapshot, { type: "continue-from-dungeon" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("allows return-to-town from dungeon-assist", () => {
+      const validation = canTransition(dungeonAssistSnapshot, { type: "return-to-town" });
+      expect(validation.allowed).toBe(true);
     });
   });
 

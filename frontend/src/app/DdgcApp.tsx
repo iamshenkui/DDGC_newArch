@@ -7,6 +7,7 @@ import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 import type { RuntimeBridge } from "../bridge/RuntimeBridge";
 import type {
   BuildingDetailViewModel,
+  DungeonAssistViewModel,
   ExpeditionResultViewModel,
   ExpeditionSetupViewModel,
   FatalErrorViewModel,
@@ -29,6 +30,7 @@ import { HeroDetailScreen } from "../screens/town/HeroDetailScreen";
 import { BuildingScreenRouter } from "../screens/town/BuildingScreenRouter";
 import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
+import { DungeonAssistScreen } from "../screens/dungeon/DungeonAssistScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
 import { ReturnScreen } from "../screens/expedition/ReturnScreen";
 
@@ -160,6 +162,25 @@ export function DdgcApp() {
             viewModel={snapshot().viewModel as ExpeditionSetupViewModel}
             onLaunchExpedition={() => {
               void dispatchIntent(bridge, { type: "launch-expedition" });
+            }}
+            onReturnToTown={() => {
+              void dispatchIntent(bridge, { type: "return-to-town" });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "dungeon-assist" && snapshot().viewModel.kind === "dungeon-assist"}
+        >
+          <DungeonAssistScreen
+            viewModel={snapshot().viewModel as DungeonAssistViewModel}
+            onSelectHero={(heroId) => {
+              void dispatchIntent(bridge, { type: "select-assist-hero", heroId });
+            }}
+            onUseAssistAction={(actionId) => {
+              void dispatchIntent(bridge, { type: "use-assist-action", actionId });
+            }}
+            onContinue={() => {
+              void dispatchIntent(bridge, { type: "continue-from-dungeon" });
             }}
             onReturnToTown={() => {
               void dispatchIntent(bridge, { type: "return-to-town" });

@@ -104,7 +104,7 @@ describe("build-run smoke: intent dispatch round-trip", () => {
 });
 
 describe("build-run smoke: flow state transitions", () => {
-  it("replay: town → provisioning → expedition → result", async () => {
+  it("replay: town → provisioning → expedition → dungeon-assist → result", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
 
@@ -120,14 +120,19 @@ describe("build-run smoke: flow state transitions", () => {
     const expVm = expSnap.viewModel as ExpeditionSetupViewModel;
     expect(expVm.isLaunchable).toBe(true);
 
-    const resultSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    const assistSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    expect(assistSnap.flowState).toBe("dungeon-assist");
+    expect(assistSnap.viewModel.kind).toBe("dungeon-assist");
+
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    const resultSnap = await bridge.dispatchIntent({ type: "continue-from-dungeon" });
     expect(resultSnap.flowState).toBe("result");
     expect(resultSnap.viewModel.kind).toBe("result");
     const resultVm = resultSnap.viewModel as ExpeditionResultViewModel;
     expect(resultVm.outcome).toBe("success");
   });
 
-  it("live: town → provisioning → expedition → result", async () => {
+  it("live: town → provisioning → expedition → dungeon-assist", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
 
@@ -139,9 +144,9 @@ describe("build-run smoke: flow state transitions", () => {
     expect(expSnap.flowState).toBe("expedition");
     expect(expSnap.viewModel.kind).toBe("expedition");
 
-    const resultSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
-    expect(resultSnap.flowState).toBe("result");
-    expect(resultSnap.viewModel.kind).toBe("result");
+    const assistSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    expect(assistSnap.flowState).toBe("dungeon-assist");
+    expect(assistSnap.viewModel.kind).toBe("dungeon-assist");
   });
 
   it("replay: provisioning → return-to-town", async () => {
