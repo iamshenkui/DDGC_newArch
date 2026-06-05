@@ -349,7 +349,7 @@ export const replayTavernBuildingDetailViewModel: BuildingDetailViewModel = {
     {
       id: "drink",
       label: "畅饮",
-      description: "在酒馆畅饮一番，大幅降低压力但可能带来随机效果。",
+      description: "在迷幻酒吧畅饮一番，大幅降低压力但可能带来随机效果。",
       cost: "150 Gold",
       isAvailable: true,
       isUnsupported: false
@@ -357,12 +357,22 @@ export const replayTavernBuildingDetailViewModel: BuildingDetailViewModel = {
     {
       id: "gamble",
       label: "博弈",
-      description: "参与酒馆博弈活动，有机会获得额外金币。",
+      description: "在猩红轮盘参与博弈活动，有机会获得额外金币。",
       cost: "50 Gold",
       isAvailable: true,
       isUnsupported: false
+    },
+    {
+      id: "brothel",
+      label: "舞会",
+      description: "在秘密舞池与欲望狂欢，释放压力恢复精神。",
+      cost: "200 Gold",
+      isAvailable: false,
+      isUnsupported: false
     }
-  ]
+  ],
+  currentUpgrade: "乐园等级 1",
+  upgradeRequirement: "达到城镇等级 2 以解锁秘密舞池。"
 };
 
 export const replayGraveyardBuildingDetailViewModel: BuildingDetailViewModel = {

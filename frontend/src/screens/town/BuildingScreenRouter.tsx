@@ -5,6 +5,7 @@ import type { BuildingDetailViewModel } from "../../bridge/contractTypes";
 import { BuildingDetailScreen } from "./BuildingDetailScreen";
 import { StagecoachBuildingScreen } from "./buildings/StagecoachBuildingScreen";
 import { GuildBuildingScreen } from "./buildings/GuildBuildingScreen";
+import { TavernBuildingScreen } from "./buildings/TavernBuildingScreen";
 import { BlacksmithBuildingScreen } from "./buildings/BlacksmithBuildingScreen";
 import { SanitariumBuildingScreen } from "./buildings/SanitariumBuildingScreen";
 
@@ -28,6 +29,13 @@ export const BuildingScreenRouter: Component<BuildingScreenRouterProps> = (props
       </Match>
       <Match when={buildingId() === "guild"}>
         <GuildBuildingScreen
+          viewModel={props.viewModel}
+          onReturn={props.onReturn}
+          onAction={props.onAction}
+        />
+      </Match>
+      <Match when={buildingId() === "tavern"}>
+        <TavernBuildingScreen
           viewModel={props.viewModel}
           onReturn={props.onReturn}
           onAction={props.onAction}

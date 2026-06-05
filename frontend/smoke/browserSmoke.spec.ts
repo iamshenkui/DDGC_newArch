@@ -332,14 +332,90 @@ test.describe("browser smoke: fidelity gates", () => {
 
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
 
-    // ── Phase 5: Full meta-loop ─────────────────────────────
-    // Town → Provisioning → Expedition → Result → Return → Town
-
-    // 5a. Return to town
+    // ── Phase 4b: Tavern building screen (迷情乐园) ─────────
     await page.getByRole("button", { name: "Return to Town" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
 
+    await page.locator('[data-building-id="tavern"]').click();
+    await settle(page, 800);
+
+    // Verify tavern screen structure matches reference 公会界面-迷情乐园-使用空.png
+    await expect(
+      page.locator(".building-detail-name"),
+      "Tavern building name must be visible (DDGC display name 迷情乐园)"
+    ).toHaveText("迷情乐园");
+
+    // Left panel: talk + leave buttons
+    await expect(
+      page.locator(".tavern-talk-btn"),
+      "Tavern talk button (对话) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".tavern-leave-btn"),
+      "Tavern leave button (离开) must be visible"
+    ).toBeVisible();
+
+    // Tab bar with upgrade / use tabs
+    await expect(
+      page.locator(".tavern-tab-btn").filter({ hasText: "升级设施" }),
+      "Tavern upgrade tab (升级设施) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".tavern-tab-btn").filter({ hasText: "使用设施" }),
+      "Tavern use tab (使用设施) must be visible"
+    ).toBeVisible();
+
+    // Use tab should be active by default
+    await expect(
+      page.locator(".tavern-tab-btn--active").filter({ hasText: "使用设施" }),
+      "Tavern use tab must be active by default"
+    ).toBeVisible();
+
+    // Three facility rows
+    await expect(
+      page.locator(".tavern-facility-row"),
+      "Tavern must show 3 facility rows"
+    ).toHaveCount(3);
+
+    // Facility names
+    for (const name of ["迷幻酒吧", "猩红轮盘", "秘密舞池"]) {
+      await expect(
+        page.locator(".tavern-facility-name").filter({ hasText: name }),
+        `Tavern facility "${name}" must be visible`
+      ).toBeVisible();
+    }
+
+    // Each facility has slots (3 facilities × 3 slots each = 9)
+    await expect(
+      page.locator(".tavern-slot"),
+      "Tavern must render facility slots"
+    ).toHaveCount(9);
+
+    // Switch to upgrade tab and verify
+    await page.locator(".tavern-tab-btn").filter({ hasText: "升级设施" }).click();
+    await settle(page, 200);
+
+    await expect(
+      page.locator(".tavern-tab-btn--active").filter({ hasText: "升级设施" }),
+      "Tavern upgrade tab must become active after click"
+    ).toBeVisible();
+
+    // Fidelity — tavern screen is a completed product surface
+    await expectFidelity(page.locator(".app-frame"), "Tavern building screen");
+    await expectFullPageFidelity(page, "Tavern building screen");
+
+    expectNoErrors(pageErrors, consoleErrors, "Phase 4b (tavern building)");
+
+    // Return to town
+    await page.getByRole("button", { name: "返回城镇" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    // ── Phase 5: Full meta-loop ─────────────────────────────
+    // Town → Provisioning → Expedition → Result → Return → Town
+
+    // 5a. Already on town after tavern return — proceed to provisioning
     // 5b. Town → Provisioning
     await page.locator(".estate-embark-button").click();
     await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
