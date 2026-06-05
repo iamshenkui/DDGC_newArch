@@ -10,6 +10,7 @@ import type {
   BuildingDetailViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  DungeonSettlementViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
 } from "./contractTypes";
@@ -301,6 +302,51 @@ const createLiveExpeditionViewModel = (): ExpeditionSetupViewModel => ({
   isLaunchable: true
 });
 
+const createLiveDungeonSettlementViewModel = (): DungeonSettlementViewModel => ({
+  kind: "dungeon-settlement",
+  title: "Room Cleared",
+  expeditionName: "The Azure Lantern Expedition",
+  roomName: "Hall of Shadows",
+  roomNumber: 1,
+  totalRooms: 4,
+  outcome: "cleared",
+  summary: "Your party has cleared the room. Enemies have been defeated and the path forward is open.",
+  lootAcquired: ["Torch", "Bandage", "Gold Coin x3"],
+  heroOutcomes: [
+    {
+      heroId: "hero-hunter-live-01",
+      heroName: "Yuan",
+      classLabel: "Hunter",
+      status: "alive",
+      hp: "38 / 42",
+      maxHp: "42",
+      stress: "5",
+      maxStress: "200",
+      hpChange: "-4",
+      stressChange: "+5"
+    },
+    {
+      heroId: "hero-white-live-01",
+      heroName: "Mei",
+      classLabel: "White",
+      status: "wounded",
+      hp: "34 / 41",
+      maxHp: "41",
+      stress: "8",
+      maxStress: "200",
+      hpChange: "-7",
+      stressChange: "+8"
+    }
+  ],
+  resourcesGained: {
+    gold: 30,
+    supplies: -1,
+    experience: 45
+  },
+  isNextRoomAvailable: true,
+  isRetreatAvailable: true
+});
+
 const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
   kind: "result",
   title: "Expedition Complete",
@@ -440,8 +486,22 @@ export class LiveRuntimeBridge implements RuntimeBridge {
       case "launch-expedition":
         this.snapshot = {
           ...this.snapshot,
+          flowState: "dungeon-settlement",
+          viewModel: createLiveDungeonSettlementViewModel()
+        };
+        break;
+      case "continue-to-next-room":
+        this.snapshot = {
+          ...this.snapshot,
           flowState: "result",
           viewModel: createLiveResultViewModel()
+        };
+        break;
+      case "retreat-from-dungeon":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "return",
+          viewModel: createLiveReturnViewModel()
         };
         break;
       case "return-to-town":

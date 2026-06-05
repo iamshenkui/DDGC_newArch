@@ -5,6 +5,7 @@ import {
   replayBuildingDetailViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
+  replayDungeonSettlementViewModel,
   replayResultViewModel,
   replayReturnViewModel
 } from "../validation/replayFixtures";
@@ -117,8 +118,22 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       case "launch-expedition":
         this.snapshot = {
           ...this.snapshot,
+          flowState: "dungeon-settlement",
+          viewModel: replayDungeonSettlementViewModel
+        };
+        break;
+      case "continue-to-next-room":
+        this.snapshot = {
+          ...this.snapshot,
           flowState: "result",
           viewModel: replayResultViewModel as ExpeditionResultViewModel
+        };
+        break;
+      case "retreat-from-dungeon":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "return",
+          viewModel: replayReturnViewModel as ReturnViewModel
         };
         break;
       case "return-to-town":

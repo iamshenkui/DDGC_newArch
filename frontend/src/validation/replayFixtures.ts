@@ -2,6 +2,7 @@ import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
   DdgcFrontendSnapshot,
+  DungeonSettlementViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
@@ -516,6 +517,55 @@ export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
   isLaunchable: true
 };
 
+export const replayDungeonSettlementViewModel: DungeonSettlementViewModel = {
+  kind: "dungeon-settlement",
+  title: "Room Cleared",
+  expeditionName: "The Depths Await",
+  roomName: "Forgotten Hallway",
+  roomNumber: 1,
+  totalRooms: 5,
+  outcome: "cleared",
+  summary: "Your party has cleared the room. Enemies have been defeated and treasures await collection.",
+  lootAcquired: [
+    "Torch x2",
+    "Bandage",
+    "Antivenom"
+  ],
+  heroOutcomes: [
+    {
+      heroId: "hero-hunter-01",
+      heroName: "Shen",
+      classLabel: "Hunter",
+      status: "alive",
+      hp: "32 / 42",
+      maxHp: "42",
+      stress: "22",
+      maxStress: "200",
+      hpChange: "-6",
+      stressChange: "+5"
+    },
+    {
+      heroId: "hero-white-01",
+      heroName: "Bai Xiu",
+      classLabel: "White",
+      status: "wounded",
+      hp: "28 / 41",
+      maxHp: "41",
+      stress: "15",
+      maxStress: "200",
+      hpChange: "-13",
+      stressChange: "+7"
+    }
+  ],
+  resourcesGained: {
+    gold: 45,
+    supplies: -2,
+    experience: 60
+  },
+  isNextRoomAvailable: true,
+  isRetreatAvailable: true
+};
+
 export const replayResultViewModel: ExpeditionResultViewModel = {
   kind: "result",
   title: "Expedition Complete",
@@ -827,6 +877,14 @@ export const expeditionSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing expedition launch screen."
 };
 
+// Dungeon settlement flow snapshot
+export const dungeonSettlementSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "dungeon-settlement",
+  viewModel: replayDungeonSettlementViewModel,
+  debugMessage: "Replay bridge showing dungeon settlement screen."
+};
+
 // Result snapshots (success, failure, partial)
 export const resultSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -877,7 +935,7 @@ export function validateSnapshotContract(snapshot: DdgcFrontendSnapshot): string
   }
 
   // FlowState must be a valid FlowState
-  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "result", "return"];
+  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "dungeon-settlement", "result", "return"];
   if (!validFlowStates.includes(snapshot.flowState as FlowState)) {
     errors.push(
       `flowState "${String(snapshot.flowState)}" is not a valid FlowState. ` +
@@ -933,6 +991,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     provisioning: ["provisioning"],
     expedition: ["expedition"],
     combat: ["expedition"],
+    "dungeon-settlement": ["dungeon-settlement"],
     result: ["result"],
     return: ["return"],
   };
@@ -1010,6 +1069,20 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (typeof vm.isLaunchable !== "boolean") e.push("ExpeditionSetupViewModel: isLaunchable is not a boolean");
       if (!vm.supplyLevel || typeof vm.supplyLevel !== "string") e.push("ExpeditionSetupViewModel: supplyLevel is missing");
       if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ExpeditionSetupViewModel: provisionCost is missing");
+      break;
+    }
+    case "dungeon-settlement": {
+      if (!vm.title || typeof vm.title !== "string") e.push("DungeonSettlementViewModel: title is missing");
+      if (!vm.expeditionName || typeof vm.expeditionName !== "string") e.push("DungeonSettlementViewModel: expeditionName is missing");
+      if (!vm.roomName || typeof vm.roomName !== "string") e.push("DungeonSettlementViewModel: roomName is missing");
+      if (typeof vm.roomNumber !== "number") e.push("DungeonSettlementViewModel: roomNumber is not a number");
+      if (typeof vm.totalRooms !== "number") e.push("DungeonSettlementViewModel: totalRooms is not a number");
+      if (vm.outcome !== "cleared" && vm.outcome !== "retreat" && vm.outcome !== "defeated") e.push(`DungeonSettlementViewModel: outcome is "${String(vm.outcome)}", expected "cleared", "retreat", or "defeated"`);
+      if (!vm.summary || typeof vm.summary !== "string") e.push("DungeonSettlementViewModel: summary is missing");
+      if (!Array.isArray(vm.heroOutcomes)) { e.push("DungeonSettlementViewModel: heroOutcomes is not an array"); } else if (vm.heroOutcomes.length === 0) { e.push("DungeonSettlementViewModel: heroOutcomes array is empty"); }
+      if (!vm.resourcesGained || typeof vm.resourcesGained !== "object") e.push("DungeonSettlementViewModel: resourcesGained is missing");
+      if (typeof vm.isNextRoomAvailable !== "boolean") e.push("DungeonSettlementViewModel: isNextRoomAvailable is not a boolean");
+      if (typeof vm.isRetreatAvailable !== "boolean") e.push("DungeonSettlementViewModel: isRetreatAvailable is not a boolean");
       break;
     }
     case "result": {

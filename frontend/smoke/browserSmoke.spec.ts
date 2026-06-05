@@ -399,8 +399,48 @@ test.describe("browser smoke: fidelity gates", () => {
       "Expedition launch screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5d. Expedition → Result (success)
+    // 5d. Expedition → Dungeon Settlement
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await settle(page);
+
+    await expect(
+      page.locator(".eyebrow").filter({ hasText: "Dungeon Settlement" }),
+      "Dungeon settlement eyebrow must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Room Cleared" }),
+      "Dungeon settlement heading must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("Forgotten Hallway"),
+      "Room name must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator("[data-hero-id]"),
+      "Hero outcome cards must be visible"
+    ).toHaveCount(2);
+    await expect(
+      page.getByRole("button", { name: "Continue to Next Room" }),
+      "Continue button must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Retreat to Town" }),
+      "Retreat button must be visible"
+    ).toBeVisible();
+    await expectFidelity(
+      page.locator(".expedition-viewport"),
+      "Dungeon settlement screen"
+    );
+    await expectFullPageFidelity(page, "Dungeon settlement screen");
+
+    // Landscape viewport check for dungeon settlement screen
+    await expect(
+      page.locator(".expedition-viewport"),
+      "Dungeon settlement screen must use .expedition-viewport landscape layout"
+    ).toBeVisible();
+
+    // 5e. Dungeon Settlement → Result
+    await page.getByRole("button", { name: "Continue to Next Room" }).click();
     await settle(page);
 
     await expect(
@@ -431,7 +471,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Result screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5e. Result → Return
+    // 5f. Result → Return
     await page.getByRole("button", { name: "Proceed to Return" }).click();
     await settle(page);
 
@@ -595,7 +635,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Live building detail screen must use .app-frame landscape layout"
     ).toBeVisible();
 
-    // Full live flow: provisioning → expedition → result → return
+    // Full live flow: provisioning → expedition → dungeon settlement → result → return
     await page.getByRole("button", { name: "Return to Town" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
@@ -614,6 +654,23 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await settle(page);
+
+    // Live dungeon settlement
+    await expect(
+      page.locator(".eyebrow").filter({ hasText: "Dungeon Settlement" }),
+      "Live dungeon settlement eyebrow must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Room Cleared" }),
+      "Live dungeon settlement heading must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator("[data-hero-id]"),
+      "Live hero outcome cards must be visible"
+    ).toHaveCount(2);
+
+    await page.getByRole("button", { name: "Continue to Next Room" }).click();
     await settle(page);
 
     await expect(

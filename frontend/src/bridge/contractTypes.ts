@@ -7,6 +7,7 @@ export type FlowState =
   | "provisioning"
   | "expedition"
   | "combat"
+  | "dungeon-settlement"
   | "result"
   | "return";
 
@@ -215,6 +216,37 @@ export interface ExpeditionSetupViewModel {
   isLaunchable: boolean;
 }
 
+export interface DungeonSettlementViewModel {
+  kind: "dungeon-settlement";
+  title: string;
+  expeditionName: string;
+  roomName: string;
+  roomNumber: number;
+  totalRooms: number;
+  outcome: "cleared" | "retreat" | "defeated";
+  summary: string;
+  lootAcquired: ReadonlyArray<string>;
+  heroOutcomes: ReadonlyArray<{
+    heroId: string;
+    heroName: string;
+    classLabel: string;
+    status: "alive" | "dead" | "wounded" | "stressed";
+    hp: string;
+    maxHp: string;
+    stress: string;
+    maxStress: string;
+    hpChange: string;
+    stressChange: string;
+  }>;
+  resourcesGained: {
+    gold: number;
+    supplies: number;
+    experience: number;
+  };
+  isNextRoomAvailable: boolean;
+  isRetreatAvailable: boolean;
+}
+
 export interface ExpeditionResultViewModel {
   kind: "result";
   title: string;
@@ -272,6 +304,7 @@ export type DdgcViewModel =
   | BuildingDetailViewModel
   | ProvisioningViewModel
   | ExpeditionSetupViewModel
+  | DungeonSettlementViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
   | UnsupportedViewModel
@@ -293,6 +326,8 @@ export type DdgcFrontendIntent =
   | { type: "toggle-hero-selection"; heroId: string }
   | { type: "confirm-provisioning" }
   | { type: "launch-expedition" }
+  | { type: "continue-to-next-room" }
+  | { type: "retreat-from-dungeon" }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }
   | { type: "resume-from-return" };

@@ -3297,6 +3297,64 @@ button {
   gap: 4px;
 }
 
+/* ── Dungeon Settlement Screen ───────────────────────────
+ * Reuses expedition-viewport base but adds room-specific
+ * layout for the dungeon settlement (副本结算) page.
+ * Source: Assets/Prefabs/UI/DungeonSettlementWindow.prefab
+ */
+
+.dungeon-settlement-viewport {
+  /* Inherits .expedition-viewport rules */
+}
+
+.dungeon-settlement-hero-row {
+  gap: 16px;
+}
+
+.dungeon-settlement-hero-row .hero-outcome-card {
+  min-width: 160px;
+  padding: 14px 18px;
+  gap: 6px;
+}
+
+/* HP / Stress bars inside dungeon settlement hero cards */
+.dungeon-settlement-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  font-size: 0.65rem;
+}
+
+.dungeon-settlement-bar-label {
+  color: var(--panel-muted);
+  width: 18px;
+  flex: 0 0 auto;
+  font-weight: 600;
+}
+
+.dungeon-settlement-bar-track {
+  flex: 1;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.dungeon-settlement-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.dungeon-settlement-bar-value {
+  color: var(--panel-text);
+  font-weight: 600;
+  width: 48px;
+  text-align: right;
+  flex: 0 0 auto;
+}
+
 /* ── Responsive: collapse to portrait on narrow screens ─ */
 @media (max-width: 920px) {
   .app-shell {
