@@ -97,6 +97,12 @@ export interface HeroBaseStats {
   dodge: string;
 }
 
+export interface HeroPersonality {
+  name: string;
+  polarity: "positive" | "negative" | "neutral";
+  description?: string;
+}
+
 export interface EquipmentItem {
   name: string;
   level: number;
@@ -141,10 +147,12 @@ export interface HeroDetailViewModel {
   positiveQuirks: ReadonlyArray<string>;
   negativeQuirks: ReadonlyArray<string>;
   diseases: ReadonlyArray<string>;
+  personalities: ReadonlyArray<HeroPersonality>;
   isWounded: boolean;
   isAfflicted: boolean;
   heroDescription: string;
   talent: string;
+  roster: ReadonlyArray<TownHeroSummary>;
 }
 
 export interface TownViewModel {

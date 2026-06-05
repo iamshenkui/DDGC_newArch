@@ -149,10 +149,16 @@ export const replayHeroDetailViewModel: HeroDetailViewModel = {
   positiveQuirks: ["steady", "sharp_eyes"],
   negativeQuirks: ["paranoid"],
   diseases: [],
+  personalities: [
+    { name: "谨慎", polarity: "positive", description: "战斗中更不容易触发陷阱" },
+    { name: "冷静", polarity: "positive", description: "压力增长减缓" },
+    { name: "固执", polarity: "negative", description: "拒绝部分治疗技能" }
+  ],
   isWounded: true,
   isAfflicted: false,
   heroDescription: "An expert hunter with keen eyes and deadly aim.",
-  talent: "Natural Marksman"
+  talent: "Natural Marksman",
+  roster: townHeroes
 };
 
 export const replayBuildingDetailViewModel: BuildingDetailViewModel = {
@@ -979,6 +985,7 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!Array.isArray(vm.campingSkills)) e.push("HeroDetailViewModel: campingSkills is not an array");
       if (!vm.weapon || typeof vm.weapon !== "object" || typeof (vm.weapon as Record<string,unknown>).name !== "string") e.push("HeroDetailViewModel: weapon is missing or not an EquipmentItem");
       if (!vm.armor || typeof vm.armor !== "object" || typeof (vm.armor as Record<string,unknown>).name !== "string") e.push("HeroDetailViewModel: armor is missing or not an EquipmentItem");
+      if (!Array.isArray(vm.roster)) e.push("HeroDetailViewModel: roster is not an array");
       break;
     }
     case "building-detail": {

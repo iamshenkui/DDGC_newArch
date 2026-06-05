@@ -16,7 +16,8 @@ import type {
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
-  ReturnViewModel
+  ReturnViewModel,
+  TownHeroSummary
 } from "./contractTypes";
 
 export class ReplayRuntimeBridge implements RuntimeBridge {
@@ -25,6 +26,8 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
 
   private listeners = new Set<RuntimeBridgeListener>();
   private snapshot = replayReadySnapshot;
+  private lastTownHeroes: ReadonlyArray<TownHeroSummary> =
+    (replayReadySnapshot.viewModel as TownViewModel).heroes ?? [];
 
   async boot(): Promise<DdgcFrontendSnapshot> {
     this.emit(this.snapshot);
@@ -38,27 +41,30 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
   async dispatchIntent(intent: DdgcFrontendIntent): Promise<DdgcFrontendSnapshot> {
     switch (intent.type) {
       case "open-hero": {
-        const townVm = this.snapshot.viewModel as TownViewModel;
-        const hero = townVm.heroes.find((h) => h.id === intent.heroId) ?? townVm.heroes[0];
-        this.snapshot = {
-          ...this.snapshot,
-          flowState: "town",
-          viewModel: {
-            ...replayHeroDetailViewModel,
-            heroId: hero.id,
-            name: hero.name,
-            classLabel: hero.classLabel,
-            hp: hero.hp.split(" / ")[0],
-            maxHp: hero.hp.split(" / ")[1] ?? hero.hp.split(" / ")[0],
-            stress: hero.stress,
-            maxStress: hero.maxStress,
-            positiveQuirks: hero.positiveQuirks,
-            negativeQuirks: hero.negativeQuirks,
-            diseases: hero.diseases,
-            isWounded: hero.isWounded,
-            isAfflicted: hero.isAfflicted
-          }
-        };
+        const heroes = this.lastTownHeroes;
+        const hero = heroes.find((h) => h.id === intent.heroId) ?? heroes[0];
+        if (hero) {
+          this.snapshot = {
+            ...this.snapshot,
+            flowState: "town",
+            viewModel: {
+              ...replayHeroDetailViewModel,
+              heroId: hero.id,
+              name: hero.name,
+              classLabel: hero.classLabel,
+              hp: hero.hp.split(" / ")[0],
+              maxHp: hero.hp.split(" / ")[1] ?? hero.hp.split(" / ")[0],
+              stress: hero.stress,
+              maxStress: hero.maxStress,
+              positiveQuirks: hero.positiveQuirks,
+              negativeQuirks: hero.negativeQuirks,
+              diseases: hero.diseases,
+              isWounded: hero.isWounded,
+              isAfflicted: hero.isAfflicted,
+              roster: heroes
+            }
+          };
+        }
         break;
       }
       case "open-building": {
@@ -123,9 +129,11 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       case "return-to-town":
         this.snapshot = replayReadySnapshot;
+        this.lastTownHeroes = (replayReadySnapshot.viewModel as TownViewModel).heroes ?? [];
         break;
       case "boot":
         this.snapshot = replayReadySnapshot;
+        this.lastTownHeroes = (replayReadySnapshot.viewModel as TownViewModel).heroes ?? [];
         break;
       case "continue-from-result":
         this.snapshot = {
@@ -136,6 +144,7 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       case "resume-from-return":
         this.snapshot = replayReadySnapshot;
+        this.lastTownHeroes = (replayReadySnapshot.viewModel as TownViewModel).heroes ?? [];
         break;
     }
 

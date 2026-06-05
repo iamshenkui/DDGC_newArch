@@ -168,10 +168,12 @@ const createLiveHeroDetailViewModel = (hero: TownHeroSummary): HeroDetailViewMod
   positiveQuirks: [],
   negativeQuirks: [],
   diseases: [],
+  personalities: [],
   isWounded: hero.isWounded,
   isAfflicted: hero.isAfflicted,
   heroDescription: "A brave hero ready for adventure.",
-  talent: "Versatile"
+  talent: "Versatile",
+  roster: []
 });
 
 const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): BuildingDetailViewModel => {

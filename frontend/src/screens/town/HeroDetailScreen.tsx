@@ -1,14 +1,16 @@
 import { createSignal, For, type Component } from "solid-js";
 
 import { resolveHeroPortrait } from "../../assets/originalAssetPaths";
-import type { HeroDetailViewModel } from "../../bridge/contractTypes";
+import type { HeroDetailViewModel, TownHeroSummary } from "../../bridge/contractTypes";
 import { AppFrame } from "../../components/layout/AppFrame";
 
 type TabKey = "equipment" | "combat-skills" | "state" | "info" | "camping-skills";
 
 interface HeroDetailScreenProps {
   viewModel: HeroDetailViewModel;
+  roster?: ReadonlyArray<TownHeroSummary>;
   onReturn: () => void;
+  onSelectHero?: (heroId: string) => void;
   onPrevHero?: () => void;
   onNextHero?: () => void;
 }
@@ -33,7 +35,7 @@ function rankDots(level: number, max: number = 5): string {
 }
 
 export const HeroDetailScreen: Component<HeroDetailScreenProps> = (props) => {
-  const [activeTab, setActiveTab] = createSignal<TabKey>("equipment");
+  const [activeTab, setActiveTab] = createSignal<TabKey>("state");
   const maxStress = () => Number(props.viewModel.maxStress) || 200;
   const pips = () => stressPips(Number(props.viewModel.stress), maxStress());
   const portraitSrc = () =>
@@ -41,6 +43,8 @@ export const HeroDetailScreen: Component<HeroDetailScreenProps> = (props) => {
       heroId: props.viewModel.heroId,
       classLabel: props.viewModel.classLabel
     });
+
+  const currentHeroId = () => props.viewModel.heroId;
 
   return (
     <AppFrame
@@ -54,6 +58,69 @@ export const HeroDetailScreen: Component<HeroDetailScreenProps> = (props) => {
         data-source-prefab="Assets/Prefabs/UI/Windows/CharacterWindow.prefab"
         data-source-component="CharacterWindow"
       >
+        {/* ── Far-left: hero roster thumbnails (reference: vertical portrait list) ── */}
+        {props.roster && props.roster.length > 0 && (
+          <div
+            class="hero-detail-roster"
+            data-source-hierarchy="CharacterWindow/HeroRoster"
+          >
+            <button
+              class="hero-roster-nav hero-roster-nav--prev"
+              onClick={() => props.onPrevHero?.()}
+              title="Previous hero"
+              aria-label="Previous hero"
+            >
+              ‹
+            </button>
+            <div class="hero-roster-list">
+              <For each={props.roster}>
+                {(hero) => {
+                  const isActive = () => hero.id === currentHeroId();
+                  const thumbSrc = () =>
+                    resolveHeroPortrait({
+                      heroId: hero.id,
+                      classLabel: hero.classLabel
+                    });
+                  return (
+                    <button
+                      class={`hero-roster-thumb ${isActive() ? "hero-roster-thumb--active" : ""}`}
+                      onClick={() => {
+                        if (!isActive()) props.onSelectHero?.(hero.id);
+                      }}
+                      title={`${hero.name} — ${hero.classLabel}`}
+                      aria-label={`${hero.name} — ${hero.classLabel}`}
+                      data-hero-id={hero.id}
+                    >
+                      {thumbSrc() ? (
+                        <img
+                          class="hero-roster-thumb-image"
+                          src={thumbSrc()}
+                          alt=""
+                          aria-hidden="true"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <span class="hero-roster-thumb-initial">
+                          {hero.classLabel[0]}
+                        </span>
+                      )}
+                      {isActive() && <span class="hero-roster-thumb-indicator" />}
+                    </button>
+                  );
+                }}
+              </For>
+            </div>
+            <button
+              class="hero-roster-nav hero-roster-nav--next"
+              onClick={() => props.onNextHero?.()}
+              title="Next hero"
+              aria-label="Next hero"
+            >
+              ›
+            </button>
+          </div>
+        )}
+
         {/* ── Left column: portrait + stress pips (mirrors StressPanel + HeroPanel) ── */}
         <div
           class="hero-detail-left"
@@ -282,12 +349,67 @@ export const HeroDetailScreen: Component<HeroDetailScreenProps> = (props) => {
             </div>
           )}
 
-          {/* ── State Panel (mirrors CharacterWindow/Panels/StateButton content) ── */}
+          {/* ── State Panel (mirrors reference: 英雄面板-人物状态) ── */}
           {activeTab() === "state" && (
             <div
               class="hero-panel hero-panel--state"
               data-source-component="StatePanel"
+              data-testid="hero-state-panel"
             >
+              {/* After-effects / sequelae (后遗症) — diseases and afflictions */}
+              <div class="info-section" data-source-component="AftereffectsPanel">
+                <h3 class="hero-panel-heading">后遗症</h3>
+                <div class="aftereffects-grid">
+                  <div class="aftereffect-cell">
+                    <span class="aftereffect-label">负面积淀</span>
+                    <span class="aftereffect-value">
+                      {props.viewModel.isAfflicted ? "是" : "否"}
+                    </span>
+                  </div>
+                  <div class="aftereffect-cell">
+                    <span class="aftereffect-label">创伤</span>
+                    <span class="aftereffect-value">
+                      {props.viewModel.isWounded ? "是" : "否"}
+                    </span>
+                  </div>
+                  <div class="aftereffect-cell">
+                    <span class="aftereffect-label">疾病</span>
+                    <span class="aftereffect-value">
+                      {props.viewModel.diseases.length > 0
+                        ? props.viewModel.diseases.join(", ")
+                        : "无"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Personality / Traits (性格) */}
+              <div class="info-section" data-source-component="PersonalityPanel">
+                <h3 class="hero-panel-heading">
+                  性格
+                  <span class="heading-count">
+                    ({props.viewModel.personalities.length})
+                  </span>
+                </h3>
+                <div class="personality-list">
+                  <For each={props.viewModel.personalities}>
+                    {(p) => (
+                      <div
+                        class={`personality-chip personality-chip--${p.polarity}`}
+                        data-source-component="PersonalitySlot"
+                        title={p.description}
+                      >
+                        <span class="personarity-pip" />
+                        <span class="personality-name">{p.name}</span>
+                      </div>
+                    )}
+                  </For>
+                  {props.viewModel.personalities.length === 0 && (
+                    <span class="quirk-empty">无性格特征</span>
+                  )}
+                </div>
+              </div>
+
               {/* Resistances (mirrors CharacterWindow/Panels/InfoPanel/ResistancePanel) */}
               <div class="info-section">
                 <h3 class="hero-panel-heading">Resistances</h3>
@@ -320,26 +442,6 @@ export const HeroDetailScreen: Component<HeroDetailScreenProps> = (props) => {
                     <span class="resistance-label">Hazard</span>
                     <span class="resistance-value">{props.viewModel.resistances.hazard}</span>
                   </div>
-                </div>
-              </div>
-
-              {/* Diseases (mirrors CharacterWindow/Panels/InfoPanel/DiseasesPanel) */}
-              <div class="info-section" data-source-component="DiseasesPanel">
-                <h3 class="hero-panel-heading">
-                  Diseases
-                  <span class="heading-count">
-                    ({props.viewModel.diseases.length})
-                  </span>
-                </h3>
-                <div class="disease-list">
-                  <For each={props.viewModel.diseases}>
-                    {(disease) => (
-                      <span class="disease-chip" data-source-component="DiseaseSlot">{disease}</span>
-                    )}
-                  </For>
-                  {props.viewModel.diseases.length === 0 && (
-                    <span class="quirk-empty">None</span>
-                  )}
                 </div>
               </div>
 

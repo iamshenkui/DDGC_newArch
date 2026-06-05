@@ -119,8 +119,12 @@ export function DdgcApp() {
         >
           <HeroDetailScreen
             viewModel={snapshot().viewModel as HeroDetailViewModel}
+            roster={(snapshot().viewModel as HeroDetailViewModel).roster}
             onReturn={() => {
               void dispatchIntent(bridge, { type: "return-to-town" });
+            }}
+            onSelectHero={(heroId) => {
+              void dispatchIntent(bridge, { type: "open-hero", heroId });
             }}
           />
         </Match>

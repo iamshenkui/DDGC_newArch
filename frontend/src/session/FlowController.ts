@@ -129,8 +129,8 @@ export function canTransition(
       return { allowed: true };
 
     case "open-hero":
-      if (screen !== "town") {
-        return { allowed: false, reason: "open-hero is only valid in town" };
+      if (screen !== "town" && screen !== "hero-detail") {
+        return { allowed: false, reason: "open-hero is only valid in town or hero-detail" };
       }
       return { allowed: true };
 
