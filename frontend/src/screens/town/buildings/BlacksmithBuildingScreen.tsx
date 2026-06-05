@@ -2,6 +2,7 @@ import { For, type Component } from "solid-js";
 
 import type { BuildingDetailViewModel } from "../../../bridge/contractTypes";
 import { BuildingDetailHeader } from "./BuildingDetailHeader";
+import { ForgeSelectionScreen } from "./ForgeSelectionScreen";
 
 interface BlacksmithBuildingScreenProps {
   viewModel: BuildingDetailViewModel;
@@ -28,6 +29,29 @@ interface BlacksmithBuildingScreenProps {
  */
 export const BlacksmithBuildingScreen: Component<BlacksmithBuildingScreenProps> = (props) => {
   const vm = () => props.viewModel;
+
+  // When heroes data is present, render the forge selection interface
+  // (matches reference image: 公会界面-锻造仓-选择.png)
+  if (vm().heroes && vm().heroes!.length > 0) {
+    return (
+      <ForgeSelectionScreen
+        buildingId={vm().buildingId}
+        label={vm().label}
+        status={vm().status}
+        description={vm().description}
+        heroes={vm().heroes!}
+        mode={vm().mode}
+        currentUpgrade={vm().currentUpgrade}
+        upgradeRequirement={vm().upgradeRequirement}
+        onReturn={props.onReturn}
+        onSelectHero={(heroId) => {
+          // Dispatch as a building-action intent so the bridge can handle it
+          props.onAction(`select-hero:${heroId}`);
+        }}
+        onAction={props.onAction}
+      />
+    );
+  }
 
   const weaponActions = () => vm().actions.filter((a) => a.id.includes("weapon"));
   const armorActions = () => vm().actions.filter((a) => a.id.includes("armor"));

@@ -174,7 +174,7 @@ const createLiveHeroDetailViewModel = (hero: TownHeroSummary): HeroDetailViewMod
   talent: "Versatile"
 });
 
-const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): BuildingDetailViewModel => {
+const createLiveBuildingDetailViewModel = (building: TownBuildingSummary, heroes: ReadonlyArray<TownHeroSummary>): BuildingDetailViewModel => {
   const buildingConfigs: Record<string, {
     description: string;
     actions: Array<{
@@ -255,7 +255,7 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
     ]
   };
 
-  return {
+  const result: BuildingDetailViewModel = {
     kind: "building-detail",
     buildingId: building.id,
     label: building.label,
@@ -265,6 +265,30 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
     currentUpgrade: config.currentUpgrade,
     upgradeRequirement: config.upgradeRequirement
   };
+
+  // Populate hero selection data for blacksmith building
+  if (building.id === "blacksmith" && heroes.length > 0) {
+    result.heroes = heroes.map((hero, index) => ({
+      id: hero.id,
+      name: hero.name,
+      classLabel: hero.classLabel,
+      level: hero.level,
+      hp: hero.hp,
+      maxHp: hero.maxHp,
+      stress: hero.stress,
+      maxStress: hero.maxStress,
+      isWounded: hero.isWounded,
+      isAfflicted: hero.isAfflicted,
+      weaponName: index === 0 ? "Hunter's Bow" : index === 1 ? "Silver Staff" : "Iron Dagger",
+      weaponLevel: index === 0 ? 3 : index === 1 ? 2 : 1,
+      armorName: index === 0 ? "Leather Armor" : index === 1 ? "Cloth Robe" : "Padded Vest",
+      armorLevel: index === 0 ? 2 : 1,
+      isSelected: index === 0
+    }));
+    result.mode = "upgrade";
+  }
+
+  return result;
 };
 
 const createLiveProvisioningViewModel = (): ProvisioningViewModel => ({
@@ -395,7 +419,7 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         this.snapshot = {
           ...this.snapshot,
           flowState: "town",
-          viewModel: createLiveBuildingDetailViewModel(building)
+          viewModel: createLiveBuildingDetailViewModel(building, townVm.heroes)
         };
         break;
       }

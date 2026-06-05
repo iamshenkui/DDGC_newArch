@@ -239,7 +239,61 @@ export const replayBlacksmithBuildingDetailViewModel: BuildingDetailViewModel = 
     }
   ],
   currentUpgrade: "Forge Level 2",
-  upgradeRequirement: "Reach Town Level 3 to unlock armor upgrades."
+  upgradeRequirement: "Reach Town Level 3 to unlock armor upgrades.",
+  heroes: [
+    {
+      id: "hero-hunter-01",
+      name: "Shen",
+      classLabel: "Hunter",
+      level: 2,
+      hp: "38 / 42",
+      maxHp: "42",
+      stress: "17",
+      maxStress: "200",
+      isWounded: true,
+      isAfflicted: false,
+      weaponName: "Hunter's Bow (+2)",
+      weaponLevel: 3,
+      armorName: "Leather Armor (+1)",
+      armorLevel: 2,
+      isSelected: true
+    },
+    {
+      id: "hero-white-01",
+      name: "Bai Xiu",
+      classLabel: "White",
+      level: 2,
+      hp: "41 / 41",
+      maxHp: "41",
+      stress: "8",
+      maxStress: "200",
+      isWounded: false,
+      isAfflicted: false,
+      weaponName: "Silver Staff",
+      weaponLevel: 2,
+      armorName: "Cloth Robe",
+      armorLevel: 1,
+      isSelected: false
+    },
+    {
+      id: "hero-black-01",
+      name: "Hei Zhen",
+      classLabel: "Black",
+      level: 1,
+      hp: "34 / 40",
+      maxHp: "40",
+      stress: "24",
+      maxStress: "200",
+      isWounded: true,
+      isAfflicted: false,
+      weaponName: "Iron Dagger",
+      weaponLevel: 1,
+      armorName: "Padded Vest",
+      armorLevel: 1,
+      isSelected: false
+    }
+  ],
+  mode: "upgrade"
 };
 
 export const replaySanitariumBuildingDetailViewModel: BuildingDetailViewModel = {

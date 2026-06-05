@@ -493,6 +493,117 @@ test.describe("browser smoke: fidelity gates", () => {
     expectNoErrors(pageErrors, consoleErrors, "Phase 5 (meta-loop)");
   });
 
+  // ── Forge selection screen test (HB-iamshenkui-GameMigration-40) ──
+  test("blacksmith forge selection screen — hero list, portrait, tabs, fidelity", async ({ page }) => {
+    const { consoleErrors, pageErrors } = setupErrorCollectors(page);
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+
+    // Boot replay
+    await page.getByRole("button", { name: "Boot Replay" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 8_000 });
+    await settle(page);
+
+    // Open blacksmith building using visible button label
+    await page.getByRole("button", { name: "锻造舱" }).click();
+    await page.waitForSelector(".forge-selection-frame", { timeout: 5_000 });
+    await settle(page, 400);
+
+    // Verify forge selection screen renders
+    await expect(
+      page.locator(".forge-selection-frame"),
+      "Forge selection frame must be visible"
+    ).toBeVisible();
+
+    // Building header
+    await expect(
+      page.locator(".building-detail-name"),
+      "Blacksmith building name must be visible (锻造舱)"
+    ).toHaveText("锻造舱");
+
+    // Section title
+    await expect(
+      page.getByText("选择人物"),
+      "Section title '选择人物' must be visible"
+    ).toBeVisible();
+
+    // Mode tabs
+    await expect(
+      page.getByTestId("tab-upgrade"),
+      "Upgrade facility tab must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("tab-rent"),
+      "Rent facility tab must be visible"
+    ).toBeVisible();
+
+    // Active tab state
+    await expect(
+      page.getByTestId("tab-upgrade"),
+      "Upgrade tab should be active by default"
+    ).toHaveClass(/forge-mode-tab--active/);
+
+    // Hero list rows
+    await expect(
+      page.locator('[data-testid^="forge-hero-row-"]'),
+      "Forge hero rows must render"
+    ).toHaveCount(3);
+
+    // Selected hero portrait on left
+    await expect(
+      page.locator(".forge-hero-portrait-frame"),
+      "Selected hero portrait must be visible"
+    ).toBeVisible();
+
+    // Selected hero info
+    await expect(
+      page.locator(".forge-selected-hero-name"),
+      "Selected hero name must be visible"
+    ).toHaveText("Shen");
+
+    // Equipment slots in hero list
+    await expect(
+      page.locator(".forge-equip-slot").first(),
+      "Equipment slot must be visible"
+    ).toBeVisible();
+
+    // Click a different hero row
+    await page.getByTestId("forge-hero-row-hero-white-01").click();
+    await settle(page, 200);
+
+    await expect(
+      page.locator(".forge-selected-hero-name"),
+      "Selected hero name should update to Bai Xiu"
+    ).toHaveText("Bai Xiu");
+
+    // Switch to rent tab
+    await page.getByTestId("tab-rent").click();
+    await settle(page, 200);
+
+    await expect(
+      page.getByTestId("tab-rent"),
+      "Rent tab should be active after click"
+    ).toHaveClass(/forge-mode-tab--active/);
+
+    // Fidelity — check before returning to town so the forge screen is still visible
+    await expectFidelity(page.locator(".forge-selection-frame"), "Forge selection screen");
+
+    // Return to town
+    await page.getByRole("button", { name: "Return to Town" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("城镇中枢"),
+      "Must be back at town after returning from forge"
+    ).toBeVisible();
+
+    await expectFullPageFidelity(page, "Forge selection screen");
+
+    expectNoErrors(pageErrors, consoleErrors, "Forge selection screen");
+  });
+
   // ── Live boot test ─────────────────────────────────────────
   test("live boot exercises live bridge path", async ({ page }) => {
     const { consoleErrors, pageErrors } = setupErrorCollectors(page);

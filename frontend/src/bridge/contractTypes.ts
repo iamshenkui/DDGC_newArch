@@ -60,6 +60,24 @@ export interface BuildingAction {
   isUnsupported: boolean;
 }
 
+export interface ForgeHeroItem {
+  id: string;
+  name: string;
+  classLabel: string;
+  level: number;
+  hp: string;
+  maxHp: string;
+  stress: string;
+  maxStress: string;
+  isWounded: boolean;
+  isAfflicted: boolean;
+  weaponName: string;
+  weaponLevel: number;
+  armorName: string;
+  armorLevel: number;
+  isSelected: boolean;
+}
+
 export interface BuildingDetailViewModel {
   kind: "building-detail";
   buildingId: string;
@@ -69,6 +87,10 @@ export interface BuildingDetailViewModel {
   actions: ReadonlyArray<BuildingAction>;
   currentUpgrade?: string;
   upgradeRequirement?: string;
+  /** Heroes available for selection in forge/building screens (e.g. blacksmith selection) */
+  heroes?: ReadonlyArray<ForgeHeroItem>;
+  /** Current forge/building mode: "upgrade" | "rent" */
+  mode?: "upgrade" | "rent";
 }
 
 export interface HeroProgression {
