@@ -60,6 +60,29 @@ export interface BuildingAction {
   isUnsupported: boolean;
 }
 
+export interface BuildingUpgradeLevel {
+  code: string;
+  cost: number;
+  isPurchased: boolean;
+  isAvailable: boolean;
+  effectSummary: string;
+}
+
+export interface BuildingUpgradeTree {
+  treeId: string;
+  label: string;
+  icon?: string;
+  levels: ReadonlyArray<BuildingUpgradeLevel>;
+}
+
+export interface BuildingResources {
+  gold: number;
+  busts: number;
+  portraits: number;
+  deeds: number;
+  crests: number;
+}
+
 export interface BuildingDetailViewModel {
   kind: "building-detail";
   buildingId: string;
@@ -69,6 +92,8 @@ export interface BuildingDetailViewModel {
   actions: ReadonlyArray<BuildingAction>;
   currentUpgrade?: string;
   upgradeRequirement?: string;
+  upgradeTrees?: ReadonlyArray<BuildingUpgradeTree>;
+  resources?: BuildingResources;
 }
 
 export interface HeroProgression {

@@ -26,7 +26,7 @@ const BUILDING_SOURCE = {
 export const TOWN_BUILDING_CATALOG: ReadonlyArray<TownBuildingCatalogEntry> = [
   {
     id: "guild",
-    displayName: "试炼场",
+    displayName: "次元感知塔",
     summary: "训练技能并调整队伍战斗能力。",
     x: 120, y: -50,
     width: 397, height: 397,
@@ -76,7 +76,7 @@ export const TOWN_BUILDING_CATALOG: ReadonlyArray<TownBuildingCatalogEntry> = [
   },
   {
     id: "stagecoach",
-    displayName: "次元感知塔",
+    displayName: "试炼场",
     summary: "招募新英雄并扩充可用名册。",
     x: 31, y: -267,
     width: 384, height: 384,

@@ -77,7 +77,7 @@ describe("runtime bridge skeleton", () => {
     expect(snapshot.viewModel.kind).toBe("building-detail");
     const buildingDetail = snapshot.viewModel as BuildingDetailViewModel;
     expect(buildingDetail.kind).toBe("building-detail");
-    expect(buildingDetail.label).toBe("试炼场");
+    expect(buildingDetail.label).toBe("次元感知塔");
     expect(buildingDetail.status).toBe("ready");
     expect(buildingDetail.actions.length).toBeGreaterThan(0);
   });
@@ -119,7 +119,7 @@ describe("runtime bridge skeleton", () => {
     expect(snapshot.viewModel.kind).toBe("building-detail");
     const buildingDetail = snapshot.viewModel as BuildingDetailViewModel;
     expect(buildingDetail.kind).toBe("building-detail");
-    expect(buildingDetail.label).toBe("次元感知塔");
+    expect(buildingDetail.label).toBe("试炼场");
     expect(buildingDetail.status).toBe("ready");
   });
 
@@ -134,7 +134,7 @@ describe("runtime bridge skeleton", () => {
 
     expect(snapshot.viewModel.kind).toBe("building-detail");
     const buildingDetail = snapshot.viewModel as BuildingDetailViewModel;
-    expect(buildingDetail.label).toBe("试炼场");
+    expect(buildingDetail.label).toBe("次元感知塔");
     expect(buildingDetail.status).toBe("ready");
   });
 

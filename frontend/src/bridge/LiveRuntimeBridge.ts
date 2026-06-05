@@ -187,6 +187,8 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
     }>;
     currentUpgrade?: string;
     upgradeRequirement?: string;
+    upgradeTrees?: BuildingDetailViewModel["upgradeTrees"];
+    resources?: BuildingDetailViewModel["resources"];
   }> = {
     stagecoach: {
       description: "The stagecoach offers new recruits from the surrounding region. Recruit heroes to expand your party roster.",
@@ -237,7 +239,44 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
           isAvailable: false,
           isUnsupported: false
         }
-      ]
+      ],
+      upgradeTrees: [
+        {
+          treeId: "guild_training",
+          label: "觉醒共鸣",
+          levels: [
+            { code: "a", cost: 0, isPurchased: true, isAvailable: true, effectSummary: "基础经验获取" },
+            { code: "b", cost: 300, isPurchased: false, isAvailable: true, effectSummary: "经验加成 +10%" },
+            { code: "c", cost: 600, isPurchased: false, isAvailable: false, effectSummary: "经验加成 +20%" },
+            { code: "d", cost: 1200, isPurchased: false, isAvailable: false, effectSummary: "经验加成 +30%" }
+          ]
+        },
+        {
+          treeId: "guild_skills",
+          label: "强力感知",
+          levels: [
+            { code: "a", cost: 0, isPurchased: true, isAvailable: true, effectSummary: "基础技能升级" },
+            { code: "b", cost: 500, isPurchased: false, isAvailable: true, effectSummary: "技能升级几率 +5%" },
+            { code: "c", cost: 1000, isPurchased: false, isAvailable: false, effectSummary: "技能升级几率 +10%" }
+          ]
+        },
+        {
+          treeId: "guild_capacity",
+          label: "休息室",
+          levels: [
+            { code: "a", cost: 0, isPurchased: true, isAvailable: true, effectSummary: "1个训练位" },
+            { code: "b", cost: 200, isPurchased: false, isAvailable: true, effectSummary: "2个训练位" },
+            { code: "c", cost: 400, isPurchased: false, isAvailable: false, effectSummary: "3个训练位" }
+          ]
+        }
+      ],
+      resources: {
+        gold: 6895,
+        busts: 10,
+        portraits: 10,
+        deeds: 10,
+        crests: 20
+      }
     }
   };
 
@@ -263,7 +302,9 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
     description: config.description,
     actions: config.actions,
     currentUpgrade: config.currentUpgrade,
-    upgradeRequirement: config.upgradeRequirement
+    upgradeRequirement: config.upgradeRequirement,
+    upgradeTrees: config.upgradeTrees,
+    resources: config.resources
   };
 };
 

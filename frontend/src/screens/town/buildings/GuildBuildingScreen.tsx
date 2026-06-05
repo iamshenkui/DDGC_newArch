@@ -1,7 +1,7 @@
-import { For, type Component } from "solid-js";
+import { For, Show, createSignal, type Component } from "solid-js";
 
 import type { BuildingDetailViewModel } from "../../../bridge/contractTypes";
-import { BuildingDetailHeader } from "./BuildingDetailHeader";
+import { resolveBuildingImage } from "../../../assets/originalAssetPaths";
 
 interface GuildBuildingScreenProps {
   viewModel: BuildingDetailViewModel;
@@ -9,8 +9,10 @@ interface GuildBuildingScreenProps {
   onAction: (actionId: string) => void;
 }
 
+type GuildTab = "upgrades" | "recruit";
+
 /**
- * Guild (试炼场) building screen.
+ * Guild (次元感知塔) building screen — Dimensional Perception Tower Upgrade.
  *
  * Mirrors Unity prefab:
  *   Assets/Prefabs/UI/Estate/Buildings/Guild/GuildWindow.prefab
@@ -18,240 +20,278 @@ interface GuildBuildingScreenProps {
  * Original sprite: Assets/Sprites/town/buildings/building_train_field.png
  * GUID: 67a5e7aed8029d84dbf9c9e497a944d2
  *
- * Related prefabs:
- *   Assets/Prefabs/UI/SkillUpgradeSlot.prefab  — skill upgrade slots
- *   Assets/Prefabs/UI/UpgradeSlot.prefab       — equipment upgrade slots
+ * Reference image: 公会界面-次元感知塔-升级.png
+ *   - Left panel: building illustration, Talk button, Leave button
+ *   - Right panel: two tabs (升级设施 / 招募人员)
+ *   - Upgrade trees: 觉醒共鸣, 强力感知, 休息室
+ *   - Bottom: currency strip (busts, portraits, deeds, crests, gold)
  *
  * Building data (data/Buildings.json):
- *   guild_training — skill training level upgrades
- *   guild_equipment — equipment tier upgrades
+ *   guild_training   — experience boost tree (觉醒共鸣)
+ *   guild_skills     — skill upgrade chance tree (强力感知)
+ *   guild_capacity   — training slots tree (休息室)
  */
 export const GuildBuildingScreen: Component<GuildBuildingScreenProps> = (props) => {
   const vm = () => props.viewModel;
+  const [activeTab, setActiveTab] = createSignal<GuildTab>("upgrades");
 
-  const trainingActions = () => vm().actions.filter((a) => a.id.startsWith("train-"));
-  const equipmentActions = () => vm().actions.filter((a) => a.id.startsWith("upgrade-"));
-  const otherActions = () =>
-    vm().actions.filter((a) => !a.id.startsWith("train-") && !a.id.startsWith("upgrade-"));
+  const spriteSrc = () => resolveBuildingImage("guild");
+
+  const upgradeTrees = () => vm().upgradeTrees ?? [];
+  const resources = () => vm().resources;
+
+  const talkAction = () => vm().actions[0];
 
   return (
-    <div class="app-frame" data-source-scene="Assets/Scenes/EstateManagement.unity">
-      {/* ── Building Header — mirrors GuildWindow/LeftPanel/Icon + Title ── */}
-      <BuildingDetailHeader
-        buildingId="guild"
-        label={vm().label}
-        status={vm().status}
-        description={vm().description}
-        sourcePrefabPath="Assets/Prefabs/UI/Estate/Buildings/Guild/GuildWindow.prefab"
-        sourceSpritePath="Assets/Sprites/town/buildings/building_train_field.png"
-        sourceGuid="67a5e7aed8029d84dbf9c9e497a944d2"
-      />
-
-      {/* ── Content — mirrors GuildWindow LeftPanel + RightPanel ── */}
-      <div class="building-detail-content">
-        {/* Left Panel — mirrors GuildWindow/LeftPanel */}
+    <div class="app-frame guild-building-screen" data-source-scene="Assets/Scenes/EstateManagement.unity">
+      {/* ── Main Content: Left + Right ── */}
+      <div class="guild-building-content">
+        {/* Left Panel — building illustration + action buttons */}
         <div
-          class="building-detail-left"
+          class="guild-building-left"
           data-source-hierarchy="GuildWindow/LeftPanel"
         >
-          <div class="building-info-card">
-            <h3 class="building-info-card-title">Building Status</h3>
-            <div class="building-info-row">
-              <span class="building-info-label">Status</span>
-              <span class="building-info-value">{vm().status === "ready" ? "Operational" : vm().status === "partial" ? "Partially Available" : "Locked"}</span>
-            </div>
-            {vm().currentUpgrade && (
-              <div class="building-info-row">
-                <span class="building-info-label">Guild Level</span>
-                <span class="building-info-value">{vm().currentUpgrade}</span>
-              </div>
-            )}
-            {vm().upgradeRequirement && (
-              <div class="building-info-row">
-                <span class="building-info-label">Requirement</span>
-                <span class="building-info-value">{vm().upgradeRequirement}</span>
+          {/* Building illustration */}
+          <div
+            class="guild-building-art"
+            data-source-component="BuildingIcon"
+            data-source-sprite="Assets/Sprites/town/buildings/building_train_field.png"
+            data-source-guid="67a5e7aed8029d84dbf9c9e497a944d2"
+          >
+            {spriteSrc() ? (
+              <img
+                class="guild-building-art-img"
+                src={spriteSrc()}
+                alt={vm().label}
+                loading="eager"
+              />
+            ) : (
+              <div class="guild-building-art-fallback">
+                <span>{vm().label[0]?.toUpperCase() ?? "?"}</span>
               </div>
             )}
           </div>
+
+          {/* Building name below illustration */}
+          <h2 class="guild-building-name" data-source-component="BuildingLabel">
+            {vm().label}
+          </h2>
+
+          {/* Action buttons */}
+          <div class="guild-building-actions">
+            <Show when={talkAction()}>
+              {(action) => (
+                <button
+                  class="guild-building-btn guild-building-btn--talk"
+                  onClick={() => props.onAction(action().id)}
+                  data-source-component="TalkButton"
+                  disabled={!action().isAvailable}
+                >
+                  对话
+                </button>
+              )}
+            </Show>
+            <button
+              class="guild-building-btn guild-building-btn--leave"
+              onClick={props.onReturn}
+              data-source-component="CloseButton"
+              data-source-sprite="Assets/Sprites/ui/btn_close.png"
+            >
+              离开
+            </button>
+          </div>
         </div>
 
-        {/* Right Panel / Actions — mirrors GuildWindow/RightPanel/UpgradeWindow */}
+        {/* Right Panel — tabs + upgrade trees */}
         <div
-          class="building-detail-right"
-          data-source-hierarchy="GuildWindow/RightPanel/UpgradeWindow"
+          class="guild-building-right"
+          data-source-hierarchy="GuildWindow/RightPanel"
         >
-          {/* Skill Training — mirrors SkillUpgradeSlot */}
-          {trainingActions().length > 0 && (
-            <div class="building-action-section">
-              <h3 class="building-action-section-title">Skill Training</h3>
-              <For each={trainingActions()}>
-                {(action) => (
-                  <div
-                    class="building-action-card"
-                    data-source-prefab="Assets/Prefabs/UI/SkillUpgradeSlot.prefab"
-                    data-source-component="SkillUpgradeSlot"
-                  >
-                    <div class="building-action-card-header">
-                      <span class="building-action-label">{action.label}</span>
-                      {action.isUnsupported && (
-                        <span class="building-action-pill building-action-pill--unsupported">
-                          Unsupported
-                        </span>
-                      )}
-                      {!action.isAvailable && !action.isUnsupported && (
-                        <span class="building-action-pill building-action-pill--unavailable">
-                          Unavailable
-                        </span>
-                      )}
-                    </div>
-                    <p class="building-action-desc">{action.description}</p>
-                    <div class="building-action-footer">
-                      <span class={`building-action-cost ${!action.isAvailable ? "building-action-cost-unavailable" : ""}`}>
-                        Cost: <strong>{action.cost}</strong>
-                      </span>
-                      {action.isUnsupported ? (
-                        <button class="building-action-btn building-action-btn--disabled" disabled>
-                          Not Available
-                        </button>
-                      ) : action.isAvailable ? (
-                        <button
-                          class="building-action-btn building-action-btn--primary"
-                          onClick={() => props.onAction(action.id)}
-                        >
-                          {action.label}
-                        </button>
-                      ) : (
-                        <button class="building-action-btn building-action-btn--disabled" disabled>
-                          Prerequisites Not Met
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </For>
-            </div>
-          )}
+          {/* Tab bar */}
+          <div class="guild-tab-bar" role="tablist" aria-label="公会功能">
+            <button
+              class={`guild-tab-btn ${activeTab() === "upgrades" ? "guild-tab-btn--active" : ""}`}
+              role="tab"
+              aria-selected={activeTab() === "upgrades"}
+              onClick={() => setActiveTab("upgrades")}
+              data-tab-id="upgrades"
+            >
+              <span class="guild-tab-check">{activeTab() === "upgrades" ? "☑" : "☐"}</span>
+              升级设施
+            </button>
+            <button
+              class={`guild-tab-btn ${activeTab() === "recruit" ? "guild-tab-btn--active" : ""}`}
+              role="tab"
+              aria-selected={activeTab() === "recruit"}
+              onClick={() => setActiveTab("recruit")}
+              data-tab-id="recruit"
+            >
+              <span class="guild-tab-check">{activeTab() === "recruit" ? "☑" : "☐"}</span>
+              招募人员
+            </button>
+          </div>
 
-          {/* Equipment Upgrades — mirrors UpgradeSlot / EquipmentUpgradeSlot */}
-          {equipmentActions().length > 0 && (
-            <div class="building-action-section">
-              <h3 class="building-action-section-title">Equipment Upgrades</h3>
-              <For each={equipmentActions()}>
-                {(action) => (
-                  <div
-                    class="building-action-card"
-                    data-source-prefab="Assets/Prefabs/UI/UpgradeSlot.prefab"
-                    data-source-component="UpgradeSlot"
-                  >
-                    <div class="building-action-card-header">
-                      <span class="building-action-label">{action.label}</span>
-                      {action.isUnsupported && (
-                        <span class="building-action-pill building-action-pill--unsupported">
-                          Unsupported
-                        </span>
-                      )}
-                      {!action.isAvailable && !action.isUnsupported && (
-                        <span class="building-action-pill building-action-pill--unavailable">
-                          Unavailable
-                        </span>
-                      )}
-                    </div>
-                    <p class="building-action-desc">{action.description}</p>
-                    <div class="building-action-footer">
-                      <span class={`building-action-cost ${!action.isAvailable ? "building-action-cost-unavailable" : ""}`}>
-                        Cost: <strong>{action.cost}</strong>
-                      </span>
-                      {action.isUnsupported ? (
-                        <button class="building-action-btn building-action-btn--disabled" disabled>
-                          Not Available
-                        </button>
-                      ) : action.isAvailable ? (
-                        <button
-                          class="building-action-btn building-action-btn--primary"
-                          onClick={() => props.onAction(action.id)}
-                        >
-                          {action.label}
-                        </button>
-                      ) : (
-                        <div style="display:flex;gap:0.5rem;align-items:center;">
-                          <button class="building-action-btn building-action-btn--disabled" disabled>
-                            Prerequisites Not Met
-                          </button>
-                          {vm().upgradeRequirement && (
-                            <span class="building-action-pill building-action-pill--info">
-                              {vm().upgradeRequirement}
-                            </span>
+          {/* Tab content */}
+          <div class="guild-tab-content" role="tabpanel">
+            <Show when={activeTab() === "upgrades"}>
+              <div class="guild-upgrade-panel">
+                <For each={upgradeTrees()}>
+                  {(tree) => (
+                    <div
+                      class="guild-upgrade-tree"
+                      data-tree-id={tree.treeId}
+                      data-source-prefab="Assets/Prefabs/UI/UpgradeSlot.prefab"
+                    >
+                      <div class="guild-upgrade-tree-header">
+                        <span class="guild-upgrade-tree-icon" aria-hidden="true">
+                          {tree.icon ? (
+                            <img src={tree.icon} alt="" />
+                          ) : (
+                            <span class="guild-upgrade-tree-icon-fallback">◆</span>
                           )}
-                        </div>
-                      )}
+                        </span>
+                        <span class="guild-upgrade-tree-label">{tree.label}</span>
+                      </div>
+                      <div class="guild-upgrade-levels">
+                        <For each={tree.levels}>
+                          {(level, index) => (
+                            <button
+                              class={`guild-upgrade-slot ${level.isPurchased ? "guild-upgrade-slot--purchased" : ""} ${!level.isAvailable && !level.isPurchased ? "guild-upgrade-slot--locked" : ""}`}
+                              onClick={() => {
+                                if (level.isAvailable && !level.isPurchased) {
+                                  props.onAction(`${tree.treeId}-${level.code}`);
+                                }
+                              }}
+                              disabled={!level.isAvailable || level.isPurchased}
+                              title={`${tree.label} ${level.code.toUpperCase()} — ${level.effectSummary}${level.cost > 0 ? ` (${level.cost} Gold)` : ""}`}
+                              data-level-code={level.code}
+                              data-purchased={level.isPurchased}
+                              data-available={level.isAvailable}
+                            >
+                              <span class="guild-upgrade-slot-check">
+                                {level.isPurchased ? "☑" : "☐"}
+                              </span>
+                              <span class="guild-upgrade-slot-code">{level.code.toUpperCase()}</span>
+                            </button>
+                          )}
+                        </For>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </For>
-            </div>
-          )}
+                  )}
+                </For>
 
-          {/* Other uncategorised actions */}
-          {otherActions().length > 0 && (
-            <div class="building-action-section">
-              <h3 class="building-action-section-title">Other Services</h3>
-              <For each={otherActions()}>
-                {(action) => (
-                  <div class="building-action-card">
-                    <div class="building-action-card-header">
-                      <span class="building-action-label">{action.label}</span>
-                      {action.isUnsupported && (
-                        <span class="building-action-pill building-action-pill--unsupported">
-                          Unsupported
-                        </span>
-                      )}
-                      {!action.isAvailable && !action.isUnsupported && (
-                        <span class="building-action-pill building-action-pill--unavailable">
-                          Unavailable
-                        </span>
-                      )}
+                {/* Fallback when no upgrade trees are provided */}
+                <Show when={upgradeTrees().length === 0}>
+                  <div class="guild-upgrade-tree">
+                    <div class="guild-upgrade-tree-header">
+                      <span class="guild-upgrade-tree-icon-fallback">◆</span>
+                      <span class="guild-upgrade-tree-label">觉醒共鸣</span>
                     </div>
-                    <p class="building-action-desc">{action.description}</p>
-                    <div class="building-action-footer">
-                      <span class={`building-action-cost ${!action.isAvailable ? "building-action-cost-unavailable" : ""}`}>
-                        Cost: <strong>{action.cost}</strong>
-                      </span>
-                      {action.isUnsupported ? (
-                        <button class="building-action-btn building-action-btn--disabled" disabled>
-                          Not Available
-                        </button>
-                      ) : action.isAvailable ? (
-                        <button
-                          class="building-action-btn building-action-btn--primary"
-                          onClick={() => props.onAction(action.id)}
-                        >
-                          {action.label}
-                        </button>
-                      ) : (
-                        <button class="building-action-btn building-action-btn--disabled" disabled>
-                          Prerequisites Not Met
-                        </button>
-                      )}
+                    <div class="guild-upgrade-levels">
+                      <button class="guild-upgrade-slot guild-upgrade-slot--purchased" disabled data-level-code="a" data-purchased={true}>
+                        <span class="guild-upgrade-slot-check">☑</span>
+                        <span class="guild-upgrade-slot-code">A</span>
+                      </button>
+                      <button class="guild-upgrade-slot" disabled data-level-code="b" data-purchased={false}>
+                        <span class="guild-upgrade-slot-check">☐</span>
+                        <span class="guild-upgrade-slot-code">B</span>
+                      </button>
+                      <button class="guild-upgrade-slot guild-upgrade-slot--locked" disabled data-level-code="c" data-purchased={false}>
+                        <span class="guild-upgrade-slot-check">☐</span>
+                        <span class="guild-upgrade-slot-code">C</span>
+                      </button>
+                      <button class="guild-upgrade-slot guild-upgrade-slot--locked" disabled data-level-code="d" data-purchased={false}>
+                        <span class="guild-upgrade-slot-check">☐</span>
+                        <span class="guild-upgrade-slot-code">D</span>
+                      </button>
                     </div>
                   </div>
-                )}
-              </For>
-            </div>
-          )}
+                  <div class="guild-upgrade-tree">
+                    <div class="guild-upgrade-tree-header">
+                      <span class="guild-upgrade-tree-icon-fallback">◆</span>
+                      <span class="guild-upgrade-tree-label">强力感知</span>
+                    </div>
+                    <div class="guild-upgrade-levels">
+                      <button class="guild-upgrade-slot guild-upgrade-slot--purchased" disabled data-level-code="a" data-purchased={true}>
+                        <span class="guild-upgrade-slot-check">☑</span>
+                        <span class="guild-upgrade-slot-code">A</span>
+                      </button>
+                      <button class="guild-upgrade-slot" disabled data-level-code="b" data-purchased={false}>
+                        <span class="guild-upgrade-slot-check">☐</span>
+                        <span class="guild-upgrade-slot-code">B</span>
+                      </button>
+                      <button class="guild-upgrade-slot guild-upgrade-slot--locked" disabled data-level-code="c" data-purchased={false}>
+                        <span class="guild-upgrade-slot-check">☐</span>
+                        <span class="guild-upgrade-slot-code">C</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="guild-upgrade-tree">
+                    <div class="guild-upgrade-tree-header">
+                      <span class="guild-upgrade-tree-icon-fallback">◆</span>
+                      <span class="guild-upgrade-tree-label">休息室</span>
+                    </div>
+                    <div class="guild-upgrade-levels">
+                      <button class="guild-upgrade-slot guild-upgrade-slot--purchased" disabled data-level-code="a" data-purchased={true}>
+                        <span class="guild-upgrade-slot-check">☑</span>
+                        <span class="guild-upgrade-slot-code">A</span>
+                      </button>
+                      <button class="guild-upgrade-slot" disabled data-level-code="b" data-purchased={false}>
+                        <span class="guild-upgrade-slot-check">☐</span>
+                        <span class="guild-upgrade-slot-code">B</span>
+                      </button>
+                      <button class="guild-upgrade-slot guild-upgrade-slot--locked" disabled data-level-code="c" data-purchased={false}>
+                        <span class="guild-upgrade-slot-check">☐</span>
+                        <span class="guild-upgrade-slot-code">C</span>
+                      </button>
+                    </div>
+                  </div>
+                </Show>
+              </div>
+            </Show>
+
+            <Show when={activeTab() === "recruit"}>
+              <div class="guild-recruit-panel">
+                <p class="guild-recruit-hint">
+                  招募人员功能将在后续版本中开放。
+                </p>
+                <div class="guild-recruit-placeholder">
+                  <span class="guild-recruit-placeholder-icon">👥</span>
+                  <span class="guild-recruit-placeholder-text">英雄招募列表</span>
+                </div>
+              </div>
+            </Show>
+          </div>
         </div>
       </div>
 
-      {/* ── Return to Town — mirrors GuildWindow/CloseButton ── */}
-      <div class="building-return-row">
-        <button
-          class="building-return-btn"
-          onClick={props.onReturn}
-          data-source-component="CloseButton"
-          data-source-sprite="Assets/Sprites/ui/btn_close.png"
-        >
-          Return to Town
-        </button>
-      </div>
+      {/* ── Bottom Currency Strip ── */}
+      <Show when={resources()}>
+        {(res) => (
+          <div class="guild-currency-strip" data-source-prefab="UI_Shared/UI_TopWindows/CurrencyPanel">
+            <div class="guild-currency-slot" data-currency="busts">
+              <span class="guild-currency-icon guild-currency-icon--bust" aria-hidden="true" />
+              <span class="guild-currency-value">{res().busts}</span>
+            </div>
+            <div class="guild-currency-slot" data-currency="portraits">
+              <span class="guild-currency-icon guild-currency-icon--portrait" aria-hidden="true" />
+              <span class="guild-currency-value">{res().portraits}</span>
+            </div>
+            <div class="guild-currency-slot" data-currency="deeds">
+              <span class="guild-currency-icon guild-currency-icon--deed" aria-hidden="true" />
+              <span class="guild-currency-value">{res().deeds}</span>
+            </div>
+            <div class="guild-currency-slot" data-currency="crests">
+              <span class="guild-currency-icon guild-currency-icon--crest" aria-hidden="true" />
+              <span class="guild-currency-value">{res().crests}</span>
+            </div>
+            <div class="guild-currency-slot guild-currency-slot--gold" data-currency="gold">
+              <span class="guild-currency-icon guild-currency-icon--gold" aria-hidden="true" />
+              <span class="guild-currency-value">{res().gold}</span>
+            </div>
+          </div>
+        )}
+      </Show>
     </div>
   );
 };

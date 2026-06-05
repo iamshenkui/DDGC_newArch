@@ -3321,3 +3321,496 @@ button {
     font-size: 1rem;
   }
 }
+
+/* ── Guild Building Screen (次元感知塔) ──────────────────────
+ * Mirrors GuildWindow.prefab hierarchy from reference image:
+ *   LeftPanel: building illustration + Talk/Leave buttons
+ *   RightPanel: tab bar (升级设施 / 招募人员) + upgrade trees
+ *   Bottom: currency strip
+ */
+.guild-building-screen {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 28px;
+  min-height: 100vh;
+}
+
+.guild-building-content {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  flex: 1;
+}
+
+/* ── Left Panel ── */
+.guild-building-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  box-shadow: var(--panel-shadow);
+}
+
+.guild-building-art {
+  width: 200px;
+  height: 240px;
+  border-radius: var(--radius-md);
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 25%, rgba(27, 50, 44, 0.5), transparent 70%),
+    radial-gradient(ellipse at center, rgba(6, 12, 10, 0.8), rgba(0, 0, 0, 0.95));
+  border: 2px solid rgba(160, 204, 188, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 60px rgba(0, 0, 0, 0.3);
+}
+
+.guild-building-art::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 30%, rgba(198, 212, 106, 0.06), transparent 70%);
+  pointer-events: none;
+}
+
+.guild-building-art-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  display: block;
+}
+
+.guild-building-art-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--heading-font);
+  font-size: 4rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+  opacity: 0.3;
+  text-shadow: 0 0 30px rgba(198, 212, 106, 0.2);
+}
+
+.guild-building-name {
+  margin: 0;
+  font-family: var(--heading-font);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--panel-text);
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+.guild-building-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.guild-building-btn {
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  font-family: var(--heading-font);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.12s ease,
+    box-shadow 0.18s ease;
+}
+
+.guild-building-btn--talk {
+  background: linear-gradient(135deg, var(--panel-accent), var(--panel-accent-strong));
+  color: #15200b;
+  border: 1px solid rgba(198, 212, 106, 0.3);
+  box-shadow:
+    0 4px 16px rgba(159, 191, 59, 0.25),
+    0 0 20px rgba(159, 191, 59, 0.08);
+}
+
+.guild-building-btn--talk:hover:not(:disabled) {
+  box-shadow:
+    0 6px 28px rgba(159, 191, 59, 0.4),
+    0 0 30px rgba(159, 191, 59, 0.15);
+  transform: translateY(-2px);
+}
+
+.guild-building-btn--talk:disabled {
+  opacity: 0.4;
+  filter: grayscale(0.6);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.guild-building-btn--leave {
+  background: rgba(20, 30, 38, 0.7);
+  border: 1px solid rgba(160, 204, 188, 0.14);
+  color: var(--panel-text);
+}
+
+.guild-building-btn--leave:hover {
+  background: rgba(198, 212, 106, 0.1);
+  border-color: rgba(198, 212, 106, 0.3);
+  transform: translateY(-1px);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(198, 212, 106, 0.08);
+}
+
+/* ── Right Panel ── */
+.guild-building-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  box-shadow: var(--panel-shadow);
+}
+
+/* Tab bar */
+.guild-tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid rgba(160, 204, 188, 0.1);
+}
+
+.guild-tab-btn {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--panel-muted);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.guild-tab-btn:hover {
+  color: var(--panel-text);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.guild-tab-btn--active {
+  color: var(--panel-accent);
+  border-bottom-color: var(--panel-accent);
+}
+
+.guild-tab-check {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* Tab content */
+.guild-tab-content {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Upgrade Panel ── */
+.guild-upgrade-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.guild-upgrade-tree {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.guild-upgrade-tree:hover {
+  border-color: rgba(160, 204, 188, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.guild-upgrade-tree-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 140px;
+  flex: 0 0 auto;
+}
+
+.guild-upgrade-tree-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.guild-upgrade-tree-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.guild-upgrade-tree-icon-fallback {
+  font-size: 1rem;
+  color: var(--panel-accent);
+  opacity: 0.7;
+}
+
+.guild-upgrade-tree-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--panel-text);
+  letter-spacing: 0.02em;
+}
+
+.guild-upgrade-levels {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.guild-upgrade-slot {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.12s ease;
+  color: var(--panel-text);
+  padding: 0;
+}
+
+.guild-upgrade-slot:hover:not(:disabled) {
+  border-color: rgba(198, 212, 106, 0.4);
+  background: rgba(198, 212, 106, 0.08);
+  box-shadow: 0 0 12px rgba(198, 212, 106, 0.1);
+  transform: translateY(-2px);
+}
+
+.guild-upgrade-slot:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.guild-upgrade-slot--purchased {
+  border-color: rgba(91, 189, 110, 0.3);
+  background: rgba(91, 189, 110, 0.08);
+}
+
+.guild-upgrade-slot--locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.guild-upgrade-slot:disabled {
+  cursor: not-allowed;
+}
+
+.guild-upgrade-slot-check {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.guild-upgrade-slot-code {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--panel-muted);
+  letter-spacing: 0.08em;
+}
+
+.guild-upgrade-slot--purchased .guild-upgrade-slot-code {
+  color: #5bbd6e;
+}
+
+/* ── Recruit Panel ── */
+.guild-recruit-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 40px 20px;
+  min-height: 300px;
+}
+
+.guild-recruit-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--panel-muted);
+  text-align: center;
+}
+
+.guild-recruit-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 32px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(160, 204, 188, 0.15);
+}
+
+.guild-recruit-placeholder-icon {
+  font-size: 2rem;
+  opacity: 0.5;
+}
+
+.guild-recruit-placeholder-text {
+  font-size: 0.8rem;
+  color: var(--panel-muted);
+}
+
+/* ── Bottom Currency Strip ── */
+.guild-currency-strip {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 12px 20px;
+  border-radius: var(--radius-lg);
+  background: rgba(6, 12, 10, 0.7);
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  backdrop-filter: blur(4px);
+}
+
+.guild-currency-slot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+}
+
+.guild-currency-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.guild-currency-icon--bust {
+  background: radial-gradient(circle at 40% 35%, #a8c8d8, #5a7a8a);
+  border: 1px solid rgba(168, 200, 216, 0.3);
+}
+
+.guild-currency-icon--portrait {
+  background: radial-gradient(circle at 40% 35%, #d8b8a8, #8a6a5a);
+  border: 1px solid rgba(216, 184, 168, 0.3);
+}
+
+.guild-currency-icon--deed {
+  background: radial-gradient(circle at 40% 35%, #c8d8a8, #7a8a5a);
+  border: 1px solid rgba(200, 216, 168, 0.3);
+}
+
+.guild-currency-icon--crest {
+  background: radial-gradient(circle at 40% 35%, #c8a8d8, #7a5a8a);
+  border: 1px solid rgba(200, 168, 216, 0.3);
+}
+
+.guild-currency-icon--gold {
+  background: radial-gradient(circle at 40% 35%, #e8c84a, #b8860b);
+  border: 1px solid rgba(232, 200, 74, 0.4);
+  border-radius: 50%;
+}
+
+.guild-currency-value {
+  font-weight: 600;
+  color: var(--panel-text);
+}
+
+.guild-currency-slot--gold .guild-currency-value {
+  color: #e8c84a;
+}
+
+/* ── Responsive: collapse to single column on narrow screens ── */
+@media (max-width: 920px) {
+  .guild-building-content {
+    grid-template-columns: 1fr;
+  }
+
+  .guild-building-left {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .guild-building-art {
+    width: 120px;
+    height: 140px;
+  }
+
+  .guild-building-name {
+    width: 100%;
+    text-align: center;
+  }
+
+  .guild-building-actions {
+    flex-direction: row;
+    width: auto;
+  }
+
+  .guild-upgrade-tree {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .guild-upgrade-levels {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .guild-currency-strip {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}

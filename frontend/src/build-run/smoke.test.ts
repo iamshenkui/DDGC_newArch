@@ -79,7 +79,7 @@ describe("build-run smoke: intent dispatch round-trip", () => {
 
     expect(detailSnap.viewModel.kind).toBe("building-detail");
     const buildingDetail = detailSnap.viewModel as BuildingDetailViewModel;
-    expect(buildingDetail.label).toBe("试炼场");
+    expect(buildingDetail.label).toBe("次元感知塔");
 
     const townSnap = await bridge.dispatchIntent({ type: "return-to-town" });
     expect(townSnap.viewModel.kind).toBe("town");

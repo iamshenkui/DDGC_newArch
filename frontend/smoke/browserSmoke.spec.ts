@@ -302,32 +302,56 @@ test.describe("browser smoke: fidelity gates", () => {
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
 
-    // Open the Guild building
+    // Open the Guild building (次元感知塔)
     await page.locator('[data-building-id="guild"]').click();
     await settle(page, 800);
 
+    // Guild building screen anchors (HB-iamshenkui-GameMigration-19)
     await expect(
-      page.locator(".building-detail-eyebrow"),
-      "Building eyebrow must be visible"
-    ).toHaveText("Building");
-    // Building detail names render the source DDGC Chinese display names (UIR-005C).
+      page.locator(".guild-building-name"),
+      "Guild building name must be visible (DDGC display name 次元感知塔 = Guild)"
+    ).toHaveText("次元感知塔");
     await expect(
-      page.locator(".building-detail-name"),
-      "Building name must be visible (DDGC display name 试炼场 = Guild)"
-    ).toHaveText("试炼场");
+      page.locator('.guild-tab-btn[data-tab-id="upgrades"]'),
+      "Upgrade facilities tab must be visible"
+    ).toBeVisible();
     await expect(
-      page.locator(".building-action-card-header").filter({ hasText: "Train Combat Skill" }),
-      "Building action must be visible"
+      page.locator('.guild-tab-btn[data-tab-id="recruit"]'),
+      "Recruit personnel tab must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.guild-tab-btn--active[data-tab-id="upgrades"]'),
+      "Upgrades tab must be active by default"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-tree-id="guild_training"]'),
+      "Awakening Resonance upgrade tree must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-tree-id="guild_skills"]'),
+      "Powerful Perception upgrade tree must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-tree-id="guild_capacity"]'),
+      "Rest Room upgrade tree must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.guild-upgrade-slot[data-purchased="true"]'),
+      "At least one purchased upgrade slot must be visible"
+    ).toHaveCount(3);
+    await expect(
+      page.locator('.guild-currency-strip'),
+      "Currency strip must be visible at bottom"
     ).toBeVisible();
 
-    // Fidelity — building detail is a completed product surface
-    await expectFidelity(page.locator(".app-frame"), "Building detail screen");
-    await expectFullPageFidelity(page, "Building detail screen");
+    // Fidelity — guild building detail is a completed product surface
+    await expectFidelity(page.locator(".guild-building-screen"), "Guild building detail screen");
+    await expectFullPageFidelity(page, "Guild building detail screen");
 
-    // Landscape viewport check — building detail uses .app-frame as its landscape layout container
+    // Landscape viewport check — guild building screen uses .app-frame as its landscape layout container
     await expect(
-      page.locator(".app-frame"),
-      "Building detail screen must use .app-frame landscape layout"
+      page.locator(".guild-building-screen"),
+      "Guild building detail screen must use landscape layout"
     ).toBeVisible();
 
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
@@ -335,8 +359,10 @@ test.describe("browser smoke: fidelity gates", () => {
     // ── Phase 5: Full meta-loop ─────────────────────────────
     // Town → Provisioning → Expedition → Result → Return → Town
 
-    // 5a. Return to town
-    await page.getByRole("button", { name: "Return to Town" }).click();
+    // 5a. Return to town from guild screen (离开 button)
+    await page.getByRole("button", { name: "离开" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
 
@@ -581,8 +607,8 @@ test.describe("browser smoke: fidelity gates", () => {
     // Building detail names render the source DDGC Chinese display names (UIR-005C).
     await expect(
       page.locator(".building-detail-name"),
-      "Stagecoach building name must be visible (DDGC display name 次元感知塔 = Stagecoach)"
-    ).toHaveText("次元感知塔");
+      "Stagecoach building name must be visible (DDGC display name 试炼场 = Stagecoach)"
+    ).toHaveText("试炼场");
     await expectFidelity(
       page.locator(".app-frame"),
       "Live building detail screen"

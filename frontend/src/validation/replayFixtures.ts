@@ -158,7 +158,7 @@ export const replayHeroDetailViewModel: HeroDetailViewModel = {
 export const replayBuildingDetailViewModel: BuildingDetailViewModel = {
   kind: "building-detail",
   buildingId: "guild",
-  label: "试炼场",
+  label: "次元感知塔",
   status: "ready",
   description: "The guild provides skill training and party capability review. Upgrade your heroes' abilities to better face the challenges ahead.",
   actions: [
@@ -203,7 +203,44 @@ export const replayBuildingDetailViewModel: BuildingDetailViewModel = {
       isUnsupported: true
     }
   ],
-  upgradeRequirement: "Reach Town Level 2 to unlock weapon and armor upgrades."
+  upgradeRequirement: "Reach Town Level 2 to unlock weapon and armor upgrades.",
+  upgradeTrees: [
+    {
+      treeId: "guild_training",
+      label: "觉醒共鸣",
+      levels: [
+        { code: "a", cost: 0, isPurchased: true, isAvailable: true, effectSummary: "基础经验获取" },
+        { code: "b", cost: 300, isPurchased: false, isAvailable: true, effectSummary: "经验加成 +10%" },
+        { code: "c", cost: 600, isPurchased: false, isAvailable: false, effectSummary: "经验加成 +20%" },
+        { code: "d", cost: 1200, isPurchased: false, isAvailable: false, effectSummary: "经验加成 +30%" }
+      ]
+    },
+    {
+      treeId: "guild_skills",
+      label: "强力感知",
+      levels: [
+        { code: "a", cost: 0, isPurchased: true, isAvailable: true, effectSummary: "基础技能升级" },
+        { code: "b", cost: 500, isPurchased: false, isAvailable: true, effectSummary: "技能升级几率 +5%" },
+        { code: "c", cost: 1000, isPurchased: false, isAvailable: false, effectSummary: "技能升级几率 +10%" }
+      ]
+    },
+    {
+      treeId: "guild_capacity",
+      label: "休息室",
+      levels: [
+        { code: "a", cost: 0, isPurchased: true, isAvailable: true, effectSummary: "1个训练位" },
+        { code: "b", cost: 200, isPurchased: false, isAvailable: true, effectSummary: "2个训练位" },
+        { code: "c", cost: 400, isPurchased: false, isAvailable: false, effectSummary: "3个训练位" }
+      ]
+    }
+  ],
+  resources: {
+    gold: 6895,
+    busts: 10,
+    portraits: 10,
+    deeds: 10,
+    crests: 20
+  }
 };
 
 export const replayBlacksmithBuildingDetailViewModel: BuildingDetailViewModel = {
@@ -280,7 +317,7 @@ export const replaySanitariumBuildingDetailViewModel: BuildingDetailViewModel = 
 export const replayStagecoachBuildingDetailViewModel: BuildingDetailViewModel = {
   kind: "building-detail",
   buildingId: "stagecoach",
-  label: "次元感知塔",
+  label: "试炼场",
   status: "ready",
   description: "The stagecoach brings new heroes to town. Recruit adventurers to expand your party roster and fill gaps in your expedition team.",
   actions: [
