@@ -250,55 +250,47 @@ test.describe("browser smoke: fidelity gates", () => {
     // ── Phase 3: Hero detail ───────────────────────────────
     // Click the "英雄" top-right utility button to open hero detail
     await page.getByRole("button", { name: "英雄", exact: true }).click();
-    await page.waitForSelector(".hero-detail-layout", { timeout: 5_000 });
+    await page.waitForSelector('[data-testid="hero-detail-screen"]', { timeout: 5_000 });
     await settle(page);
 
     await expect(
-      page.getByText("Hero Detail"),
-      "Hero detail eyebrow must be visible"
-    ).toBeVisible();
+      page.locator(".hero-panel-name"),
+      "Hero detail name must be visible"
+    ).toHaveText("Shen");
     await expect(
-      page.getByText("Shen — Hunter"),
-      "Hero detail title (name + class) must be visible"
-    ).toBeVisible();
+      page.locator(".hero-class-name"),
+      "Hero detail class must be visible"
+    ).toHaveText("Hunter");
     await expectOriginalAssetImage(
-      page.locator('.hero-portrait-image[src*="hunter_portrait_roster.png"]'),
+      page.locator('.hero-panel-artwork-img[src*="hunter_portrait_roster.png"]'),
       "hunter_portrait_roster.png",
       "Hero detail portrait"
     );
 
     // Cycle through each tab to verify reactive rendering
-    // Use data-source-component for unique identification (Chinese labels
-    // "战斗技能" and "扎营技能" both contain "技能")
-    const tabComponents = [
-      "EquipButton",
-      "CombatSkillButton",
-      "StateButton",
-      "InfoButton",
-      "CampingSkillButton",
-    ];
-    for (const comp of tabComponents) {
-      const tabBtn = page.locator(`.hero-tab-btn[data-source-component="${comp}"]`);
-      await expect(tabBtn, `Tab "${comp}" must be visible`).toBeVisible();
+    const tabKeys = ["equipment", "combat", "state", "info", "camping"];
+    for (const key of tabKeys) {
+      const tabBtn = page.locator(`.hero-panel-tab[data-tab-key="${key}"]`);
+      await expect(tabBtn, `Tab "${key}" must be visible`).toBeVisible();
       await tabBtn.click();
       await settle(page, 200);
     }
 
     // Fidelity — hero detail is a completed product surface
-    await expectFidelity(page.locator(".hero-detail-layout"), "Hero detail screen");
+    await expectFidelity(page.locator('[data-testid="hero-detail-screen"]'), "Hero detail screen");
     await expectFullPageFidelity(page, "Hero detail screen");
 
     // Landscape viewport check for hero detail
     await expect(
-      page.locator(".hero-detail-layout"),
-      "Hero detail screen must use .hero-detail-layout landscape class"
+      page.locator('[data-testid="hero-detail-screen"]'),
+      "Hero detail screen must use hero-panel-viewport landscape class"
     ).toBeVisible();
 
     expectNoErrors(pageErrors, consoleErrors, "Phase 3 (hero detail)");
 
     // ── Phase 4: Building detail ───────────────────────────
     // Return to town first
-    await page.getByRole("button", { name: "Return to Town" }).click();
+    await page.getByRole("button", { name: "返回" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
 
@@ -545,29 +537,29 @@ test.describe("browser smoke: fidelity gates", () => {
 
     // Open hero detail from live bridge via the "英雄" utility button
     await page.getByRole("button", { name: "英雄", exact: true }).click();
-    await page.waitForSelector(".hero-detail-layout", { timeout: 5_000 });
+    await page.waitForSelector('[data-testid="hero-detail-screen"]', { timeout: 5_000 });
     await settle(page);
 
     await expect(
-      page.getByText("Hero Detail"),
+      page.locator(".hero-panel-name"),
       "Hero detail must be reachable from live boot"
-    ).toBeVisible();
+    ).toHaveText("Yuan");
 
     // Fidelity check on live hero detail
     await expectFidelity(
-      page.locator(".hero-detail-layout"),
+      page.locator('[data-testid="hero-detail-screen"]'),
       "Live hero detail screen"
     );
     await expectFullPageFidelity(page, "Live hero detail screen");
 
     // Landscape viewport check for live hero detail
     await expect(
-      page.locator(".hero-detail-layout"),
-      "Live hero detail screen must use .hero-detail-layout landscape class"
+      page.locator('[data-testid="hero-detail-screen"]'),
+      "Live hero detail screen must use hero-panel-viewport landscape class"
     ).toBeVisible();
 
     // Return and open a building
-    await page.getByRole("button", { name: "Return to Town" }).click();
+    await page.getByRole("button", { name: "返回" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
 
