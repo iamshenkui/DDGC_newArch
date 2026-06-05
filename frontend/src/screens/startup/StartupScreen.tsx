@@ -9,11 +9,14 @@ interface StartupScreenProps {
 }
 
 /**
- * Title / main-menu page rewritten from the original DDGC MainMenuWindow.prefab
- * hierarchy (fixtures/ui_inventory/Assets/Prefabs/UI/Windows/MainMenuWindow.prefab.json).
+ * 开始界面 (Start Screen) — rewritten from reference image:
+ * reference/ref_image/跨际元契约/1系统界面/开始界面.png
  *
- * Layout mirrors the Unity prefab:
- *   MainMenuWindow (centered canvas) → background layer → MenuOptions → Buttons
+ * Layout mirrors the reference:
+ *   - Dark grungy stone background
+ *   - Title "跨纪元契约" with sword-cross ornament
+ *   - Parchment-style menu with four options
+ *   - Version label at bottom
  *
  * Source-backed chrome:
  *   - menu_bg.png (GUID 4e780ea66a89c2f4b8bdc4f4b76c290d)
@@ -25,71 +28,113 @@ interface StartupScreenProps {
 export const StartupScreen: Component<StartupScreenProps> = (props) => {
   return (
     <main
-      class="title-page"
-      data-source-prefab="Assets/Prefabs/UI/Windows/MainMenuWindow.prefab"
+      class="start-screen"
+      data-source-ref="开始界面"
+      data-source-group="1系统界面"
     >
-      {/* Background layer — mirrors MainMenuWindow root Image component (menu_bg.png) */}
+      {/* Background layer — dark grungy stone texture */}
       <div
-        class="title-page-backdrop"
+        class="start-screen-backdrop"
         data-source-sprite="Assets/Sprites/ui/menu_bg.png"
         data-source-guid="4e780ea66a89c2f4b8bdc4f4b76c290d"
       />
 
-      <div
-        class="title-page-dialog"
-        data-source-component="MainMenuWindow"
-      >
-        {/* Game branding header */}
-        <header class="title-page-header">
-          <div class="title-page-ornament" aria-hidden="true" />
-          <h1 class="title-page-game-title">DDGC</h1>
-          <p class="title-page-game-subtitle">暗黑地牢: 降龙</p>
+      <div class="start-screen-content">
+        {/* Title with sword-cross ornament */}
+        <header class="start-screen-header">
+          <div class="start-screen-ornament" aria-hidden="true">
+            <svg
+              viewBox="0 0 48 64"
+              width="48"
+              height="64"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {/* Sword-cross ornament matching reference */}
+              <path
+                d="M24 0v64M12 20h24M24 20l-8-12M24 20l8-12M18 20l-6 8M30 20l6 8"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          <h1 class="start-screen-game-title">跨纪元契约</h1>
         </header>
 
-        <div class="title-page-divider" aria-hidden="true" />
-
-        {/* MenuOptions container — mirrors MainMenuWindow → MenuOptions LayoutGroup */}
+        {/* Parchment-style menu */}
         <nav
-          class="title-page-menu"
+          class="start-screen-menu"
           data-source-component="MenuOptions"
           data-source-font="Assets/Fonts/Bak/Deutsch.ttf"
           data-source-button-sprite="Assets/Sprites/ui/btn_menu_primary.png"
         >
-          <span class="title-page-menu-label">Main Menu</span>
-
           <button
-            class="title-page-button"
+            class="start-screen-menu-button"
             data-source-sprite="Assets/Sprites/ui/btn_menu_primary.png"
+            data-testid="start-new-game"
             onClick={props.onNewCampaign}
           >
-            New Campaign
+            新游戏
           </button>
 
           <button
-            class="title-page-button"
+            class="start-screen-menu-button"
             data-source-sprite="Assets/Sprites/ui/btn_menu_primary.png"
+            data-testid="start-continue"
             onClick={props.onLoadCampaign}
             disabled={!props.hasSavedCampaign}
           >
-            Load Campaign
+            {props.hasSavedCampaign ? "继续游戏" : "读取存档"}
           </button>
 
           <button
-            class="title-page-button"
+            class="start-screen-menu-button"
             data-source-sprite="Assets/Sprites/ui/btn_menu_primary.png"
-            onClick={props.onReplayBoot}
+            data-testid="start-settings"
+            onClick={() => {
+              /* Settings not yet implemented — noop with visual feedback */
+            }}
+            disabled
           >
-            Boot Replay
+            设置
           </button>
 
           <button
-            class="title-page-button"
+            class="start-screen-menu-button"
             data-source-sprite="Assets/Sprites/ui/btn_menu_primary.png"
-            onClick={props.onLiveBoot}
+            data-testid="start-exit"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.close();
+              }
+            }}
           >
-            Boot Live
+            退出游戏
           </button>
         </nav>
+
+        {/* Version label */}
+        <footer class="start-screen-version">V 1.0</footer>
+      </div>
+
+      {/* Dev tools row — secondary, outside main reference layout */}
+      <div class="start-screen-dev-bar">
+        <button
+          class="start-screen-dev-button"
+          data-testid="boot-replay"
+          onClick={props.onReplayBoot}
+        >
+          Boot Replay
+        </button>
+        <button
+          class="start-screen-dev-button"
+          data-testid="boot-live"
+          onClick={props.onLiveBoot}
+        >
+          Boot Live
+        </button>
       </div>
     </main>
   );

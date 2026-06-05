@@ -137,33 +137,39 @@ test.describe("browser smoke: fidelity gates", () => {
     await page.waitForLoadState("networkidle");
 
     // ── Phase 1: Startup screen ────────────────────────────
+    // Start screen (开始界面) — reference: 1系统界面/开始界面.png
     await expect(
-      page.getByRole("heading", { name: "DDGC" }),
-      "Startup title must be visible"
+      page.getByRole("heading", { name: "跨纪元契约" }),
+      "Startup title (跨纪元契约) must be visible"
     ).toBeVisible();
 
     await expect(
-      page.getByRole("button", { name: "New Campaign" }),
-      "New Campaign button must be present"
+      page.locator('[data-testid="start-new-game"]'),
+      "New Game button (新游戏) must be present"
     ).toBeVisible();
 
     await expect(
-      page.getByRole("button", { name: "Load Campaign" }),
-      "Load Campaign button must be present"
+      page.locator('[data-testid="start-continue"]'),
+      "Continue/Load button must be present"
     ).toBeVisible();
 
     await expect(
-      page.getByRole("button", { name: "Boot Replay" }),
+      page.locator('[data-testid="boot-replay"]'),
       "Replay boot button must be present"
     ).toBeVisible();
 
     await expect(
-      page.getByRole("button", { name: "Boot Live" }),
+      page.locator('[data-testid="boot-live"]'),
       "Live boot button must be present"
     ).toBeVisible();
 
+    await expect(
+      page.locator(".start-screen-version"),
+      "Version label must be visible"
+    ).toHaveText("V 1.0");
+
     // ── Phase 2: Replay boot → Town shell ──────────────────
-    await page.getByRole("button", { name: "Boot Replay" }).click();
+    await page.locator('[data-testid="boot-replay"]').click();
 
     // Wait for landscape town viewport to mount
     await page.waitForSelector(".town-viewport", { timeout: 8_000 });
@@ -501,11 +507,11 @@ test.describe("browser smoke: fidelity gates", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(
-      page.getByRole("button", { name: "Boot Live" }),
+      page.locator('[data-testid="boot-live"]'),
       "Live boot button must be present"
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Boot Live" }).click();
+    await page.locator('[data-testid="boot-live"]').click();
 
     // Wait for landscape town viewport (live bridge boots to town)
     await page.waitForSelector(".town-viewport", { timeout: 8_000 });

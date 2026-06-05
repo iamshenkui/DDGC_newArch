@@ -7,7 +7,7 @@ test("UIR-008: capture provisioning and expedition launch screens", async ({ pag
   await page.goto(BASE_URL);
   await page.waitForLoadState("networkidle");
 
-  await page.getByRole("button", { name: "Boot Replay" }).click();
+  await page.locator('[data-testid="boot-replay"]').click();
   await page.waitForSelector(".town-viewport", { timeout: 10_000 });
   await page.waitForTimeout(400);
 
