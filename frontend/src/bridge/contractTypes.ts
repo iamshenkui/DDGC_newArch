@@ -60,6 +60,20 @@ export interface BuildingAction {
   isUnsupported: boolean;
 }
 
+export interface BuildingRecruit {
+  heroId: string;
+  name: string;
+  classLabel: string;
+  level: number;
+  hp: string;
+  maxHp: string;
+  stress: string;
+  maxStress: string;
+  cost: string;
+  isAvailable: boolean;
+  portrait?: string;
+}
+
 export interface BuildingDetailViewModel {
   kind: "building-detail";
   buildingId: string;
@@ -69,6 +83,7 @@ export interface BuildingDetailViewModel {
   actions: ReadonlyArray<BuildingAction>;
   currentUpgrade?: string;
   upgradeRequirement?: string;
+  recruits?: ReadonlyArray<BuildingRecruit>;
 }
 
 export interface HeroProgression {

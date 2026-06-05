@@ -3321,3 +3321,580 @@ button {
     font-size: 1rem;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   Stagecoach Building Screen (次元感知塔-使用)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.stagecoach-frame {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  gap: 14px;
+}
+
+/* ── Main two-column content ── */
+.stagecoach-content {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+@media (max-width: 920px) {
+  .stagecoach-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Left Panel: Tower art + buttons ── */
+.stagecoach-left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stagecoach-tower-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 24px 18px;
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(180deg, rgba(22, 30, 38, 0.85) 0%, rgba(14, 20, 26, 0.92) 100%);
+  border: 1px solid rgba(160, 204, 188, 0.14);
+  box-shadow:
+    0 12px 36px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(160, 204, 188, 0.06);
+}
+
+.stagecoach-tower-title {
+  margin: 0;
+  font-family: var(--heading-font);
+  font-size: 1.35rem;
+  letter-spacing: 0.08em;
+  color: rgba(245, 234, 212, 0.96);
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
+}
+
+.stagecoach-tower-subtitle {
+  margin: 0;
+  font-size: 0.72rem;
+  color: rgba(180, 170, 150, 0.65);
+  letter-spacing: 0.06em;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Tower art — circular mechanical device with face */
+.stagecoach-tower-art {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 40% 35%, rgba(140, 180, 200, 0.25), rgba(40, 60, 80, 0.5) 55%, rgba(20, 30, 40, 0.8) 100%),
+    conic-gradient(from 0deg, rgba(100, 140, 170, 0.2), rgba(80, 120, 150, 0.3), rgba(100, 140, 170, 0.2));
+  border: 3px solid rgba(140, 180, 200, 0.25);
+  box-shadow:
+    0 0 40px rgba(100, 160, 200, 0.15),
+    inset 0 0 30px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+.stagecoach-tower-art::before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  border: 1px dashed rgba(140, 180, 200, 0.2);
+  pointer-events: none;
+}
+
+.stagecoach-tower-sprite {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 45% 40%, rgba(200, 220, 240, 0.35), rgba(120, 160, 190, 0.2) 50%, rgba(60, 100, 130, 0.3) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(160, 200, 230, 0.3);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.stagecoach-tower-face {
+  font-size: 2.4rem;
+  color: rgba(60, 40, 20, 0.85);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+  user-select: none;
+}
+
+/* Talk / Leave buttons */
+.stagecoach-talk-btn,
+.stagecoach-leave-btn {
+  width: 100%;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.stagecoach-talk-btn {
+  background: rgba(100, 160, 200, 0.15);
+  border: 1px solid rgba(140, 190, 220, 0.25);
+  color: rgba(200, 230, 250, 0.9);
+}
+
+.stagecoach-talk-btn:hover {
+  background: rgba(100, 160, 200, 0.25);
+  border-color: rgba(140, 190, 220, 0.4);
+  transform: translateY(-1px);
+}
+
+.stagecoach-leave-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(160, 204, 188, 0.15);
+  color: rgba(200, 190, 170, 0.75);
+}
+
+.stagecoach-leave-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(160, 204, 188, 0.25);
+  color: rgba(220, 210, 190, 0.9);
+}
+
+/* ── Right Panel: Tabbed parchment ── */
+.stagecoach-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(180deg, rgba(28, 24, 18, 0.9) 0%, rgba(22, 18, 14, 0.92) 100%);
+  border: 1px solid rgba(180, 160, 130, 0.18);
+  box-shadow:
+    0 12px 36px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(200, 180, 150, 0.06);
+  overflow: hidden;
+}
+
+/* Tab bar */
+.stagecoach-tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid rgba(180, 160, 130, 0.15);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.stagecoach-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 18px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(180, 170, 150, 0.65);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.stagecoach-tab:hover {
+  color: rgba(220, 210, 190, 0.85);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.stagecoach-tab--active {
+  color: rgba(220, 200, 160, 0.95);
+  border-bottom-color: rgba(200, 160, 100, 0.6);
+  background: rgba(200, 160, 100, 0.06);
+}
+
+.stagecoach-tab-check {
+  font-size: 1.1rem;
+  line-height: 1;
+  color: rgba(200, 100, 80, 0.85);
+}
+
+/* Tab content area */
+.stagecoach-tab-content {
+  padding: 18px;
+  min-height: 320px;
+}
+
+/* ── Action cards (shared between tabs) ── */
+.stagecoach-action-list {
+  display: grid;
+  gap: 12px;
+}
+
+.stagecoach-action-card {
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stagecoach-action-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.stagecoach-action-label {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--panel-text);
+}
+
+.stagecoach-action-desc {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--panel-muted);
+  line-height: 1.4;
+}
+
+.stagecoach-action-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.stagecoach-action-cost {
+  font-size: 0.76rem;
+  color: rgba(200, 180, 130, 0.75);
+}
+
+.stagecoach-action-cost strong {
+  color: rgba(230, 210, 160, 0.9);
+  font-weight: 600;
+}
+
+.stagecoach-action-cost-unavailable {
+  color: var(--panel-muted);
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.stagecoach-action-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.stagecoach-action-btn--primary {
+  background: rgba(100, 160, 200, 0.2);
+  border: 1px solid rgba(140, 190, 220, 0.3);
+  color: rgba(200, 230, 250, 0.95);
+}
+
+.stagecoach-action-btn--primary:hover {
+  background: rgba(100, 160, 200, 0.3);
+  border-color: rgba(140, 190, 220, 0.45);
+  transform: translateY(-1px);
+}
+
+.stagecoach-action-btn--disabled {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  color: var(--panel-muted);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ── Recruit list ── */
+.stagecoach-recruit-list {
+  display: grid;
+  gap: 10px;
+}
+
+.stagecoach-recruit-card {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.stagecoach-recruit-card:hover {
+  border-color: rgba(160, 204, 188, 0.18);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.stagecoach-recruit-card--unavailable {
+  opacity: 0.6;
+}
+
+/* Recruit portrait */
+.stagecoach-recruit-portrait {
+  width: 52px;
+  height: 52px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex: 0 0 auto;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(160, 204, 188, 0.12);
+}
+
+.stagecoach-recruit-portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+.stagecoach-recruit-portrait-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(198, 212, 106, 0.1), rgba(0, 0, 0, 0.4) 70%);
+}
+
+.stagecoach-recruit-portrait-fallback span {
+  font-family: var(--heading-font);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+}
+
+/* Recruit info */
+.stagecoach-recruit-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.stagecoach-recruit-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stagecoach-recruit-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--panel-text);
+}
+
+.stagecoach-recruit-class {
+  font-size: 0.65rem;
+  color: var(--panel-muted);
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  white-space: nowrap;
+}
+
+.stagecoach-recruit-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 0.7rem;
+  color: var(--panel-muted);
+}
+
+.stagecoach-recruit-stat {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Recruit action */
+.stagecoach-recruit-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.stagecoach-recruit-cost {
+  font-size: 0.72rem;
+  color: rgba(200, 180, 130, 0.75);
+  font-weight: 600;
+}
+
+.stagecoach-recruit-cost--unavailable {
+  color: var(--panel-muted);
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.stagecoach-recruit-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.stagecoach-recruit-btn--primary {
+  background: rgba(100, 160, 200, 0.2);
+  border: 1px solid rgba(140, 190, 220, 0.3);
+  color: rgba(200, 230, 250, 0.95);
+}
+
+.stagecoach-recruit-btn--primary:hover {
+  background: rgba(100, 160, 200, 0.3);
+  border-color: rgba(140, 190, 220, 0.45);
+  transform: translateY(-1px);
+}
+
+.stagecoach-recruit-btn--disabled {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  color: var(--panel-muted);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Empty state */
+.stagecoach-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--panel-muted);
+  font-size: 0.85rem;
+}
+
+/* ── Bottom Resource Bar ── */
+.stagecoach-resource-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+}
+
+.stagecoach-resource-slot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  color: rgba(220, 210, 190, 0.85);
+}
+
+.stagecoach-resource-slot--gold {
+  color: rgba(248, 226, 178, 0.95);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.stagecoach-resource-icon {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.stagecoach-resource-icon--gem {
+  background: radial-gradient(circle at 40% 35%, #6ab5d4, #2a7a9a);
+  border: 1px solid rgba(100, 200, 240, 0.4);
+  box-shadow: 0 0 6px rgba(100, 200, 240, 0.2);
+}
+
+.stagecoach-resource-icon--bust {
+  background: radial-gradient(circle at 40% 35%, #a0c8e0, #5080a0);
+  border: 1px solid rgba(140, 190, 220, 0.35);
+}
+
+.stagecoach-resource-icon--portrait {
+  background: radial-gradient(circle at 40% 35%, #d0b8c0, #906870);
+  border: 1px solid rgba(200, 160, 170, 0.35);
+}
+
+.stagecoach-resource-icon--crest {
+  background: radial-gradient(circle at 40% 35%, #c07060, #803020);
+  border: 1px solid rgba(200, 100, 80, 0.4);
+  box-shadow: 0 0 6px rgba(200, 100, 80, 0.2);
+}
+
+.stagecoach-resource-icon--gold {
+  background: radial-gradient(circle at 40% 35%, #e8c84a, #b8860b);
+  border: 1px solid rgba(232, 200, 74, 0.4);
+  box-shadow: 0 0 6px rgba(232, 200, 74, 0.2);
+}
+
+.stagecoach-resource-value {
+  font-variant-numeric: tabular-nums;
+  min-width: 1.5rem;
+  text-align: right;
+}
+
+/* ── Responsive: stagecoach on narrow screens ── */
+@media (max-width: 920px) {
+  .stagecoach-content {
+    grid-template-columns: 1fr;
+  }
+
+  .stagecoach-tower-art {
+    width: 160px;
+    height: 160px;
+  }
+
+  .stagecoach-tower-sprite {
+    width: 110px;
+    height: 110px;
+  }
+
+  .stagecoach-tower-face {
+    font-size: 1.8rem;
+  }
+
+  .stagecoach-recruit-card {
+    grid-template-columns: 48px 1fr;
+    gap: 10px;
+  }
+
+  .stagecoach-recruit-action {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .stagecoach-resource-bar {
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+}

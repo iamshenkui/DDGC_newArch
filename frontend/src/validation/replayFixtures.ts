@@ -285,18 +285,18 @@ export const replayStagecoachBuildingDetailViewModel: BuildingDetailViewModel = 
   description: "The stagecoach brings new heroes to town. Recruit adventurers to expand your party roster and fill gaps in your expedition team.",
   actions: [
     {
-      id: "recruit-hero",
-      label: "Recruit Hero",
-      description: "Recruit a new hero from the available pool to join your roster.",
-      cost: "500 Gold",
+      id: "upgrade-facility",
+      label: "Upgrade Facility",
+      description: "Improve the dimensional perception tower to unlock more hero slots and better recruits.",
+      cost: "1000 Gold",
       isAvailable: true,
       isUnsupported: false
     },
     {
-      id: "dismiss-hero",
-      label: "Dismiss Hero",
-      description: "Release a hero from your roster to make room for new recruits.",
-      cost: "0 Gold",
+      id: "recruit-hero",
+      label: "Recruit Hero",
+      description: "Recruit a new hero from the available pool to join your roster.",
+      cost: "500 Gold",
       isAvailable: true,
       isUnsupported: false
     },
@@ -307,6 +307,32 @@ export const replayStagecoachBuildingDetailViewModel: BuildingDetailViewModel = 
       cost: "1500 Gold",
       isAvailable: false,
       isUnsupported: true
+    }
+  ],
+  recruits: [
+    {
+      heroId: "recruit-hunter-01",
+      name: "高必",
+      classLabel: "多面人",
+      level: 1,
+      hp: "32 / 32",
+      maxHp: "32",
+      stress: "0",
+      maxStress: "200",
+      cost: "500 Gold",
+      isAvailable: true
+    },
+    {
+      heroId: "recruit-white-01",
+      name: "江颐",
+      classLabel: "红龙战士",
+      level: 1,
+      hp: "30 / 30",
+      maxHp: "30",
+      stress: "0",
+      maxStress: "200",
+      cost: "500 Gold",
+      isAvailable: true
     }
   ],
   upgradeRequirement: "Reach Town Level 2 to unlock rare recruitment."

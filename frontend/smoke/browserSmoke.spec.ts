@@ -493,6 +493,122 @@ test.describe("browser smoke: fidelity gates", () => {
     expectNoErrors(pageErrors, consoleErrors, "Phase 5 (meta-loop)");
   });
 
+  // ── Phase 4b: Stagecoach building detail (次元感知塔-使用) ──
+  test("stagecoach building screen — tabbed recruit UI", async ({ page }) => {
+    const { consoleErrors, pageErrors } = setupErrorCollectors(page);
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+
+    // Boot replay
+    await page.getByRole("button", { name: "Boot Replay" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 8_000 });
+    await settle(page);
+
+    // Open stagecoach building
+    await page.locator('[data-building-id="stagecoach"]').click();
+    await settle(page, 800);
+
+    // Verify building name
+    await expect(
+      page.locator(".building-detail-name"),
+      "Stagecoach building name must be visible (次元感知塔)"
+    ).toHaveText("次元感知塔");
+
+    // Verify left panel tower art and buttons
+    await expect(
+      page.locator(".stagecoach-tower-art"),
+      "Tower art must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".stagecoach-talk-btn"),
+      "Talk button (对话) must be visible"
+    ).toHaveText("对话");
+    await expect(
+      page.locator(".stagecoach-leave-btn"),
+      "Leave button (离开) must be visible"
+    ).toHaveText("离开");
+
+    // Verify tab bar
+    await expect(
+      page.locator('.stagecoach-tab[data-tab="upgrade"]'),
+      "Upgrade tab (升级设施) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.stagecoach-tab[data-tab="recruit"]'),
+      "Recruit tab (招募人员) must be visible"
+    ).toBeVisible();
+
+    // Default tab should be recruit
+    await expect(
+      page.locator('.stagecoach-tab--active[data-tab="recruit"]'),
+      "Recruit tab should be active by default"
+    ).toBeVisible();
+
+    // Verify recruit list with sample data
+    await expect(
+      page.locator(".stagecoach-recruit-list"),
+      "Recruit list must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-recruit-id="recruit-hunter-01"]'),
+      "First recruit card must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-recruit-id="recruit-white-01"]'),
+      "Second recruit card must be visible"
+    ).toBeVisible();
+
+    // Verify recruit names
+    await expect(
+      page.locator(".stagecoach-recruit-name").filter({ hasText: "高必" }),
+      "Recruit name (高必) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".stagecoach-recruit-name").filter({ hasText: "江颐" }),
+      "Recruit name (江颐) must be visible"
+    ).toBeVisible();
+
+    // Verify recruit buttons
+    const recruitBtns = page.locator(".stagecoach-recruit-btn--primary");
+    await expect(recruitBtns, "Recruit buttons must be present and enabled").toHaveCount(2);
+
+    // Verify bottom resource bar
+    await expect(
+      page.locator(".stagecoach-resource-bar"),
+      "Resource bar must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".stagecoach-resource-slot"),
+      "Resource slots must contain 5 items"
+    ).toHaveCount(5);
+
+    // Switch to upgrade tab
+    await page.locator('.stagecoach-tab[data-tab="upgrade"]').click();
+    await settle(page, 200);
+
+    await expect(
+      page.locator('.stagecoach-tab--active[data-tab="upgrade"]'),
+      "Upgrade tab should be active after click"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-tab-content="upgrade"]'),
+      "Upgrade tab content must be visible"
+    ).toBeVisible();
+
+    // Return to town
+    await page.locator(".building-return-btn").click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("城镇中枢"),
+      "Must be back at town after leaving stagecoach"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Stagecoach building screen");
+  });
+
   // ── Live boot test ─────────────────────────────────────────
   test("live boot exercises live bridge path", async ({ page }) => {
     const { consoleErrors, pageErrors } = setupErrorCollectors(page);

@@ -187,10 +187,31 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
     }>;
     currentUpgrade?: string;
     upgradeRequirement?: string;
+    recruits?: Array<{
+      heroId: string;
+      name: string;
+      classLabel: string;
+      level: number;
+      hp: string;
+      maxHp: string;
+      stress: string;
+      maxStress: string;
+      cost: string;
+      isAvailable: boolean;
+      portrait?: string;
+    }>;
   }> = {
     stagecoach: {
       description: "The stagecoach offers new recruits from the surrounding region. Recruit heroes to expand your party roster.",
       actions: [
+        {
+          id: "upgrade-facility",
+          label: "Upgrade Facility",
+          description: "Improve the dimensional perception tower to unlock more hero slots and better recruits.",
+          cost: "1000 Gold",
+          isAvailable: true,
+          isUnsupported: false
+        },
         {
           id: "recruit-hero",
           label: "Recruit Hero",
@@ -206,6 +227,32 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
           cost: "Free",
           isAvailable: true,
           isUnsupported: false
+        }
+      ],
+      recruits: [
+        {
+          heroId: "recruit-hunter-live-01",
+          name: "高必",
+          classLabel: "多面人",
+          level: 1,
+          hp: "32 / 32",
+          maxHp: "32",
+          stress: "0",
+          maxStress: "200",
+          cost: "500 Gold",
+          isAvailable: true
+        },
+        {
+          heroId: "recruit-white-live-01",
+          name: "江颐",
+          classLabel: "红龙战士",
+          level: 1,
+          hp: "30 / 30",
+          maxHp: "30",
+          stress: "0",
+          maxStress: "200",
+          cost: "500 Gold",
+          isAvailable: true
         }
       ]
     },
@@ -263,7 +310,8 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
     description: config.description,
     actions: config.actions,
     currentUpgrade: config.currentUpgrade,
-    upgradeRequirement: config.upgradeRequirement
+    upgradeRequirement: config.upgradeRequirement,
+    recruits: config.recruits
   };
 };
 
