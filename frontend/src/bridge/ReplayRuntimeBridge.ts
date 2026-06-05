@@ -3,6 +3,16 @@ import {
   replayReadySnapshot,
   replayHeroDetailViewModel,
   replayBuildingDetailViewModel,
+  replayGardenBuildingDetailViewModel,
+  replayBlacksmithBuildingDetailViewModel,
+  replaySanitariumBuildingDetailViewModel,
+  replayStagecoachBuildingDetailViewModel,
+  replayAbbeyBuildingDetailViewModel,
+  replayTavernBuildingDetailViewModel,
+  replayGraveyardBuildingDetailViewModel,
+  replayLegacyTowerBuildingDetailViewModel,
+  replayMarketBuildingDetailViewModel,
+  replayCampingTrainerBuildingDetailViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
@@ -13,11 +23,39 @@ import type {
   DdgcFrontendIntent,
   DdgcFrontendSnapshot,
   TownViewModel,
+  BuildingDetailViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel
 } from "./contractTypes";
+
+function buildingDetailViewModelFor(buildingId: string): BuildingDetailViewModel {
+  switch (buildingId) {
+    case "garden":
+      return replayGardenBuildingDetailViewModel;
+    case "blacksmith":
+      return replayBlacksmithBuildingDetailViewModel;
+    case "sanitarium":
+      return replaySanitariumBuildingDetailViewModel;
+    case "stagecoach":
+      return replayStagecoachBuildingDetailViewModel;
+    case "abbey":
+      return replayAbbeyBuildingDetailViewModel;
+    case "tavern":
+      return replayTavernBuildingDetailViewModel;
+    case "graveyard":
+      return replayGraveyardBuildingDetailViewModel;
+    case "legacytower":
+      return replayLegacyTowerBuildingDetailViewModel;
+    case "market":
+      return replayMarketBuildingDetailViewModel;
+    case "campingtrainer":
+      return replayCampingTrainerBuildingDetailViewModel;
+    default:
+      return replayBuildingDetailViewModel;
+  }
+}
 
 export class ReplayRuntimeBridge implements RuntimeBridge {
   readonly id = "ddgc-replay-bridge";
@@ -64,11 +102,12 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       case "open-building": {
         const townVm = this.snapshot.viewModel as TownViewModel;
         const building = townVm.buildings.find((b) => b.id === intent.buildingId) ?? townVm.buildings[0];
+        const baseVm = buildingDetailViewModelFor(building.id);
         this.snapshot = {
           ...this.snapshot,
           flowState: "town",
           viewModel: {
-            ...replayBuildingDetailViewModel,
+            ...baseVm,
             buildingId: building.id,
             label: building.label,
             status: building.status

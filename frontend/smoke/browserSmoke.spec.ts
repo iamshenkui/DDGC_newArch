@@ -332,6 +332,49 @@ test.describe("browser smoke: fidelity gates", () => {
 
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
 
+    // ── Phase 4b: Garden building detail (天国花园 - 使用空) ───
+    await page.getByRole("button", { name: "Return to Town" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    // Open the Garden building
+    await page.locator('[data-building-id="garden"]').click();
+    await settle(page, 800);
+
+    await expect(
+      page.locator(".building-detail-eyebrow"),
+      "Garden building eyebrow must be visible"
+    ).toHaveText("Building");
+    await expect(
+      page.locator(".building-detail-name"),
+      "Garden building name must be visible (DDGC display name 天国花园 = Garden)"
+    ).toHaveText("天国花园");
+    await expect(
+      page.locator(".building-action-section-title").filter({ hasText: "休养位" }),
+      "Garden rest slots section must be visible"
+    ).toBeVisible();
+
+    // Verify empty slots (使用空 state)
+    const gardenEmptySlots = page.locator('[data-slot-state="empty"]');
+    await expect(gardenEmptySlots, "Garden must show 3 empty rest slots").toHaveCount(3);
+
+    // Verify "放置英雄" (Place Hero) buttons on empty slots
+    await expect(
+      page.locator('[data-action="place-hero"]'),
+      "Garden empty slots must have place-hero buttons"
+    ).toHaveCount(3);
+
+    // Verify garden action cards
+    await expect(
+      page.locator(".building-action-card-header").filter({ hasText: "休整" }),
+      "Garden rest action must be visible"
+    ).toBeVisible();
+
+    await expectFidelity(page.locator(".app-frame"), "Garden building detail screen");
+    await expectFullPageFidelity(page, "Garden building detail screen");
+
+    expectNoErrors(pageErrors, consoleErrors, "Phase 4b (garden building detail)");
+
     // ── Phase 5: Full meta-loop ─────────────────────────────
     // Town → Provisioning → Expedition → Result → Return → Town
 

@@ -388,7 +388,7 @@ export const replayGardenBuildingDetailViewModel: BuildingDetailViewModel = {
   buildingId: "garden",
   label: "天国花园",
   status: "partial",
-  description: "提供特殊休整与恢复服务，在宁静的花园中治愈身心。",
+  description: "提供特殊休整与恢复服务，在宁静的花园中治愈身心。放置英雄进行休养以恢复生命值并降低压力。",
   actions: [
     {
       id: "rest",
@@ -397,8 +397,25 @@ export const replayGardenBuildingDetailViewModel: BuildingDetailViewModel = {
       cost: "200 Gold",
       isAvailable: true,
       isUnsupported: false
+    },
+    {
+      id: "upgrade-slots",
+      label: "扩充休养位",
+      description: "增加花园中的英雄休养位数量。",
+      cost: "500 Gold",
+      isAvailable: false,
+      isUnsupported: false
+    },
+    {
+      id: "enhance-recovery",
+      label: "增强恢复",
+      description: "提升花园中英雄的生命值和压力恢复效果。",
+      cost: "800 Gold",
+      isAvailable: false,
+      isUnsupported: false
     }
   ],
+  currentUpgrade: "Garden Level 1",
   upgradeRequirement: "Reach Town Level 2 to unlock garden upgrades."
 };
 
