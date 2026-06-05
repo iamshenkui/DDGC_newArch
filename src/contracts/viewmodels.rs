@@ -364,6 +364,10 @@ pub struct BuildingDetailViewModel {
     pub actions: Vec<BuildingAction>,
     /// Requirement for upgrading this building (if upgradeable).
     pub upgrade_requirement: Option<String>,
+    /// Heroes available for selection in guild/camping-trainer screens.
+    pub heroes: Option<Vec<TownHeroViewModel>>,
+    /// Camping skills available for training/purchase.
+    pub camping_skills: Option<Vec<String>>,
 }
 
 impl BuildingDetailViewModel {
@@ -377,6 +381,8 @@ impl BuildingDetailViewModel {
             description: String::new(),
             actions: Vec::new(),
             upgrade_requirement: None,
+            heroes: None,
+            camping_skills: None,
         }
     }
 }

@@ -835,6 +835,54 @@ pub fn building_detail_from_campaign(
     // Determine upgrade requirement
     let upgrade_requirement = building_upgrade_hint(building_id);
 
+    // Populate heroes and camping skills for guild / camping-trainer screens
+    let heroes = if building_id == "guild" || building_id == "campingtrainer" {
+        Some(
+            campaign
+                .roster
+                .iter()
+                .map(|hero| {
+                    let is_wounded = hero.health < hero.max_health;
+                    let is_afflicted = hero.stress >= hero.max_stress;
+                    crate::contracts::viewmodels::TownHeroViewModel {
+                        id: hero.id.clone(),
+                        name: hero.id.clone(),
+                        class_id: hero.class_id.clone(),
+                        class_name: hero.class_id.clone(),
+                        health: hero.health,
+                        max_health: hero.max_health,
+                        stress: hero.stress,
+                        max_stress: hero.max_stress,
+                        is_wounded,
+                        is_afflicted,
+                        level: hero.level,
+                        xp: hero.xp,
+                        positive_quirks: hero.quirks.positive.clone(),
+                        negative_quirks: hero.quirks.negative.clone(),
+                        diseases: hero.quirks.diseases.clone(),
+                    }
+                })
+                .collect(),
+        )
+    } else {
+        None
+    };
+
+    let camping_skills = if building_id == "guild" || building_id == "campingtrainer" {
+        Some(vec![
+            "Campfire Song".to_string(),
+            "Warrior's Restore".to_string(),
+            "Oblivion Surge".to_string(),
+            "Tactical Rest".to_string(),
+            "Wound Treatment".to_string(),
+            "Stress Relief".to_string(),
+            "Party Morale".to_string(),
+            "Resource Scavenge".to_string(),
+        ])
+    } else {
+        None
+    };
+
     Ok(BuildingDetailViewModel {
         kind: "building-detail".to_string(),
         building_id: building_id.to_string(),
@@ -843,6 +891,8 @@ pub fn building_detail_from_campaign(
         description,
         actions,
         upgrade_requirement,
+        heroes,
+        camping_skills,
     })
 }
 

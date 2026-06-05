@@ -64,6 +64,7 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       case "open-building": {
         const townVm = this.snapshot.viewModel as TownViewModel;
         const building = townVm.buildings.find((b) => b.id === intent.buildingId) ?? townVm.buildings[0];
+        const isGuildLike = building.id === "guild" || building.id === "campingtrainer";
         this.snapshot = {
           ...this.snapshot,
           flowState: "town",
@@ -71,7 +72,9 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
             ...replayBuildingDetailViewModel,
             buildingId: building.id,
             label: building.label,
-            status: building.status
+            status: building.status,
+            heroes: isGuildLike ? townVm.heroes : undefined,
+            campingSkills: isGuildLike ? replayBuildingDetailViewModel.campingSkills : undefined
           }
         };
         break;

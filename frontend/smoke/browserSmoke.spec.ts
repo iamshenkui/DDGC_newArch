@@ -315,9 +315,47 @@ test.describe("browser smoke: fidelity gates", () => {
       page.locator(".building-detail-name"),
       "Building name must be visible (DDGC display name 试炼场 = Guild)"
     ).toHaveText("试炼场");
+
+    // Guild Space Analysis Selection Interface — hero slots and skill grid
+    await expect(
+      page.locator(".guild-hero-slots"),
+      "Guild hero selection slots must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".guild-hero-slot"),
+      "Guild hero slots must render at least one hero"
+    ).toHaveCount(3);
+    await expect(
+      page.locator(".guild-hero-info"),
+      "Guild hero info panel must be visible when a hero is selected"
+    ).toBeVisible();
+    await expect(
+      page.locator(".guild-skill-grid"),
+      "Guild camping skill grid must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".guild-skill-tree"),
+      "Guild camping skill trees must render skills"
+    ).toHaveCount(8);
+    await expect(
+      page.locator(".guild-skill-slot-name").filter({ hasText: "Campfire Song" }),
+      "Camping skill name must be visible"
+    ).toBeVisible();
     await expect(
       page.locator(".building-action-card-header").filter({ hasText: "Train Combat Skill" }),
       "Building action must be visible"
+    ).toBeVisible();
+
+    // Test hero selection interaction
+    await page.locator('[data-hero-id="hero-white-01"]').click();
+    await settle(page, 200);
+    await expect(
+      page.locator(".guild-hero-info-name"),
+      "Selected hero name must update after clicking a different hero"
+    ).toHaveText("Bai Xiu");
+    await expect(
+      page.locator('.guild-hero-slot--selected[data-hero-id="hero-white-01"]'),
+      "Clicked hero slot must have selected styling"
     ).toBeVisible();
 
     // Fidelity — building detail is a completed product surface

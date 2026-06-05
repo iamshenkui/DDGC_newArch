@@ -1,4 +1,4 @@
-import { For, type Component } from "solid-js";
+import { For, createSignal, type Component } from "solid-js";
 
 import type { BuildingDetailViewModel } from "../../../bridge/contractTypes";
 import { BuildingDetailHeader } from "./BuildingDetailHeader";
@@ -10,10 +10,15 @@ interface GuildBuildingScreenProps {
 }
 
 /**
- * Guild (试炼场) building screen.
+ * Guild (试炼场) building screen — Space Analysis Selection Interface.
  *
  * Mirrors Unity prefab:
  *   Assets/Prefabs/UI/Estate/Buildings/Guild/GuildWindow.prefab
+ *   → UseWindow [GuildHeroWindow]
+ *     → HeroSlot [HeroObserverSlot] + Frame
+ *     → HeroInfo [Image] + HeroClassLabel + HeroDescription
+ *     → SkillScroller [Image] + Content [LayoutGroup] + SkillTree [MonoBehaviour]
+ *     → HeroName [Text]
  *
  * Original sprite: Assets/Sprites/town/buildings/building_train_field.png
  * GUID: 67a5e7aed8029d84dbf9c9e497a944d2
@@ -21,13 +26,18 @@ interface GuildBuildingScreenProps {
  * Related prefabs:
  *   Assets/Prefabs/UI/SkillUpgradeSlot.prefab  — skill upgrade slots
  *   Assets/Prefabs/UI/UpgradeSlot.prefab       — equipment upgrade slots
- *
- * Building data (data/Buildings.json):
- *   guild_training — skill training level upgrades
- *   guild_equipment — equipment tier upgrades
  */
 export const GuildBuildingScreen: Component<GuildBuildingScreenProps> = (props) => {
   const vm = () => props.viewModel;
+  const heroes = () => vm().heroes ?? [];
+  const campingSkills = () => vm().campingSkills ?? [];
+
+  const [selectedHeroId, setSelectedHeroId] = createSignal<string | null>(
+    heroes()[0]?.id ?? null
+  );
+
+  const selectedHero = () =>
+    heroes().find((h) => h.id === selectedHeroId()) ?? null;
 
   const trainingActions = () => vm().actions.filter((a) => a.id.startsWith("train-"));
   const equipmentActions = () => vm().actions.filter((a) => a.id.startsWith("upgrade-"));
@@ -49,41 +59,170 @@ export const GuildBuildingScreen: Component<GuildBuildingScreenProps> = (props) 
 
       {/* ── Content — mirrors GuildWindow LeftPanel + RightPanel ── */}
       <div class="building-detail-content">
-        {/* Left Panel — mirrors GuildWindow/LeftPanel */}
+        {/* Left Panel — mirrors GuildWindow/LeftPanel + GuildHeroWindow/HeroSlot + HeroInfo */}
         <div
           class="building-detail-left"
           data-source-hierarchy="GuildWindow/LeftPanel"
         >
-          <div class="building-info-card">
-            <h3 class="building-info-card-title">Building Status</h3>
-            <div class="building-info-row">
-              <span class="building-info-label">Status</span>
-              <span class="building-info-value">{vm().status === "ready" ? "Operational" : vm().status === "partial" ? "Partially Available" : "Locked"}</span>
-            </div>
-            {vm().currentUpgrade && (
-              <div class="building-info-row">
-                <span class="building-info-label">Guild Level</span>
-                <span class="building-info-value">{vm().currentUpgrade}</span>
+          {/* Hero Selection — mirrors GuildHeroWindow/HeroSlot */}
+          <div class="building-info-card guild-hero-selection"
+            data-source-prefab="Assets/Prefabs/UI/Estate/Buildings/Guild/GuildWindow.prefab"
+            data-source-component="HeroObserverSlot"
+          >
+            <h3 class="building-info-card-title">选择英雄</h3>
+            {heroes().length > 0 ? (
+              <div class="guild-hero-slots"
+                data-source-hierarchy="GuildHeroWindow/HeroSlot"
+              >
+                <For each={heroes()}>
+                  {(hero) => (
+                    <button
+                      class={`guild-hero-slot ${selectedHeroId() === hero.id ? "guild-hero-slot--selected" : ""}`}
+                      onClick={() => setSelectedHeroId(hero.id)}
+                      data-hero-id={hero.id}
+                      data-source-component="HeroObserverSlot"
+                    >
+                      <span class="guild-hero-slot-frame" aria-hidden="true"
+                        data-source-sprite="Assets/Sprites/ui/char_slot.png"
+                      >
+                        <span class="guild-hero-slot-initial">{hero.name[0]?.toUpperCase() ?? "?"}</span>
+                      </span>
+                      <span class="guild-hero-slot-name">{hero.name}</span>
+                    </button>
+                  )}
+                </For>
               </div>
+            ) : (
+              <p class="guild-hero-empty">暂无可用英雄</p>
             )}
-            {vm().upgradeRequirement && (
-              <div class="building-info-row">
-                <span class="building-info-label">Requirement</span>
-                <span class="building-info-value">{vm().upgradeRequirement}</span>
+          </div>
+
+          {/* Hero Info — mirrors GuildHeroWindow/HeroInfo */}
+          {selectedHero() && (
+            <div class="building-info-card guild-hero-info"
+              data-source-hierarchy="GuildHeroWindow/HeroInfo"
+              data-source-sprite="Assets/Sprites/ui/char_desc_frame.png"
+            >
+              <div class="guild-hero-info-header"
+                data-source-component="HeroName"
+              >
+                <span class="guild-hero-info-name">{selectedHero()?.name}</span>
+                <span class="guild-hero-info-class"
+                  data-source-component="HeroClassLabel"
+                >
+                  {selectedHero()?.classLabel}
+                </span>
+              </div>
+              <p class="guild-hero-info-desc"
+                data-source-component="HeroDescription"
+              >
+                {selectedHero()?.isWounded
+                  ? `${selectedHero()?.name} 当前受伤，需要休息恢复。`
+                  : `${selectedHero()?.name} 状态良好，可以进行技能训练。`}
+              </p>
+              <div class="guild-hero-info-vitals"
+                data-source-hierarchy="GuildHeroWindow/HeroInfo"
+              >
+                <div class="guild-hero-info-vital"
+                  data-source-sprite="hp_icon.png"
+                >
+                  <span class="guild-hero-info-vital-label">生命值</span>
+                  <span class="guild-hero-info-vital-value">{selectedHero()?.hp} / {selectedHero()?.maxHp}</span>
+                </div>
+                <div class="guild-hero-info-vital"
+                  data-source-sprite="stress_icon.png"
+                >
+                  <span class="guild-hero-info-vital-label">压力值</span>
+                  <span class="guild-hero-info-vital-value">{selectedHero()?.stress} / {selectedHero()?.maxStress}</span>
+                </div>
+                <div class="guild-hero-info-vital"
+                >
+                  <span class="guild-hero-info-vital-label">等级</span>
+                  <span class="guild-hero-info-vital-value">Lv.{selectedHero()?.level}</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Panel / Skills — mirrors GuildHeroWindow/SkillScroller + SkillTree */}
+        <div
+          class="building-detail-right"
+          data-source-hierarchy="GuildWindow/RightPanel/SkillScroller"
+        >
+          {/* Camping Skills Section — mirrors SkillTree [MonoBehaviour] entries */}
+          <div class="building-action-section"
+            data-source-prefab="Assets/Prefabs/UI/SkillUpgradeSlot.prefab"
+            data-source-component="SkillUpgradeSlot"
+          >
+            <h3 class="building-action-section-title"
+              data-source-component="UseTitle"
+            >
+              空间分析技能
+            </h3>
+            {campingSkills().length > 0 ? (
+              <div class="guild-skill-grid"
+                data-source-hierarchy="GuildHeroWindow/SkillScroller/Content/LayoutGroup"
+              >
+                <For each={campingSkills()}>
+                  {(skill, index) => (
+                    <div
+                      class="guild-skill-tree"
+                      data-source-prefab="Assets/Prefabs/UI/SkillUpgradeSlot.prefab"
+                      data-source-component="SkillTree"
+                      data-source-sprite="Assets/Sprites/ui/skill_slot01.png"
+                    >
+                      <div class="guild-skill-tree-connector" aria-hidden="true"
+                        data-source-sprite="Assets/Sprites/ui/line_short.png"
+                      >
+                        {index() > 0 && (
+                          <span class="guild-skill-connector-line"></span>
+                        )}
+                      </div>
+                      <div class="guild-skill-slot"
+                        data-source-component="SkillPurchaseSlot"
+                      >
+                        <span class="guild-skill-slot-frame" aria-hidden="true"
+                          data-source-sprite="Assets/Sprites/ui/skill_slot01.png"
+                        >
+                          <span class="guild-skill-slot-initial">{skill.name[0]?.toUpperCase() ?? "?"}</span>
+                        </span>
+                        <span class="guild-skill-slot-name"
+                          data-source-component="Level"
+                        >
+                          {skill.name}
+                        </span>
+                        <span class={`guild-skill-slot-locker ${skill.level <= 1 ? "guild-skill-slot-locker--unlocked" : ""}`}
+                          aria-hidden="true"
+                          data-source-sprite="Assets/Sprites/ui/skill.locked.png"
+                        >
+                          {skill.level <= 1 ? "✓" : "🔒"}
+                        </span>
+                      </div>
+                      <span class="guild-skill-desc">{skill.description}</span>
+                    </div>
+                  )}
+                </For>
+              </div>
+            ) : (
+              <div class="building-info-card"
+                data-source-component="SkillUpgradeSlot"
+              >
+                <p style="margin:0;color:rgba(218,198,168,0.5);font-size:0.82rem;"
+                  data-source-hierarchy="GuildHeroWindow/SkillScroller"
+                >
+                  暂无可用空间分析技能。
+                </p>
               </div>
             )}
           </div>
-        </div>
 
-        {/* Right Panel / Actions — mirrors GuildWindow/RightPanel/UpgradeWindow */}
-        <div
-          class="building-detail-right"
-          data-source-hierarchy="GuildWindow/RightPanel/UpgradeWindow"
-        >
-          {/* Skill Training — mirrors SkillUpgradeSlot */}
+          {/* Training Actions — mirrors SkillUpgradeSlot / EquipmentUpgradeSlot */}
           {trainingActions().length > 0 && (
-            <div class="building-action-section">
-              <h3 class="building-action-section-title">Skill Training</h3>
+            <div class="building-action-section"
+              data-source-prefab="Assets/Prefabs/UI/SkillUpgradeSlot.prefab"
+            >
+              <h3 class="building-action-section-title">技能训练</h3>
               <For each={trainingActions()}>
                 {(action) => (
                   <div
@@ -134,8 +273,10 @@ export const GuildBuildingScreen: Component<GuildBuildingScreenProps> = (props) 
 
           {/* Equipment Upgrades — mirrors UpgradeSlot / EquipmentUpgradeSlot */}
           {equipmentActions().length > 0 && (
-            <div class="building-action-section">
-              <h3 class="building-action-section-title">Equipment Upgrades</h3>
+            <div class="building-action-section"
+              data-source-prefab="Assets/Prefabs/UI/UpgradeSlot.prefab"
+            >
+              <h3 class="building-action-section-title">装备升级</h3>
               <For each={equipmentActions()}>
                 {(action) => (
                   <div
@@ -194,7 +335,7 @@ export const GuildBuildingScreen: Component<GuildBuildingScreenProps> = (props) 
           {/* Other uncategorised actions */}
           {otherActions().length > 0 && (
             <div class="building-action-section">
-              <h3 class="building-action-section-title">Other Services</h3>
+              <h3 class="building-action-section-title">其他服务</h3>
               <For each={otherActions()}>
                 {(action) => (
                   <div class="building-action-card">
@@ -242,7 +383,9 @@ export const GuildBuildingScreen: Component<GuildBuildingScreenProps> = (props) 
       </div>
 
       {/* ── Return to Town — mirrors GuildWindow/CloseButton ── */}
-      <div class="building-return-row">
+      <div class="building-return-row"
+        data-source-hierarchy="GuildWindow/CloseButton"
+      >
         <button
           class="building-return-btn"
           onClick={props.onReturn}

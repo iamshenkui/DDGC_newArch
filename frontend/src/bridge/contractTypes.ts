@@ -69,6 +69,10 @@ export interface BuildingDetailViewModel {
   actions: ReadonlyArray<BuildingAction>;
   currentUpgrade?: string;
   upgradeRequirement?: string;
+  /** Heroes available for selection in guild/camping-trainer screens */
+  heroes?: ReadonlyArray<TownHeroSummary>;
+  /** Camping skills available for training/purchase */
+  campingSkills?: ReadonlyArray<SkillDetail>;
 }
 
 export interface HeroProgression {

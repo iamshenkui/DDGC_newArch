@@ -203,7 +203,18 @@ export const replayBuildingDetailViewModel: BuildingDetailViewModel = {
       isUnsupported: true
     }
   ],
-  upgradeRequirement: "Reach Town Level 2 to unlock weapon and armor upgrades."
+  upgradeRequirement: "Reach Town Level 2 to unlock weapon and armor upgrades.",
+  heroes: townHeroes,
+  campingSkills: [
+    { name: "Campfire Song", level: 1, description: "Restores party stress during camp.", target: "Party", hitRating: "100%", critRating: "0%" },
+    { name: "Warrior's Restore", level: 1, description: "Heal a hero during camp rest.", target: "Self", hitRating: "100%", critRating: "0%" },
+    { name: "Oblivion Surge", level: 1, description: "Boost party damage for the next battle.", target: "Party", hitRating: "100%", critRating: "0%" },
+    { name: "Tactical Rest", level: 1, description: "Reduce stress and restore a small amount of health.", target: "Self", hitRating: "100%", critRating: "0%" },
+    { name: "Wound Treatment", level: 1, description: "Treat wounds to prevent bleeding effects.", target: "Ally", hitRating: "100%", critRating: "0%" },
+    { name: "Stress Relief", level: 1, description: "Significantly reduce stress for one hero.", target: "Ally", hitRating: "100%", critRating: "0%" },
+    { name: "Party Morale", level: 1, description: "Boost entire party's resolve.", target: "Party", hitRating: "100%", critRating: "0%" },
+    { name: "Resource Scavenge", level: 1, description: "Find extra supplies during camp.", target: "Self", hitRating: "100%", critRating: "0%" }
+  ]
 };
 
 export const replayBlacksmithBuildingDetailViewModel: BuildingDetailViewModel = {
