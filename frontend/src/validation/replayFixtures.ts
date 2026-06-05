@@ -345,9 +345,34 @@ export const replayTavernBuildingDetailViewModel: BuildingDetailViewModel = {
   label: "迷情乐园",
   status: "ready",
   description: "通过酒馆活动缓解压力并恢复状态，在轻松的氛围中重整队伍。",
+  currentUpgrade: "Tavern Level 1",
   actions: [
     {
-      id: "drink",
+      id: "upgrade-tavern-level",
+      label: "Upgrade Tavern Level",
+      description: "Improve tavern facilities to unlock more services and reduce stress faster.",
+      cost: "500 Gold",
+      isAvailable: false,
+      isUnsupported: false
+    },
+    {
+      id: "upgrade-gambling-table",
+      label: "Install Gambling Table",
+      description: "Add a gambling table for heroes to test their luck.",
+      cost: "300 Gold",
+      isAvailable: false,
+      isUnsupported: false
+    },
+    {
+      id: "upgrade-private-rooms",
+      label: "Private Rooms",
+      description: "Add private rooms for better rest and recovery.",
+      cost: "800 Gold",
+      isAvailable: false,
+      isUnsupported: true
+    },
+    {
+      id: "use-drink",
       label: "畅饮",
       description: "在酒馆畅饮一番，大幅降低压力但可能带来随机效果。",
       cost: "150 Gold",
@@ -355,14 +380,23 @@ export const replayTavernBuildingDetailViewModel: BuildingDetailViewModel = {
       isUnsupported: false
     },
     {
-      id: "gamble",
+      id: "use-gamble",
       label: "博弈",
       description: "参与酒馆博弈活动，有机会获得额外金币。",
       cost: "50 Gold",
       isAvailable: true,
       isUnsupported: false
+    },
+    {
+      id: "use-rest",
+      label: "休整",
+      description: "在酒馆中休息恢复，降低压力并恢复少量生命值。",
+      cost: "200 Gold",
+      isAvailable: false,
+      isUnsupported: false
     }
-  ]
+  ],
+  upgradeRequirement: "Reach Town Level 2 to unlock more tavern services."
 };
 
 export const replayGraveyardBuildingDetailViewModel: BuildingDetailViewModel = {

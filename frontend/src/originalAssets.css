@@ -588,6 +588,278 @@
   outline-offset: 2px;
 }
 
+/* ── Tavern-specific styles ───────────────────────────────────────
+ * Mirrors TavernWindow reference image layout:
+ *   LeftPanel: portrait + talk/leave buttons
+ *   RightPanel: tab bar (升级设施 / 使用设施) + upgrade slots
+ * ──────────────────────────────────────────────────────────────── */
+
+.tavern-host-portrait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+}
+
+.tavern-host-frame {
+  position: relative;
+  width: 180px;
+  height: 220px;
+  border-radius: 6px;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 25%, rgba(80, 50, 40, 0.4), transparent 70%),
+    radial-gradient(ellipse at center, rgba(20, 12, 10, 0.85), rgba(0, 0, 0, 0.95));
+  border: 2px solid rgba(196, 168, 110, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 60px rgba(0, 0, 0, 0.3);
+}
+
+.tavern-host-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 30%, rgba(220, 160, 120, 0.08), transparent 70%);
+  pointer-events: none;
+}
+
+.tavern-host-frame::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(196, 168, 110, 0.1);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.tavern-host-avatar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 70%;
+  height: 70%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(196, 168, 110, 0.15), rgba(0, 0, 0, 0.55));
+  border: 1px solid rgba(196, 168, 110, 0.2);
+}
+
+.tavern-host-initial {
+  font-family: var(--heading-font);
+  font-size: 3rem;
+  font-weight: 700;
+  color: rgba(244, 224, 184, 0.5);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.tavern-host-label {
+  font-size: 0.72rem;
+  color: rgba(214, 192, 150, 0.7);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.tavern-action-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 8px;
+}
+
+.tavern-action-btn {
+  font-family: var(--heading-font);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 10px 16px;
+  border-radius: 3px;
+  border: 1px solid rgba(196, 168, 110, 0.28);
+  background: rgba(28, 22, 14, 0.6);
+  color: rgba(244, 224, 184, 0.88);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+.tavern-action-btn:hover {
+  border-color: rgba(232, 200, 140, 0.45);
+  background: rgba(48, 36, 22, 0.75);
+  transform: translateY(-1px);
+}
+
+.tavern-action-btn:active {
+  transform: translateY(0);
+}
+
+.tavern-action-btn--talk {
+  border-color: rgba(185, 215, 126, 0.3);
+  background: rgba(40, 50, 20, 0.5);
+}
+
+.tavern-action-btn--talk:hover {
+  border-color: rgba(185, 215, 126, 0.5);
+  background: rgba(60, 80, 30, 0.6);
+}
+
+.tavern-action-btn--leave {
+  border-color: rgba(234, 155, 136, 0.3);
+  background: rgba(50, 25, 20, 0.5);
+}
+
+.tavern-action-btn--leave:hover {
+  border-color: rgba(234, 155, 136, 0.5);
+  background: rgba(80, 35, 25, 0.6);
+}
+
+/* ── Tavern tab bar ─────────────────────────────────────────── */
+.tavern-tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid rgba(196, 168, 110, 0.15);
+  margin-bottom: 14px;
+}
+
+.tavern-tab-btn {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(214, 192, 150, 0.65);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.tavern-tab-btn:hover {
+  color: rgba(244, 224, 184, 0.85);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.tavern-tab-btn--active {
+  color: rgba(248, 232, 200, 0.96);
+  border-bottom-color: rgba(196, 168, 110, 0.55);
+}
+
+.tavern-tab-check {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* ── Tavern upgrade panel ───────────────────────────────────── */
+.tavern-upgrade-panel,
+.tavern-use-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tavern-upgrade-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 5px;
+  background:
+    linear-gradient(180deg, rgba(20, 14, 10, 0.78), rgba(10, 6, 4, 0.82)),
+    var(--ddgc-chrome-building-info-bg, url("/original/chrome/building_info_bg.png"));
+  background-size: cover, 100% 100%;
+  background-position: center, center;
+  background-repeat: no-repeat;
+  border: 1px solid rgba(196, 168, 110, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(232, 200, 140, 0.06),
+    inset 0 0 28px rgba(0, 0, 0, 0.45),
+    0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.tavern-upgrade-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(196, 168, 110, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.tavern-upgrade-icon-img {
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+}
+
+.tavern-upgrade-slots {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  align-items: center;
+}
+
+.tavern-upgrade-slot {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border: 1px solid rgba(196, 168, 110, 0.25);
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(214, 192, 150, 0.5);
+}
+
+.tavern-upgrade-slot--active {
+  background: rgba(120, 168, 60, 0.18);
+  border-color: rgba(185, 215, 126, 0.45);
+  color: #b9d77e;
+}
+
+.tavern-upgrade-slot--locked {
+  background: rgba(80, 40, 30, 0.18);
+  border-color: rgba(234, 155, 136, 0.3);
+  color: rgba(234, 155, 136, 0.6);
+}
+
+.tavern-upgrade-level {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(196, 168, 110, 0.12);
+}
+
+.tavern-upgrade-level-label {
+  font-size: 0.78rem;
+  color: rgba(214, 192, 150, 0.7);
+  letter-spacing: 0.08em;
+}
+
+.tavern-upgrade-level-value {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: rgba(248, 232, 200, 0.92);
+}
+
 /* ── Responsive: collapse to single column on narrow screens ── */
 @media (max-width: 920px) {
   .building-detail-header {

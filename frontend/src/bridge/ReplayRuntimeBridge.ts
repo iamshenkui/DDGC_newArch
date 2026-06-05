@@ -3,11 +3,38 @@ import {
   replayReadySnapshot,
   replayHeroDetailViewModel,
   replayBuildingDetailViewModel,
+  replayTavernBuildingDetailViewModel,
+  replayBlacksmithBuildingDetailViewModel,
+  replaySanitariumBuildingDetailViewModel,
+  replayStagecoachBuildingDetailViewModel,
+  replayAbbeyBuildingDetailViewModel,
+  replayGraveyardBuildingDetailViewModel,
+  replayGardenBuildingDetailViewModel,
+  replayLegacyTowerBuildingDetailViewModel,
+  replayMarketBuildingDetailViewModel,
+  replayCampingTrainerBuildingDetailViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
   replayReturnViewModel
 } from "../validation/replayFixtures";
+import type { BuildingDetailViewModel } from "./contractTypes";
+
+function buildingDetailFixtureFor(buildingId: string): BuildingDetailViewModel {
+  switch (buildingId) {
+    case "tavern": return replayTavernBuildingDetailViewModel;
+    case "blacksmith": return replayBlacksmithBuildingDetailViewModel;
+    case "sanitarium": return replaySanitariumBuildingDetailViewModel;
+    case "stagecoach": return replayStagecoachBuildingDetailViewModel;
+    case "abbey": return replayAbbeyBuildingDetailViewModel;
+    case "graveyard": return replayGraveyardBuildingDetailViewModel;
+    case "garden": return replayGardenBuildingDetailViewModel;
+    case "legacytower": return replayLegacyTowerBuildingDetailViewModel;
+    case "market": return replayMarketBuildingDetailViewModel;
+    case "campingtrainer": return replayCampingTrainerBuildingDetailViewModel;
+    default: return replayBuildingDetailViewModel;
+  }
+}
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
 import type {
   DdgcFrontendIntent,
@@ -64,11 +91,12 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       case "open-building": {
         const townVm = this.snapshot.viewModel as TownViewModel;
         const building = townVm.buildings.find((b) => b.id === intent.buildingId) ?? townVm.buildings[0];
+        const fixture = buildingDetailFixtureFor(building.id);
         this.snapshot = {
           ...this.snapshot,
           flowState: "town",
           viewModel: {
-            ...replayBuildingDetailViewModel,
+            ...fixture,
             buildingId: building.id,
             label: building.label,
             status: building.status
