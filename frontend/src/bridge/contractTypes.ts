@@ -265,6 +265,57 @@ export interface FatalErrorViewModel {
   reason: string;
 }
 
+export interface CombatSkill {
+  id: string;
+  name: string;
+  description: string;
+  target: string;
+  hitRating: string;
+  critRating: string;
+  cooldown: number;
+  cooldownRemaining: number;
+}
+
+export interface CombatHero {
+  id: string;
+  name: string;
+  classLabel: string;
+  hp: string;
+  maxHp: string;
+  stress: string;
+  maxStress: string;
+  position: number;
+  isActive: boolean;
+  isAlive: boolean;
+  skills: ReadonlyArray<CombatSkill>;
+  portrait?: string;
+}
+
+export interface CombatEnemy {
+  id: string;
+  name: string;
+  hp: string;
+  maxHp: string;
+  position: number;
+  isAlive: boolean;
+  isTargeted: boolean;
+  size: "small" | "medium" | "large";
+}
+
+export interface CombatViewModel {
+  kind: "combat";
+  title: string;
+  round: number;
+  turnPhase: "player" | "enemy";
+  activeHeroId: string;
+  party: ReadonlyArray<CombatHero>;
+  enemies: ReadonlyArray<CombatEnemy>;
+  selectedSkillId?: string;
+  combatLog: ReadonlyArray<string>;
+  isPlayerTurn: boolean;
+  canFlee: boolean;
+}
+
 export type DdgcViewModel =
   | BootLoadViewModel
   | TownViewModel
@@ -274,6 +325,7 @@ export type DdgcViewModel =
   | ExpeditionSetupViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
+  | CombatViewModel
   | UnsupportedViewModel
   | FatalErrorViewModel;
 
@@ -295,4 +347,9 @@ export type DdgcFrontendIntent =
   | { type: "launch-expedition" }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }
-  | { type: "resume-from-return" };
+  | { type: "resume-from-return" }
+  | { type: "select-skill"; skillId: string }
+  | { type: "select-target"; enemyId: string }
+  | { type: "confirm-attack" }
+  | { type: "flee-combat" }
+  | { type: "end-turn" };

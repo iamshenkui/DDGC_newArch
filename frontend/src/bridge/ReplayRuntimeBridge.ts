@@ -6,7 +6,9 @@ import {
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
-  replayReturnViewModel
+  replayReturnViewModel,
+  replayCombatViewModel,
+  replayCombatSnapshot
 } from "../validation/replayFixtures";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
 import type {
@@ -16,7 +18,8 @@ import type {
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
-  ReturnViewModel
+  ReturnViewModel,
+  CombatViewModel
 } from "./contractTypes";
 
 export class ReplayRuntimeBridge implements RuntimeBridge {
@@ -115,6 +118,46 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "launch-expedition":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "combat",
+          viewModel: replayCombatViewModel as CombatViewModel
+        };
+        break;
+      case "select-skill": {
+        const combatVm = this.snapshot.viewModel as CombatViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...combatVm,
+            selectedSkillId: intent.skillId
+          }
+        };
+        break;
+      }
+      case "select-target": {
+        const combatVm = this.snapshot.viewModel as CombatViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...combatVm,
+            enemies: combatVm.enemies.map((e) => ({
+              ...e,
+              isTargeted: e.id === intent.enemyId
+            }))
+          }
+        };
+        break;
+      }
+      case "confirm-attack":
+      case "end-turn":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "result",
+          viewModel: replayResultViewModel as ExpeditionResultViewModel
+        };
+        break;
+      case "flee-combat":
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",

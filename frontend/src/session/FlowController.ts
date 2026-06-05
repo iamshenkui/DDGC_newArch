@@ -7,10 +7,11 @@ import type {
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   HeroDetailViewModel,
-  BuildingDetailViewModel
+  BuildingDetailViewModel,
+  CombatViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "combat" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -39,6 +40,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "expedition") {
     return "expedition";
+  }
+
+  if (snapshot.viewModel.kind === "combat") {
+    return "combat";
   }
 
   if (snapshot.viewModel.kind === "result") {
@@ -89,6 +94,66 @@ export function canTransition(
       }
       if (!snapshot.viewModel.isTownResumeAvailable) {
         return { allowed: false, reason: "town resume is not available" };
+      }
+      return { allowed: true };
+
+    case "select-skill":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "select-skill is only valid in combat" };
+      }
+      if (snapshot.viewModel.kind !== "combat") {
+        return { allowed: false, reason: "viewModel is not a combat view model" };
+      }
+      if (!snapshot.viewModel.isPlayerTurn) {
+        return { allowed: false, reason: "not player turn" };
+      }
+      return { allowed: true };
+
+    case "select-target":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "select-target is only valid in combat" };
+      }
+      if (snapshot.viewModel.kind !== "combat") {
+        return { allowed: false, reason: "viewModel is not a combat view model" };
+      }
+      if (!snapshot.viewModel.isPlayerTurn) {
+        return { allowed: false, reason: "not player turn" };
+      }
+      return { allowed: true };
+
+    case "confirm-attack":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "confirm-attack is only valid in combat" };
+      }
+      if (snapshot.viewModel.kind !== "combat") {
+        return { allowed: false, reason: "viewModel is not a combat view model" };
+      }
+      if (!snapshot.viewModel.isPlayerTurn) {
+        return { allowed: false, reason: "not player turn" };
+      }
+      return { allowed: true };
+
+    case "flee-combat":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "flee-combat is only valid in combat" };
+      }
+      if (snapshot.viewModel.kind !== "combat") {
+        return { allowed: false, reason: "viewModel is not a combat view model" };
+      }
+      if (!snapshot.viewModel.canFlee) {
+        return { allowed: false, reason: "cannot flee this combat" };
+      }
+      return { allowed: true };
+
+    case "end-turn":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "end-turn is only valid in combat" };
+      }
+      if (snapshot.viewModel.kind !== "combat") {
+        return { allowed: false, reason: "viewModel is not a combat view model" };
+      }
+      if (!snapshot.viewModel.isPlayerTurn) {
+        return { allowed: false, reason: "not player turn" };
       }
       return { allowed: true };
 

@@ -200,13 +200,26 @@ describe("provisioning and expedition launch flow", () => {
     expect(expVm.isLaunchable).toBe(true);
   });
 
-  it("replay launch-expedition transitions to result state", async () => {
+  it("replay launch-expedition transitions to combat state", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
 
     const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    expect(snapshot.flowState).toBe("combat");
+    expect(snapshot.viewModel.kind).toBe("combat");
+  });
+
+  it("replay confirm-attack transitions from combat to result state", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-attack" });
 
     expect(snapshot.flowState).toBe("result");
     expect(snapshot.viewModel.kind).toBe("result");
@@ -249,13 +262,26 @@ describe("provisioning and expedition launch flow", () => {
     expect(snapshot.viewModel.kind).toBe("expedition");
   });
 
-  it("live launch-expedition transitions to result state", async () => {
+  it("live launch-expedition transitions to combat state", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
 
     const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    expect(snapshot.flowState).toBe("combat");
+    expect(snapshot.viewModel.kind).toBe("combat");
+  });
+
+  it("live confirm-attack transitions from combat to result state", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-attack" });
 
     expect(snapshot.flowState).toBe("result");
     expect(snapshot.viewModel.kind).toBe("result");
@@ -280,8 +306,12 @@ describe("provisioning and expedition launch flow", () => {
     expect(expSnapshot.viewModel.kind).toBe("expedition");
 
     const launchSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
-    expect(launchSnapshot.flowState).toBe("result");
-    expect(launchSnapshot.viewModel.kind).toBe("result");
+    expect(launchSnapshot.flowState).toBe("combat");
+    expect(launchSnapshot.viewModel.kind).toBe("combat");
+
+    const resultSnapshot = await bridge.dispatchIntent({ type: "confirm-attack" });
+    expect(resultSnapshot.flowState).toBe("result");
+    expect(resultSnapshot.viewModel.kind).toBe("result");
   });
 
   it("town -> provision -> launch path is reproducible in live", async () => {
@@ -301,8 +331,12 @@ describe("provisioning and expedition launch flow", () => {
     expect(expSnapshot.viewModel.kind).toBe("expedition");
 
     const launchSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
-    expect(launchSnapshot.flowState).toBe("result");
-    expect(launchSnapshot.viewModel.kind).toBe("result");
+    expect(launchSnapshot.flowState).toBe("combat");
+    expect(launchSnapshot.viewModel.kind).toBe("combat");
+
+    const resultSnapshot = await bridge.dispatchIntent({ type: "confirm-attack" });
+    expect(resultSnapshot.flowState).toBe("result");
+    expect(resultSnapshot.viewModel.kind).toBe("result");
   });
 });
 

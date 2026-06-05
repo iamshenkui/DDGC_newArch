@@ -12,6 +12,7 @@ import type {
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
+  CombatViewModel
 } from "./contractTypes";
 import { createTownBuildingSummary } from "../town/buildingCatalog";
 
@@ -334,6 +335,84 @@ const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
   isContinueAvailable: true
 });
 
+const createLiveCombatViewModel = (): CombatViewModel => ({
+  kind: "combat",
+  title: "副本场景-人物攻击",
+  round: 1,
+  turnPhase: "player",
+  activeHeroId: "hero-hunter-live-01",
+  party: [
+    {
+      id: "hero-hunter-live-01",
+      name: "Yuan",
+      classLabel: "Hunter",
+      hp: "42 / 42",
+      maxHp: "42",
+      stress: "0",
+      maxStress: "200",
+      position: 1,
+      isActive: true,
+      isAlive: true,
+      skills: [
+        { id: "skill-1", name: "Hunting Bow", description: "Ranged attack that marks the target.", target: "Enemy", hitRating: "85%", critRating: "7%", cooldown: 0, cooldownRemaining: 0 },
+        { id: "skill-2", name: "Rapid Shot", description: "Fire two quick shots at the target.", target: "Enemy", hitRating: "75%", critRating: "5%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "skill-3", name: "Marked for Death", description: "Mark a target to take increased damage.", target: "Enemy", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 1 },
+        { id: "skill-4", name: "Batty Advice", description: "Grant a random buff to an ally.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 3, cooldownRemaining: 0 },
+        { id: "skill-5", name: "Dodge Stance", description: "Increase dodge for one turn.", target: "Self", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 0 }
+      ]
+    },
+    {
+      id: "hero-white-live-01",
+      name: "Mei",
+      classLabel: "White",
+      hp: "41 / 41",
+      maxHp: "41",
+      stress: "0",
+      maxStress: "200",
+      position: 2,
+      isActive: false,
+      isAlive: true,
+      skills: [
+        { id: "skill-w1", name: "Holy Light", description: "Deal light damage to an enemy.", target: "Enemy", hitRating: "90%", critRating: "3%", cooldown: 0, cooldownRemaining: 0 },
+        { id: "skill-w2", name: "Heal", description: "Restore health to an ally.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "skill-w3", name: "Bless", description: "Increase an ally's accuracy.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 0 },
+        { id: "skill-w4", name: "Smite", description: "Heavy damage to marked targets.", target: "Enemy", hitRating: "80%", critRating: "8%", cooldown: 2, cooldownRemaining: 1 },
+        { id: "skill-w5", name: "Prayer", description: "Reduce party stress.", target: "Party", hitRating: "100%", critRating: "0%", cooldown: 3, cooldownRemaining: 0 }
+      ]
+    }
+  ],
+  enemies: [
+    {
+      id: "enemy-moth-01",
+      name: "Moth Guardian",
+      hp: "120 / 150",
+      maxHp: "150",
+      position: 1,
+      isAlive: true,
+      isTargeted: true,
+      size: "large"
+    },
+    {
+      id: "enemy-larva-01",
+      name: "Larva Swarm",
+      hp: "30 / 30",
+      maxHp: "30",
+      position: 2,
+      isAlive: true,
+      isTargeted: false,
+      size: "small"
+    }
+  ],
+  selectedSkillId: "skill-1",
+  combatLog: [
+    "Round 1 begins...",
+    "Yuan readies Hunting Bow.",
+    "Select a target to attack."
+  ],
+  isPlayerTurn: true,
+  canFlee: true
+});
+
 const createLiveReturnViewModel = (): ReturnViewModel => ({
   kind: "return",
   title: "Returning to Town",
@@ -438,6 +517,40 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "launch-expedition":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "combat",
+          viewModel: createLiveCombatViewModel()
+        };
+        break;
+      case "select-skill": {
+        const combatVm = this.snapshot.viewModel as CombatViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...combatVm,
+            selectedSkillId: intent.skillId
+          }
+        };
+        break;
+      }
+      case "select-target": {
+        const combatVm = this.snapshot.viewModel as CombatViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...combatVm,
+            enemies: combatVm.enemies.map((e) => ({
+              ...e,
+              isTargeted: e.id === intent.enemyId
+            }))
+          }
+        };
+        break;
+      }
+      case "confirm-attack":
+      case "end-turn":
+      case "flee-combat":
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",

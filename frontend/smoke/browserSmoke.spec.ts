@@ -399,8 +399,53 @@ test.describe("browser smoke: fidelity gates", () => {
       "Expedition launch screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5d. Expedition → Result (success)
+    // 5d. Expedition → Combat
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await page.waitForSelector(".combat-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.locator(".eyebrow").filter({ hasText: "Combat — Round 1" }),
+      "Combat screen eyebrow must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "副本场景-人物攻击" }),
+      "Combat screen title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".combat-hero-stand"),
+      "Combat party heroes must be visible"
+    ).toHaveCount(3);
+    await expect(
+      page.locator(".combat-enemy-stand"),
+      "Combat enemies must be visible"
+    ).toHaveCount(2);
+    await expect(
+      page.locator(".combat-char-panel"),
+      "Combat character panel must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".combat-target-panel"),
+      "Combat target panel must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Confirm Attack" }),
+      "Confirm Attack button must be visible"
+    ).toBeVisible();
+    await expectFidelity(
+      page.locator(".combat-viewport"),
+      "Combat screen"
+    );
+    await expectFullPageFidelity(page, "Combat screen");
+
+    // Landscape viewport check for combat screen
+    await expect(
+      page.locator(".combat-viewport"),
+      "Combat screen must use .combat-viewport landscape layout"
+    ).toBeVisible();
+
+    // 5e. Combat → Result (success)
+    await page.getByRole("button", { name: "Confirm Attack" }).click();
     await settle(page);
 
     await expect(
@@ -614,6 +659,15 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await page.waitForSelector(".combat-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.locator(".eyebrow").filter({ hasText: "Combat — Round 1" }),
+      "Live combat screen eyebrow must be visible"
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "Confirm Attack" }).click();
     await settle(page);
 
     await expect(
