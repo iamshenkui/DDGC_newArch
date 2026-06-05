@@ -8,6 +8,7 @@ import type {
   TownBuildingSummary,
   HeroDetailViewModel,
   BuildingDetailViewModel,
+  GuildUpgradeViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
@@ -334,6 +335,47 @@ const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
   isContinueAvailable: true
 });
 
+const createLiveGuildUpgradeViewModel = (): GuildUpgradeViewModel => ({
+  kind: "guild-upgrade",
+  buildingId: "guild",
+  label: "试炼场",
+  status: "ready",
+  description: "The guild provides skill training and party capability review. Upgrade your heroes' abilities to better face the challenges ahead.",
+  activeTab: "upgrade",
+  currentLevel: 1,
+  maxLevel: 5,
+  completionPercent: 20,
+  upgradeRows: [
+    {
+      id: "train-field-upgrade",
+      label: "训练场升级",
+      currentLevel: 1,
+      maxLevel: 5,
+      cost: "500 Gold + 10 Deeds",
+      isAvailable: true,
+      benefits: ["Unlocks skill level 3", "Increases training speed"]
+    },
+    {
+      id: "hero-trial-field",
+      label: "英雄试炼场",
+      currentLevel: 0,
+      maxLevel: 3,
+      cost: "800 Gold + 20 Crests",
+      isAvailable: false,
+      benefits: ["Unlocks hero trials", "Grants bonus XP"]
+    }
+  ],
+  resources: {
+    gold: 500,
+    bust: 10,
+    portrait: 10,
+    deed: 10,
+    crest: 20
+  },
+  npcName: "训练师",
+  npcTitle: "Guild Master"
+});
+
 const createLiveReturnViewModel = (): ReturnViewModel => ({
   kind: "return",
   title: "Returning to Town",
@@ -403,6 +445,13 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         this.snapshot = {
           ...this.snapshot,
           debugMessage: `Live: building action intent received for ${intent.actionId}.`
+        };
+        break;
+      case "open-guild-upgrade":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "town",
+          viewModel: createLiveGuildUpgradeViewModel()
         };
         break;
       case "start-provisioning":

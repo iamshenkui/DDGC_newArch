@@ -3,6 +3,7 @@ import {
   replayReadySnapshot,
   replayHeroDetailViewModel,
   replayBuildingDetailViewModel,
+  replayGuildUpgradeViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
@@ -80,6 +81,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         this.snapshot = {
           ...this.snapshot,
           debugMessage: `Replay: building action intent received for ${intent.actionId}.`
+        };
+        break;
+      case "open-guild-upgrade":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "town",
+          viewModel: replayGuildUpgradeViewModel
         };
         break;
       case "start-provisioning":

@@ -14,6 +14,7 @@ import {
   replayReadySnapshot,
   replayHeroDetailSnapshot,
   replayBuildingDetailSnapshot,
+  replayGuildUpgradeSnapshot,
   startupSnapshot,
   provisioningSnapshot,
   expeditionSnapshot,
@@ -69,6 +70,11 @@ describe("FlowController", () => {
       expect(screen).toBe("building-detail");
     });
 
+    it("returns guild-upgrade screen for guild upgrade view model", () => {
+      const screen = resolveScreen(replayGuildUpgradeSnapshot);
+      expect(screen).toBe("guild-upgrade");
+    });
+
     it("returns provisioning screen for provisioning view model", () => {
       const screen = resolveScreen(provisioningSnapshot);
       expect(screen).toBe("provisioning");
@@ -102,7 +108,7 @@ describe("FlowController", () => {
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "guild-upgrade", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -111,6 +117,7 @@ describe("ScreenKey exhaustiveness", () => {
       town: replayReadySnapshot,
       "hero-detail": replayHeroDetailSnapshot,
       "building-detail": replayBuildingDetailSnapshot,
+      "guild-upgrade": replayGuildUpgradeSnapshot,
       provisioning: provisioningSnapshot,
       expedition: expeditionSnapshot,
       result: resultSnapshot,
@@ -389,6 +396,24 @@ describe("canTransition - result and return meta-loop continuation", () => {
       const validation = canTransition(replayReadySnapshot, { type: "building-action", actionId: "train-combat" });
       expect(validation.allowed).toBe(false);
       expect(validation.reason).toContain("only valid in building-detail");
+    });
+  });
+
+  describe("guild-upgrade transitions", () => {
+    it("allows open-guild-upgrade from building-detail", () => {
+      const validation = canTransition(replayBuildingDetailSnapshot, { type: "open-guild-upgrade" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects open-guild-upgrade when not in building-detail", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "open-guild-upgrade" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in building-detail");
+    });
+
+    it("allows return-to-town from guild-upgrade", () => {
+      const validation = canTransition(replayGuildUpgradeSnapshot, { type: "return-to-town" });
+      expect(validation.allowed).toBe(true);
     });
   });
 

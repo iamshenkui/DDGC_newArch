@@ -6,6 +6,7 @@ import type {
   ExpeditionResultViewModel,
   ReturnViewModel,
   FatalErrorViewModel,
+  GuildUpgradeViewModel,
   HeroDetailViewModel,
   ProvisioningViewModel,
   TownHeroSummary,
@@ -474,6 +475,54 @@ export const replayCampingTrainerBuildingDetailViewModel: BuildingDetailViewMode
   upgradeRequirement: "Reach Town Level 2 to unlock advanced camping skills."
 };
 
+export const replayGuildUpgradeViewModel: GuildUpgradeViewModel = {
+  kind: "guild-upgrade",
+  buildingId: "guild",
+  label: "试炼场",
+  status: "ready",
+  description: "The guild provides skill training and party capability review. Upgrade your heroes' abilities to better face the challenges ahead.",
+  activeTab: "upgrade",
+  currentLevel: 1,
+  maxLevel: 5,
+  completionPercent: 20,
+  upgradeRows: [
+    {
+      id: "train-field-upgrade",
+      label: "训练场升级",
+      currentLevel: 1,
+      maxLevel: 5,
+      cost: "500 Gold + 10 Deeds",
+      isAvailable: true,
+      benefits: ["Unlocks skill level 3", "Increases training speed"]
+    },
+    {
+      id: "hero-trial-field",
+      label: "英雄试炼场",
+      currentLevel: 0,
+      maxLevel: 3,
+      cost: "800 Gold + 20 Crests",
+      isAvailable: false,
+      benefits: ["Unlocks hero trials", "Grants bonus XP"]
+    }
+  ],
+  resources: {
+    gold: 1250,
+    bust: 100,
+    portrait: 100,
+    deed: 100,
+    crest: 200
+  },
+  npcName: "训练师",
+  npcTitle: "Guild Master"
+};
+
+export const replayGuildUpgradeSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "town",
+  viewModel: replayGuildUpgradeViewModel,
+  debugMessage: "Replay bridge showing guild trial upgrade screen."
+};
+
 export const replayProvisioningViewModel: ProvisioningViewModel = {
   kind: "provisioning",
   title: "Provision Expedition",
@@ -929,7 +978,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
   const flowStateKindMap: Record<string, string[]> = {
     boot: ["boot-load"],
     load: ["boot-load"],
-    town: ["town", "hero-detail", "building-detail"],
+    town: ["town", "hero-detail", "building-detail", "guild-upgrade"],
     provisioning: ["provisioning"],
     expedition: ["expedition"],
     combat: ["expedition"],
@@ -987,6 +1036,20 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!["ready", "partial", "locked"].includes(vm.status as string)) e.push(`BuildingDetailViewModel: status is "${String(vm.status)}", expected "ready", "partial", or "locked"`);
       if (!vm.description || typeof vm.description !== "string") e.push("BuildingDetailViewModel: description is missing");
       if (!Array.isArray(vm.actions)) { e.push("BuildingDetailViewModel: actions is not an array"); } else if (vm.actions.length === 0) { e.push("BuildingDetailViewModel: actions array is empty"); }
+      break;
+    }
+    case "guild-upgrade": {
+      if (!vm.buildingId || typeof vm.buildingId !== "string") e.push("GuildUpgradeViewModel: buildingId is missing");
+      if (!vm.label || typeof vm.label !== "string") e.push("GuildUpgradeViewModel: label is missing");
+      if (!["ready", "partial", "locked"].includes(vm.status as string)) e.push(`GuildUpgradeViewModel: status is "${String(vm.status)}", expected "ready", "partial", or "locked"`);
+      if (!vm.description || typeof vm.description !== "string") e.push("GuildUpgradeViewModel: description is missing");
+      if (typeof vm.currentLevel !== "number") e.push("GuildUpgradeViewModel: currentLevel is not a number");
+      if (typeof vm.maxLevel !== "number") e.push("GuildUpgradeViewModel: maxLevel is not a number");
+      if (typeof vm.completionPercent !== "number") e.push("GuildUpgradeViewModel: completionPercent is not a number");
+      if (!Array.isArray(vm.upgradeRows)) { e.push("GuildUpgradeViewModel: upgradeRows is not an array"); } else if (vm.upgradeRows.length === 0) { e.push("GuildUpgradeViewModel: upgradeRows array is empty"); }
+      if (!vm.resources || typeof vm.resources !== "object") e.push("GuildUpgradeViewModel: resources is missing");
+      if (!vm.npcName || typeof vm.npcName !== "string") e.push("GuildUpgradeViewModel: npcName is missing");
+      if (!vm.npcTitle || typeof vm.npcTitle !== "string") e.push("GuildUpgradeViewModel: npcTitle is missing");
       break;
     }
     case "provisioning": {

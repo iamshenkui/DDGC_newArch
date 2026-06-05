@@ -10,7 +10,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "guild-upgrade" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -31,6 +31,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "building-detail") {
     return "building-detail";
+  }
+
+  if (snapshot.viewModel.kind === "guild-upgrade") {
+    return "guild-upgrade";
   }
 
   if (snapshot.viewModel.kind === "provisioning") {
@@ -98,6 +102,12 @@ export function canTransition(
       }
       return { allowed: true };
 
+    case "return-to-guild":
+      if (screen !== "guild-upgrade") {
+        return { allowed: false, reason: "return-to-guild is only valid in guild-upgrade" };
+      }
+      return { allowed: true };
+
     case "start-provisioning":
       if (screen !== "town") {
         return { allowed: false, reason: "start-provisioning is only valid in town" };
@@ -143,6 +153,12 @@ export function canTransition(
     case "building-action":
       if (screen !== "building-detail") {
         return { allowed: false, reason: "building-action is only valid in building-detail" };
+      }
+      return { allowed: true };
+
+    case "open-guild-upgrade":
+      if (screen !== "building-detail") {
+        return { allowed: false, reason: "open-guild-upgrade is only valid in building-detail" };
       }
       return { allowed: true };
 

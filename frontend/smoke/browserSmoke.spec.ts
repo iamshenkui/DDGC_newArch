@@ -332,11 +332,62 @@ test.describe("browser smoke: fidelity gates", () => {
 
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
 
+    // ── Phase 4b: Guild Trial Upgrade ────────────────────────
+    // Navigate to guild upgrade from guild building detail
+    await page.locator('[data-source-component="UpgradeFacilityButton"]').click();
+    await page.waitForSelector(".guild-upgrade-frame", { timeout: 5_000 });
+    await settle(page, 800);
+
+    await expect(
+      page.locator(".guild-upgrade-building-name"),
+      "Guild upgrade building name must be visible"
+    ).toHaveText("试炼场");
+    await expect(
+      page.locator(".guild-upgrade-tab--active"),
+      "Upgrade facility tab must be active by default"
+    ).toHaveAttribute("data-tab", "upgrade");
+    await expect(
+      page.locator(".guild-upgrade-row").first(),
+      "Upgrade row must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".guild-upgrade-completion-bar"),
+      "Completion bar must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".guild-upgrade-resources"),
+      "Resources strip must be visible"
+    ).toBeVisible();
+
+    // Fidelity — guild upgrade is a completed product surface
+    await expectFidelity(page.locator(".guild-upgrade-frame"), "Guild upgrade screen");
+    await expectFullPageFidelity(page, "Guild upgrade screen");
+
+    // Landscape viewport check
+    await expect(
+      page.locator(".guild-upgrade-frame"),
+      "Guild upgrade screen must use .guild-upgrade-frame landscape layout"
+    ).toBeVisible();
+
+    // Test tab switching
+    await page.locator('[data-tab="use"]').click();
+    await settle(page, 200);
+    await expect(
+      page.locator(".guild-upgrade-tab--active"),
+      "Use facility tab must become active after click"
+    ).toHaveAttribute("data-tab", "use");
+
+    // Return to town from guild upgrade
+    await page.getByRole("button", { name: "Return to Town" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    expectNoErrors(pageErrors, consoleErrors, "Phase 4b (guild upgrade)");
+
     // ── Phase 5: Full meta-loop ─────────────────────────────
     // Town → Provisioning → Expedition → Result → Return → Town
 
-    // 5a. Return to town
-    await page.getByRole("button", { name: "Return to Town" }).click();
+    // 5a. Already in town after Phase 4b return
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
 

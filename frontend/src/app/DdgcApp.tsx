@@ -10,6 +10,7 @@ import type {
   ExpeditionResultViewModel,
   ExpeditionSetupViewModel,
   FatalErrorViewModel,
+  GuildUpgradeViewModel,
   HeroDetailViewModel,
   ProvisioningViewModel,
   ReturnViewModel,
@@ -27,6 +28,7 @@ import { StartupScreen } from "../screens/startup/StartupScreen";
 import { TownShellScreen } from "../screens/town/TownShellScreen";
 import { HeroDetailScreen } from "../screens/town/HeroDetailScreen";
 import { BuildingScreenRouter } from "../screens/town/BuildingScreenRouter";
+import { GuildTrialUpgradeScreen } from "../screens/town/guild/GuildTrialUpgradeScreen";
 import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
@@ -133,6 +135,25 @@ export function DdgcApp() {
               void dispatchIntent(bridge, { type: "return-to-town" });
             }}
             onAction={(actionId) => {
+              void dispatchIntent(bridge, { type: "building-action", actionId });
+            }}
+            onOpenGuildUpgrade={() => {
+              void dispatchIntent(bridge, { type: "open-guild-upgrade" });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "guild-upgrade" && snapshot().viewModel.kind === "guild-upgrade"}
+        >
+          <GuildTrialUpgradeScreen
+            viewModel={snapshot().viewModel as GuildUpgradeViewModel}
+            onReturnToTown={() => {
+              void dispatchIntent(bridge, { type: "return-to-town" });
+            }}
+            onReturnToGuild={() => {
+              void dispatchIntent(bridge, { type: "open-building", buildingId: "guild" });
+            }}
+            onUpgradeAction={(actionId) => {
               void dispatchIntent(bridge, { type: "building-action", actionId });
             }}
           />

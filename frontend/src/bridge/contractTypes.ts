@@ -71,6 +71,38 @@ export interface BuildingDetailViewModel {
   upgradeRequirement?: string;
 }
 
+export interface GuildUpgradeRow {
+  id: string;
+  label: string;
+  currentLevel: number;
+  maxLevel: number;
+  cost: string;
+  isAvailable: boolean;
+  benefits: ReadonlyArray<string>;
+}
+
+export interface GuildUpgradeViewModel {
+  kind: "guild-upgrade";
+  buildingId: string;
+  label: string;
+  status: "ready" | "partial" | "locked";
+  description: string;
+  activeTab: "upgrade" | "use";
+  currentLevel: number;
+  maxLevel: number;
+  completionPercent: number;
+  upgradeRows: ReadonlyArray<GuildUpgradeRow>;
+  resources: {
+    gold: number;
+    bust: number;
+    portrait: number;
+    deed: number;
+    crest: number;
+  };
+  npcName: string;
+  npcTitle: string;
+}
+
 export interface HeroProgression {
   level: number;
   experience: string;
@@ -270,6 +302,7 @@ export type DdgcViewModel =
   | TownViewModel
   | HeroDetailViewModel
   | BuildingDetailViewModel
+  | GuildUpgradeViewModel
   | ProvisioningViewModel
   | ExpeditionSetupViewModel
   | ExpeditionResultViewModel
@@ -289,10 +322,12 @@ export type DdgcFrontendIntent =
   | { type: "open-hero"; heroId: string }
   | { type: "open-building"; buildingId: string }
   | { type: "building-action"; actionId: string }
+  | { type: "open-guild-upgrade" }
+  | { type: "return-to-guild" }
+  | { type: "return-to-town" }
   | { type: "start-provisioning" }
   | { type: "toggle-hero-selection"; heroId: string }
   | { type: "confirm-provisioning" }
   | { type: "launch-expedition" }
-  | { type: "return-to-town" }
   | { type: "continue-from-result" }
   | { type: "resume-from-return" };

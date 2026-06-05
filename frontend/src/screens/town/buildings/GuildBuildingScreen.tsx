@@ -7,6 +7,7 @@ interface GuildBuildingScreenProps {
   viewModel: BuildingDetailViewModel;
   onReturn: () => void;
   onAction: (actionId: string) => void;
+  onOpenUpgrade?: () => void;
 }
 
 /**
@@ -240,6 +241,19 @@ export const GuildBuildingScreen: Component<GuildBuildingScreenProps> = (props) 
           )}
         </div>
       </div>
+
+      {/* ── Guild Upgrade Navigation ── */}
+      {props.onOpenUpgrade && (
+        <div class="building-return-row">
+          <button
+            class="building-action-btn building-action-btn--primary"
+            onClick={props.onOpenUpgrade}
+            data-source-component="UpgradeFacilityButton"
+          >
+            升级设施
+          </button>
+        </div>
+      )}
 
       {/* ── Return to Town — mirrors GuildWindow/CloseButton ── */}
       <div class="building-return-row">
