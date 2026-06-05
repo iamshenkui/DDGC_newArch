@@ -21,6 +21,7 @@ import {
   failureResultSnapshot,
   partialResultSnapshot,
   returnSnapshot,
+  dungeonItemsSnapshot,
 } from "../validation/replayFixtures";
 
 describe("FlowController", () => {
@@ -98,11 +99,16 @@ describe("FlowController", () => {
       const screen = resolveScreen(returnSnapshot);
       expect(screen).toBe("return");
     });
+
+    it("returns dungeon-items screen for dungeon-items view model", () => {
+      const screen = resolveScreen(dungeonItemsSnapshot);
+      expect(screen).toBe("dungeon-items");
+    });
   });
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "dungeon-items", "result", "return", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -113,6 +119,7 @@ describe("ScreenKey exhaustiveness", () => {
       "building-detail": replayBuildingDetailSnapshot,
       provisioning: provisioningSnapshot,
       expedition: expeditionSnapshot,
+      "dungeon-items": dungeonItemsSnapshot,
       result: resultSnapshot,
       return: returnSnapshot,
       unsupported: unsupportedSnapshot,
@@ -389,6 +396,48 @@ describe("canTransition - result and return meta-loop continuation", () => {
       const validation = canTransition(replayReadySnapshot, { type: "building-action", actionId: "train-combat" });
       expect(validation.allowed).toBe(false);
       expect(validation.reason).toContain("only valid in building-detail");
+    });
+  });
+
+  describe("dungeon-items transitions", () => {
+    it("allows continue-from-dungeon-items when isContinueAvailable is true", () => {
+      const validation = canTransition(dungeonItemsSnapshot, { type: "continue-from-dungeon-items" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects continue-from-dungeon-items when not on dungeon-items screen", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "continue-from-dungeon-items" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on dungeon-items screen");
+    });
+
+    it("rejects continue-from-dungeon-items when isContinueAvailable is false", () => {
+      const unavailableSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonItemsSnapshot,
+        viewModel: {
+          ...dungeonItemsSnapshot.viewModel,
+          isContinueAvailable: false
+        } as import("../bridge/contractTypes").DungeonItemsViewModel
+      };
+      const validation = canTransition(unavailableSnapshot, { type: "continue-from-dungeon-items" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not available");
+    });
+
+    it("allows select-dungeon-hero on dungeon-items screen", () => {
+      const validation = canTransition(dungeonItemsSnapshot, { type: "select-dungeon-hero", heroId: "hero-hunter-01" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects select-dungeon-hero when not on dungeon-items screen", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "select-dungeon-hero", heroId: "hero-hunter-01" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on dungeon-items screen");
+    });
+
+    it("allows return-to-town from dungeon-items screen", () => {
+      const validation = canTransition(dungeonItemsSnapshot, { type: "return-to-town" });
+      expect(validation.allowed).toBe(true);
     });
   });
 

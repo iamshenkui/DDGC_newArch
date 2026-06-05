@@ -857,6 +857,44 @@ export const returnSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing return screen."
 };
 
+// ── Dungeon Items fixture ──────────────────────────────────────────────────────
+
+export const replayDungeonItemsViewModel: import("../bridge/contractTypes").DungeonItemsViewModel = {
+  kind: "dungeon-items",
+  title: "副本场景-物品",
+  dungeonName: "The Depths Await",
+  floorLabel: "Floor 1 — Corridor",
+  party: [
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", stress: "17", maxStress: "200", level: 2 },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "8", maxStress: "200", level: 2 },
+  ],
+  selectedHeroId: "hero-hunter-01",
+  selectedHeroEquipment: [
+    { slotId: "weapon", slotLabel: "Weapon", itemName: "Hunter's Bow (+2)", itemLevel: 3, isEmpty: false },
+    { slotId: "armor", slotLabel: "Armor", itemName: "Leather Armor (+1)", itemLevel: 2, isEmpty: false },
+    { slotId: "trinket-1", slotLabel: "Trinket", isEmpty: true },
+    { slotId: "trinket-2", slotLabel: "Trinket", isEmpty: true },
+    { slotId: "consumable-1", slotLabel: "Potion", itemName: "Healing Salve", itemLevel: 1, isEmpty: false },
+    { slotId: "consumable-2", slotLabel: "Scroll", isEmpty: true },
+  ],
+  inventoryItems: [
+    { itemId: "inv-gold-01", name: "Gold Coin", description: "Currency used for purchases.", quantity: 3, icon: "🪙" },
+    { itemId: "inv-gem-01", name: "Mysterious Gemstone", description: "A glowing stone of unknown origin.", quantity: 1, icon: "💎" },
+    { itemId: "inv-relic-01", name: "Forgotten Relic", description: "An ancient artifact from a lost civilization.", quantity: 1, icon: "🏺" },
+    { itemId: "inv-supply-01", name: "Bandage", description: "Restores a small amount of health.", quantity: 4, icon: "🩹" },
+    { itemId: "inv-supply-02", name: "Torch", description: "Illuminates dark passages.", quantity: 2, icon: "🔥" },
+    { itemId: "inv-food-01", name: "Rations", description: "Restores stamina during rest.", quantity: 3, icon: "🍞" },
+  ],
+  isContinueAvailable: true,
+};
+
+export const dungeonItemsSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "dungeon",
+  viewModel: replayDungeonItemsViewModel,
+  debugMessage: "Replay bridge showing dungeon scene items screen."
+};
+
 // ── Snapshot contract validation ───────────────────────────────────────────────
 
 /**
@@ -877,7 +915,7 @@ export function validateSnapshotContract(snapshot: DdgcFrontendSnapshot): string
   }
 
   // FlowState must be a valid FlowState
-  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "result", "return"];
+  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "dungeon", "result", "return"];
   if (!validFlowStates.includes(snapshot.flowState as FlowState)) {
     errors.push(
       `flowState "${String(snapshot.flowState)}" is not a valid FlowState. ` +
@@ -933,6 +971,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     provisioning: ["provisioning"],
     expedition: ["expedition"],
     combat: ["expedition"],
+    dungeon: ["dungeon-items"],
     result: ["result"],
     return: ["return"],
   };
@@ -1010,6 +1049,17 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (typeof vm.isLaunchable !== "boolean") e.push("ExpeditionSetupViewModel: isLaunchable is not a boolean");
       if (!vm.supplyLevel || typeof vm.supplyLevel !== "string") e.push("ExpeditionSetupViewModel: supplyLevel is missing");
       if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ExpeditionSetupViewModel: provisionCost is missing");
+      break;
+    }
+    case "dungeon-items": {
+      if (!vm.title || typeof vm.title !== "string") e.push("DungeonItemsViewModel: title is missing");
+      if (!vm.dungeonName || typeof vm.dungeonName !== "string") e.push("DungeonItemsViewModel: dungeonName is missing");
+      if (!vm.floorLabel || typeof vm.floorLabel !== "string") e.push("DungeonItemsViewModel: floorLabel is missing");
+      if (!Array.isArray(vm.party)) { e.push("DungeonItemsViewModel: party is not an array"); } else if (vm.party.length === 0) { e.push("DungeonItemsViewModel: party array is empty"); }
+      if (!vm.selectedHeroId || typeof vm.selectedHeroId !== "string") e.push("DungeonItemsViewModel: selectedHeroId is missing");
+      if (!Array.isArray(vm.selectedHeroEquipment)) e.push("DungeonItemsViewModel: selectedHeroEquipment is not an array");
+      if (!Array.isArray(vm.inventoryItems)) e.push("DungeonItemsViewModel: inventoryItems is not an array");
+      if (typeof vm.isContinueAvailable !== "boolean") e.push("DungeonItemsViewModel: isContinueAvailable is not a boolean");
       break;
     }
     case "result": {

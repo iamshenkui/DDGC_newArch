@@ -45,6 +45,8 @@ import {
   replayLegacyTowerBuildingSnapshot,
   replayMarketBuildingSnapshot,
   replayCampingTrainerBuildingSnapshot,
+  replayDungeonItemsViewModel,
+  dungeonItemsSnapshot,
 } from "./replayFixtures";
 
 describe("replay fixtures — hero and campaign state consistency", () => {
@@ -356,6 +358,50 @@ describe("replay fixtures — hero and campaign state consistency", () => {
       expect(replayReturnViewModel.isTownResumeAvailable).toBe(true);
     });
   });
+
+  describe("dungeon-items fixture", () => {
+    it("has valid dungeon items parameters", () => {
+      const vm = replayDungeonItemsViewModel;
+      expect(vm.dungeonName).toBeTruthy();
+      expect(vm.floorLabel).toBeTruthy();
+      expect(vm.party.length).toBeGreaterThan(0);
+      expect(vm.selectedHeroId).toBeTruthy();
+      expect(Array.isArray(vm.selectedHeroEquipment)).toBe(true);
+      expect(Array.isArray(vm.inventoryItems)).toBe(true);
+      expect(typeof vm.isContinueAvailable).toBe("boolean");
+    });
+
+    it("selected hero exists in party", () => {
+      const vm = replayDungeonItemsViewModel;
+      const selected = vm.party.find((h) => h.id === vm.selectedHeroId);
+      expect(selected).toBeDefined();
+    });
+
+    it("equipment slots have required fields", () => {
+      for (const slot of replayDungeonItemsViewModel.selectedHeroEquipment) {
+        expect(slot.slotId).toBeTruthy();
+        expect(slot.slotLabel).toBeTruthy();
+        expect(typeof slot.isEmpty).toBe("boolean");
+      }
+    });
+
+    it("inventory items have required fields", () => {
+      for (const item of replayDungeonItemsViewModel.inventoryItems) {
+        expect(item.itemId).toBeTruthy();
+        expect(item.name).toBeTruthy();
+        expect(item.description).toBeTruthy();
+        expect(typeof item.quantity).toBe("number");
+        expect(item.quantity).toBeGreaterThan(0);
+      }
+    });
+
+    it("dungeon party heroes match expedition heroes", () => {
+      const dungeonIds = new Set(replayDungeonItemsViewModel.party.map((h) => h.id));
+      for (const eh of replayExpeditionViewModel.party) {
+        expect(dungeonIds.has(eh.id), `expedition hero ${eh.id} not in dungeon party`).toBe(true);
+      }
+    });
+  });
 });
 
 interface NamedSnapshot {
@@ -375,6 +421,7 @@ const allSnapshots: NamedSnapshot[] = [
   { name: "replayStagecoachBuildingSnapshot", snapshot: replayStagecoachBuildingSnapshot },
   { name: "provisioningSnapshot", snapshot: provisioningSnapshot },
   { name: "expeditionSnapshot", snapshot: expeditionSnapshot },
+  { name: "dungeonItemsSnapshot", snapshot: dungeonItemsSnapshot },
   { name: "resultSnapshot", snapshot: resultSnapshot },
   { name: "failureResultSnapshot", snapshot: failureResultSnapshot },
   { name: "partialResultSnapshot", snapshot: partialResultSnapshot },
@@ -471,6 +518,11 @@ describe("type discrimination", () => {
     expect(returnSnapshot.flowState).toBe("return");
     expect(returnSnapshot.viewModel.kind).toBe("return");
   });
+
+  it("dungeon-items snapshot sets flowState to dungeon and kind to dungeon-items", () => {
+    expect(dungeonItemsSnapshot.flowState).toBe("dungeon");
+    expect(dungeonItemsSnapshot.viewModel.kind).toBe("dungeon-items");
+  });
 });
 
 // ── HP string format validation ───────────────────────────────────────────
@@ -510,6 +562,12 @@ describe("HP string format consistency across fixtures", () => {
   it("returning heroes have valid HP strings", () => {
     for (const rh of replayReturnViewModel.returningHeroes) {
       checkHpFormat(rh.hp, `return hero ${rh.heroId}`);
+    }
+  });
+
+  it("dungeon-items heroes have valid HP strings", () => {
+    for (const dh of replayDungeonItemsViewModel.party) {
+      checkHpFormat(dh.hp, `dungeon hero ${dh.id}`);
     }
   });
 

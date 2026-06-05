@@ -10,6 +10,7 @@ import type {
   BuildingDetailViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  DungeonItemsViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
 } from "./contractTypes";
@@ -334,6 +335,33 @@ const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
   isContinueAvailable: true
 });
 
+const createLiveDungeonItemsViewModel = (): DungeonItemsViewModel => ({
+  kind: "dungeon-items",
+  title: "副本场景-物品",
+  dungeonName: "The Azure Lantern Expedition",
+  floorLabel: "Floor 1 — Corridor",
+  party: [
+    { id: "hero-hunter-live-01", name: "Yuan", classLabel: "Hunter", hp: "42 / 42", maxHp: "42", stress: "0", maxStress: "200", level: 1 },
+    { id: "hero-white-live-01", name: "Mei", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "0", maxStress: "200", level: 1 },
+  ],
+  selectedHeroId: "hero-hunter-live-01",
+  selectedHeroEquipment: [
+    { slotId: "weapon", slotLabel: "Weapon", itemName: "Basic Bow", itemLevel: 1, isEmpty: false },
+    { slotId: "armor", slotLabel: "Armor", itemName: "Leather Armor", itemLevel: 1, isEmpty: false },
+    { slotId: "trinket-1", slotLabel: "Trinket", isEmpty: true },
+    { slotId: "trinket-2", slotLabel: "Trinket", isEmpty: true },
+    { slotId: "consumable-1", slotLabel: "Potion", itemName: "Healing Salve", itemLevel: 1, isEmpty: false },
+    { slotId: "consumable-2", slotLabel: "Scroll", isEmpty: true },
+  ],
+  inventoryItems: [
+    { itemId: "inv-gold-01", name: "Gold Coin", description: "Currency used for purchases.", quantity: 2, icon: "🪙" },
+    { itemId: "inv-relic-01", name: "Ancient Relic", description: "An ancient artifact from a lost civilization.", quantity: 1, icon: "🏺" },
+    { itemId: "inv-supply-01", name: "Bandage", description: "Restores a small amount of health.", quantity: 3, icon: "🩹" },
+    { itemId: "inv-food-01", name: "Rations", description: "Restores stamina during rest.", quantity: 2, icon: "🍞" },
+  ],
+  isContinueAvailable: true,
+});
+
 const createLiveReturnViewModel = (): ReturnViewModel => ({
   kind: "return",
   title: "Returning to Town",
@@ -440,10 +468,29 @@ export class LiveRuntimeBridge implements RuntimeBridge {
       case "launch-expedition":
         this.snapshot = {
           ...this.snapshot,
+          flowState: "dungeon",
+          viewModel: createLiveDungeonItemsViewModel()
+        };
+        break;
+      case "continue-from-dungeon-items":
+        this.snapshot = {
+          ...this.snapshot,
           flowState: "result",
           viewModel: createLiveResultViewModel()
         };
         break;
+      case "select-dungeon-hero": {
+        const dungeonVm = this.snapshot.viewModel as DungeonItemsViewModel;
+        const heroExists = dungeonVm.party.some((h) => h.id === intent.heroId);
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...dungeonVm,
+            selectedHeroId: heroExists ? intent.heroId : dungeonVm.selectedHeroId
+          } as DungeonItemsViewModel
+        };
+        break;
+      }
       case "return-to-town":
         this.snapshot = createLiveTownSnapshot();
         break;

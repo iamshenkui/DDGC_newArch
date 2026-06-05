@@ -6,7 +6,8 @@ import {
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
-  replayReturnViewModel
+  replayReturnViewModel,
+  replayDungeonItemsViewModel
 } from "../validation/replayFixtures";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
 import type {
@@ -15,6 +16,7 @@ import type {
   TownViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  DungeonItemsViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel
 } from "./contractTypes";
@@ -117,10 +119,29 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       case "launch-expedition":
         this.snapshot = {
           ...this.snapshot,
+          flowState: "dungeon",
+          viewModel: replayDungeonItemsViewModel as DungeonItemsViewModel
+        };
+        break;
+      case "continue-from-dungeon-items":
+        this.snapshot = {
+          ...this.snapshot,
           flowState: "result",
           viewModel: replayResultViewModel as ExpeditionResultViewModel
         };
         break;
+      case "select-dungeon-hero": {
+        const dungeonVm = this.snapshot.viewModel as DungeonItemsViewModel;
+        const heroExists = dungeonVm.party.some((h) => h.id === intent.heroId);
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...dungeonVm,
+            selectedHeroId: heroExists ? intent.heroId : dungeonVm.selectedHeroId
+          } as DungeonItemsViewModel
+        };
+        break;
+      }
       case "return-to-town":
         this.snapshot = replayReadySnapshot;
         break;

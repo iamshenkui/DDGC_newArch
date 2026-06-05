@@ -10,7 +10,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "dungeon-items" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -39,6 +39,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "expedition") {
     return "expedition";
+  }
+
+  if (snapshot.viewModel.kind === "dungeon-items") {
+    return "dungeon-items";
   }
 
   if (snapshot.viewModel.kind === "result") {
@@ -89,6 +93,24 @@ export function canTransition(
       }
       if (!snapshot.viewModel.isTownResumeAvailable) {
         return { allowed: false, reason: "town resume is not available" };
+      }
+      return { allowed: true };
+
+    case "continue-from-dungeon-items":
+      if (screen !== "dungeon-items") {
+        return { allowed: false, reason: "continue-from-dungeon-items is only valid on dungeon-items screen" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-items") {
+        return { allowed: false, reason: "viewModel is not a dungeon-items view model" };
+      }
+      if (!snapshot.viewModel.isContinueAvailable) {
+        return { allowed: false, reason: "dungeon continue is not available" };
+      }
+      return { allowed: true };
+
+    case "select-dungeon-hero":
+      if (screen !== "dungeon-items") {
+        return { allowed: false, reason: "select-dungeon-hero is only valid on dungeon-items screen" };
       }
       return { allowed: true };
 
