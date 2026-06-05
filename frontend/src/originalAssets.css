@@ -614,3 +614,420 @@
     padding: 18px 14px;
   }
 }
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   Sanitarium (细胞修复站) — specific styles for usage tab + selection modal
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Tab bar ── */
+.sanitarium-tabs {
+  display: flex;
+  gap: 12px;
+  margin: 0 0 16px;
+  padding: 0 4px;
+}
+
+.sanitarium-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(12, 8, 6, 0.6);
+  border: 1px solid rgba(196, 168, 110, 0.18);
+  border-radius: 4px;
+  color: rgba(214, 192, 150, 0.7);
+  font-family: var(--heading-font);
+  font-size: 0.84rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sanitarium-tab:hover {
+  background: rgba(22, 16, 10, 0.8);
+  border-color: rgba(196, 168, 110, 0.35);
+  color: rgba(244, 224, 184, 0.9);
+}
+
+.sanitarium-tab--active {
+  background: rgba(22, 16, 10, 0.9);
+  border-color: rgba(196, 168, 110, 0.5);
+  color: rgba(244, 224, 184, 0.95);
+  box-shadow: inset 0 0 12px rgba(196, 168, 110, 0.08);
+}
+
+.sanitarium-tab-checkbox {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* ── NPC portrait area (left panel) ── */
+.sanitarium-npc-area {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 280px;
+  padding: 16px;
+  background:
+    linear-gradient(180deg, rgba(22, 16, 10, 0.5), rgba(12, 8, 6, 0.7)),
+    var(--ddgc-chrome-building-info-bg, url("/original/chrome/building_info_bg.png"));
+  background-size: cover, 100% 100%;
+  border: 1px solid rgba(196, 168, 110, 0.18);
+  border-radius: 6px;
+}
+
+.sanitarium-npc-portrait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.sanitarium-npc-label {
+  padding: 4px 14px;
+  background: rgba(12, 8, 6, 0.7);
+  border: 1px solid rgba(196, 168, 110, 0.22);
+  border-radius: 3px;
+  color: rgba(214, 192, 150, 0.85);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+}
+
+/* ── Usage panel / slot cards ── */
+.sanitarium-usage-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sanitarium-slot-card {
+  padding: 14px 16px;
+  background:
+    linear-gradient(180deg, rgba(22, 16, 10, 0.75), rgba(12, 8, 6, 0.8)),
+    var(--ddgc-chrome-building-info-bg, url("/original/chrome/building_info_bg.png"));
+  background-size: cover, 100% 100%;
+  border: 1px solid rgba(196, 168, 110, 0.2);
+  border-radius: 6px;
+  box-shadow: inset 0 1px 0 rgba(232, 200, 140, 0.06), 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+
+.sanitarium-slot-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.sanitarium-slot-icon {
+  font-size: 1.4rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(12, 8, 6, 0.6);
+  border: 1px solid rgba(196, 168, 110, 0.18);
+  border-radius: 4px;
+}
+
+.sanitarium-slot-title-area {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sanitarium-slot-title {
+  font-family: var(--heading-font);
+  font-size: 0.92rem;
+  color: rgba(244, 224, 184, 0.95);
+  letter-spacing: 0.06em;
+}
+
+.sanitarium-slot-desc {
+  font-size: 0.74rem;
+  color: rgba(214, 192, 150, 0.6);
+}
+
+.sanitarium-slot-grid {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sanitarium-slot-cell {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(12, 8, 6, 0.55);
+  border: 1px dashed rgba(196, 168, 110, 0.22);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sanitarium-slot-cell:hover {
+  background: rgba(22, 16, 10, 0.75);
+  border-color: rgba(196, 168, 110, 0.45);
+  transform: translateY(-2px);
+}
+
+.sanitarium-slot-cell--occupied {
+  border-style: solid;
+  border-color: rgba(196, 168, 110, 0.4);
+  background: rgba(22, 16, 10, 0.7);
+}
+
+.sanitarium-slot-placeholder {
+  font-size: 1.4rem;
+  color: rgba(196, 168, 110, 0.35);
+}
+
+.sanitarium-slot-hero {
+  font-size: 1.6rem;
+}
+
+/* ── Modal overlay ── */
+.sanitarium-modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(3px);
+  z-index: 100;
+  padding: 20px;
+}
+
+.sanitarium-modal {
+  position: relative;
+  width: min(560px, 92vw);
+  max-height: min(640px, 85vh);
+  overflow-y: auto;
+  background:
+    linear-gradient(180deg, rgba(28, 20, 12, 0.96), rgba(16, 10, 6, 0.98)),
+    var(--ddgc-chrome-building-info-bg, url("/original/chrome/building_info_bg.png"));
+  background-size: cover, 100% 100%;
+  border: 1px solid rgba(196, 168, 110, 0.28);
+  border-radius: 6px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(232, 200, 140, 0.1);
+  padding: 24px;
+}
+
+.sanitarium-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(12, 8, 6, 0.6);
+  border: 1px solid rgba(196, 168, 110, 0.2);
+  border-radius: 4px;
+  color: rgba(214, 192, 150, 0.8);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.sanitarium-modal-close:hover {
+  background: rgba(80, 30, 30, 0.5);
+  border-color: rgba(220, 100, 100, 0.4);
+  color: rgba(244, 180, 180, 0.9);
+}
+
+.sanitarium-modal-title {
+  margin: 0 0 18px;
+  font-family: var(--heading-font);
+  font-size: 1.05rem;
+  letter-spacing: 0.12em;
+  color: rgba(244, 224, 184, 0.95);
+  text-align: center;
+}
+
+/* ── Hero list in modal ── */
+.sanitarium-hero-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.sanitarium-hero-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(12, 8, 6, 0.5);
+  border: 1px solid rgba(196, 168, 110, 0.14);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  text-align: left;
+}
+
+.sanitarium-hero-row:hover {
+  background: rgba(22, 16, 10, 0.7);
+  border-color: rgba(196, 168, 110, 0.3);
+}
+
+.sanitarium-hero-row--selected {
+  background: rgba(30, 24, 14, 0.85);
+  border-color: rgba(196, 168, 110, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(196, 168, 110, 0.15);
+}
+
+.sanitarium-hero-avatar {
+  font-size: 1.6rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(12, 8, 6, 0.6);
+  border: 1px solid rgba(196, 168, 110, 0.15);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.sanitarium-hero-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sanitarium-hero-name {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: rgba(248, 232, 200, 0.95);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sanitarium-hero-class {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: rgba(214, 192, 150, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.sanitarium-hero-vitals {
+  display: flex;
+  gap: 12px;
+  font-size: 0.74rem;
+  color: rgba(214, 192, 150, 0.65);
+}
+
+.sanitarium-hero-quirks {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.sanitarium-quirk {
+  font-size: 0.68rem;
+  padding: 2px 8px;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+}
+
+.sanitarium-quirk--positive {
+  background: rgba(60, 100, 60, 0.35);
+  color: rgba(160, 220, 160, 0.85);
+  border: 1px solid rgba(100, 180, 100, 0.2);
+}
+
+.sanitarium-quirk--negative {
+  background: rgba(100, 60, 60, 0.35);
+  color: rgba(220, 160, 160, 0.85);
+  border: 1px solid rgba(180, 100, 100, 0.2);
+}
+
+/* ── Disease preview ── */
+.sanitarium-disease-preview {
+  padding: 12px;
+  background: rgba(12, 8, 6, 0.5);
+  border: 1px solid rgba(196, 168, 110, 0.16);
+  border-radius: 4px;
+  margin-bottom: 14px;
+}
+
+.sanitarium-disease-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(196, 168, 110, 0.1);
+  font-size: 0.82rem;
+}
+
+.sanitarium-disease-row:last-child {
+  border-bottom: none;
+}
+
+.sanitarium-disease-label {
+  color: rgba(214, 192, 150, 0.65);
+}
+
+.sanitarium-disease-value {
+  color: rgba(248, 232, 200, 0.9);
+  font-weight: 600;
+}
+
+.sanitarium-disease-cost {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(196, 168, 110, 0.15);
+  font-size: 0.86rem;
+  color: rgba(214, 192, 150, 0.75);
+  text-align: right;
+}
+
+/* ── Modal actions ── */
+.sanitarium-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(196, 168, 110, 0.12);
+}
+
+.sanitarium-confirm-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sanitarium-confirm-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: rgba(12, 8, 6, 0.5);
+  border: 1px solid rgba(196, 168, 110, 0.16);
+  border-radius: 4px;
+}
+
+.sanitarium-confirm-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: rgba(248, 232, 200, 0.95);
+}
+
+.sanitarium-confirm-disease {
+  font-size: 0.8rem;
+  color: rgba(220, 160, 160, 0.85);
+}
+
+.sanitarium-confirm-cost {
+  font-size: 0.86rem;
+  color: rgba(214, 192, 150, 0.75);
+  text-align: right;
+}

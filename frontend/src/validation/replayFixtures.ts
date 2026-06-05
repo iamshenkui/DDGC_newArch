@@ -274,7 +274,25 @@ export const replaySanitariumBuildingDetailViewModel: BuildingDetailViewModel = 
       isUnsupported: false
     }
   ],
-  upgradeRequirement: "Reach Town Level 2 to unlock quirk removal."
+  upgradeRequirement: "Reach Town Level 2 to unlock quirk removal.",
+  slots: [
+    {
+      id: "quirk-treatment",
+      slotType: "quirk",
+      label: "心魔冶",
+      description: "治疗英雄的负面怪癖与心理状态。",
+      capacity: 1,
+      occupied: 0
+    },
+    {
+      id: "disease-treatment",
+      slotType: "disease",
+      label: "异常驱除工坊",
+      description: "治愈英雄的疾病与身体异常。",
+      capacity: 1,
+      occupied: 0
+    }
+  ]
 };
 
 export const replayStagecoachBuildingDetailViewModel: BuildingDetailViewModel = {

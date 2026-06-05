@@ -344,6 +344,23 @@ impl BuildingStatus {
     }
 }
 
+/// A slot within a building representing a service capacity (e.g. sanitarium treatment bed).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BuildingSlot {
+    /// Slot identifier.
+    pub id: String,
+    /// Slot type (e.g. "quirk", "disease", "bar", "gambling").
+    pub slot_type: String,
+    /// Human-readable label.
+    pub label: String,
+    /// Description of what this slot does.
+    pub description: String,
+    /// Maximum capacity for this slot type.
+    pub capacity: usize,
+    /// Number of currently occupied slots.
+    pub occupied: usize,
+}
+
 /// Building detail view model — full building inspection for town interactions.
 ///
 /// This view model represents the detailed state of a single town building,
@@ -364,6 +381,10 @@ pub struct BuildingDetailViewModel {
     pub actions: Vec<BuildingAction>,
     /// Requirement for upgrading this building (if upgradeable).
     pub upgrade_requirement: Option<String>,
+    /// Slots available in this building (for slot-based buildings like sanitarium).
+    pub slots: Option<Vec<BuildingSlot>>,
+    /// Heroes available for selection in this building (for hero-selection sub-screens).
+    pub available_heroes: Option<Vec<TownHeroSummary>>,
 }
 
 impl BuildingDetailViewModel {
@@ -377,6 +398,8 @@ impl BuildingDetailViewModel {
             description: String::new(),
             actions: Vec::new(),
             upgrade_requirement: None,
+            slots: None,
+            available_heroes: None,
         }
     }
 }

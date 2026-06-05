@@ -38,7 +38,7 @@
 //! | `DdgcRunState` + heroes | `ReturnFlowViewModel` | [`return_flow_from_state`] |
 
 use crate::contracts::viewmodels::{
-    BuildingAction, BuildingDetailViewModel, BootLoadViewModel, CombatHudViewModel,
+    BuildingAction, BuildingDetailViewModel, BuildingSlot, BootLoadViewModel, CombatHudViewModel,
     CombatPhase, CombatViewModel, CombatantType, CombatantViewModel, CombatPosition,
     CombatantVitalViewModel, DungeonHeroViewModel, DungeonRoomKind, DungeonRoomViewModel,
     DungeonViewModel, EncounterEntryViewModel, EncounterHeroViewModel, EncounterType,
@@ -835,6 +835,9 @@ pub fn building_detail_from_campaign(
     // Determine upgrade requirement
     let upgrade_requirement = building_upgrade_hint(building_id);
 
+    // Generate slots for slot-based buildings (e.g. sanitarium)
+    let slots = generate_building_slots(building_id, building_state.current_level);
+
     Ok(BuildingDetailViewModel {
         kind: "building-detail".to_string(),
         building_id: building_id.to_string(),
@@ -843,7 +846,43 @@ pub fn building_detail_from_campaign(
         description,
         actions,
         upgrade_requirement,
+        slots,
+        available_heroes: None,
     })
+}
+
+/// Generate building slots for slot-based buildings.
+///
+/// Returns `Some(vec)` for buildings that use slot-based activities
+/// (sanitarium, tavern, etc.), or `None` for simple buildings.
+fn generate_building_slots(building_id: &str, current_level: Option<char>) -> Option<Vec<BuildingSlot>> {
+    let level = current_level.unwrap_or('a');
+    match building_id {
+        "sanitarium" => {
+            // Default slot counts per upgrade level (simplified for L0 inventory)
+            let quirk_capacity = if level >= 'c' { 2 } else { 1 };
+            let disease_capacity = if level >= 'b' { 2 } else { 1 };
+            Some(vec![
+                BuildingSlot {
+                    id: "quirk-treatment".to_string(),
+                    slot_type: "quirk".to_string(),
+                    label: "心魔冶".to_string(),
+                    description: "治疗英雄的负面怪癖与心理状态。".to_string(),
+                    capacity: quirk_capacity,
+                    occupied: 0,
+                },
+                BuildingSlot {
+                    id: "disease-treatment".to_string(),
+                    slot_type: "disease".to_string(),
+                    label: "异常驱除工坊".to_string(),
+                    description: "治愈英雄的疾病与身体异常。".to_string(),
+                    capacity: disease_capacity,
+                    occupied: 0,
+                },
+            ])
+        }
+        _ => None,
+    }
 }
 
 /// Get the label and description for a building by ID.
@@ -862,7 +901,7 @@ fn building_label_and_description(building_id: &str) -> (String, String) {
             "The blacksmith crafts and repairs weapons and armor. Enhance your party's equipment.".to_string(),
         ),
         "sanitarium" => (
-            "Sanitarium".to_string(),
+            "细胞修复站".to_string(),
             "The sanitarium treats hero quirks, diseases, and ailments. Restore heroes to full health.".to_string(),
         ),
         "tavern" => (

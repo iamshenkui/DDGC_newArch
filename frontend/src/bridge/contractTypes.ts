@@ -60,6 +60,15 @@ export interface BuildingAction {
   isUnsupported: boolean;
 }
 
+export interface BuildingSlot {
+  id: string;
+  slotType: string;
+  label: string;
+  description: string;
+  capacity: number;
+  occupied: number;
+}
+
 export interface BuildingDetailViewModel {
   kind: "building-detail";
   buildingId: string;
@@ -69,6 +78,8 @@ export interface BuildingDetailViewModel {
   actions: ReadonlyArray<BuildingAction>;
   currentUpgrade?: string;
   upgradeRequirement?: string;
+  slots?: ReadonlyArray<BuildingSlot>;
+  availableHeroes?: ReadonlyArray<TownHeroSummary>;
 }
 
 export interface HeroProgression {
