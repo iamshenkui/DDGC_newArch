@@ -332,11 +332,74 @@ test.describe("browser smoke: fidelity gates", () => {
 
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
 
+    // ── Phase 4b: Sanitarium building detail (细胞修复站) ─────
+    await page.getByRole("button", { name: "Return to Town" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await page.locator('[data-building-id="sanitarium"]').click();
+    await settle(page, 800);
+
+    await expect(
+      page.locator(".building-detail-name"),
+      "Sanitarium building name must be visible (细胞修复站)"
+    ).toHaveText("细胞修复站");
+
+    // Tab bar
+    await expect(
+      page.locator('.sanitarium-tab[data-source-component="UseButton"]'),
+      "Sanitarium Use tab must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.sanitarium-tab[data-source-component="UpgradeButton"]'),
+      "Sanitarium Upgrade tab must be visible"
+    ).toBeVisible();
+
+    // Treatment selector cards
+    await expect(
+      page.locator('.sanitarium-treatment-card[data-treatment="disease"]'),
+      "Disease treatment card must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.sanitarium-treatment-card[data-treatment="quirk"]'),
+      "Quirk treatment card must be visible"
+    ).toBeVisible();
+
+    // Quirk backdrop (Selection 1) is shown by default
+    await expect(
+      page.locator('.sanitarium-quirk-backdrop[data-source-component="SanitariumQuirkWindow"]'),
+      "Quirk treatment backdrop must be visible by default"
+    ).toBeVisible();
+    await expect(
+      page.locator('.sanitarium-quirk-slot[data-slot-type="negative"]'),
+      "Negative quirk slots must render"
+    ).toHaveCount(5);
+    await expect(
+      page.locator('.sanitarium-quirk-slot[data-slot-type="positive"]'),
+      "Positive quirk slots must render"
+    ).toHaveCount(5);
+
+    // Cost and activity button
+    await expect(
+      page.locator('.sanitarium-quirk-backdrop .sanitarium-activity-btn'),
+      "Start treatment button must be visible"
+    ).toHaveText("开始治疗");
+
+    // Fidelity
+    await expectFidelity(page.locator(".app-frame"), "Sanitarium building detail screen");
+    await expectFullPageFidelity(page, "Sanitarium building detail screen");
+    await expect(
+      page.locator(".app-frame"),
+      "Sanitarium screen must use .app-frame landscape layout"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Phase 4b (sanitarium building detail)");
+
     // ── Phase 5: Full meta-loop ─────────────────────────────
     // Town → Provisioning → Expedition → Result → Return → Town
 
-    // 5a. Return to town
-    await page.getByRole("button", { name: "Return to Town" }).click();
+    // 5a. Return to town from sanitarium
+    await page.locator('.sanitarium-return-btn[data-source-component="CloseButton"]').click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
 

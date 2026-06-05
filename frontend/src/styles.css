@@ -3321,3 +3321,460 @@ button {
     font-size: 1rem;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Sanitarium Window (细胞修复站)
+   Mirrors SanitariumWindow.prefab hierarchy from Unity
+   ═══════════════════════════════════════════════════════════════ */
+
+.sanitarium-window {
+  /* Inherits .app-frame grid */
+}
+
+.sanitarium-content {
+  min-height: 520px;
+}
+
+/* ── Left Panel ── */
+.sanitarium-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.sanitarium-npc-area {
+  position: relative;
+  width: 220px;
+  height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 30%, rgba(27, 50, 44, 0.4), transparent 70%),
+    radial-gradient(ellipse at center, rgba(6, 12, 10, 0.8), rgba(0, 0, 0, 0.95));
+  border: 2px solid rgba(160, 204, 188, 0.12);
+  overflow: hidden;
+}
+
+.sanitarium-npc-circle {
+  position: absolute;
+  inset: -20%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(160, 204, 188, 0.06), transparent 60%);
+  pointer-events: none;
+}
+
+.sanitarium-npc-label {
+  position: absolute;
+  bottom: 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--panel-accent);
+  letter-spacing: 0.08em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.sanitarium-talk-btn {
+  padding: 10px 28px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(160, 204, 188, 0.15);
+  color: var(--panel-text);
+  font-family: var(--heading-font);
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.sanitarium-talk-btn:hover {
+  background: rgba(198, 212, 106, 0.08);
+  border-color: rgba(198, 212, 106, 0.3);
+}
+
+/* ── Right Panel / Tabs ── */
+.sanitarium-right {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sanitarium-tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid rgba(160, 204, 188, 0.1);
+}
+
+.sanitarium-tab {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--panel-muted);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.sanitarium-tab:hover {
+  color: var(--panel-text);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.sanitarium-tab--active {
+  color: var(--panel-accent);
+  border-bottom-color: var(--panel-accent);
+}
+
+/* ── Use Panel ── */
+.sanitarium-use-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sanitarium-treatment-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.sanitarium-treatment-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 14px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+  color: inherit;
+  text-align: center;
+}
+
+.sanitarium-treatment-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(160, 204, 188, 0.2);
+  transform: translateY(-1px);
+}
+
+.sanitarium-treatment-card--active {
+  background: rgba(198, 212, 106, 0.06);
+  border-color: rgba(198, 212, 106, 0.35);
+  box-shadow: 0 0 16px rgba(198, 212, 106, 0.06);
+}
+
+.sanitarium-treatment-card--active:hover {
+  border-color: rgba(198, 212, 106, 0.45);
+}
+
+.sanitarium-treatment-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.sanitarium-treatment-icon-fallback {
+  font-family: var(--heading-font);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+}
+
+.sanitarium-treatment-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--panel-text);
+}
+
+.sanitarium-treatment-desc {
+  font-size: 0.7rem;
+  color: var(--panel-muted);
+  line-height: 1.3;
+}
+
+/* ── Treatment Backdrops (Quirk + Disease) ── */
+.sanitarium-backdrop {
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sanitarium-backdrop-label {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--panel-accent);
+  font-family: var(--heading-font);
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+.sanitarium-quirk-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sanitarium-quirk-section-title {
+  margin: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--panel-muted);
+}
+
+.sanitarium-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.sanitarium-quirk-slot {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+  position: relative;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.sanitarium-quirk-slot:hover {
+  border-color: rgba(160, 204, 188, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sanitarium-quirk-slot--positive {
+  border-color: rgba(91, 189, 110, 0.1);
+}
+
+.sanitarium-quirk-slot--positive:hover {
+  border-color: rgba(91, 189, 110, 0.25);
+}
+
+.sanitarium-quirk-slot-label {
+  font-size: 0.62rem;
+  color: var(--panel-muted);
+  text-align: center;
+}
+
+.sanitarium-quirk-slot-lock {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+}
+
+/* Disease slots */
+.sanitarium-disease-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.sanitarium-disease-slot {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.sanitarium-disease-slot:hover {
+  border-color: rgba(160, 204, 188, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sanitarium-disease-slot-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(234, 119, 103, 0.1);
+  border: 1px solid rgba(234, 119, 103, 0.15);
+}
+
+.sanitarium-disease-slot-label {
+  font-size: 0.65rem;
+  color: var(--panel-muted);
+}
+
+/* Backdrop footer: cost + action */
+.sanitarium-backdrop-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(160, 204, 188, 0.08);
+}
+
+.sanitarium-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--panel-muted);
+}
+
+.sanitarium-cost-label {
+  color: var(--panel-text);
+}
+
+.sanitarium-cost-value {
+  font-weight: 700;
+  color: var(--panel-accent);
+}
+
+.sanitarium-activity-btn {
+  padding: 10px 22px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--panel-accent), var(--panel-accent-strong));
+  color: #15200b;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  border: 1px solid rgba(198, 212, 106, 0.3);
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.12s ease;
+}
+
+.sanitarium-activity-btn:hover:not(:disabled) {
+  box-shadow: 0 4px 16px rgba(159, 191, 59, 0.3);
+  transform: translateY(-1px);
+}
+
+.sanitarium-activity-btn:disabled {
+  opacity: 0.4;
+  filter: grayscale(0.6);
+  cursor: not-allowed;
+}
+
+/* ── Upgrade Panel ── */
+.sanitarium-upgrade-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sanitarium-upgrade-trees {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.sanitarium-upgrade-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+}
+
+.sanitarium-upgrade-tree-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sanitarium-upgrade-tree-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.sanitarium-upgrade-tree-icon-fallback {
+  font-family: var(--heading-font);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+}
+
+.sanitarium-upgrade-tree-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--panel-text);
+}
+
+.sanitarium-upgrade-tree-slots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.sanitarium-upgrade-node {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  position: relative;
+}
+
+.sanitarium-upgrade-node--active {
+  background: rgba(198, 212, 106, 0.12);
+  border-color: rgba(198, 212, 106, 0.4);
+  box-shadow: 0 0 8px rgba(198, 212, 106, 0.1);
+}
+
+.sanitarium-upgrade-node:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  width: 8px;
+  height: 1px;
+  background: rgba(160, 204, 188, 0.15);
+}
+
+.sanitarium-upgrade-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sanitarium-upgrade-action-card {
+  margin-bottom: 0;
+}
+
+.sanitarium-return-btn {
+  min-width: 180px;
+}

@@ -247,34 +247,42 @@ export const replaySanitariumBuildingDetailViewModel: BuildingDetailViewModel = 
   buildingId: "sanitarium",
   label: "细胞修复站",
   status: "ready",
-  description: "The sanitarium provides treatment for physical and mental afflictions. Cure diseases, reduce stress, and remove negative quirks.",
+  description: "结合阴阳混沌的医理枢纽，通过调节人体小周天与宇宙大周天达到身体的阴阳平衡。",
   actions: [
     {
       id: "cure-disease",
-      label: "Cure Disease",
-      description: "Treat a hero's diseases and restore their health.",
-      cost: "250 Gold",
-      isAvailable: true,
-      isUnsupported: false
-    },
-    {
-      id: "reduce-stress",
-      label: "Stress Treatment",
-      description: "Provide therapy to reduce a hero's stress level.",
-      cost: "300 Gold",
+      label: "后遗症抹除",
+      description: "治疗英雄的后遗症，恢复身体健康。",
+      cost: "750 Gold",
       isAvailable: true,
       isUnsupported: false
     },
     {
       id: "remove-quirk",
-      label: "Remove Negative Quirk",
-      description: "Remove a negative quirk from a hero's profile.",
+      label: "消除负面神降",
+      description: "消除英雄的负面神降并锁定正面神降。",
+      cost: "1350 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "quirk-slot-upgrade",
+      label: "扩展医疗舱",
+      description: "增加可同时治疗的英雄数量。",
       cost: "500 Gold",
+      isAvailable: false,
+      isUnsupported: false
+    },
+    {
+      id: "disease-slot-upgrade",
+      label: "升级调控仪",
+      description: "提升后遗症治疗效果。",
+      cost: "600 Gold",
       isAvailable: false,
       isUnsupported: false
     }
   ],
-  upgradeRequirement: "Reach Town Level 2 to unlock quirk removal."
+  upgradeRequirement: "达到城镇等级 2 以解锁高级医疗舱。"
 };
 
 export const replayStagecoachBuildingDetailViewModel: BuildingDetailViewModel = {
