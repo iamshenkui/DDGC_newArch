@@ -4,13 +4,14 @@ import type {
   ExpeditionResultViewModel,
   ReturnViewModel,
   TownViewModel,
+  ExpeditionPlanningViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   HeroDetailViewModel,
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "expedition-planning" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -31,6 +32,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "building-detail") {
     return "building-detail";
+  }
+
+  if (snapshot.viewModel.kind === "expedition-planning") {
+    return "expedition-planning";
   }
 
   if (snapshot.viewModel.kind === "provisioning") {
@@ -98,9 +103,39 @@ export function canTransition(
       }
       return { allowed: true };
 
-    case "start-provisioning":
+    case "start-expedition-planning":
       if (screen !== "town") {
-        return { allowed: false, reason: "start-provisioning is only valid in town" };
+        return { allowed: false, reason: "start-expedition-planning is only valid in town" };
+      }
+      return { allowed: true };
+
+    case "select-plane":
+      if (screen !== "expedition-planning") {
+        return { allowed: false, reason: "select-plane is only valid in expedition-planning" };
+      }
+      return { allowed: true };
+
+    case "toggle-planning-hero":
+      if (screen !== "expedition-planning") {
+        return { allowed: false, reason: "toggle-planning-hero is only valid in expedition-planning" };
+      }
+      return { allowed: true };
+
+    case "proceed-to-provisioning":
+      if (screen !== "expedition-planning") {
+        return { allowed: false, reason: "proceed-to-provisioning is only valid in expedition-planning" };
+      }
+      if (snapshot.viewModel.kind !== "expedition-planning") {
+        return { allowed: false, reason: "viewModel is not an expedition-planning view model" };
+      }
+      if (!snapshot.viewModel.isReadyToProvision) {
+        return { allowed: false, reason: "not ready to provision" };
+      }
+      return { allowed: true };
+
+    case "start-provisioning":
+      if (screen !== "town" && screen !== "expedition-planning") {
+        return { allowed: false, reason: "start-provisioning is only valid in town or expedition-planning" };
       }
       return { allowed: true };
 

@@ -333,16 +333,62 @@ test.describe("browser smoke: fidelity gates", () => {
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
 
     // ── Phase 5: Full meta-loop ─────────────────────────────
-    // Town → Provisioning → Expedition → Result → Return → Town
+    // Town → Expedition Planning → Provisioning → Expedition → Result → Return → Town
 
     // 5a. Return to town
     await page.getByRole("button", { name: "Return to Town" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
 
-    // 5b. Town → Provisioning
+    // 5b. Town → Expedition Planning (位面探索)
     await page.locator(".estate-embark-button").click();
     await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("位面探索"),
+      "Expedition planning eyebrow (位面探索) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Plane Exploration" }),
+      "Expedition planning title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-plane-id="qinglong"]'),
+      "QingLong plane card must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-plane-id="baihu"]'),
+      "BaiHu plane card must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.plane-card-name').filter({ hasText: "青龙" }),
+      "QingLong plane card name must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.plane-card-name').filter({ hasText: "白虎" }),
+      "BaiHu plane card name must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Proceed to Provisioning" }),
+      "Proceed to Provisioning button must be visible"
+    ).toBeVisible();
+    await expectFidelity(
+      page.locator(".expedition-viewport"),
+      "Expedition planning screen"
+    );
+    await expectFullPageFidelity(page, "Expedition planning screen");
+
+    // Landscape viewport check for expedition planning
+    await expect(
+      page.locator(".expedition-viewport"),
+      "Expedition planning screen must use .expedition-viewport landscape layout"
+    ).toBeVisible();
+
+    // 5c. Expedition Planning → Provisioning
+    await page
+      .getByRole("button", { name: "Proceed to Provisioning" })
+      .click();
     await settle(page);
 
     await expect(
@@ -365,7 +411,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Provisioning screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5c. Provisioning → Expedition
+    // 5d. Provisioning → Expedition
     await page
       .getByRole("button", { name: "Confirm & Launch Expedition" })
       .click();
@@ -595,14 +641,26 @@ test.describe("browser smoke: fidelity gates", () => {
       "Live building detail screen must use .app-frame landscape layout"
     ).toBeVisible();
 
-    // Full live flow: provisioning → expedition → result → return
+    // Full live flow: expedition-planning → provisioning → expedition → result → return
     await page.getByRole("button", { name: "Return to Town" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
 
-    // Launch expedition from live (button text may differ)
+    // Launch expedition from live
     await page.locator(".estate-embark-button").click();
     await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("位面探索"),
+      "Live expedition planning eyebrow must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Plane Exploration" }),
+      "Live expedition planning title must be visible"
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
     await settle(page);
 
     await page.getByRole("button", { name: "Confirm & Launch Expedition" }).click();

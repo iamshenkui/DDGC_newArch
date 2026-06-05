@@ -21,6 +21,7 @@ import {
   failureResultSnapshot,
   partialResultSnapshot,
   returnSnapshot,
+  expeditionPlanningSnapshot,
 } from "../validation/replayFixtures";
 
 describe("FlowController", () => {
@@ -102,7 +103,7 @@ describe("FlowController", () => {
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "expedition-planning", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -111,6 +112,7 @@ describe("ScreenKey exhaustiveness", () => {
       town: replayReadySnapshot,
       "hero-detail": replayHeroDetailSnapshot,
       "building-detail": replayBuildingDetailSnapshot,
+      "expedition-planning": expeditionPlanningSnapshot,
       provisioning: provisioningSnapshot,
       expedition: expeditionSnapshot,
       result: resultSnapshot,

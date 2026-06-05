@@ -7,6 +7,7 @@ import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 import type { RuntimeBridge } from "../bridge/RuntimeBridge";
 import type {
   BuildingDetailViewModel,
+  ExpeditionPlanningViewModel,
   ExpeditionResultViewModel,
   ExpeditionSetupViewModel,
   FatalErrorViewModel,
@@ -27,6 +28,7 @@ import { StartupScreen } from "../screens/startup/StartupScreen";
 import { TownShellScreen } from "../screens/town/TownShellScreen";
 import { HeroDetailScreen } from "../screens/town/HeroDetailScreen";
 import { BuildingScreenRouter } from "../screens/town/BuildingScreenRouter";
+import { ExpeditionPlanningScreen } from "../screens/expedition/ExpeditionPlanningScreen";
 import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
@@ -110,7 +112,26 @@ export function DdgcApp() {
               void dispatchIntent(bridge, { type: "open-building", buildingId });
             }}
             onStartProvisioning={() => {
-              void dispatchIntent(bridge, { type: "start-provisioning" });
+              void dispatchIntent(bridge, { type: "start-expedition-planning" });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "expedition-planning" && snapshot().viewModel.kind === "expedition-planning"}
+        >
+          <ExpeditionPlanningScreen
+            viewModel={snapshot().viewModel as ExpeditionPlanningViewModel}
+            onSelectPlane={(planeId) => {
+              void dispatchIntent(bridge, { type: "select-plane", planeId });
+            }}
+            onToggleHero={(heroId) => {
+              void dispatchIntent(bridge, { type: "toggle-planning-hero", heroId });
+            }}
+            onProceedToProvisioning={() => {
+              void dispatchIntent(bridge, { type: "proceed-to-provisioning" });
+            }}
+            onReturnToTown={() => {
+              void dispatchIntent(bridge, { type: "return-to-town" });
             }}
           />
         </Match>

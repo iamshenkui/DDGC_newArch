@@ -4,6 +4,7 @@ export type FlowState =
   | "boot"
   | "load"
   | "town"
+  | "expedition-planning"
   | "provisioning"
   | "expedition"
   | "combat"
@@ -177,6 +178,41 @@ export interface ProvisioningHeroSummary {
   isSelected: boolean;
 }
 
+export interface ExpeditionPlanningHeroSlot {
+  heroId: string;
+  heroName: string;
+  classLabel: string;
+  hp: string;
+  stress: string;
+  level: number;
+}
+
+export interface ExpeditionPlane {
+  id: string;
+  name: string;
+  description: string;
+  difficulty: string;
+  difficultyPips: number;
+  estimatedDuration: string;
+  isLocked: boolean;
+  lockReason?: string;
+  rewards: ReadonlyArray<string>;
+  objectives: ReadonlyArray<string>;
+  themeColor: string;
+}
+
+export interface ExpeditionPlanningViewModel {
+  kind: "expedition-planning";
+  title: string;
+  campaignName: string;
+  selectedPlaneId: string;
+  planes: ReadonlyArray<ExpeditionPlane>;
+  partySlots: ReadonlyArray<ExpeditionPlanningHeroSlot | null>;
+  maxPartySize: number;
+  isReadyToProvision: boolean;
+  provisionCost: string;
+}
+
 export interface ProvisioningViewModel {
   kind: "provisioning";
   title: string;
@@ -270,6 +306,7 @@ export type DdgcViewModel =
   | TownViewModel
   | HeroDetailViewModel
   | BuildingDetailViewModel
+  | ExpeditionPlanningViewModel
   | ProvisioningViewModel
   | ExpeditionSetupViewModel
   | ExpeditionResultViewModel
@@ -289,6 +326,10 @@ export type DdgcFrontendIntent =
   | { type: "open-hero"; heroId: string }
   | { type: "open-building"; buildingId: string }
   | { type: "building-action"; actionId: string }
+  | { type: "start-expedition-planning" }
+  | { type: "select-plane"; planeId: string }
+  | { type: "toggle-planning-hero"; heroId: string }
+  | { type: "proceed-to-provisioning" }
   | { type: "start-provisioning" }
   | { type: "toggle-hero-selection"; heroId: string }
   | { type: "confirm-provisioning" }

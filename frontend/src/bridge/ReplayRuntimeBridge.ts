@@ -3,6 +3,7 @@ import {
   replayReadySnapshot,
   replayHeroDetailViewModel,
   replayBuildingDetailViewModel,
+  replayExpeditionPlanningViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
@@ -13,6 +14,7 @@ import type {
   DdgcFrontendIntent,
   DdgcFrontendSnapshot,
   TownViewModel,
+  ExpeditionPlanningViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
@@ -80,6 +82,49 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         this.snapshot = {
           ...this.snapshot,
           debugMessage: `Replay: building action intent received for ${intent.actionId}.`
+        };
+        break;
+      case "start-expedition-planning":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "expedition-planning",
+          viewModel: replayExpeditionPlanningViewModel as ExpeditionPlanningViewModel
+        };
+        break;
+      case "select-plane": {
+        const planningVm = this.snapshot.viewModel as ExpeditionPlanningViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...planningVm,
+            selectedPlaneId: intent.planeId
+          }
+        };
+        break;
+      }
+      case "toggle-planning-hero": {
+        const planningVm = this.snapshot.viewModel as ExpeditionPlanningViewModel;
+        const updatedSlots = planningVm.partySlots.map((slot) => {
+          if (slot === null) return null;
+          if (slot.heroId === intent.heroId) return null;
+          return slot;
+        });
+        const filledCount = updatedSlots.filter((s) => s !== null).length;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...planningVm,
+            partySlots: updatedSlots,
+            isReadyToProvision: filledCount >= 1 && filledCount <= planningVm.maxPartySize
+          }
+        };
+        break;
+      }
+      case "proceed-to-provisioning":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "provisioning",
+          viewModel: replayProvisioningViewModel as ProvisioningViewModel
         };
         break;
       case "start-provisioning":

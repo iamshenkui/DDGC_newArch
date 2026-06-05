@@ -17,6 +17,7 @@ import type {
   DdgcFrontendIntent,
   HeroDetailViewModel,
   BuildingDetailViewModel,
+  ExpeditionPlanningViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
@@ -104,11 +105,18 @@ describe("build-run smoke: intent dispatch round-trip", () => {
 });
 
 describe("build-run smoke: flow state transitions", () => {
-  it("replay: town → provisioning → expedition → result", async () => {
+  it("replay: town → expedition-planning → provisioning → expedition → result", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
 
-    const provSnap = await bridge.dispatchIntent({ type: "start-provisioning" });
+    const planningSnap = await bridge.dispatchIntent({ type: "start-expedition-planning" });
+    expect(planningSnap.flowState).toBe("expedition-planning");
+    expect(planningSnap.viewModel.kind).toBe("expedition-planning");
+    const planningVm = planningSnap.viewModel as ExpeditionPlanningViewModel;
+    expect(planningVm.isReadyToProvision).toBe(true);
+    expect(planningVm.planes.length).toBeGreaterThan(0);
+
+    const provSnap = await bridge.dispatchIntent({ type: "proceed-to-provisioning" });
     expect(provSnap.flowState).toBe("provisioning");
     expect(provSnap.viewModel.kind).toBe("provisioning");
     const provVm = provSnap.viewModel as ProvisioningViewModel;
@@ -127,11 +135,15 @@ describe("build-run smoke: flow state transitions", () => {
     expect(resultVm.outcome).toBe("success");
   });
 
-  it("live: town → provisioning → expedition → result", async () => {
+  it("live: town → expedition-planning → provisioning → expedition → result", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
 
-    const provSnap = await bridge.dispatchIntent({ type: "start-provisioning" });
+    const planningSnap = await bridge.dispatchIntent({ type: "start-expedition-planning" });
+    expect(planningSnap.flowState).toBe("expedition-planning");
+    expect(planningSnap.viewModel.kind).toBe("expedition-planning");
+
+    const provSnap = await bridge.dispatchIntent({ type: "proceed-to-provisioning" });
     expect(provSnap.flowState).toBe("provisioning");
     expect(provSnap.viewModel.kind).toBe("provisioning");
 
@@ -144,15 +156,26 @@ describe("build-run smoke: flow state transitions", () => {
     expect(resultSnap.viewModel.kind).toBe("result");
   });
 
-  it("replay: provisioning → return-to-town", async () => {
+  it("replay: expedition-planning → return-to-town", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
 
-    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "start-expedition-planning" });
     const townSnap = await bridge.dispatchIntent({ type: "return-to-town" });
 
     expect(townSnap.flowState).toBe("town");
     expect(townSnap.viewModel.kind).toBe("town");
+  });
+
+  it("replay: expedition-planning select-plane updates selected plane", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-expedition-planning" });
+    const selectSnap = await bridge.dispatchIntent({ type: "select-plane", planeId: "baihu" });
+    expect(selectSnap.viewModel.kind).toBe("expedition-planning");
+    const planningVm = selectSnap.viewModel as ExpeditionPlanningViewModel;
+    expect(planningVm.selectedPlaneId).toBe("baihu");
   });
 });
 
@@ -193,11 +216,12 @@ describe("build-run smoke: meta-loop continuation", () => {
     expect(returnSnap.viewModel.kind).toBe("town");
   });
 
-  it("replay: full meta-loop cycle town → expedition → result → return → town", async () => {
+  it("replay: full meta-loop cycle town → expedition-planning → result → return → town", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
 
-    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "start-expedition-planning" });
+    await bridge.dispatchIntent({ type: "proceed-to-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
     await bridge.dispatchIntent({ type: "launch-expedition" });
 
@@ -209,9 +233,9 @@ describe("build-run smoke: meta-loop continuation", () => {
     expect(townSnap.flowState).toBe("town");
     expect(townSnap.viewModel.kind).toBe("town");
 
-    const provSnap = await bridge.dispatchIntent({ type: "start-provisioning" });
-    expect(provSnap.flowState).toBe("provisioning");
-    expect(provSnap.viewModel.kind).toBe("provisioning");
+    const planningSnap = await bridge.dispatchIntent({ type: "start-expedition-planning" });
+    expect(planningSnap.flowState).toBe("expedition-planning");
+    expect(planningSnap.viewModel.kind).toBe("expedition-planning");
   });
 });
 
