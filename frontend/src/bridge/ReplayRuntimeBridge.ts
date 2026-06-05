@@ -5,6 +5,7 @@ import {
   replayBuildingDetailViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
+  replayDungeonMapViewModel,
   replayResultViewModel,
   replayReturnViewModel
 } from "../validation/replayFixtures";
@@ -15,6 +16,7 @@ import type {
   TownViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  DungeonMapViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel
 } from "./contractTypes";
@@ -115,6 +117,48 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "launch-expedition":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-map",
+          viewModel: replayDungeonMapViewModel as DungeonMapViewModel
+        };
+        break;
+      case "enter-room": {
+        const mapVm = this.snapshot.viewModel as DungeonMapViewModel;
+        const updatedRooms = mapVm.rooms.map((room) =>
+          room.id === intent.roomId
+            ? { ...room, isVisited: true, isCurrent: true }
+            : { ...room, isCurrent: false }
+        );
+        const visitedCount = updatedRooms.filter((r) => r.isVisited).length;
+        const total = updatedRooms.length;
+        const newCompletion = Math.round((visitedCount / total) * 100);
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...mapVm,
+            currentRoomId: intent.roomId,
+            rooms: updatedRooms,
+            exploredCount: visitedCount,
+            completionPercent: newCompletion,
+            isComplete: newCompletion >= 80
+          }
+        };
+        break;
+      }
+      case "retreat-from-dungeon":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "result",
+          viewModel: {
+            ...replayResultViewModel,
+            outcome: "partial",
+            title: "Expedition Partial Success",
+            summary: "Your party retreated from the dungeon with what they could carry."
+          } as ExpeditionResultViewModel
+        };
+        break;
+      case "complete-dungeon":
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",

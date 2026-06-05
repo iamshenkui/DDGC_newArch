@@ -10,7 +10,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "dungeon-map" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -39,6 +39,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "expedition") {
     return "expedition";
+  }
+
+  if (snapshot.viewModel.kind === "dungeon-map") {
+    return "dungeon-map";
   }
 
   if (snapshot.viewModel.kind === "result") {
@@ -125,6 +129,39 @@ export function canTransition(
       }
       if (!snapshot.viewModel.isLaunchable) {
         return { allowed: false, reason: "expedition is not launchable" };
+      }
+      return { allowed: true };
+
+    case "enter-room":
+      if (screen !== "dungeon-map") {
+        return { allowed: false, reason: "enter-room is only valid on dungeon-map screen" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-map") {
+        return { allowed: false, reason: "viewModel is not a dungeon-map view model" };
+      }
+      return { allowed: true };
+
+    case "retreat-from-dungeon":
+      if (screen !== "dungeon-map") {
+        return { allowed: false, reason: "retreat-from-dungeon is only valid on dungeon-map screen" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-map") {
+        return { allowed: false, reason: "viewModel is not a dungeon-map view model" };
+      }
+      if (!snapshot.viewModel.isRetreatAvailable) {
+        return { allowed: false, reason: "retreat is not available" };
+      }
+      return { allowed: true };
+
+    case "complete-dungeon":
+      if (screen !== "dungeon-map") {
+        return { allowed: false, reason: "complete-dungeon is only valid on dungeon-map screen" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-map") {
+        return { allowed: false, reason: "viewModel is not a dungeon-map view model" };
+      }
+      if (!snapshot.viewModel.isComplete) {
+        return { allowed: false, reason: "dungeon is not complete" };
       }
       return { allowed: true };
 

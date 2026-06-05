@@ -10,6 +10,7 @@ import type {
   BuildingDetailViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  DungeonMapViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
 } from "./contractTypes";
@@ -301,6 +302,39 @@ const createLiveExpeditionViewModel = (): ExpeditionSetupViewModel => ({
   isLaunchable: true
 });
 
+const createLiveDungeonMapViewModel = (): DungeonMapViewModel => ({
+  kind: "dungeon-map",
+  title: "Dungeon Map",
+  expeditionName: "The Azure Lantern Expedition",
+  dungeonName: "Azure Lantern Depths",
+  currentRoomId: "room-entrance",
+  rooms: [
+    { id: "room-entrance", x: 2, y: 4, type: "entrance", label: "Entrance", isRevealed: true, isVisited: true, isCurrent: true, connections: ["room-empty-1", "room-combat-1"] },
+    { id: "room-empty-1", x: 2, y: 3, type: "empty", label: "Hallway", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-entrance", "room-treasure-1"] },
+    { id: "room-combat-1", x: 3, y: 4, type: "combat", label: "Ambush", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-entrance", "room-curio-1"], difficulty: "Easy" },
+    { id: "room-treasure-1", x: 2, y: 2, type: "treasure", label: "Cache", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-empty-1", "room-rest-1"], lootPreview: "Gold + Relic" },
+    { id: "room-curio-1", x: 4, y: 4, type: "curio", label: "Strange Idol", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-combat-1", "room-shrine-1"] },
+    { id: "room-rest-1", x: 2, y: 1, type: "rest", label: "Safe Room", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-treasure-1", "room-boss-1"] },
+    { id: "room-shrine-1", x: 5, y: 4, type: "shrine", label: "Healing Shrine", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-curio-1", "room-combat-2"] },
+    { id: "room-combat-2", x: 5, y: 3, type: "combat", label: "Elite Guard", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-shrine-1", "room-exit"], difficulty: "Hard" },
+    { id: "room-boss-1", x: 2, y: 0, type: "boss", label: "Depths Guardian", isRevealed: false, isVisited: false, isCurrent: false, connections: ["room-rest-1"], difficulty: "Boss" },
+    { id: "room-exit", x: 5, y: 2, type: "exit", label: "Exit", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-combat-2"] }
+  ],
+  party: [
+    { id: "hero-hunter-live-01", name: "Yuan", classLabel: "Hunter", hp: "42 / 42", maxHp: "42", stress: "0", maxStress: "200", isWounded: false, isAfflicted: false },
+    { id: "hero-white-live-01", name: "Mei", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "0", maxStress: "200", isWounded: false, isAfflicted: false }
+  ],
+  torchLevel: 75,
+  maxTorchLevel: 100,
+  exploredCount: 1,
+  totalRooms: 10,
+  completionPercent: 10,
+  isRetreatAvailable: true,
+  isComplete: false,
+  minimapRows: 5,
+  minimapCols: 6
+});
+
 const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
   kind: "result",
   title: "Expedition Complete",
@@ -438,6 +472,48 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "launch-expedition":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-map",
+          viewModel: createLiveDungeonMapViewModel()
+        };
+        break;
+      case "enter-room": {
+        const mapVm = this.snapshot.viewModel as DungeonMapViewModel;
+        const updatedRooms = mapVm.rooms.map((room) =>
+          room.id === intent.roomId
+            ? { ...room, isVisited: true, isCurrent: true }
+            : { ...room, isCurrent: false }
+        );
+        const visitedCount = updatedRooms.filter((r) => r.isVisited).length;
+        const total = updatedRooms.length;
+        const newCompletion = Math.round((visitedCount / total) * 100);
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...mapVm,
+            currentRoomId: intent.roomId,
+            rooms: updatedRooms,
+            exploredCount: visitedCount,
+            completionPercent: newCompletion,
+            isComplete: newCompletion >= 80
+          }
+        };
+        break;
+      }
+      case "retreat-from-dungeon":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "result",
+          viewModel: {
+            ...createLiveResultViewModel(),
+            outcome: "partial",
+            title: "Expedition Partial Success",
+            summary: "Your party retreated from the dungeon with what they could carry."
+          }
+        };
+        break;
+      case "complete-dungeon":
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",

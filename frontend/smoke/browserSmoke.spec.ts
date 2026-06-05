@@ -333,7 +333,7 @@ test.describe("browser smoke: fidelity gates", () => {
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
 
     // ── Phase 5: Full meta-loop ─────────────────────────────
-    // Town → Provisioning → Expedition → Result → Return → Town
+    // Town → Provisioning → Expedition → Dungeon Map → Result → Return → Town
 
     // 5a. Return to town
     await page.getByRole("button", { name: "Return to Town" }).click();
@@ -399,8 +399,58 @@ test.describe("browser smoke: fidelity gates", () => {
       "Expedition launch screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5d. Expedition → Result (success)
+    // 5d. Expedition → Dungeon Map
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await page.waitForSelector(".dungeon-map-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("Dungeon Exploration"),
+      "Dungeon map eyebrow must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Dungeon Map" }),
+      "Dungeon map title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".dungeon-room"),
+      "Dungeon rooms must be visible"
+    ).toHaveCount(10);
+    await expect(
+      page.locator(".dungeon-room--current"),
+      "Current room must be marked"
+    ).toBeVisible();
+    await expect(
+      page.locator(".dungeon-party-panel"),
+      "Party panel must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Retreat" }),
+      "Retreat button must be visible"
+    ).toBeVisible();
+    await expectFidelity(
+      page.locator(".dungeon-map-viewport"),
+      "Dungeon map screen"
+    );
+    await expectFullPageFidelity(page, "Dungeon map screen");
+
+    // Landscape viewport check for dungeon map
+    await expect(
+      page.locator(".dungeon-map-viewport"),
+      "Dungeon map screen must use .dungeon-map-viewport landscape layout"
+    ).toBeVisible();
+
+    // 5e. Dungeon Map → navigate to a room
+    await page.locator('[data-room-id="room-combat-1"]').click();
+    await settle(page);
+
+    await expect(
+      page.locator(".dungeon-room--current[data-room-id='room-combat-1']"),
+      "Room navigation must update current room"
+    ).toBeVisible();
+
+    // 5f. Dungeon Map → Result (retreat from dungeon)
+    await page.getByRole("button", { name: "Retreat" }).click();
     await settle(page);
 
     await expect(
@@ -408,12 +458,12 @@ test.describe("browser smoke: fidelity gates", () => {
       "Result screen eyebrow must be visible"
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Expedition Complete" }),
+      page.getByRole("heading", { name: "Expedition Partial Success" }),
       "Result screen heading must be visible"
     ).toBeVisible();
     await expect(
-      page.getByText("Victory"),
-      "Victory outcome must be visible"
+      page.locator(".outcome-banner-title").filter({ hasText: "Partial Success" }),
+      "Partial success outcome must be visible"
     ).toBeVisible();
     await expect(
       page.getByText("Ancient Gold Coin"),
@@ -431,7 +481,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Result screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5e. Result → Return
+    // 5g. Result → Return
     await page.getByRole("button", { name: "Proceed to Return" }).click();
     await settle(page);
 
@@ -459,7 +509,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Return screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5f. Return → Town (back to the meta-loop)
+    // 5h. Return → Town (back to the meta-loop)
     await page.getByRole("button", { name: "Resume Town Activities" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
@@ -614,6 +664,20 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await page.waitForSelector(".dungeon-map-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("Dungeon Exploration"),
+      "Live dungeon map eyebrow must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".dungeon-room"),
+      "Live dungeon rooms must render"
+    ).toHaveCount(10);
+
+    // Retreat from live dungeon to result
+    await page.getByRole("button", { name: "Retreat" }).click();
     await settle(page);
 
     await expect(
@@ -621,7 +685,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Live result screen eyebrow must be visible"
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Expedition Complete" }),
+      page.getByRole("heading", { name: "Expedition Partial Success" }),
       "Live result screen heading must be visible"
     ).toBeVisible();
 
