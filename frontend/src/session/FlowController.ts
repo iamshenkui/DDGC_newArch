@@ -10,7 +10,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "dungeon-content" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -39,6 +39,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "expedition") {
     return "expedition";
+  }
+
+  if (snapshot.viewModel.kind === "dungeon-content") {
+    return "dungeon-content";
   }
 
   if (snapshot.viewModel.kind === "result") {
@@ -125,6 +129,18 @@ export function canTransition(
       }
       if (!snapshot.viewModel.isLaunchable) {
         return { allowed: false, reason: "expedition is not launchable" };
+      }
+      return { allowed: true };
+
+    case "enter-dungeon-map":
+      if (screen !== "dungeon-content") {
+        return { allowed: false, reason: "enter-dungeon-map is only valid in dungeon-content" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-content") {
+        return { allowed: false, reason: "viewModel is not a dungeon-content view model" };
+      }
+      if (!snapshot.viewModel.isEnterable) {
+        return { allowed: false, reason: "dungeon is not enterable" };
       }
       return { allowed: true };
 

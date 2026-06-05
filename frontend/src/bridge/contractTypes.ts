@@ -6,6 +6,7 @@ export type FlowState =
   | "town"
   | "provisioning"
   | "expedition"
+  | "dungeon-content"
   | "combat"
   | "result"
   | "return";
@@ -200,6 +201,34 @@ export interface ExpeditionHeroSummary {
   maxStress: string;
 }
 
+export interface DungeonReward {
+  name: string;
+  icon?: string;
+  quantity?: number;
+}
+
+export interface DungeonStage {
+  id: string;
+  number: number;
+  name: string;
+  status: "locked" | "available" | "completed";
+  hasCombat: boolean;
+  hasTreasure: boolean;
+}
+
+export interface DungeonContentViewModel {
+  kind: "dungeon-content";
+  title: string;
+  dungeonName: string;
+  dungeonSubtitle: string;
+  difficulty: string;
+  difficultyLevel: number;
+  objectives: ReadonlyArray<string>;
+  rewards: ReadonlyArray<DungeonReward>;
+  stages: ReadonlyArray<DungeonStage>;
+  isEnterable: boolean;
+}
+
 export interface ExpeditionSetupViewModel {
   kind: "expedition";
   title: string;
@@ -272,6 +301,7 @@ export type DdgcViewModel =
   | BuildingDetailViewModel
   | ProvisioningViewModel
   | ExpeditionSetupViewModel
+  | DungeonContentViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
   | UnsupportedViewModel
@@ -293,6 +323,7 @@ export type DdgcFrontendIntent =
   | { type: "toggle-hero-selection"; heroId: string }
   | { type: "confirm-provisioning" }
   | { type: "launch-expedition" }
+  | { type: "enter-dungeon-map" }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }
   | { type: "resume-from-return" };

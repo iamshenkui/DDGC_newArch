@@ -17,6 +17,7 @@ import {
   startupSnapshot,
   provisioningSnapshot,
   expeditionSnapshot,
+  dungeonContentSnapshot,
   resultSnapshot,
   failureResultSnapshot,
   partialResultSnapshot,
@@ -98,11 +99,16 @@ describe("FlowController", () => {
       const screen = resolveScreen(returnSnapshot);
       expect(screen).toBe("return");
     });
+
+    it("returns dungeon-content screen for dungeon content view model", () => {
+      const screen = resolveScreen(dungeonContentSnapshot);
+      expect(screen).toBe("dungeon-content");
+    });
   });
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "dungeon-content", "result", "return", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -113,6 +119,7 @@ describe("ScreenKey exhaustiveness", () => {
       "building-detail": replayBuildingDetailSnapshot,
       provisioning: provisioningSnapshot,
       expedition: expeditionSnapshot,
+      "dungeon-content": dungeonContentSnapshot,
       result: resultSnapshot,
       return: returnSnapshot,
       unsupported: unsupportedSnapshot,

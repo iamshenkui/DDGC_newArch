@@ -3321,3 +3321,360 @@ button {
     font-size: 1rem;
   }
 }
+
+/* ── Dungeon Content Screen (位面探索-副本内容) ───────────────────────
+ * Book-like layout matching the original Unity reference image.
+ * Two-page spread: left page shows dungeon info/rewards, right page
+ * shows the stage progression list.
+ */
+
+.dungeon-content-layout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 32px;
+}
+
+.dungeon-book {
+  display: flex;
+  width: 100%;
+  max-width: 1100px;
+  height: 100%;
+  max-height: 640px;
+  background: rgba(14, 23, 31, 0.92);
+  border: 1px solid rgba(160, 204, 188, 0.15);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    var(--panel-shadow),
+    inset 0 1px 0 rgba(198, 212, 106, 0.05);
+  overflow: hidden;
+}
+
+.dungeon-page {
+  flex: 1 1 50%;
+  padding: 32px 36px;
+  overflow-y: auto;
+}
+
+.dungeon-page--left {
+  border-right: 1px solid rgba(160, 204, 188, 0.1);
+}
+
+.dungeon-book-spine {
+  width: 4px;
+  flex-shrink: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(160, 204, 188, 0.05) 0%,
+    rgba(160, 204, 188, 0.15) 50%,
+    rgba(160, 204, 188, 0.05) 100%
+  );
+}
+
+/* ── Left page: Dungeon header ── */
+.dungeon-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.dungeon-icon {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, rgba(198, 212, 106, 0.12), rgba(198, 212, 106, 0.04));
+  border: 1px solid rgba(198, 212, 106, 0.18);
+  color: var(--panel-accent);
+}
+
+.dungeon-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.dungeon-name {
+  margin: 0;
+  font-family: var(--heading-font);
+  font-size: clamp(1.3rem, 2.2vw, 1.7rem);
+  line-height: 1.2;
+  color: var(--panel-text);
+}
+
+.dungeon-subtitle {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--panel-muted);
+}
+
+.dungeon-difficulty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.difficulty-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--panel-muted);
+}
+
+.difficulty-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.difficulty-star {
+  color: rgba(160, 204, 188, 0.25);
+  display: flex;
+  align-items: center;
+}
+
+.difficulty-star--filled {
+  color: var(--panel-accent);
+}
+
+.dungeon-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(160, 204, 188, 0.2) 20%,
+    rgba(160, 204, 188, 0.3) 50%,
+    rgba(160, 204, 188, 0.2) 80%,
+    transparent 100%
+  );
+  margin-bottom: 20px;
+}
+
+/* ── Dungeon sections (objectives, rewards) ── */
+.dungeon-section {
+  margin-bottom: 20px;
+}
+
+.dungeon-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-family: var(--heading-font);
+  font-size: 1rem;
+  color: var(--panel-accent);
+}
+
+.dungeon-section-icon {
+  display: flex;
+  align-items: center;
+  color: var(--panel-accent);
+}
+
+.dungeon-objectives {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dungeon-objective {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: var(--panel-text);
+  line-height: 1.5;
+}
+
+.objective-bullet {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--panel-accent);
+}
+
+.objective-text {
+  flex: 1;
+}
+
+.dungeon-rewards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.dungeon-reward {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(14, 23, 31, 0.6);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+}
+
+.dungeon-reward-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(198, 212, 106, 0.08);
+  color: var(--panel-accent);
+}
+
+.dungeon-reward-icon img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.dungeon-reward-name {
+  font-size: 0.88rem;
+  color: var(--panel-text);
+}
+
+.dungeon-reward-qty {
+  font-size: 0.78rem;
+  color: var(--panel-muted);
+}
+
+/* ── Right page: Stage list ── */
+.dungeon-stage-list-title {
+  margin: 0 0 20px;
+  font-family: var(--heading-font);
+  font-size: 1.1rem;
+  color: var(--panel-accent);
+  text-align: center;
+}
+
+.dungeon-stages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dungeon-stage {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(14, 23, 31, 0.5);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.dungeon-stage--completed {
+  background: rgba(91, 189, 110, 0.06);
+  border-color: rgba(91, 189, 110, 0.15);
+}
+
+.dungeon-stage--locked {
+  opacity: 0.55;
+}
+
+.dungeon-stage-number {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(160, 204, 188, 0.1);
+  border: 1px solid rgba(160, 204, 188, 0.15);
+  font-family: var(--heading-font);
+  font-size: 0.9rem;
+  color: var(--panel-text);
+}
+
+.dungeon-stage--completed .dungeon-stage-number {
+  background: rgba(91, 189, 110, 0.15);
+  border-color: rgba(91, 189, 110, 0.25);
+  color: #5bbd6e;
+}
+
+.dungeon-stage-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.dungeon-stage-name {
+  font-size: 0.92rem;
+  color: var(--panel-text);
+  font-weight: 500;
+}
+
+.dungeon-stage--locked .dungeon-stage-name {
+  color: var(--panel-muted);
+}
+
+.dungeon-stage-tags {
+  display: flex;
+  gap: 6px;
+}
+
+.stage-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+}
+
+.stage-tag--combat {
+  background: rgba(234, 119, 103, 0.1);
+  color: #ea7767;
+  border: 1px solid rgba(234, 119, 103, 0.15);
+}
+
+.stage-tag--treasure {
+  background: rgba(198, 212, 106, 0.1);
+  color: var(--panel-accent);
+  border: 1px solid rgba(198, 212, 106, 0.15);
+}
+
+.dungeon-stage-status {
+  flex-shrink: 0;
+  color: var(--panel-muted);
+}
+
+.dungeon-stage--completed .dungeon-stage-status {
+  color: #5bbd6e;
+}
+
+/* ── Responsive: dungeon book collapses on narrow screens ─ */
+@media (max-width: 920px) {
+  .dungeon-book {
+    flex-direction: column;
+    max-height: none;
+    overflow-y: auto;
+  }
+
+  .dungeon-page {
+    padding: 20px 24px;
+  }
+
+  .dungeon-page--left {
+    border-right: none;
+    border-bottom: 1px solid rgba(160, 204, 188, 0.1);
+  }
+
+  .dungeon-book-spine {
+    display: none;
+  }
+}

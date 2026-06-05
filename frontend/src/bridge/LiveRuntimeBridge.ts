@@ -10,6 +10,7 @@ import type {
   BuildingDetailViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  DungeonContentViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
 } from "./contractTypes";
@@ -301,6 +302,32 @@ const createLiveExpeditionViewModel = (): ExpeditionSetupViewModel => ({
   isLaunchable: true
 });
 
+const createLiveDungeonContentViewModel = (): DungeonContentViewModel => ({
+  kind: "dungeon-content",
+  title: "副本内容",
+  dungeonName: "白虎大陆",
+  dungeonSubtitle: "陷灵的护卫",
+  difficulty: "Challenging",
+  difficultyLevel: 3,
+  objectives: [
+    "完成100%区域探索",
+    "击败区域首领",
+    "收集古代遗物"
+  ],
+  rewards: [
+    { name: "古代金币", quantity: 150 },
+    { name: "精神水晶", quantity: 2 },
+    { name: "英雄经验", quantity: 200 }
+  ],
+  stages: [
+    { id: "stage-1", number: 1, name: "迷雾入口", status: "completed", hasCombat: true, hasTreasure: false },
+    { id: "stage-2", number: 2, name: "幽暗走廊", status: "completed", hasCombat: true, hasTreasure: true },
+    { id: "stage-3", number: 3, name: "守护者大厅", status: "available", hasCombat: true, hasTreasure: false },
+    { id: "stage-4", number: 4, name: "深渊核心", status: "locked", hasCombat: true, hasTreasure: true }
+  ],
+  isEnterable: true
+});
+
 const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
   kind: "result",
   title: "Expedition Complete",
@@ -438,6 +465,13 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "launch-expedition":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-content",
+          viewModel: createLiveDungeonContentViewModel()
+        };
+        break;
+      case "enter-dungeon-map":
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",

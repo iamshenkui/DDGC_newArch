@@ -9,7 +9,7 @@
  * 1. Startup → replay boot → town shell (deterministic replay bridge)
  * 2. Hero detail screen with tab navigation
  * 3. Building detail screen with actions
- * 4. Full meta-loop: provisioning → expedition → result → return → town
+ * 4. Full meta-loop: provisioning → expedition → dungeon-content → result → return → town
  * 5. Live bridge boot path
  * 6. No page errors, no console errors
  * 7. Completed product surfaces free of placeholder/skeletal/reserved canvas language
@@ -333,7 +333,7 @@ test.describe("browser smoke: fidelity gates", () => {
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
 
     // ── Phase 5: Full meta-loop ─────────────────────────────
-    // Town → Provisioning → Expedition → Result → Return → Town
+    // Town → Provisioning → Expedition → Dungeon Content → Result → Return → Town
 
     // 5a. Return to town
     await page.getByRole("button", { name: "Return to Town" }).click();
@@ -399,8 +399,53 @@ test.describe("browser smoke: fidelity gates", () => {
       "Expedition launch screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5d. Expedition → Result (success)
+    // 5d. Expedition → Dungeon Content
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await page.waitForSelector("[data-testid='dungeon-content-screen']", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByRole("heading", { name: "副本内容" }),
+      "Dungeon content title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("白虎大陆").first(),
+      "Dungeon name must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("陷灵的护卫"),
+      "Dungeon subtitle must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("任务目标"),
+      "Objectives section must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("任务奖励"),
+      "Rewards section must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("副本进度"),
+      "Stage list title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "进入地图" }),
+      "Enter map button must be visible"
+    ).toBeVisible();
+    await expectFidelity(
+      page.locator(".expedition-viewport"),
+      "Dungeon content screen"
+    );
+    await expectFullPageFidelity(page, "Dungeon content screen");
+
+    // Landscape viewport check for dungeon content
+    await expect(
+      page.locator(".expedition-viewport"),
+      "Dungeon content screen must use .expedition-viewport landscape layout"
+    ).toBeVisible();
+
+    // 5e. Dungeon Content → Result (success)
+    await page.getByRole("button", { name: "进入地图" }).click();
     await settle(page);
 
     await expect(
@@ -595,7 +640,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Live building detail screen must use .app-frame landscape layout"
     ).toBeVisible();
 
-    // Full live flow: provisioning → expedition → result → return
+    // Full live flow: provisioning → expedition → dungeon-content → result → return
     await page.getByRole("button", { name: "Return to Town" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
@@ -614,6 +659,19 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await page.waitForSelector("[data-testid='dungeon-content-screen']", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("白虎大陆").first(),
+      "Live dungeon content dungeon name must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "进入地图" }),
+      "Live enter map button must be visible"
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "进入地图" }).click();
     await settle(page);
 
     await expect(

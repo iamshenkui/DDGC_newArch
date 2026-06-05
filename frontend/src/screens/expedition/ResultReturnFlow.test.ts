@@ -14,6 +14,7 @@ import {
   replayReadySnapshot,
   provisioningSnapshot,
   expeditionSnapshot,
+  dungeonContentSnapshot,
   startupSnapshot,
   fatalSnapshot,
   unsupportedSnapshot,
@@ -113,6 +114,41 @@ describe("Return screen view model contract validation", () => {
   });
 });
 
+describe("Dungeon content screen resolution", () => {
+  it("resolves dungeon-content screen for dungeon content view model", () => {
+    const screen = resolveScreen(dungeonContentSnapshot);
+    expect(screen).toBe("dungeon-content");
+  });
+});
+
+describe("Dungeon content transition validation", () => {
+  it("allows enter-dungeon-map from dungeon-content screen", () => {
+    const validation = canTransition(dungeonContentSnapshot, { type: "enter-dungeon-map" });
+    expect(validation.allowed).toBe(true);
+  });
+
+  it("rejects enter-dungeon-map from non-dungeon-content screens", () => {
+    const nonDungeonContentScreens: DdgcFrontendSnapshot[] = [
+      replayReadySnapshot,
+      provisioningSnapshot,
+      expeditionSnapshot,
+      resultSnapshot,
+      returnSnapshot,
+      startupSnapshot,
+    ];
+
+    for (const snap of nonDungeonContentScreens) {
+      const validation = canTransition(snap, { type: "enter-dungeon-map" });
+      expect(validation.allowed).toBe(false);
+    }
+  });
+
+  it("allows return-to-town from dungeon-content screen", () => {
+    const validation = canTransition(dungeonContentSnapshot, { type: "return-to-town" });
+    expect(validation.allowed).toBe(true);
+  });
+});
+
 describe("Result screen resolution", () => {
   it("resolves result screen for success result view model", () => {
     const screen = resolveScreen(resultSnapshot);
@@ -146,6 +182,7 @@ describe("Result screen transition validation", () => {
       replayReadySnapshot,
       provisioningSnapshot,
       expeditionSnapshot,
+      dungeonContentSnapshot,
       returnSnapshot,
       startupSnapshot,
       replayLoadingSnapshot,
@@ -188,6 +225,7 @@ describe("Return screen transition validation", () => {
       replayReadySnapshot,
       provisioningSnapshot,
       expeditionSnapshot,
+      dungeonContentSnapshot,
       resultSnapshot,
       failureResultSnapshot,
       partialResultSnapshot,
@@ -253,6 +291,7 @@ describe("Result return meta-loop continuation proof", () => {
     expect(canTransition(replayReadySnapshot, { type: "start-provisioning" }).allowed).toBe(true);
     expect(canTransition(provisioningSnapshot, { type: "confirm-provisioning" }).allowed).toBe(true);
     expect(canTransition(expeditionSnapshot, { type: "launch-expedition" }).allowed).toBe(true);
+    expect(canTransition(dungeonContentSnapshot, { type: "enter-dungeon-map" }).allowed).toBe(true);
   });
 
   it("proves no dead-end states exist in the meta-loop", () => {
@@ -272,10 +311,11 @@ describe("Result return meta-loop continuation proof", () => {
   });
 
   it("proves full expedition cycle closes without dead-end", () => {
-    // Full cycle: town → provisioning → expedition → combat → result → town → provisioning
+    // Full cycle: town → provisioning → expedition → dungeon-content → result → town → provisioning
     expect(canTransition(replayReadySnapshot, { type: "start-provisioning" }).allowed).toBe(true);
     expect(canTransition(provisioningSnapshot, { type: "confirm-provisioning" }).allowed).toBe(true);
     expect(canTransition(expeditionSnapshot, { type: "launch-expedition" }).allowed).toBe(true);
+    expect(canTransition(dungeonContentSnapshot, { type: "enter-dungeon-map" }).allowed).toBe(true);
     expect(canTransition(resultSnapshot, { type: "continue-from-result" }).allowed).toBe(true);
 
     // Cycle completes: back in town, can provision again

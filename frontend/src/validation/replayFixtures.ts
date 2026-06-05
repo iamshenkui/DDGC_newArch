@@ -2,6 +2,7 @@ import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
   DdgcFrontendSnapshot,
+  DungeonContentViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
@@ -516,6 +517,32 @@ export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
   isLaunchable: true
 };
 
+export const replayDungeonContentViewModel: DungeonContentViewModel = {
+  kind: "dungeon-content",
+  title: "副本内容",
+  dungeonName: "白虎大陆",
+  dungeonSubtitle: "陷灵的护卫",
+  difficulty: "Challenging",
+  difficultyLevel: 3,
+  objectives: [
+    "完成100%区域探索",
+    "击败区域首领",
+    "收集古代遗物"
+  ],
+  rewards: [
+    { name: "古代金币", quantity: 150 },
+    { name: "精神水晶", quantity: 2 },
+    { name: "英雄经验", quantity: 200 }
+  ],
+  stages: [
+    { id: "stage-1", number: 1, name: "迷雾入口", status: "completed", hasCombat: true, hasTreasure: false },
+    { id: "stage-2", number: 2, name: "幽暗走廊", status: "completed", hasCombat: true, hasTreasure: true },
+    { id: "stage-3", number: 3, name: "守护者大厅", status: "available", hasCombat: true, hasTreasure: false },
+    { id: "stage-4", number: 4, name: "深渊核心", status: "locked", hasCombat: true, hasTreasure: true }
+  ],
+  isEnterable: true
+};
+
 export const replayResultViewModel: ExpeditionResultViewModel = {
   kind: "result",
   title: "Expedition Complete",
@@ -827,6 +854,14 @@ export const expeditionSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing expedition launch screen."
 };
 
+// Dungeon content flow snapshot
+export const dungeonContentSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "dungeon-content",
+  viewModel: replayDungeonContentViewModel,
+  debugMessage: "Replay bridge showing dungeon content screen."
+};
+
 // Result snapshots (success, failure, partial)
 export const resultSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -877,7 +912,7 @@ export function validateSnapshotContract(snapshot: DdgcFrontendSnapshot): string
   }
 
   // FlowState must be a valid FlowState
-  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "result", "return"];
+  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "dungeon-content", "combat", "result", "return"];
   if (!validFlowStates.includes(snapshot.flowState as FlowState)) {
     errors.push(
       `flowState "${String(snapshot.flowState)}" is not a valid FlowState. ` +
@@ -932,6 +967,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     town: ["town", "hero-detail", "building-detail"],
     provisioning: ["provisioning"],
     expedition: ["expedition"],
+    "dungeon-content": ["dungeon-content"],
     combat: ["expedition"],
     result: ["result"],
     return: ["return"],
@@ -1010,6 +1046,18 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (typeof vm.isLaunchable !== "boolean") e.push("ExpeditionSetupViewModel: isLaunchable is not a boolean");
       if (!vm.supplyLevel || typeof vm.supplyLevel !== "string") e.push("ExpeditionSetupViewModel: supplyLevel is missing");
       if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ExpeditionSetupViewModel: provisionCost is missing");
+      break;
+    }
+    case "dungeon-content": {
+      if (!vm.title || typeof vm.title !== "string") e.push("DungeonContentViewModel: title is missing");
+      if (!vm.dungeonName || typeof vm.dungeonName !== "string") e.push("DungeonContentViewModel: dungeonName is missing");
+      if (!vm.dungeonSubtitle || typeof vm.dungeonSubtitle !== "string") e.push("DungeonContentViewModel: dungeonSubtitle is missing");
+      if (!vm.difficulty || typeof vm.difficulty !== "string") e.push("DungeonContentViewModel: difficulty is missing");
+      if (typeof vm.difficultyLevel !== "number") e.push("DungeonContentViewModel: difficultyLevel is not a number");
+      if (!Array.isArray(vm.objectives)) { e.push("DungeonContentViewModel: objectives is not an array"); } else if (vm.objectives.length === 0) { e.push("DungeonContentViewModel: objectives array is empty"); }
+      if (!Array.isArray(vm.rewards)) { e.push("DungeonContentViewModel: rewards is not an array"); }
+      if (!Array.isArray(vm.stages)) { e.push("DungeonContentViewModel: stages is not an array"); } else if (vm.stages.length === 0) { e.push("DungeonContentViewModel: stages array is empty"); }
+      if (typeof vm.isEnterable !== "boolean") e.push("DungeonContentViewModel: isEnterable is not a boolean");
       break;
     }
     case "result": {
