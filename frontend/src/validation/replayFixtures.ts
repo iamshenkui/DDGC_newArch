@@ -452,7 +452,36 @@ export const replayMarketBuildingDetailViewModel: BuildingDetailViewModel = {
       isUnsupported: false
     }
   ],
-  upgradeRequirement: "Reach Town Level 2 to unlock trinket shop."
+  upgradeRequirement: "Reach Town Level 2 to unlock trinket shop.",
+  sellItems: [
+    {
+      id: "forest-bag",
+      name: "丛林",
+      sellPrice: 100,
+      count: 1
+    }
+  ],
+  buyItems: [
+    {
+      id: "torch",
+      name: "火把",
+      buyPrice: 50,
+      sellPrice: 10
+    },
+    {
+      id: "bandage",
+      name: "绷带",
+      buyPrice: 80,
+      sellPrice: 15
+    }
+  ],
+  currencies: [
+    { label: "蓝晶", amount: 10 },
+    { label: "紫晶", amount: 10 },
+    { label: "绿晶", amount: 10 },
+    { label: "徽章", amount: 20 },
+    { label: "Gold", amount: 1250 }
+  ]
 };
 
 export const replayCampingTrainerBuildingDetailViewModel: BuildingDetailViewModel = {

@@ -60,6 +60,15 @@ export interface BuildingAction {
   isUnsupported: boolean;
 }
 
+export interface MarketItem {
+  id: string;
+  name: string;
+  icon?: string;
+  sellPrice: number;
+  buyPrice?: number;
+  count?: number;
+}
+
 export interface BuildingDetailViewModel {
   kind: "building-detail";
   buildingId: string;
@@ -69,6 +78,12 @@ export interface BuildingDetailViewModel {
   actions: ReadonlyArray<BuildingAction>;
   currentUpgrade?: string;
   upgradeRequirement?: string;
+  /** Sellable items for market/trading buildings (sell tab) */
+  sellItems?: ReadonlyArray<MarketItem>;
+  /** Purchasable items for market/trading buildings (buy tab) */
+  buyItems?: ReadonlyArray<MarketItem>;
+  /** Currency balances to display (key = currency label, value = amount) */
+  currencies?: ReadonlyArray<{ label: string; amount: number; icon?: string }>;
 }
 
 export interface HeroProgression {

@@ -332,6 +332,101 @@ test.describe("browser smoke: fidelity gates", () => {
 
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
 
+    // ── Phase 4b: Market building — sell tab fidelity ────────
+    // Return to town first
+    await page.getByRole("button", { name: "Return to Town" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    // Open the Market building
+    await page.locator('[data-building-id="market"]').click();
+    await settle(page, 800);
+
+    // Market screen must render with tab bar
+    await expect(
+      page.locator(".market-tab-bar"),
+      "Market tab bar must be visible"
+    ).toBeVisible();
+
+    // Three tabs must render
+    await expect(
+      page.locator(".market-tab-btn"),
+      "Market must have 3 tabs"
+    ).toHaveCount(3);
+
+    // Sell tab (售卖物品) must be active by default
+    await expect(
+      page.locator('.market-tab-btn--active[data-tab-id="sell"]'),
+      "Sell tab must be active by default"
+    ).toBeVisible();
+
+    // Parchment content area must render
+    await expect(
+      page.locator(".market-parchment"),
+      "Market parchment content must be visible"
+    ).toBeVisible();
+
+    // Sell items must be visible
+    await expect(
+      page.locator('.market-item-card[data-item-id="forest-bag"]'),
+      "Sell item '丛林' must be visible"
+    ).toBeVisible();
+
+    await expect(
+      page.locator('.market-item-card[data-item-id="forest-bag"] .market-item-price'),
+      "Sell item price must show 100 Gold"
+    ).toHaveText("100 Gold");
+
+    // Currency strip must render with 5 slots
+    await expect(
+      page.locator(".market-currency-strip"),
+      "Market currency strip must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".market-currency-slot"),
+      "Currency strip must contain 5 slots"
+    ).toHaveCount(5);
+
+    // Gold amount from replay fixture
+    await expect(
+      page.locator('.market-currency-slot[data-currency-label="Gold"] .market-currency-value'),
+      "Gold currency must show replay fixture amount"
+    ).toHaveText("1250");
+
+    // Tab switching: click buy tab
+    await page.locator('.market-tab-btn[data-tab-id="buy"]').click();
+    await settle(page, 200);
+    await expect(
+      page.locator('.market-tab-btn--active[data-tab-id="buy"]'),
+      "Buy tab must become active after click"
+    ).toBeVisible();
+
+    // Buy items must be visible
+    await expect(
+      page.locator('.market-item-card[data-item-id="torch"]'),
+      "Buy item '火把' must be visible"
+    ).toBeVisible();
+
+    // Tab switching: click upgrade tab
+    await page.locator('.market-tab-btn[data-tab-id="upgrade"]').click();
+    await settle(page, 200);
+    await expect(
+      page.locator('.market-tab-btn--active[data-tab-id="upgrade"]'),
+      "Upgrade tab must become active after click"
+    ).toBeVisible();
+
+    // Fidelity — market screen is a completed product surface
+    await expectFidelity(page.locator(".app-frame"), "Market building screen");
+    await expectFullPageFidelity(page, "Market building screen");
+
+    // Landscape viewport check
+    await expect(
+      page.locator(".app-frame"),
+      "Market screen must use .app-frame landscape layout"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Phase 4b (market building)");
+
     // ── Phase 5: Full meta-loop ─────────────────────────────
     // Town → Provisioning → Expedition → Result → Return → Town
 

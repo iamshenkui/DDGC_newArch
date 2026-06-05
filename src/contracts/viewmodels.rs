@@ -344,6 +344,34 @@ impl BuildingStatus {
     }
 }
 
+/// A tradable item displayed in the market building screen.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MarketItem {
+    /// Item identifier.
+    pub id: String,
+    /// Human-readable item name.
+    pub name: String,
+    /// Optional icon path/URL.
+    pub icon: Option<String>,
+    /// Price the player receives when selling.
+    pub sell_price: u32,
+    /// Price the player pays when buying (if available).
+    pub buy_price: Option<u32>,
+    /// Stack count (for sell tab).
+    pub count: Option<u32>,
+}
+
+/// A currency slot displayed in the market currency strip.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CurrencySlot {
+    /// Currency label (e.g., "Gold", "蓝晶").
+    pub label: String,
+    /// Current amount.
+    pub amount: u32,
+    /// Optional icon path/URL.
+    pub icon: Option<String>,
+}
+
 /// Building detail view model — full building inspection for town interactions.
 ///
 /// This view model represents the detailed state of a single town building,
@@ -364,6 +392,12 @@ pub struct BuildingDetailViewModel {
     pub actions: Vec<BuildingAction>,
     /// Requirement for upgrading this building (if upgradeable).
     pub upgrade_requirement: Option<String>,
+    /// Sellable items for market/trading buildings (sell tab).
+    pub sell_items: Option<Vec<MarketItem>>,
+    /// Purchasable items for market/trading buildings (buy tab).
+    pub buy_items: Option<Vec<MarketItem>>,
+    /// Currency balances to display in the currency strip.
+    pub currencies: Option<Vec<CurrencySlot>>,
 }
 
 impl BuildingDetailViewModel {
@@ -377,6 +411,9 @@ impl BuildingDetailViewModel {
             description: String::new(),
             actions: Vec::new(),
             upgrade_requirement: None,
+            sell_items: None,
+            buy_items: None,
+            currencies: None,
         }
     }
 }

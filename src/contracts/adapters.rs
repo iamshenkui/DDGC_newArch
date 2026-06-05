@@ -835,6 +835,68 @@ pub fn building_detail_from_campaign(
     // Determine upgrade requirement
     let upgrade_requirement = building_upgrade_hint(building_id);
 
+    // Build market-specific data when entering the market building
+    let (sell_items, buy_items, currencies) = if building_id == "market" {
+        let sell_items = vec![
+            crate::contracts::viewmodels::MarketItem {
+                id: "forest-bag".to_string(),
+                name: "丛林".to_string(),
+                icon: None,
+                sell_price: 100,
+                buy_price: None,
+                count: Some(1),
+            },
+        ];
+        let buy_items = vec![
+            crate::contracts::viewmodels::MarketItem {
+                id: "torch".to_string(),
+                name: "火把".to_string(),
+                icon: None,
+                sell_price: 10,
+                buy_price: Some(50),
+                count: None,
+            },
+            crate::contracts::viewmodels::MarketItem {
+                id: "bandage".to_string(),
+                name: "绷带".to_string(),
+                icon: None,
+                sell_price: 15,
+                buy_price: Some(80),
+                count: None,
+            },
+        ];
+        let currencies = vec![
+            crate::contracts::viewmodels::CurrencySlot {
+                label: "蓝晶".to_string(),
+                amount: 10,
+                icon: None,
+            },
+            crate::contracts::viewmodels::CurrencySlot {
+                label: "紫晶".to_string(),
+                amount: 10,
+                icon: None,
+            },
+            crate::contracts::viewmodels::CurrencySlot {
+                label: "绿晶".to_string(),
+                amount: 10,
+                icon: None,
+            },
+            crate::contracts::viewmodels::CurrencySlot {
+                label: "徽章".to_string(),
+                amount: 20,
+                icon: None,
+            },
+            crate::contracts::viewmodels::CurrencySlot {
+                label: "Gold".to_string(),
+                amount: campaign.gold,
+                icon: None,
+            },
+        ];
+        (Some(sell_items), Some(buy_items), Some(currencies))
+    } else {
+        (None, None, None)
+    };
+
     Ok(BuildingDetailViewModel {
         kind: "building-detail".to_string(),
         building_id: building_id.to_string(),
@@ -843,6 +905,9 @@ pub fn building_detail_from_campaign(
         description,
         actions,
         upgrade_requirement,
+        sell_items,
+        buy_items,
+        currencies,
     })
 }
 
