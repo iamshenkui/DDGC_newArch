@@ -265,6 +265,30 @@ export interface FatalErrorViewModel {
   reason: string;
 }
 
+export interface CombatantVital {
+  id: string;
+  combatantType: "hero" | "monster";
+  healthFraction: number;
+  isAtDeathsDoor: boolean;
+  isDead: boolean;
+  statusCount: number;
+}
+
+export interface CombatViewModel {
+  kind: "combat";
+  title: string;
+  encounterId: string;
+  round: number;
+  phase: "PreBattle" | "HeroTurn" | "MonsterTurn" | "Resolution" | "PostBattle" | "Unknown";
+  result?: "Victory" | "Defeat" | "Fled" | "Draw";
+  currentTurnActorId?: string;
+  heroVitals: ReadonlyArray<CombatantVital>;
+  monsterVitals: ReadonlyArray<CombatantVital>;
+  heroesAlive: number;
+  monstersAlive: number;
+  isResolving: boolean;
+}
+
 export type DdgcViewModel =
   | BootLoadViewModel
   | TownViewModel
@@ -272,6 +296,7 @@ export type DdgcViewModel =
   | BuildingDetailViewModel
   | ProvisioningViewModel
   | ExpeditionSetupViewModel
+  | CombatViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
   | UnsupportedViewModel
@@ -293,6 +318,9 @@ export type DdgcFrontendIntent =
   | { type: "toggle-hero-selection"; heroId: string }
   | { type: "confirm-provisioning" }
   | { type: "launch-expedition" }
+  | { type: "enter-combat" }
+  | { type: "resolve-combat" }
+  | { type: "combat-action"; actionId: string }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }
   | { type: "resume-from-return" };

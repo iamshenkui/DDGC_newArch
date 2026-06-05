@@ -399,8 +399,50 @@ test.describe("browser smoke: fidelity gates", () => {
       "Expedition launch screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5d. Expedition → Result (success)
+    // 5d. Expedition → Combat
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await settle(page);
+
+    await expect(
+      page.locator(".combat-viewport"),
+      "Combat screen must use .combat-viewport landscape layout"
+    ).toBeVisible();
+    await expect(
+      page.locator(".combat-phase-pill").filter({ hasText: "英雄回合" }),
+      "Combat phase pill must show hero turn"
+    ).toBeVisible();
+    await expect(
+      page.locator(".combatant-card"),
+      "Combatant cards must render"
+    ).toHaveCount(6);
+    await expect(
+      page.locator(".combat-formation--heroes .combatant-card"),
+      "Hero combatant cards must render"
+    ).toHaveCount(3);
+    await expect(
+      page.locator(".combat-formation--monsters .combatant-card"),
+      "Monster combatant cards must render"
+    ).toHaveCount(3);
+    await expect(
+      page.getByRole("button", { name: "攻击" }),
+      "Attack action button must be visible during hero turn"
+    ).toBeVisible();
+    await expectFidelity(
+      page.locator(".combat-viewport"),
+      "Combat screen"
+    );
+    await expectFullPageFidelity(page, "Combat screen");
+
+    // 5e. Combat → resolve combat → Result
+    await page.getByRole("button", { name: "攻击" }).click();
+    await settle(page);
+
+    await expect(
+      page.locator(".combat-action-ended-result"),
+      "Combat victory result must be visible after action"
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "继续" }).click();
     await settle(page);
 
     await expect(
@@ -614,6 +656,17 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await settle(page);
+
+    await expect(
+      page.locator(".combat-viewport"),
+      "Live combat screen must use .combat-viewport landscape layout"
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "攻击" }).click();
+    await settle(page);
+
+    await page.getByRole("button", { name: "继续" }).click();
     await settle(page);
 
     await expect(

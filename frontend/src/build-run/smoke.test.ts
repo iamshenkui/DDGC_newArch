@@ -19,6 +19,7 @@ import type {
   BuildingDetailViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  CombatViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel
 } from "../bridge/contractTypes";
@@ -104,7 +105,7 @@ describe("build-run smoke: intent dispatch round-trip", () => {
 });
 
 describe("build-run smoke: flow state transitions", () => {
-  it("replay: town → provisioning → expedition → result", async () => {
+  it("replay: town → provisioning → expedition → combat → result", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
 
@@ -120,14 +121,21 @@ describe("build-run smoke: flow state transitions", () => {
     const expVm = expSnap.viewModel as ExpeditionSetupViewModel;
     expect(expVm.isLaunchable).toBe(true);
 
-    const resultSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    const combatSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    expect(combatSnap.flowState).toBe("combat");
+    expect(combatSnap.viewModel.kind).toBe("combat");
+    const combatVm = combatSnap.viewModel as CombatViewModel;
+    expect(combatVm.heroVitals.length).toBeGreaterThan(0);
+    expect(combatVm.monsterVitals.length).toBeGreaterThan(0);
+
+    const resultSnap = await bridge.dispatchIntent({ type: "resolve-combat" });
     expect(resultSnap.flowState).toBe("result");
     expect(resultSnap.viewModel.kind).toBe("result");
     const resultVm = resultSnap.viewModel as ExpeditionResultViewModel;
     expect(resultVm.outcome).toBe("success");
   });
 
-  it("live: town → provisioning → expedition → result", async () => {
+  it("live: town → provisioning → expedition → combat → result", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
 
@@ -139,7 +147,11 @@ describe("build-run smoke: flow state transitions", () => {
     expect(expSnap.flowState).toBe("expedition");
     expect(expSnap.viewModel.kind).toBe("expedition");
 
-    const resultSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    const combatSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    expect(combatSnap.flowState).toBe("combat");
+    expect(combatSnap.viewModel.kind).toBe("combat");
+
+    const resultSnap = await bridge.dispatchIntent({ type: "resolve-combat" });
     expect(resultSnap.flowState).toBe("result");
     expect(resultSnap.viewModel.kind).toBe("result");
   });
@@ -153,6 +165,22 @@ describe("build-run smoke: flow state transitions", () => {
 
     expect(townSnap.flowState).toBe("town");
     expect(townSnap.viewModel.kind).toBe("town");
+  });
+
+  it("replay: combat action transitions combat state", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const actionSnap = await bridge.dispatchIntent({ type: "combat-action", actionId: "attack" });
+    expect(actionSnap.flowState).toBe("combat");
+    expect(actionSnap.viewModel.kind).toBe("combat");
+    const combatVm = actionSnap.viewModel as CombatViewModel;
+    expect(combatVm.phase).toBe("PostBattle");
+    expect(combatVm.result).toBe("Victory");
   });
 });
 
@@ -193,13 +221,14 @@ describe("build-run smoke: meta-loop continuation", () => {
     expect(returnSnap.viewModel.kind).toBe("town");
   });
 
-  it("replay: full meta-loop cycle town → expedition → result → return → town", async () => {
+  it("replay: full meta-loop cycle town → expedition → combat → result → return → town", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
 
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
     await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "resolve-combat" });
 
     const returnSnap = await bridge.dispatchIntent({ type: "continue-from-result" });
     expect(returnSnap.flowState).toBe("return");

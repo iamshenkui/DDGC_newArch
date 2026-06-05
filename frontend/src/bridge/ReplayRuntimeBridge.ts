@@ -6,7 +6,9 @@ import {
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
-  replayReturnViewModel
+  replayReturnViewModel,
+  replayCombatViewModel,
+  replayCombatVictoryViewModel
 } from "../validation/replayFixtures";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
 import type {
@@ -117,8 +119,29 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       case "launch-expedition":
         this.snapshot = {
           ...this.snapshot,
+          flowState: "combat",
+          viewModel: replayCombatViewModel
+        };
+        break;
+      case "enter-combat":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "combat",
+          viewModel: replayCombatViewModel
+        };
+        break;
+      case "resolve-combat":
+        this.snapshot = {
+          ...this.snapshot,
           flowState: "result",
           viewModel: replayResultViewModel as ExpeditionResultViewModel
+        };
+        break;
+      case "combat-action":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "combat",
+          viewModel: replayCombatVictoryViewModel
         };
         break;
       case "return-to-town":

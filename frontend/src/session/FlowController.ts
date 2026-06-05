@@ -10,7 +10,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "combat" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -39,6 +39,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "expedition") {
     return "expedition";
+  }
+
+  if (snapshot.viewModel.kind === "combat") {
+    return "combat";
   }
 
   if (snapshot.viewModel.kind === "result") {
@@ -125,6 +129,33 @@ export function canTransition(
       }
       if (!snapshot.viewModel.isLaunchable) {
         return { allowed: false, reason: "expedition is not launchable" };
+      }
+      return { allowed: true };
+
+    case "enter-combat":
+      if (screen !== "expedition") {
+        return { allowed: false, reason: "enter-combat is only valid in expedition" };
+      }
+      if (snapshot.viewModel.kind !== "expedition") {
+        return { allowed: false, reason: "viewModel is not an expedition view model" };
+      }
+      return { allowed: true };
+
+    case "resolve-combat":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "resolve-combat is only valid in combat" };
+      }
+      if (snapshot.viewModel.kind !== "combat") {
+        return { allowed: false, reason: "viewModel is not a combat view model" };
+      }
+      return { allowed: true };
+
+    case "combat-action":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "combat-action is only valid in combat" };
+      }
+      if (snapshot.viewModel.kind !== "combat") {
+        return { allowed: false, reason: "viewModel is not a combat view model" };
       }
       return { allowed: true };
 

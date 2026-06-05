@@ -7,6 +7,7 @@ import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 import type { RuntimeBridge } from "../bridge/RuntimeBridge";
 import type {
   BuildingDetailViewModel,
+  CombatViewModel,
   ExpeditionResultViewModel,
   ExpeditionSetupViewModel,
   FatalErrorViewModel,
@@ -31,6 +32,7 @@ import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
 import { ReturnScreen } from "../screens/expedition/ReturnScreen";
+import { CombatScreen } from "../screens/combat/CombatScreen";
 
 function createBridge(mode: RuntimeMode): RuntimeBridge {
   return mode === "live" ? new LiveRuntimeBridge() : new ReplayRuntimeBridge();
@@ -163,6 +165,22 @@ export function DdgcApp() {
             }}
             onReturnToTown={() => {
               void dispatchIntent(bridge, { type: "return-to-town" });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "combat" && snapshot().viewModel.kind === "combat"}
+        >
+          <CombatScreen
+            viewModel={snapshot().viewModel as CombatViewModel}
+            onResolveCombat={() => {
+              void dispatchIntent(bridge, { type: "resolve-combat" });
+            }}
+            onReturnToExpedition={() => {
+              void dispatchIntent(bridge, { type: "return-to-town" });
+            }}
+            onCombatAction={(actionId) => {
+              void dispatchIntent(bridge, { type: "combat-action", actionId });
             }}
           />
         </Match>

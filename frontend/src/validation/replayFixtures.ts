@@ -1,6 +1,7 @@
 import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
+  CombatViewModel,
   DdgcFrontendSnapshot,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
@@ -645,6 +646,135 @@ export const replayReturnViewModel: ReturnViewModel = {
   isTownResumeAvailable: true
 };
 
+export const replayCombatViewModel: CombatViewModel = {
+  kind: "combat",
+  title: "副本场景-战斗",
+  encounterId: "encounter-dungeon-01",
+  round: 1,
+  phase: "HeroTurn",
+  currentTurnActorId: "hero-hunter-01",
+  heroVitals: [
+    {
+      id: "hero-hunter-01",
+      combatantType: "hero",
+      healthFraction: 0.9,
+      isAtDeathsDoor: false,
+      isDead: false,
+      statusCount: 0
+    },
+    {
+      id: "hero-white-01",
+      combatantType: "hero",
+      healthFraction: 1.0,
+      isAtDeathsDoor: false,
+      isDead: false,
+      statusCount: 0
+    },
+    {
+      id: "hero-black-01",
+      combatantType: "hero",
+      healthFraction: 0.75,
+      isAtDeathsDoor: false,
+      isDead: false,
+      statusCount: 1
+    }
+  ],
+  monsterVitals: [
+    {
+      id: "monster-skeleton-01",
+      combatantType: "monster",
+      healthFraction: 0.8,
+      isAtDeathsDoor: false,
+      isDead: false,
+      statusCount: 0
+    },
+    {
+      id: "monster-skeleton-02",
+      combatantType: "monster",
+      healthFraction: 0.6,
+      isAtDeathsDoor: false,
+      isDead: false,
+      statusCount: 0
+    },
+    {
+      id: "monster-boss-01",
+      combatantType: "monster",
+      healthFraction: 1.0,
+      isAtDeathsDoor: false,
+      isDead: false,
+      statusCount: 0
+    }
+  ],
+  heroesAlive: 3,
+  monstersAlive: 3,
+  isResolving: false
+};
+
+export const replayCombatVictoryViewModel: CombatViewModel = {
+  kind: "combat",
+  title: "副本场景-战斗",
+  encounterId: "encounter-dungeon-01",
+  round: 3,
+  phase: "PostBattle",
+  result: "Victory",
+  currentTurnActorId: undefined,
+  heroVitals: [
+    {
+      id: "hero-hunter-01",
+      combatantType: "hero",
+      healthFraction: 0.7,
+      isAtDeathsDoor: false,
+      isDead: false,
+      statusCount: 0
+    },
+    {
+      id: "hero-white-01",
+      combatantType: "hero",
+      healthFraction: 0.85,
+      isAtDeathsDoor: false,
+      isDead: false,
+      statusCount: 0
+    },
+    {
+      id: "hero-black-01",
+      combatantType: "hero",
+      healthFraction: 0.5,
+      isAtDeathsDoor: true,
+      isDead: false,
+      statusCount: 1
+    }
+  ],
+  monsterVitals: [
+    {
+      id: "monster-skeleton-01",
+      combatantType: "monster",
+      healthFraction: 0,
+      isAtDeathsDoor: false,
+      isDead: true,
+      statusCount: 0
+    },
+    {
+      id: "monster-skeleton-02",
+      combatantType: "monster",
+      healthFraction: 0,
+      isAtDeathsDoor: false,
+      isDead: true,
+      statusCount: 0
+    },
+    {
+      id: "monster-boss-01",
+      combatantType: "monster",
+      healthFraction: 0,
+      isAtDeathsDoor: false,
+      isDead: true,
+      statusCount: 0
+    }
+  ],
+  heroesAlive: 3,
+  monstersAlive: 0,
+  isResolving: false
+};
+
 export const replayReadySnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
   flowState: "town",
@@ -857,6 +987,21 @@ export const returnSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing return screen."
 };
 
+// Combat snapshots
+export const combatSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "combat",
+  viewModel: replayCombatViewModel,
+  debugMessage: "Replay bridge showing combat screen."
+};
+
+export const combatVictorySnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "combat",
+  viewModel: replayCombatVictoryViewModel,
+  debugMessage: "Replay bridge showing combat victory screen."
+};
+
 // ── Snapshot contract validation ───────────────────────────────────────────────
 
 /**
@@ -932,7 +1077,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     town: ["town", "hero-detail", "building-detail"],
     provisioning: ["provisioning"],
     expedition: ["expedition"],
-    combat: ["expedition"],
+    combat: ["combat"],
     result: ["result"],
     return: ["return"],
   };
@@ -1010,6 +1155,18 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (typeof vm.isLaunchable !== "boolean") e.push("ExpeditionSetupViewModel: isLaunchable is not a boolean");
       if (!vm.supplyLevel || typeof vm.supplyLevel !== "string") e.push("ExpeditionSetupViewModel: supplyLevel is missing");
       if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ExpeditionSetupViewModel: provisionCost is missing");
+      break;
+    }
+    case "combat": {
+      if (!vm.title || typeof vm.title !== "string") e.push("CombatViewModel: title is missing");
+      if (!vm.encounterId || typeof vm.encounterId !== "string") e.push("CombatViewModel: encounterId is missing");
+      if (typeof vm.round !== "number") e.push("CombatViewModel: round is not a number");
+      if (!vm.phase || typeof vm.phase !== "string") e.push("CombatViewModel: phase is missing");
+      if (!Array.isArray(vm.heroVitals)) { e.push("CombatViewModel: heroVitals is not an array"); } else if (vm.heroVitals.length === 0) { e.push("CombatViewModel: heroVitals array is empty"); }
+      if (!Array.isArray(vm.monsterVitals)) { e.push("CombatViewModel: monsterVitals is not an array"); } else if (vm.monsterVitals.length === 0) { e.push("CombatViewModel: monsterVitals array is empty"); }
+      if (typeof vm.heroesAlive !== "number") e.push("CombatViewModel: heroesAlive is not a number");
+      if (typeof vm.monstersAlive !== "number") e.push("CombatViewModel: monstersAlive is not a number");
+      if (typeof vm.isResolving !== "boolean") e.push("CombatViewModel: isResolving is not a boolean");
       break;
     }
     case "result": {

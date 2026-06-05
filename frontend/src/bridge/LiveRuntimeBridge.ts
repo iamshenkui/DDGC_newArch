@@ -10,6 +10,7 @@ import type {
   BuildingDetailViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  CombatViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
 } from "./contractTypes";
@@ -358,6 +359,103 @@ const createLiveReturnViewModel = (): ReturnViewModel => ({
   isTownResumeAvailable: true
 });
 
+const createLiveCombatViewModel = (): CombatViewModel => ({
+  kind: "combat",
+  title: "副本场景-战斗",
+  encounterId: "encounter-live-dungeon-01",
+  round: 1,
+  phase: "HeroTurn",
+  currentTurnActorId: "hero-hunter-live-01",
+  heroVitals: [
+    {
+      id: "hero-hunter-live-01",
+      combatantType: "hero",
+      healthFraction: 0.95,
+      isAtDeathsDoor: false,
+      isDead: false,
+      statusCount: 0
+    },
+    {
+      id: "hero-white-live-01",
+      combatantType: "hero",
+      healthFraction: 1.0,
+      isAtDeathsDoor: false,
+      isDead: false,
+      statusCount: 0
+    }
+  ],
+  monsterVitals: [
+    {
+      id: "monster-skeleton-live-01",
+      combatantType: "monster",
+      healthFraction: 0.85,
+      isAtDeathsDoor: false,
+      isDead: false,
+      statusCount: 0
+    },
+    {
+      id: "monster-skeleton-live-02",
+      combatantType: "monster",
+      healthFraction: 0.7,
+      isAtDeathsDoor: false,
+      isDead: false,
+      statusCount: 0
+    }
+  ],
+  heroesAlive: 2,
+  monstersAlive: 2,
+  isResolving: false
+});
+
+const createLiveCombatVictoryViewModel = (): CombatViewModel => ({
+  kind: "combat",
+  title: "副本场景-战斗",
+  encounterId: "encounter-live-dungeon-01",
+  round: 2,
+  phase: "PostBattle",
+  result: "Victory",
+  currentTurnActorId: undefined,
+  heroVitals: [
+    {
+      id: "hero-hunter-live-01",
+      combatantType: "hero",
+      healthFraction: 0.8,
+      isAtDeathsDoor: false,
+      isDead: false,
+      statusCount: 0
+    },
+    {
+      id: "hero-white-live-01",
+      combatantType: "hero",
+      healthFraction: 0.9,
+      isAtDeathsDoor: false,
+      isDead: false,
+      statusCount: 0
+    }
+  ],
+  monsterVitals: [
+    {
+      id: "monster-skeleton-live-01",
+      combatantType: "monster",
+      healthFraction: 0,
+      isAtDeathsDoor: false,
+      isDead: true,
+      statusCount: 0
+    },
+    {
+      id: "monster-skeleton-live-02",
+      combatantType: "monster",
+      healthFraction: 0,
+      isAtDeathsDoor: false,
+      isDead: true,
+      statusCount: 0
+    }
+  ],
+  heroesAlive: 2,
+  monstersAlive: 0,
+  isResolving: false
+});
+
 export class LiveRuntimeBridge implements RuntimeBridge {
   readonly id = "ddgc-live-bridge";
   readonly mode: RuntimeMode = "live";
@@ -440,8 +538,29 @@ export class LiveRuntimeBridge implements RuntimeBridge {
       case "launch-expedition":
         this.snapshot = {
           ...this.snapshot,
+          flowState: "combat",
+          viewModel: createLiveCombatViewModel()
+        };
+        break;
+      case "enter-combat":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "combat",
+          viewModel: createLiveCombatViewModel()
+        };
+        break;
+      case "resolve-combat":
+        this.snapshot = {
+          ...this.snapshot,
           flowState: "result",
           viewModel: createLiveResultViewModel()
+        };
+        break;
+      case "combat-action":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "combat",
+          viewModel: createLiveCombatVictoryViewModel()
         };
         break;
       case "return-to-town":
