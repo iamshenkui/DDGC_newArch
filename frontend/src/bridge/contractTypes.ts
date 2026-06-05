@@ -235,6 +235,18 @@ export interface ExpeditionResultViewModel {
     supplies: number;
     experience: number;
   };
+  /**
+   * Heirloom counters collected during the dungeon run.
+   * Optional: the headless bridge does not yet surface these counters
+   * in the runtime payload. When absent the UI renders zero counts
+   * and annotates BLOCKER-005.
+   */
+  heirloomsGained?: {
+    portrait: number;
+    deed: number;
+    crest: number;
+    relic: number;
+  };
   isContinueAvailable: boolean;
 }
 

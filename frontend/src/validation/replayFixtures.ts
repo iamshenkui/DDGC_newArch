@@ -518,19 +518,19 @@ export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
 
 export const replayResultViewModel: ExpeditionResultViewModel = {
   kind: "result",
-  title: "Expedition Complete",
-  expeditionName: "The Depths Await",
+  title: "副本结算",
+  expeditionName: "毅和遗迹",
   outcome: "success",
-  summary: "Your party has returned victorious from the expedition. The depths have been conquered and valuable treasures have been recovered.",
+  summary: "队伍成功撤离了遗迹，带回了可观的宝藏与经验。",
   lootAcquired: [
-    "Ancient Gold Coin x3",
-    "Mysterious Gemstone",
-    "Forgotten Relic"
+    "古老金币 x3",
+    "神秘宝石",
+    "遗忘遗物"
   ],
   heroOutcomes: [
     {
       heroId: "hero-hunter-01",
-      heroName: "Shen",
+      heroName: "艾唯",
       classLabel: "Hunter",
       status: "alive",
       hpChange: "-4",
@@ -538,32 +538,54 @@ export const replayResultViewModel: ExpeditionResultViewModel = {
     },
     {
       heroId: "hero-white-01",
-      heroName: "Bai Xiu",
+      heroName: "听风",
       classLabel: "White",
       status: "alive",
       hpChange: "-8",
       stressChange: "+8"
+    },
+    {
+      heroId: "hero-black-01",
+      heroName: "河北人测试1",
+      classLabel: "Black",
+      status: "alive",
+      hpChange: "-6",
+      stressChange: "+10"
+    },
+    {
+      heroId: "hero-tank-01",
+      heroName: "腹肌有测试1",
+      classLabel: "Tank",
+      status: "alive",
+      hpChange: "-2",
+      stressChange: "+5"
     }
   ],
   resourcesGained: {
-    gold: 250,
-    supplies: -50,
+    gold: 480,
+    supplies: -30,
     experience: 180
+  },
+  heirloomsGained: {
+    portrait: 0,
+    deed: 0,
+    crest: 0,
+    relic: 0
   },
   isContinueAvailable: true
 };
 
 export const replayFailureResultViewModel: ExpeditionResultViewModel = {
   kind: "result",
-  title: "Expedition Failed",
-  expeditionName: "The Depths Await",
+  title: "副本结算",
+  expeditionName: "毅和遗迹",
   outcome: "failure",
-  summary: "Your expedition has been utterly defeated. The party was overwhelmed and forced to retreat in disarray.",
+  summary: "远征遭遇了彻底的失败，队伍在混乱中被迫撤退。",
   lootAcquired: [],
   heroOutcomes: [
     {
       heroId: "hero-hunter-01",
-      heroName: "Shen",
+      heroName: "艾唯",
       classLabel: "Hunter",
       status: "alive",
       hpChange: "-18",
@@ -571,11 +593,27 @@ export const replayFailureResultViewModel: ExpeditionResultViewModel = {
     },
     {
       heroId: "hero-white-01",
-      heroName: "Bai Xiu",
+      heroName: "听风",
       classLabel: "White",
       status: "dead",
       hpChange: "-41",
       stressChange: "+40"
+    },
+    {
+      heroId: "hero-black-01",
+      heroName: "河北人测试1",
+      classLabel: "Black",
+      status: "dead",
+      hpChange: "-40",
+      stressChange: "+35"
+    },
+    {
+      heroId: "hero-tank-01",
+      heroName: "腹肌有测试1",
+      classLabel: "Tank",
+      status: "alive",
+      hpChange: "-22",
+      stressChange: "+18"
     }
   ],
   resourcesGained: {
@@ -583,22 +621,28 @@ export const replayFailureResultViewModel: ExpeditionResultViewModel = {
     supplies: -100,
     experience: 50
   },
+  heirloomsGained: {
+    portrait: 0,
+    deed: 0,
+    crest: 0,
+    relic: 0
+  },
   isContinueAvailable: true
 };
 
 export const replayPartialResultViewModel: ExpeditionResultViewModel = {
   kind: "result",
-  title: "Expedition Partial Success",
-  expeditionName: "The Depths Await",
+  title: "副本结算",
+  expeditionName: "毅和遗迹",
   outcome: "partial",
-  summary: "Your party returned with mixed results. Some objectives were achieved but at significant cost.",
+  summary: "队伍带回了部分成果，但也付出了不小的代价。",
   lootAcquired: [
-    "Ancient Gold Coin x1"
+    "古老金币 x1"
   ],
   heroOutcomes: [
     {
       heroId: "hero-hunter-01",
-      heroName: "Shen",
+      heroName: "艾唯",
       classLabel: "Hunter",
       status: "alive",
       hpChange: "-12",
@@ -606,17 +650,39 @@ export const replayPartialResultViewModel: ExpeditionResultViewModel = {
     },
     {
       heroId: "hero-white-01",
-      heroName: "Bai Xiu",
+      heroName: "听风",
       classLabel: "White",
       status: "stressed",
       hpChange: "-15",
       stressChange: "+22"
+    },
+    {
+      heroId: "hero-black-01",
+      heroName: "河北人测试1",
+      classLabel: "Black",
+      status: "alive",
+      hpChange: "-10",
+      stressChange: "+14"
+    },
+    {
+      heroId: "hero-tank-01",
+      heroName: "腹肌有测试1",
+      classLabel: "Tank",
+      status: "alive",
+      hpChange: "-8",
+      stressChange: "+10"
     }
   ],
   resourcesGained: {
     gold: 80,
     supplies: -75,
     experience: 100
+  },
+  heirloomsGained: {
+    portrait: 0,
+    deed: 0,
+    crest: 0,
+    relic: 0
   },
   isContinueAvailable: true
 };

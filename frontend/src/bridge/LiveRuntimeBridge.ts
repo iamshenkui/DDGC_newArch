@@ -303,15 +303,15 @@ const createLiveExpeditionViewModel = (): ExpeditionSetupViewModel => ({
 
 const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
   kind: "result",
-  title: "Expedition Complete",
-  expeditionName: "The Azure Lantern Expedition",
+  title: "副本结算",
+  expeditionName: "苍灯遗迹",
   outcome: "success",
-  summary: "Your expedition has returned. Review the outcomes and continue your campaign.",
-  lootAcquired: ["Gold Coin x2", "Ancient Relic"],
+  summary: "队伍成功撤离了遗迹，带回了可观的宝藏与经验。",
+  lootAcquired: ["古老金币 x2", "远古遗物"],
   heroOutcomes: [
     {
       heroId: "hero-hunter-live-01",
-      heroName: "Yuan",
+      heroName: "元",
       classLabel: "Hunter",
       status: "alive",
       hpChange: "-2",
@@ -319,17 +319,39 @@ const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
     },
     {
       heroId: "hero-white-live-01",
-      heroName: "Mei",
+      heroName: "梅",
       classLabel: "White",
       status: "alive",
       hpChange: "-3",
       stressChange: "+3"
+    },
+    {
+      heroId: "hero-black-live-01",
+      heroName: "黑振",
+      classLabel: "Black",
+      status: "alive",
+      hpChange: "-4",
+      stressChange: "+6"
+    },
+    {
+      heroId: "hero-tank-live-01",
+      heroName: "铁壁",
+      classLabel: "Tank",
+      status: "alive",
+      hpChange: "-1",
+      stressChange: "+2"
     }
   ],
   resourcesGained: {
-    gold: 150,
+    gold: 480,
     supplies: -30,
     experience: 100
+  },
+  heirloomsGained: {
+    portrait: 0,
+    deed: 0,
+    crest: 0,
+    relic: 0
   },
   isContinueAvailable: true
 });
