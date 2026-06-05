@@ -69,6 +69,8 @@ export interface BuildingDetailViewModel {
   actions: ReadonlyArray<BuildingAction>;
   currentUpgrade?: string;
   upgradeRequirement?: string;
+  /** Optional hero roster for buildings that require character selection (e.g. garden). */
+  heroes?: ReadonlyArray<TownHeroSummary>;
 }
 
 export interface HeroProgression {

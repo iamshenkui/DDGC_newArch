@@ -174,7 +174,7 @@ const createLiveHeroDetailViewModel = (hero: TownHeroSummary): HeroDetailViewMod
   talent: "Versatile"
 });
 
-const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): BuildingDetailViewModel => {
+const createLiveBuildingDetailViewModel = (building: TownBuildingSummary, townHeroes?: ReadonlyArray<TownHeroSummary>): BuildingDetailViewModel => {
   const buildingConfigs: Record<string, {
     description: string;
     actions: Array<{
@@ -238,6 +238,36 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
           isUnsupported: false
         }
       ]
+    },
+    garden: {
+      description: "天国花园提供特殊休整与恢复服务，在宁静的花园中治愈身心。",
+      actions: [
+        {
+          id: "rest",
+          label: "休整",
+          description: "在花园中休整，恢复英雄生命值并降低压力。",
+          cost: "200 Gold",
+          isAvailable: true,
+          isUnsupported: false
+        },
+        {
+          id: "meditate",
+          label: "冥想",
+          description: "在花园中冥想，大幅降低压力值。",
+          cost: "150 Gold",
+          isAvailable: true,
+          isUnsupported: false
+        },
+        {
+          id: "pray",
+          label: "祈祷",
+          description: "向花园神灵祈祷，恢复生命并清除负面状态。",
+          cost: "300 Gold",
+          isAvailable: false,
+          isUnsupported: false
+        }
+      ],
+      upgradeRequirement: "Reach Town Level 2 to unlock advanced garden services."
     }
   };
 
@@ -263,7 +293,8 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
     description: config.description,
     actions: config.actions,
     currentUpgrade: config.currentUpgrade,
-    upgradeRequirement: config.upgradeRequirement
+    upgradeRequirement: config.upgradeRequirement,
+    heroes: building.id === "garden" ? townHeroes : undefined
   };
 };
 
@@ -395,7 +426,7 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         this.snapshot = {
           ...this.snapshot,
           flowState: "town",
-          viewModel: createLiveBuildingDetailViewModel(building)
+          viewModel: createLiveBuildingDetailViewModel(building, townVm.heroes)
         };
         break;
       }

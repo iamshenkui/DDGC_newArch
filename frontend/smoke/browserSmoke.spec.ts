@@ -332,6 +332,60 @@ test.describe("browser smoke: fidelity gates", () => {
 
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
 
+    // ── Phase 4b: Garden building detail (HB-iamshenkui-GameMigration-17) ──
+    await page.getByRole("button", { name: "Return to Town" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await page.locator('[data-building-id="garden"]').click();
+    await settle(page, 800);
+
+    await expect(
+      page.locator(".building-detail-name"),
+      "Garden building name must be visible (DDGC display name 天国花园)"
+    ).toHaveText("天国花园");
+    await expect(
+      page.locator('.garden-tab-btn--active'),
+      "Garden 'Use Facilities' tab must be active by default"
+    ).toHaveAttribute("data-tab", "use");
+    await expect(
+      page.locator(".garden-panel-title").filter({ hasText: "选择人物" }),
+      "Garden hero selection panel must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".garden-hero-list-item").first(),
+      "Garden hero list must contain at least one hero"
+    ).toBeVisible();
+    await expect(
+      page.locator(".garden-activity-card").first(),
+      "Garden activity grid must contain at least one activity"
+    ).toBeVisible();
+
+    // Switch to upgrade tab and verify
+    await page.locator('.garden-tab-btn[data-tab="upgrade"]').click();
+    await settle(page, 300);
+    await expect(
+      page.locator(".building-action-section"),
+      "Garden upgrade tab must show action section"
+    ).toBeVisible();
+
+    // Screenshot capture for acceptance evidence
+    await page.screenshot({
+      path: "test-results/hb17-garden-upgrade.png",
+      fullPage: false
+    });
+
+    // Return to use tab for main screenshot
+    await page.locator('.garden-tab-btn[data-tab="use"]').click();
+    await settle(page, 300);
+    await page.screenshot({
+      path: "test-results/hb17-garden-use.png",
+      fullPage: false
+    });
+
+    await expectFidelity(page.locator(".app-frame"), "Garden building screen");
+    expectNoErrors(pageErrors, consoleErrors, "Phase 4b (garden building detail)");
+
     // ── Phase 5: Full meta-loop ─────────────────────────────
     // Town → Provisioning → Expedition → Result → Return → Town
 

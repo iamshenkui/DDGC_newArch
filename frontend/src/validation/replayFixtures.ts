@@ -397,9 +397,34 @@ export const replayGardenBuildingDetailViewModel: BuildingDetailViewModel = {
       cost: "200 Gold",
       isAvailable: true,
       isUnsupported: false
+    },
+    {
+      id: "meditate",
+      label: "冥想",
+      description: "在花园中冥想，大幅降低压力值。",
+      cost: "150 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "pray",
+      label: "祈祷",
+      description: "向花园神灵祈祷，恢复生命并清除负面状态。",
+      cost: "300 Gold",
+      isAvailable: false,
+      isUnsupported: false
+    },
+    {
+      id: "upgrade-garden",
+      label: "扩建花园",
+      description: "扩大花园规模，增加可同时休整的英雄数量。",
+      cost: "1000 Gold",
+      isAvailable: false,
+      isUnsupported: false
     }
   ],
-  upgradeRequirement: "Reach Town Level 2 to unlock garden upgrades."
+  upgradeRequirement: "Reach Town Level 2 to unlock garden upgrades.",
+  heroes: townHeroes
 };
 
 export const replayLegacyTowerBuildingDetailViewModel: BuildingDetailViewModel = {

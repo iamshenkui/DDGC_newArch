@@ -85,6 +85,26 @@ describe("build-run smoke: intent dispatch round-trip", () => {
     expect(townSnap.viewModel.kind).toBe("town");
   });
 
+  it("replay: open-building garden then return-to-town", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    const detailSnap = await bridge.dispatchIntent({
+      type: "open-building",
+      buildingId: "garden"
+    });
+
+    expect(detailSnap.viewModel.kind).toBe("building-detail");
+    const buildingDetail = detailSnap.viewModel as BuildingDetailViewModel;
+    expect(buildingDetail.buildingId).toBe("garden");
+    expect(buildingDetail.label).toBe("天国花园");
+    expect(buildingDetail.heroes).toBeDefined();
+    expect(buildingDetail.heroes!.length).toBeGreaterThan(0);
+
+    const townSnap = await bridge.dispatchIntent({ type: "return-to-town" });
+    expect(townSnap.viewModel.kind).toBe("town");
+  });
+
   it("live: open-hero then return-to-town", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
@@ -97,6 +117,26 @@ describe("build-run smoke: intent dispatch round-trip", () => {
     expect(detailSnap.viewModel.kind).toBe("hero-detail");
     const heroDetail = detailSnap.viewModel as HeroDetailViewModel;
     expect(heroDetail.name).toBe("Yuan");
+
+    const townSnap = await bridge.dispatchIntent({ type: "return-to-town" });
+    expect(townSnap.viewModel.kind).toBe("town");
+  });
+
+  it("live: open-building garden then return-to-town", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    const detailSnap = await bridge.dispatchIntent({
+      type: "open-building",
+      buildingId: "garden"
+    });
+
+    expect(detailSnap.viewModel.kind).toBe("building-detail");
+    const buildingDetail = detailSnap.viewModel as BuildingDetailViewModel;
+    expect(buildingDetail.buildingId).toBe("garden");
+    expect(buildingDetail.label).toBe("天国花园");
+    expect(buildingDetail.heroes).toBeDefined();
+    expect(buildingDetail.heroes!.length).toBeGreaterThan(0);
 
     const townSnap = await bridge.dispatchIntent({ type: "return-to-town" });
     expect(townSnap.viewModel.kind).toBe("town");
