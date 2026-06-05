@@ -45,6 +45,8 @@ import {
   replayLegacyTowerBuildingSnapshot,
   replayMarketBuildingSnapshot,
   replayCampingTrainerBuildingSnapshot,
+  replayDungeonInventoryViewModel,
+  dungeonInventorySnapshot,
 } from "./replayFixtures";
 
 describe("replay fixtures — hero and campaign state consistency", () => {
@@ -356,6 +358,50 @@ describe("replay fixtures — hero and campaign state consistency", () => {
       expect(replayReturnViewModel.isTownResumeAvailable).toBe(true);
     });
   });
+
+  describe("dungeon inventory fixture", () => {
+    it("has valid dungeon name and title", () => {
+      expect(replayDungeonInventoryViewModel.dungeonName).toBeTruthy();
+      expect(replayDungeonInventoryViewModel.title).toBeTruthy();
+    });
+
+    it("has hero with equipment slots", () => {
+      const hero = replayDungeonInventoryViewModel.hero;
+      expect(hero.heroId).toBeTruthy();
+      expect(hero.heroName).toBeTruthy();
+      expect(hero.classLabel).toBeTruthy();
+      expect(hero.level).toBeGreaterThan(0);
+      expect(hero.equipment).toBeDefined();
+    });
+
+    it("has at least one equipped item", () => {
+      const eq = replayDungeonInventoryViewModel.hero.equipment;
+      const hasEquipped = eq.weapon || eq.armor || eq.trinket1 || eq.trinket2;
+      expect(hasEquipped).toBeTruthy();
+    });
+
+    it("has inventory items with valid categories", () => {
+      const validCategories = ["consumable", "equipment", "material", "quest"];
+      for (const item of replayDungeonInventoryViewModel.inventory) {
+        expect(item.id).toBeTruthy();
+        expect(item.name).toBeTruthy();
+        expect(item.description).toBeTruthy();
+        expect(item.quantity).toBeGreaterThan(0);
+        expect(validCategories).toContain(item.category);
+        expect(typeof item.isUsable).toBe("boolean");
+      }
+    });
+
+    it("inventory count does not exceed max slots", () => {
+      expect(replayDungeonInventoryViewModel.inventory.length).toBeLessThanOrEqual(
+        replayDungeonInventoryViewModel.maxInventorySlots
+      );
+    });
+
+    it("has non-negative gold", () => {
+      expect(replayDungeonInventoryViewModel.gold).toBeGreaterThanOrEqual(0);
+    });
+  });
 });
 
 interface NamedSnapshot {
@@ -379,6 +425,7 @@ const allSnapshots: NamedSnapshot[] = [
   { name: "failureResultSnapshot", snapshot: failureResultSnapshot },
   { name: "partialResultSnapshot", snapshot: partialResultSnapshot },
   { name: "returnSnapshot", snapshot: returnSnapshot },
+  { name: "dungeonInventorySnapshot", snapshot: dungeonInventorySnapshot },
   { name: "unsupportedSnapshot", snapshot: unsupportedSnapshot },
   { name: "fatalSnapshot", snapshot: fatalSnapshot },
 ];
@@ -465,6 +512,11 @@ describe("type discrimination", () => {
   it("expedition snapshot sets flowState and kind to expedition", () => {
     expect(expeditionSnapshot.flowState).toBe("expedition");
     expect(expeditionSnapshot.viewModel.kind).toBe("expedition");
+  });
+
+  it("dungeon inventory snapshot sets flowState and kind to dungeon-inventory", () => {
+    expect(dungeonInventorySnapshot.flowState).toBe("dungeon-inventory");
+    expect(dungeonInventorySnapshot.viewModel.kind).toBe("dungeon-inventory");
   });
 
   it("return snapshot sets flowState and kind to return", () => {

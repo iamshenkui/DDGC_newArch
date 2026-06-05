@@ -7,6 +7,7 @@ export type FlowState =
   | "provisioning"
   | "expedition"
   | "combat"
+  | "dungeon-inventory"
   | "result"
   | "return";
 
@@ -253,6 +254,45 @@ export interface ReturnViewModel {
   isTownResumeAvailable: boolean;
 }
 
+export interface DungeonInventoryItem {
+  id: string;
+  name: string;
+  description: string;
+  quantity: number;
+  icon?: string;
+  category: "consumable" | "equipment" | "material" | "quest";
+  isUsable: boolean;
+}
+
+export interface DungeonHeroEquipment {
+  weapon?: { name: string; level: number; icon?: string };
+  armor?: { name: string; level: number; icon?: string };
+  trinket1?: { name: string; level: number; icon?: string };
+  trinket2?: { name: string; level: number; icon?: string };
+}
+
+export interface DungeonInventoryViewModel {
+  kind: "dungeon-inventory";
+  title: string;
+  dungeonName: string;
+  sceneBanner?: string;
+  hero: {
+    heroId: string;
+    heroName: string;
+    classLabel: string;
+    portrait?: string;
+    hp: string;
+    maxHp: string;
+    stress: string;
+    maxStress: string;
+    level: number;
+    equipment: DungeonHeroEquipment;
+  };
+  inventory: ReadonlyArray<DungeonInventoryItem>;
+  maxInventorySlots: number;
+  gold: number;
+}
+
 export interface UnsupportedViewModel {
   kind: "unsupported";
   title: string;
@@ -274,6 +314,7 @@ export type DdgcViewModel =
   | ExpeditionSetupViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
+  | DungeonInventoryViewModel
   | UnsupportedViewModel
   | FatalErrorViewModel;
 
@@ -293,6 +334,9 @@ export type DdgcFrontendIntent =
   | { type: "toggle-hero-selection"; heroId: string }
   | { type: "confirm-provisioning" }
   | { type: "launch-expedition" }
+  | { type: "open-dungeon-inventory"; heroId?: string }
+  | { type: "close-dungeon-inventory" }
+  | { type: "use-item"; itemId: string }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }
   | { type: "resume-from-return" };

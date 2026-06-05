@@ -6,7 +6,8 @@ import {
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
-  replayReturnViewModel
+  replayReturnViewModel,
+  replayDungeonInventoryViewModel
 } from "../validation/replayFixtures";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
 import type {
@@ -16,7 +17,8 @@ import type {
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
-  ReturnViewModel
+  ReturnViewModel,
+  DungeonInventoryViewModel
 } from "./contractTypes";
 
 export class ReplayRuntimeBridge implements RuntimeBridge {
@@ -136,6 +138,38 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       case "resume-from-return":
         this.snapshot = replayReadySnapshot;
+        break;
+      case "open-dungeon-inventory": {
+        const townVm = this.snapshot.viewModel as TownViewModel;
+        const hero = townVm.heroes.find((h) => h.id === intent.heroId) ?? townVm.heroes[0];
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-inventory",
+          viewModel: {
+            ...replayDungeonInventoryViewModel,
+            hero: {
+              ...replayDungeonInventoryViewModel.hero,
+              heroId: hero.id,
+              heroName: hero.name,
+              classLabel: hero.classLabel,
+              hp: hero.hp.split(" / ")[0],
+              maxHp: hero.hp.split(" / ")[1] ?? hero.hp.split(" / ")[0],
+              stress: hero.stress,
+              maxStress: hero.maxStress,
+              level: hero.level
+            }
+          } as DungeonInventoryViewModel
+        };
+        break;
+      }
+      case "close-dungeon-inventory":
+        this.snapshot = replayReadySnapshot;
+        break;
+      case "use-item":
+        this.snapshot = {
+          ...this.snapshot,
+          debugMessage: `Replay: use-item intent received for ${intent.itemId}.`
+        };
         break;
     }
 

@@ -2,6 +2,7 @@ import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
   DdgcFrontendSnapshot,
+  DungeonInventoryViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
@@ -645,6 +646,39 @@ export const replayReturnViewModel: ReturnViewModel = {
   isTownResumeAvailable: true
 };
 
+export const replayDungeonInventoryViewModel: DungeonInventoryViewModel = {
+  kind: "dungeon-inventory",
+  title: "Dungeon Inventory",
+  dungeonName: "桑町",
+  hero: {
+    heroId: "hero-hunter-01",
+    heroName: "Shen",
+    classLabel: "Hunter",
+    hp: "34",
+    maxHp: "42",
+    stress: "29",
+    maxStress: "200",
+    level: 2,
+    equipment: {
+      weapon: { name: "Hunter's Bow", level: 3 },
+      armor: { name: "Leather Armor", level: 2 },
+      trinket1: { name: "Lucky Charm", level: 1 },
+      trinket2: undefined
+    }
+  },
+  inventory: [
+    { id: "item-scroll-01", name: "破旧卷轴", description: "记载着古老咒语的卷轴，似乎蕴含着某种力量。", quantity: 1, category: "quest", isUsable: false },
+    { id: "item-sword-01", name: "铁剑", description: "一把普通的铁剑，适合近战使用。", quantity: 1, category: "equipment", isUsable: false },
+    { id: "item-shield-01", name: "木盾", description: "简易的木制盾牌，能提供基础的防护。", quantity: 1, category: "equipment", isUsable: false },
+    { id: "item-gem-01", name: "红宝石", description: "一颗闪耀的红宝石，价值不菲。", quantity: 2, category: "material", isUsable: false },
+    { id: "item-potion-01", name: "治疗药水", description: "恢复少量生命值的药水。", quantity: 3, category: "consumable", isUsable: true },
+    { id: "item-potion-02", name: "镇定剂", description: "降低压力值的药剂。", quantity: 2, category: "consumable", isUsable: true },
+    { id: "item-material-01", name: "精铁", description: "锻造武器所需的精铁材料。", quantity: 5, category: "material", isUsable: false }
+  ],
+  maxInventorySlots: 16,
+  gold: 1250
+};
+
 export const replayReadySnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
   flowState: "town",
@@ -857,6 +891,14 @@ export const returnSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing return screen."
 };
 
+// Dungeon inventory flow snapshot
+export const dungeonInventorySnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "dungeon-inventory",
+  viewModel: replayDungeonInventoryViewModel,
+  debugMessage: "Replay bridge showing dungeon inventory screen."
+};
+
 // ── Snapshot contract validation ───────────────────────────────────────────────
 
 /**
@@ -877,7 +919,7 @@ export function validateSnapshotContract(snapshot: DdgcFrontendSnapshot): string
   }
 
   // FlowState must be a valid FlowState
-  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "result", "return"];
+  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "dungeon-inventory", "result", "return"];
   if (!validFlowStates.includes(snapshot.flowState as FlowState)) {
     errors.push(
       `flowState "${String(snapshot.flowState)}" is not a valid FlowState. ` +
@@ -933,6 +975,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     provisioning: ["provisioning"],
     expedition: ["expedition"],
     combat: ["expedition"],
+    "dungeon-inventory": ["dungeon-inventory"],
     result: ["result"],
     return: ["return"],
   };
@@ -1019,6 +1062,15 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!Array.isArray(vm.heroOutcomes)) { e.push("ExpeditionResultViewModel: heroOutcomes is not an array"); } else if (vm.heroOutcomes.length === 0) { e.push("ExpeditionResultViewModel: heroOutcomes array is empty"); }
       if (!vm.resourcesGained || typeof vm.resourcesGained !== "object") e.push("ExpeditionResultViewModel: resourcesGained is missing");
       if (typeof vm.isContinueAvailable !== "boolean") e.push("ExpeditionResultViewModel: isContinueAvailable is not a boolean");
+      break;
+    }
+    case "dungeon-inventory": {
+      if (!vm.title || typeof vm.title !== "string") e.push("DungeonInventoryViewModel: title is missing");
+      if (!vm.dungeonName || typeof vm.dungeonName !== "string") e.push("DungeonInventoryViewModel: dungeonName is missing");
+      if (!vm.hero || typeof vm.hero !== "object") e.push("DungeonInventoryViewModel: hero is missing");
+      if (!Array.isArray(vm.inventory)) e.push("DungeonInventoryViewModel: inventory is not an array");
+      if (typeof vm.maxInventorySlots !== "number") e.push("DungeonInventoryViewModel: maxInventorySlots is not a number");
+      if (typeof vm.gold !== "number") e.push("DungeonInventoryViewModel: gold is not a number");
       break;
     }
     case "return": {

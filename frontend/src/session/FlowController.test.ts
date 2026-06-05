@@ -17,6 +17,7 @@ import {
   startupSnapshot,
   provisioningSnapshot,
   expeditionSnapshot,
+  dungeonInventorySnapshot,
   resultSnapshot,
   failureResultSnapshot,
   partialResultSnapshot,
@@ -79,6 +80,11 @@ describe("FlowController", () => {
       expect(screen).toBe("expedition");
     });
 
+    it("returns dungeon-inventory screen for dungeon inventory view model", () => {
+      const screen = resolveScreen(dungeonInventorySnapshot);
+      expect(screen).toBe("dungeon-inventory");
+    });
+
     it("returns result screen for result view model", () => {
       const screen = resolveScreen(resultSnapshot);
       expect(screen).toBe("result");
@@ -102,7 +108,7 @@ describe("FlowController", () => {
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "dungeon-inventory", "result", "return", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -113,6 +119,7 @@ describe("ScreenKey exhaustiveness", () => {
       "building-detail": replayBuildingDetailSnapshot,
       provisioning: provisioningSnapshot,
       expedition: expeditionSnapshot,
+      "dungeon-inventory": dungeonInventorySnapshot,
       result: resultSnapshot,
       return: returnSnapshot,
       unsupported: unsupportedSnapshot,
@@ -389,6 +396,35 @@ describe("canTransition - result and return meta-loop continuation", () => {
       const validation = canTransition(replayReadySnapshot, { type: "building-action", actionId: "train-combat" });
       expect(validation.allowed).toBe(false);
       expect(validation.reason).toContain("only valid in building-detail");
+    });
+  });
+
+  describe("dungeon-inventory transitions", () => {
+    it("allows open-dungeon-inventory from any screen", () => {
+      expect(canTransition(replayReadySnapshot, { type: "open-dungeon-inventory" }).allowed).toBe(true);
+      expect(canTransition(expeditionSnapshot, { type: "open-dungeon-inventory" }).allowed).toBe(true);
+    });
+
+    it("allows close-dungeon-inventory when in dungeon-inventory", () => {
+      const validation = canTransition(dungeonInventorySnapshot, { type: "close-dungeon-inventory" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects close-dungeon-inventory when not in dungeon-inventory", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "close-dungeon-inventory" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in dungeon-inventory");
+    });
+
+    it("allows use-item when in dungeon-inventory", () => {
+      const validation = canTransition(dungeonInventorySnapshot, { type: "use-item", itemId: "item-potion-01" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects use-item when not in dungeon-inventory", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "use-item", itemId: "item-potion-01" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in dungeon-inventory");
     });
   });
 

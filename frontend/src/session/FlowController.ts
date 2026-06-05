@@ -10,7 +10,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "dungeon-inventory" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -39,6 +39,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "expedition") {
     return "expedition";
+  }
+
+  if (snapshot.viewModel.kind === "dungeon-inventory") {
+    return "dungeon-inventory";
   }
 
   if (snapshot.viewModel.kind === "result") {
@@ -149,6 +153,21 @@ export function canTransition(
     case "toggle-hero-selection":
       if (screen !== "provisioning") {
         return { allowed: false, reason: "toggle-hero-selection is only valid in provisioning" };
+      }
+      return { allowed: true };
+
+    case "open-dungeon-inventory":
+      return { allowed: true };
+
+    case "close-dungeon-inventory":
+      if (screen !== "dungeon-inventory") {
+        return { allowed: false, reason: "close-dungeon-inventory is only valid in dungeon-inventory" };
+      }
+      return { allowed: true };
+
+    case "use-item":
+      if (screen !== "dungeon-inventory") {
+        return { allowed: false, reason: "use-item is only valid in dungeon-inventory" };
       }
       return { allowed: true };
 

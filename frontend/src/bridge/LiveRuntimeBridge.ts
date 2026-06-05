@@ -12,6 +12,7 @@ import type {
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
+  DungeonInventoryViewModel,
 } from "./contractTypes";
 import { createTownBuildingSummary } from "../town/buildingCatalog";
 
@@ -358,6 +359,34 @@ const createLiveReturnViewModel = (): ReturnViewModel => ({
   isTownResumeAvailable: true
 });
 
+const createLiveDungeonInventoryViewModel = (hero: TownHeroSummary): DungeonInventoryViewModel => ({
+  kind: "dungeon-inventory",
+  title: "Dungeon Inventory",
+  dungeonName: "桑町",
+  hero: {
+    heroId: hero.id,
+    heroName: hero.name,
+    classLabel: hero.classLabel,
+    hp: hero.hp.split(" / ")[0],
+    maxHp: hero.hp.split(" / ")[1] ?? hero.hp.split(" / ")[0],
+    stress: hero.stress,
+    maxStress: "200",
+    level: hero.level,
+    equipment: {
+      weapon: { name: "Basic Sword", level: 1 },
+      armor: { name: "Cloth Armor", level: 1 },
+      trinket1: undefined,
+      trinket2: undefined
+    }
+  },
+  inventory: [
+    { id: "item-potion-live-01", name: "Healing Potion", description: "Restores a small amount of HP.", quantity: 2, category: "consumable", isUsable: true },
+    { id: "item-scroll-live-01", name: "Mysterious Scroll", description: "An ancient scroll with unknown powers.", quantity: 1, category: "quest", isUsable: false }
+  ],
+  maxInventorySlots: 12,
+  gold: 500
+});
+
 export class LiveRuntimeBridge implements RuntimeBridge {
   readonly id = "ddgc-live-bridge";
   readonly mode: RuntimeMode = "live";
@@ -456,6 +485,25 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         break;
       case "resume-from-return":
         this.snapshot = createLiveTownSnapshot();
+        break;
+      case "open-dungeon-inventory": {
+        const townVm = this.snapshot.viewModel as TownViewModel;
+        const hero = townVm.heroes.find((h) => h.id === intent.heroId) ?? townVm.heroes[0];
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-inventory",
+          viewModel: createLiveDungeonInventoryViewModel(hero)
+        };
+        break;
+      }
+      case "close-dungeon-inventory":
+        this.snapshot = createLiveTownSnapshot();
+        break;
+      case "use-item":
+        this.snapshot = {
+          ...this.snapshot,
+          debugMessage: `Live: use-item intent received for ${intent.itemId}.`
+        };
         break;
     }
 

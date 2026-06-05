@@ -687,4 +687,106 @@ test.describe("browser smoke: fidelity gates", () => {
 
     expectNoErrors(pageErrors, consoleErrors, "Live boot flow");
   });
+
+  // ── Dungeon inventory screen test ───────────────────────────
+  test("dungeon inventory screen renders with equipment and items", async ({ page }) => {
+    const { consoleErrors, pageErrors } = setupErrorCollectors(page);
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+
+    // Boot replay
+    await page.getByRole("button", { name: "Boot Replay" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 8_000 });
+    await settle(page);
+
+    // Navigate to dungeon inventory via test bridge hook
+    await page.evaluate(() => {
+      (window as unknown as Record<string, (intent: unknown) => void>).__ddgc_test_dispatch({
+        type: "open-dungeon-inventory"
+      });
+    });
+    await settle(page, 600);
+
+    // Wait for dungeon inventory viewport
+    await page.waitForSelector(".dungeon-inventory-viewport", { timeout: 8_000 });
+
+    // Verify dungeon name is visible
+    await expect(
+      page.locator(".dungeon-scene-name"),
+      "Dungeon name (桑町) must be visible"
+    ).toHaveText("桑町");
+
+    // Verify return button
+    await expect(
+      page.getByRole("button", { name: "返回" }),
+      "Return button must be visible"
+    ).toBeVisible();
+
+    // Verify hero panel
+    await expect(
+      page.locator(".dungeon-hero-panel"),
+      "Hero equipment panel must be visible"
+    ).toBeVisible();
+
+    await expect(
+      page.locator(".dungeon-hero-name"),
+      "Hero name must be visible"
+    ).toBeVisible();
+
+    // Verify equipment slots
+    await expect(
+      page.locator(".dungeon-equipment-slot"),
+      "Equipment slots must render"
+    ).toHaveCount(4);
+
+    // Verify inventory panel
+    await expect(
+      page.locator(".dungeon-inventory-panel"),
+      "Inventory panel must be visible"
+    ).toBeVisible();
+
+    await expect(
+      page.locator(".dungeon-inventory-panel-title"),
+      "Inventory title (道具) must be visible"
+    ).toHaveText("道具");
+
+    // Verify item slots render
+    await expect(
+      page.locator(".dungeon-item-slot"),
+      "Item slots must render"
+    ).toHaveCount(16); // 7 items + 9 empty slots
+
+    // Verify gold display
+    await expect(
+      page.locator(".dungeon-gold-amount"),
+      "Gold amount must be visible"
+    ).toBeVisible();
+
+    // Fidelity check
+    await expectFidelity(
+      page.locator(".dungeon-inventory-viewport"),
+      "Dungeon inventory screen"
+    );
+    await expectFullPageFidelity(page, "Dungeon inventory screen");
+
+    // Landscape viewport check
+    await expect(
+      page.locator(".dungeon-inventory-viewport"),
+      "Dungeon inventory screen must use .dungeon-inventory-viewport landscape layout"
+    ).toBeVisible();
+
+    // Test return navigation
+    await page.getByRole("button", { name: "返回" }).click();
+    await settle(page, 600);
+
+    // After closing inventory, should be back at town
+    await page.waitForSelector(".town-viewport", { timeout: 8_000 });
+    await expect(
+      page.getByText("城镇中枢"),
+      "Must return to town after closing dungeon inventory"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Dungeon inventory screen");
+  });
 });
