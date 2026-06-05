@@ -687,4 +687,129 @@ test.describe("browser smoke: fidelity gates", () => {
 
     expectNoErrors(pageErrors, consoleErrors, "Live boot flow");
   });
+
+  // ── Settings screen test ───────────────────────────────────
+  test("settings screen navigation and fidelity", async ({ page }) => {
+    const { consoleErrors, pageErrors } = setupErrorCollectors(page);
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+
+    // Boot replay
+    await page.getByRole("button", { name: "Boot Replay" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 8_000 });
+    await settle(page);
+
+    // Navigate to settings via the "设置" side button
+    await page.getByRole("button", { name: "设置", exact: true }).click();
+    await page.waitForSelector(".settings-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    // Verify settings page structure
+    await expect(
+      page.locator(".settings-title"),
+      "Settings title (设置) must be visible"
+    ).toHaveText("设置");
+
+    // Verify category sidebar with 4 categories
+    await expect(
+      page.locator(".settings-category-btn"),
+      "Settings must have 4 category buttons"
+    ).toHaveCount(4);
+
+    // Verify expected categories
+    const expectedCategories = ["音频", "画面", "游戏", "语言"];
+    for (const label of expectedCategories) {
+      await expect(
+        page.locator(".settings-category-label").filter({ hasText: label }),
+        `Settings category "${label}" must be visible`
+      ).toBeVisible();
+    }
+
+    // Verify options panel renders options for the active category
+    await expect(
+      page.locator(".settings-option-row"),
+      "Settings must render option rows for the active category"
+    ).toHaveCount(3);
+
+    // Verify specific option labels exist
+    await expect(
+      page.locator(".settings-option-label").filter({ hasText: "背景音乐" }),
+      "BGM option label must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".settings-option-label").filter({ hasText: "音效" }),
+      "SFX option label must be visible"
+    ).toBeVisible();
+
+    // Verify slider controls exist in audio category
+    await expect(
+      page.locator(".settings-slider"),
+      "Audio category must have 3 slider controls"
+    ).toHaveCount(3);
+
+    // Switch to graphics category
+    await page.locator('.settings-category-btn[data-category="graphics"]').click();
+    await settle(page, 200);
+
+    // Verify graphics options render
+    await expect(
+      page.locator(".settings-option-label").filter({ hasText: "全屏模式" }),
+      "Fullscreen option must render after switching to graphics"
+    ).toBeVisible();
+    await expect(
+      page.locator(".settings-option-label").filter({ hasText: "分辨率" }),
+      "Resolution option must render after switching to graphics"
+    ).toBeVisible();
+
+    // Verify toggle control exists in graphics category
+    await expect(
+      page.locator(".settings-toggle").first(),
+      "Graphics category must have a toggle control"
+    ).toBeVisible();
+
+    // Switch to gameplay category
+    await page.locator('.settings-category-btn[data-category="gameplay"]').click();
+    await settle(page, 200);
+
+    await expect(
+      page.locator(".settings-option-label").filter({ hasText: "自动保存" }),
+      "Auto-save option must render after switching to gameplay"
+    ).toBeVisible();
+
+    // Switch to language category
+    await page.locator('.settings-category-btn[data-category="language"]').click();
+    await settle(page, 200);
+
+    await expect(
+      page.locator(".settings-option-label").filter({ hasText: "界面语言" }),
+      "Language option must render after switching to language"
+    ).toBeVisible();
+
+    // Fidelity — settings is a completed product surface
+    await expectFidelity(page.locator(".settings-viewport"), "Settings screen");
+    await expectFullPageFidelity(page, "Settings screen");
+
+    // Landscape viewport check for settings screen
+    await expect(
+      page.locator(".settings-viewport"),
+      "Settings screen must use .settings-viewport landscape layout"
+    ).toBeVisible();
+
+    // Close settings and return to town
+    await page.getByRole("button", { name: "保存并关闭" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("城镇中枢"),
+      "Must be back at town (城镇中枢) after closing settings"
+    ).toBeVisible();
+    await expect(
+      page.locator(".estate-building-node"),
+      "All 11 building nodes must re-render after closing settings"
+    ).toHaveCount(11);
+
+    expectNoErrors(pageErrors, consoleErrors, "Settings screen flow");
+  });
 });

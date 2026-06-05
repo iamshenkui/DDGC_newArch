@@ -6,7 +6,8 @@ import {
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
-  replayReturnViewModel
+  replayReturnViewModel,
+  settingsSnapshot
 } from "../validation/replayFixtures";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
 import type {
@@ -135,6 +136,16 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "resume-from-return":
+        this.snapshot = replayReadySnapshot;
+        break;
+      case "open-settings":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "town",
+          viewModel: settingsSnapshot.viewModel
+        };
+        break;
+      case "close-settings":
         this.snapshot = replayReadySnapshot;
         break;
     }

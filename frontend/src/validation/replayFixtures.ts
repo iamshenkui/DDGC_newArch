@@ -11,6 +11,7 @@ import type {
   TownHeroSummary,
   TownViewModel,
   UnsupportedViewModel,
+  SettingsViewModel,
   FlowState,
   FrontendLifecycle
 } from "../bridge/contractTypes";
@@ -645,6 +646,31 @@ export const replayReturnViewModel: ReturnViewModel = {
   isTownResumeAvailable: true
 };
 
+export const replaySettingsViewModel: SettingsViewModel = {
+  kind: "settings",
+  title: "设置",
+  categories: [
+    { key: "audio", label: "音频", description: "背景音乐、音效与语音音量控制" },
+    { key: "graphics", label: "画面", description: "分辨率、画质与显示模式" },
+    { key: "gameplay", label: "游戏", description: "自动保存、教程与游戏速度" },
+    { key: "language", label: "语言", description: "界面语言与字幕设置" }
+  ],
+  options: [
+    { id: "bgm-volume", label: "背景音乐", category: "audio", type: "slider", value: "80", min: 0, max: 100 },
+    { id: "sfx-volume", label: "音效", category: "audio", type: "slider", value: "90", min: 0, max: 100 },
+    { id: "voice-volume", label: "语音", category: "audio", type: "slider", value: "70", min: 0, max: 100 },
+    { id: "fullscreen", label: "全屏模式", category: "graphics", type: "toggle", value: "false" },
+    { id: "resolution", label: "分辨率", category: "graphics", type: "select", value: "1920x1080", options: ["1280x720", "1920x1080", "2560x1440", "3840x2160"] },
+    { id: "quality", label: "画质等级", category: "graphics", type: "select", value: "高", options: ["低", "中", "高", "极高"] },
+    { id: "auto-save", label: "自动保存", category: "gameplay", type: "toggle", value: "true" },
+    { id: "tutorial", label: "教程提示", category: "gameplay", type: "toggle", value: "true" },
+    { id: "game-speed", label: "战斗速度", category: "gameplay", type: "select", value: "正常", options: ["慢速", "正常", "快速"] },
+    { id: "ui-language", label: "界面语言", category: "language", type: "select", value: "简体中文", options: ["简体中文", "English", "日本語"] }
+  ],
+  activeCategory: "audio",
+  hasUnsavedChanges: false
+};
+
 export const replayReadySnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
   flowState: "town",
@@ -857,6 +883,14 @@ export const returnSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing return screen."
 };
 
+// Settings flow snapshot
+export const settingsSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "town",
+  viewModel: replaySettingsViewModel,
+  debugMessage: "Replay bridge showing settings screen."
+};
+
 // ── Snapshot contract validation ───────────────────────────────────────────────
 
 /**
@@ -929,7 +963,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
   const flowStateKindMap: Record<string, string[]> = {
     boot: ["boot-load"],
     load: ["boot-load"],
-    town: ["town", "hero-detail", "building-detail"],
+    town: ["town", "hero-detail", "building-detail", "settings"],
     provisioning: ["provisioning"],
     expedition: ["expedition"],
     combat: ["expedition"],
@@ -1027,6 +1061,14 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!vm.summary || typeof vm.summary !== "string") e.push("ReturnViewModel: summary is missing");
       if (!Array.isArray(vm.returningHeroes)) { e.push("ReturnViewModel: returningHeroes is not an array"); } else if (vm.returningHeroes.length === 0) { e.push("ReturnViewModel: returningHeroes array is empty"); }
       if (typeof vm.isTownResumeAvailable !== "boolean") e.push("ReturnViewModel: isTownResumeAvailable is not a boolean");
+      break;
+    }
+    case "settings": {
+      if (!vm.title || typeof vm.title !== "string") e.push("SettingsViewModel: title is missing");
+      if (!Array.isArray(vm.categories)) { e.push("SettingsViewModel: categories is not an array"); } else if (vm.categories.length === 0) { e.push("SettingsViewModel: categories array is empty"); }
+      if (!Array.isArray(vm.options)) { e.push("SettingsViewModel: options is not an array"); } else if (vm.options.length === 0) { e.push("SettingsViewModel: options array is empty"); }
+      if (!vm.activeCategory || typeof vm.activeCategory !== "string") e.push("SettingsViewModel: activeCategory is missing");
+      if (typeof vm.hasUnsavedChanges !== "boolean") e.push("SettingsViewModel: hasUnsavedChanges is not a boolean");
       break;
     }
     case "fatal": {

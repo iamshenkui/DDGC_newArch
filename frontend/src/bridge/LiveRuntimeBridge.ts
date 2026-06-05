@@ -358,6 +358,31 @@ const createLiveReturnViewModel = (): ReturnViewModel => ({
   isTownResumeAvailable: true
 });
 
+const createLiveSettingsViewModel = () => ({
+  kind: "settings" as const,
+  title: "设置",
+  categories: [
+    { key: "audio" as const, label: "音频", description: "背景音乐、音效与语音音量控制" },
+    { key: "graphics" as const, label: "画面", description: "分辨率、画质与显示模式" },
+    { key: "gameplay" as const, label: "游戏", description: "自动保存、教程与游戏速度" },
+    { key: "language" as const, label: "语言", description: "界面语言与字幕设置" }
+  ],
+  options: [
+    { id: "bgm-volume", label: "背景音乐", category: "audio" as const, type: "slider" as const, value: "80", min: 0, max: 100 },
+    { id: "sfx-volume", label: "音效", category: "audio" as const, type: "slider" as const, value: "90", min: 0, max: 100 },
+    { id: "voice-volume", label: "语音", category: "audio" as const, type: "slider" as const, value: "70", min: 0, max: 100 },
+    { id: "fullscreen", label: "全屏模式", category: "graphics" as const, type: "toggle" as const, value: "false" },
+    { id: "resolution", label: "分辨率", category: "graphics" as const, type: "select" as const, value: "1920x1080", options: ["1280x720", "1920x1080", "2560x1440", "3840x2160"] },
+    { id: "quality", label: "画质等级", category: "graphics" as const, type: "select" as const, value: "高", options: ["低", "中", "高", "极高"] },
+    { id: "auto-save", label: "自动保存", category: "gameplay" as const, type: "toggle" as const, value: "true" },
+    { id: "tutorial", label: "教程提示", category: "gameplay" as const, type: "toggle" as const, value: "true" },
+    { id: "game-speed", label: "战斗速度", category: "gameplay" as const, type: "select" as const, value: "正常", options: ["慢速", "正常", "快速"] },
+    { id: "ui-language", label: "界面语言", category: "language" as const, type: "select" as const, value: "简体中文", options: ["简体中文", "English", "日本語"] }
+  ],
+  activeCategory: "audio" as const,
+  hasUnsavedChanges: false
+});
+
 export class LiveRuntimeBridge implements RuntimeBridge {
   readonly id = "ddgc-live-bridge";
   readonly mode: RuntimeMode = "live";
@@ -455,6 +480,16 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "resume-from-return":
+        this.snapshot = createLiveTownSnapshot();
+        break;
+      case "open-settings":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "town",
+          viewModel: createLiveSettingsViewModel()
+        };
+        break;
+      case "close-settings":
         this.snapshot = createLiveTownSnapshot();
         break;
     }

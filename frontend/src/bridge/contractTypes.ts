@@ -253,6 +253,32 @@ export interface ReturnViewModel {
   isTownResumeAvailable: boolean;
 }
 
+export interface SettingsOption {
+  id: string;
+  label: string;
+  category: "audio" | "graphics" | "gameplay" | "language";
+  type: "toggle" | "slider" | "select";
+  value: string;
+  options?: ReadonlyArray<string>;
+  min?: number;
+  max?: number;
+}
+
+export interface SettingsCategory {
+  key: "audio" | "graphics" | "gameplay" | "language";
+  label: string;
+  description: string;
+}
+
+export interface SettingsViewModel {
+  kind: "settings";
+  title: string;
+  categories: ReadonlyArray<SettingsCategory>;
+  options: ReadonlyArray<SettingsOption>;
+  activeCategory: "audio" | "graphics" | "gameplay" | "language";
+  hasUnsavedChanges: boolean;
+}
+
 export interface UnsupportedViewModel {
   kind: "unsupported";
   title: string;
@@ -274,6 +300,7 @@ export type DdgcViewModel =
   | ExpeditionSetupViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
+  | SettingsViewModel
   | UnsupportedViewModel
   | FatalErrorViewModel;
 
@@ -295,4 +322,6 @@ export type DdgcFrontendIntent =
   | { type: "launch-expedition" }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }
-  | { type: "resume-from-return" };
+  | { type: "resume-from-return" }
+  | { type: "open-settings" }
+  | { type: "close-settings" };

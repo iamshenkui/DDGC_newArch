@@ -21,6 +21,7 @@ import {
   failureResultSnapshot,
   partialResultSnapshot,
   returnSnapshot,
+  settingsSnapshot,
 } from "../validation/replayFixtures";
 
 describe("FlowController", () => {
@@ -98,11 +99,16 @@ describe("FlowController", () => {
       const screen = resolveScreen(returnSnapshot);
       expect(screen).toBe("return");
     });
+
+    it("returns settings screen for settings view model", () => {
+      const screen = resolveScreen(settingsSnapshot);
+      expect(screen).toBe("settings");
+    });
   });
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "result", "return", "settings", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -115,6 +121,7 @@ describe("ScreenKey exhaustiveness", () => {
       expedition: expeditionSnapshot,
       result: resultSnapshot,
       return: returnSnapshot,
+      settings: settingsSnapshot,
       unsupported: unsupportedSnapshot,
       fatal: fatalSnapshot,
     };

@@ -13,6 +13,7 @@ import type {
   HeroDetailViewModel,
   ProvisioningViewModel,
   ReturnViewModel,
+  SettingsViewModel,
   TownViewModel,
   UnsupportedViewModel
 } from "../bridge/contractTypes";
@@ -31,6 +32,7 @@ import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
 import { ReturnScreen } from "../screens/expedition/ReturnScreen";
+import { SettingsScreen } from "../screens/system/SettingsScreen";
 
 function createBridge(mode: RuntimeMode): RuntimeBridge {
   return mode === "live" ? new LiveRuntimeBridge() : new ReplayRuntimeBridge();
@@ -112,6 +114,9 @@ export function DdgcApp() {
             onStartProvisioning={() => {
               void dispatchIntent(bridge, { type: "start-provisioning" });
             }}
+            onOpenSettings={() => {
+              void dispatchIntent(bridge, { type: "open-settings" });
+            }}
           />
         </Match>
         <Match
@@ -186,6 +191,16 @@ export function DdgcApp() {
             viewModel={snapshot().viewModel as ReturnViewModel}
             onResumeTown={() => {
               void dispatchIntent(bridge, { type: "resume-from-return" });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "settings" && snapshot().viewModel.kind === "settings"}
+        >
+          <SettingsScreen
+            viewModel={snapshot().viewModel as SettingsViewModel}
+            onClose={() => {
+              void dispatchIntent(bridge, { type: "close-settings" });
             }}
           />
         </Match>

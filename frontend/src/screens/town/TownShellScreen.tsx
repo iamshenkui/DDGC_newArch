@@ -10,6 +10,7 @@ interface TownShellScreenProps {
   onOpenHero: (heroId: string) => void;
   onOpenBuilding: (buildingId: string) => void;
   onStartProvisioning: () => void;
+  onOpenSettings?: () => void;
 }
 
 const ESTATE_STAGE_WIDTH = 1920;
@@ -295,6 +296,7 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                   aria-label="设置"
                   data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons/Settings"
                   data-source-rect="anchoredPosition=(-100,-80) sizeDelta=(136,136)"
+                  onClick={() => props.onOpenSettings?.()}
                 >
                   设置
                 </button>

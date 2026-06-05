@@ -10,7 +10,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "settings" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -47,6 +47,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "return") {
     return "return";
+  }
+
+  if (snapshot.viewModel.kind === "settings") {
+    return "settings";
   }
 
   if (snapshot.flowState === "town") {
@@ -149,6 +153,18 @@ export function canTransition(
     case "toggle-hero-selection":
       if (screen !== "provisioning") {
         return { allowed: false, reason: "toggle-hero-selection is only valid in provisioning" };
+      }
+      return { allowed: true };
+
+    case "open-settings":
+      if (screen !== "town") {
+        return { allowed: false, reason: "open-settings is only valid in town" };
+      }
+      return { allowed: true };
+
+    case "close-settings":
+      if (screen !== "settings") {
+        return { allowed: false, reason: "close-settings is only valid on settings screen" };
       }
       return { allowed: true };
 
