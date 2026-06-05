@@ -388,18 +388,42 @@ export const replayGardenBuildingDetailViewModel: BuildingDetailViewModel = {
   buildingId: "garden",
   label: "天国花园",
   status: "partial",
-  description: "提供特殊休整与恢复服务，在宁静的花园中治愈身心。",
+  description: "提供特殊的花园式服务，在宁静的花园中治愈身心。",
   actions: [
     {
-      id: "rest",
-      label: "休整",
-      description: "在花园中休整，恢复英雄生命值并降低压力。",
+      id: "garden-stargazing",
+      label: "Stargazing Observatory",
+      description: "Gaze at the stars to find peace of mind away from the city's noise.",
       cost: "200 Gold",
       isAvailable: true,
       isUnsupported: false
+    },
+    {
+      id: "garden-memory",
+      label: "Memory Corridor",
+      description: "Reflect on past pain and memories to heal the soul.",
+      cost: "250 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "garden-dream",
+      label: "Dream Chamber",
+      description: "Weave beautiful dreams to restore mental fortitude.",
+      cost: "300 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "garden-upgrade-slots",
+      label: "Expand Garden Slots",
+      description: "Increase the number of heroes that can use garden facilities simultaneously.",
+      cost: "1500 Gold",
+      isAvailable: false,
+      isUnsupported: true
     }
   ],
-  upgradeRequirement: "Reach Town Level 2 to unlock garden upgrades."
+  upgradeRequirement: "Upgrade to expand garden facilities and unlock additional hero slots."
 };
 
 export const replayLegacyTowerBuildingDetailViewModel: BuildingDetailViewModel = {

@@ -3321,3 +3321,554 @@ button {
     font-size: 1rem;
   }
 }
+
+/* ── Garden Building Screen (天国花园) ──────────────────────
+ * Mirrors GardenWindow.prefab layout from reference:
+ *   公会界面-天国花园-使用中
+ *
+ * Layout: left panel (icon + title + NPC + buttons)
+ *         right panel (tab bar + facility cards + hero slots)
+ */
+
+/* ── Tab bar ── */
+.garden-tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid rgba(160, 204, 188, 0.1);
+  margin-bottom: 16px;
+}
+
+.garden-tab-btn {
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--panel-muted);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+}
+
+.garden-tab-btn:hover {
+  color: var(--panel-text);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.garden-tab-btn--active {
+  color: var(--panel-accent);
+  border-bottom-color: var(--panel-accent);
+}
+
+.garden-tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── NPC area (left panel) ── */
+.garden-npc-area {
+  display: flex;
+  justify-content: center;
+  padding: 14px 0;
+}
+
+.garden-npc-frame {
+  width: 180px;
+  height: 220px;
+  border-radius: var(--radius-md);
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 25%, rgba(27, 50, 44, 0.5), transparent 70%),
+    radial-gradient(ellipse at center, rgba(6, 12, 10, 0.8), rgba(0, 0, 0, 0.95));
+  border: 2px solid rgba(160, 204, 188, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 60px rgba(0, 0, 0, 0.3);
+}
+
+.garden-npc-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 30%, rgba(198, 212, 106, 0.06), transparent 70%);
+  pointer-events: none;
+}
+
+.garden-npc-label {
+  font-family: var(--heading-font);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+  opacity: 0.5;
+  letter-spacing: 0.06em;
+}
+
+/* ── Left panel action buttons ── */
+.garden-left-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.garden-talk-btn {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(20, 30, 38, 0.7);
+  border: 1px solid rgba(160, 204, 188, 0.14);
+  color: var(--panel-text);
+  font-family: var(--heading-font);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+}
+
+.garden-talk-btn:hover {
+  background: rgba(198, 212, 106, 0.1);
+  border-color: rgba(198, 212, 106, 0.3);
+  transform: translateY(-1px);
+}
+
+.garden-leave-btn {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  color: var(--panel-muted);
+  font-family: var(--heading-font);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.garden-leave-btn:hover {
+  background: rgba(234, 119, 103, 0.08);
+  border-color: rgba(234, 119, 103, 0.25);
+  color: #ea7767;
+}
+
+/* ── Facility card (use tab) ── */
+.garden-facility-card {
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.garden-facility-header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.garden-facility-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.garden-facility-icon-letter {
+  font-family: var(--heading-font);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+  opacity: 0.7;
+}
+
+.garden-facility-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.garden-facility-name {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--panel-text);
+}
+
+.garden-facility-desc {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--panel-muted);
+  line-height: 1.4;
+}
+
+/* ── Hero slot row ── */
+.garden-slot-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.garden-hero-slot {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.garden-hero-slot--empty {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(198, 212, 106, 0.08), rgba(0, 0, 0, 0.5) 70%),
+    repeating-linear-gradient(
+      135deg,
+      rgba(160, 204, 188, 0.03) 0,
+      rgba(160, 204, 188, 0.03) 4px,
+      rgba(160, 204, 188, 0.06) 4px,
+      rgba(160, 204, 188, 0.06) 8px
+    );
+  border: 1px dashed rgba(160, 204, 188, 0.25);
+}
+
+.garden-hero-slot--empty:hover {
+  border-color: rgba(198, 212, 106, 0.4);
+  background:
+    radial-gradient(circle at 50% 30%, rgba(198, 212, 106, 0.12), rgba(0, 0, 0, 0.5) 70%),
+    repeating-linear-gradient(
+      135deg,
+      rgba(160, 204, 188, 0.04) 0,
+      rgba(160, 204, 188, 0.04) 4px,
+      rgba(160, 204, 188, 0.08) 4px,
+      rgba(160, 204, 188, 0.08) 8px
+    );
+}
+
+.garden-hero-slot-plus {
+  font-size: 1.4rem;
+  font-weight: 300;
+  color: rgba(160, 204, 188, 0.45);
+  user-select: none;
+}
+
+.garden-facility-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(160, 204, 188, 0.06);
+}
+
+/* ── Building detail generic styles (shared across building screens) ── */
+.building-detail-content {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+}
+
+.building-detail-left {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.building-detail-right {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 400px;
+}
+
+.building-detail-header {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(160, 204, 188, 0.1);
+}
+
+.building-detail-sprite {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+
+.building-detail-sprite-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  display: block;
+}
+
+.building-detail-sprite-fallback {
+  font-family: var(--heading-font);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+  opacity: 0.4;
+}
+
+.building-detail-title-area {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.building-detail-eyebrow {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--panel-accent);
+}
+
+.building-detail-name {
+  margin: 0;
+  font-family: var(--heading-font);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--panel-text);
+}
+
+.building-detail-status {
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.building-detail-desc {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: var(--panel-muted);
+  line-height: 1.4;
+  max-width: 50ch;
+}
+
+/* Info card (shared) */
+.building-info-card {
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+}
+
+.building-info-card-title {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--panel-accent);
+  font-family: var(--heading-font);
+}
+
+.building-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.building-info-label {
+  font-size: 0.75rem;
+  color: var(--panel-muted);
+}
+
+.building-info-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--panel-text);
+}
+
+/* Action section (shared) */
+.building-action-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.building-action-section-title {
+  margin: 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--panel-accent);
+  font-family: var(--heading-font);
+}
+
+.building-action-card {
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+}
+
+.building-action-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  gap: 8px;
+}
+
+.building-action-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--panel-text);
+}
+
+.building-action-pill {
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.building-action-pill--unsupported {
+  color: #ea7767;
+  background: rgba(234, 119, 103, 0.1);
+  border: 1px solid rgba(234, 119, 103, 0.15);
+}
+
+.building-action-pill--unavailable {
+  color: #e8a838;
+  background: rgba(232, 168, 56, 0.1);
+  border: 1px solid rgba(232, 168, 56, 0.15);
+}
+
+.building-action-pill--info {
+  color: #82aaff;
+  background: rgba(130, 170, 255, 0.08);
+  border: 1px solid rgba(130, 170, 255, 0.12);
+}
+
+.building-action-desc {
+  margin: 0 0 10px;
+  font-size: 0.75rem;
+  color: var(--panel-muted);
+  line-height: 1.4;
+}
+
+.building-action-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.building-action-cost {
+  font-size: 0.72rem;
+  color: var(--panel-muted);
+}
+
+.building-action-cost strong {
+  color: var(--panel-text);
+  font-weight: 600;
+}
+
+.building-action-cost-unavailable {
+  color: rgba(234, 119, 103, 0.7);
+}
+
+.building-action-cost-unavailable strong {
+  color: rgba(234, 119, 103, 0.8);
+}
+
+.building-action-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  border: 1px solid transparent;
+}
+
+.building-action-btn--primary {
+  background: linear-gradient(135deg, var(--panel-accent), var(--panel-accent-strong));
+  color: #15200b;
+  border-color: rgba(198, 212, 106, 0.3);
+}
+
+.building-action-btn--primary:hover {
+  box-shadow: 0 4px 16px rgba(159, 191, 59, 0.25);
+  transform: translateY(-1px);
+}
+
+.building-action-btn--disabled {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--panel-muted);
+  border-color: rgba(160, 204, 188, 0.08);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.building-return-row {
+  display: flex;
+  justify-content: center;
+  padding-top: 10px;
+}
+
+.building-return-btn {
+  padding: 12px 28px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  color: var(--panel-text);
+  font-family: var(--heading-font);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.building-return-btn:hover {
+  background: rgba(198, 212, 106, 0.08);
+  border-color: rgba(198, 212, 106, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Responsive: collapse building detail to single column */
+@media (max-width: 920px) {
+  .building-detail-content {
+    grid-template-columns: 1fr;
+  }
+
+  .garden-npc-frame {
+    width: 140px;
+    height: 180px;
+  }
+}

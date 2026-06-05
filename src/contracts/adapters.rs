@@ -869,6 +869,10 @@ fn building_label_and_description(building_id: &str) -> (String, String) {
             "Tavern".to_string(),
             "The tavern provides food, drink, and entertainment. Reduce stress and boost morale.".to_string(),
         ),
+        "garden" => (
+            "天国花园".to_string(),
+            "提供特殊的花园式服务，在宁静的花园中治愈身心。".to_string(),
+        ),
         "abbey" => (
             "Abbey".to_string(),
             "The abbey offers spiritual respite. Reduce hero stress through prayer and meditation.".to_string(),
@@ -912,6 +916,7 @@ fn building_upgrade_hint(building_id: &str) -> Option<String> {
         "blacksmith" => Some("Upgrade to improve equipment discounts and repair efficiency.".to_string()),
         "sanitarium" => Some("Upgrade to unlock additional treatment slots and reduce costs.".to_string()),
         "tavern" => Some("Upgrade to improve stress healing and unlock new activities.".to_string()),
+        "garden" => Some("Upgrade to expand garden facilities and unlock additional hero slots.".to_string()),
         "abbey" => Some("Upgrade to deepen spiritual healing and unlock meditation.".to_string()),
         "inn" => Some("Upgrade to improve rest quality and food options.".to_string()),
         "graveyard" => Some("Upgrade to unlock memorial ceremonies and hero recovery.".to_string()),
@@ -928,8 +933,8 @@ fn building_upgrade_hint(building_id: &str) -> Option<String> {
 /// Actions include costs, availability (based on gold and building status), and
 /// unsupported flags for features not yet implemented in the current build.
 ///
-/// Currently covered building types (11 total from registry):
-/// - Primary: stagecoach, guild, blacksmith, sanitarium, tavern, abbey
+/// Currently covered building types (12 total from registry):
+/// - Primary: stagecoach, guild, blacksmith, sanitarium, tavern, abbey, garden
 /// - Secondary: inn, graveyard, museum, provisioner, sanctuary
 /// - Special: campfire
 fn generate_building_actions(
@@ -1072,6 +1077,40 @@ fn generate_building_actions(
                 cost: "150 Gold".to_string(),
                 is_available: is_ready && current_gold >= 150,
                 is_unsupported: false,
+            },
+        ],
+        "garden" => vec![
+            BuildingAction {
+                id: "garden-stargazing".to_string(),
+                label: "Stargazing Observatory".to_string(),
+                description: "Gaze at the stars to find peace of mind away from the city's noise.".to_string(),
+                cost: "200 Gold".to_string(),
+                is_available: is_ready && current_gold >= 200,
+                is_unsupported: false,
+            },
+            BuildingAction {
+                id: "garden-memory".to_string(),
+                label: "Memory Corridor".to_string(),
+                description: "Reflect on past pain and memories to heal the soul.".to_string(),
+                cost: "250 Gold".to_string(),
+                is_available: is_ready && current_gold >= 250,
+                is_unsupported: false,
+            },
+            BuildingAction {
+                id: "garden-dream".to_string(),
+                label: "Dream Chamber".to_string(),
+                description: "Weave beautiful dreams to restore mental fortitude.".to_string(),
+                cost: "300 Gold".to_string(),
+                is_available: is_ready && current_gold >= 300,
+                is_unsupported: false,
+            },
+            BuildingAction {
+                id: "garden-upgrade-slots".to_string(),
+                label: "Expand Garden Slots".to_string(),
+                description: "Increase the number of heroes that can use garden facilities simultaneously.".to_string(),
+                cost: "1500 Gold".to_string(),
+                is_available: is_ready && current_gold >= 1500,
+                is_unsupported: true,
             },
         ],
         "abbey" => vec![
