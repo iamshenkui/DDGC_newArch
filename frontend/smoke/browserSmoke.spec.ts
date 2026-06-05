@@ -332,6 +332,39 @@ test.describe("browser smoke: fidelity gates", () => {
 
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
 
+    // ── Phase 4b: Trinket Inventory (饰品仓库) ───────────────
+    // Return to town first
+    await page.getByRole("button", { name: "Return to Town" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    // Click the "饰品仓库" top-right utility button to open inventory
+    await page.getByRole("button", { name: "饰品仓库", exact: true }).click();
+    await settle(page, 800);
+
+    await expect(
+      page.locator(".inventory-title"),
+      "Inventory title (饰品仓库) must be visible"
+    ).toHaveText("饰品仓库");
+    await expect(
+      page.locator(".inventory-hero-card"),
+      "Inventory hero cards must be visible"
+    ).toHaveCount(3);
+    await expect(
+      page.locator(".inventory-trinket-card"),
+      "Inventory trinket cards must be visible"
+    ).toHaveCount(4);
+    await expect(
+      page.locator(".inventory-filter-pill"),
+      "Inventory filter pills must be visible"
+    ).toHaveCount(6);
+
+    // Fidelity — inventory is a completed product surface
+    await expectFidelity(page.locator(".app-frame"), "Inventory screen");
+    await expectFullPageFidelity(page, "Inventory screen");
+
+    expectNoErrors(pageErrors, consoleErrors, "Phase 4b (trinket inventory)");
+
     // ── Phase 5: Full meta-loop ─────────────────────────────
     // Town → Provisioning → Expedition → Result → Return → Town
 

@@ -7,6 +7,7 @@ import type {
   ReturnViewModel,
   FatalErrorViewModel,
   HeroDetailViewModel,
+  InventoryViewModel,
   ProvisioningViewModel,
   TownHeroSummary,
   TownViewModel,
@@ -98,6 +99,86 @@ export const replayTownViewModel: TownViewModel = {
   gold: 1250,
   isFreshVisit: true,
   nextActionLabel: "整备远征"
+};
+
+export const replayInventoryViewModel: InventoryViewModel = {
+  kind: "inventory",
+  title: "饰品仓库",
+  trinkets: [
+    {
+      name: "猎人徽章",
+      description: "+10% 命中率，猎人专属",
+      rarity: "稀有",
+      classRestriction: "Hunter",
+      isEquipped: true
+    },
+    {
+      name: "古老护符",
+      description: "+5% 闪避，所有职业可用",
+      rarity: "普通",
+      isEquipped: false
+    },
+    {
+      name: "瘟疫面具",
+      description: "+20% 疾病抗性",
+      rarity: "史诗",
+      isEquipped: false
+    },
+    {
+      name: "审判之眼",
+      description: "+15% 暴击率",
+      rarity: "传说",
+      isEquipped: true
+    },
+    {
+      name: "坚韧之石",
+      description: "+8 最大生命值",
+      rarity: "普通",
+      isEquipped: false
+    },
+    {
+      name: "神圣蜡烛",
+      description: "-10% 压力伤害",
+      rarity: "稀有",
+      isEquipped: false
+    }
+  ],
+  heroes: [
+    {
+      heroId: "hero-hunter-01",
+      heroName: "Shen",
+      classLabel: "Hunter",
+      leftTrinket: {
+        name: "猎人徽章",
+        description: "+10% 命中率，猎人专属",
+        rarity: "稀有",
+        classRestriction: "Hunter",
+        isEquipped: true
+      },
+      rightTrinket: undefined
+    },
+    {
+      heroId: "hero-white-01",
+      heroName: "Bai Xiu",
+      classLabel: "White",
+      leftTrinket: undefined,
+      rightTrinket: {
+        name: "审判之眼",
+        description: "+15% 暴击率",
+        rarity: "传说",
+        isEquipped: true
+      }
+    },
+    {
+      heroId: "hero-black-01",
+      heroName: "Hei Zhen",
+      classLabel: "Black",
+      leftTrinket: undefined,
+      rightTrinket: undefined
+    }
+  ],
+  filterOptions: ["全部", "普通", "稀有", "史诗", "传说", "已装备"],
+  activeFilter: "全部"
 };
 
 export const replayHeroDetailViewModel: HeroDetailViewModel = {
@@ -666,6 +747,13 @@ export const replayBuildingDetailSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing building detail for interaction."
 };
 
+export const replayInventorySnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "inventory",
+  viewModel: replayInventoryViewModel,
+  debugMessage: "Replay bridge showing trinket inventory for interaction."
+};
+
 export const replayBlacksmithBuildingSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
   flowState: "town",
@@ -987,6 +1075,14 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!["ready", "partial", "locked"].includes(vm.status as string)) e.push(`BuildingDetailViewModel: status is "${String(vm.status)}", expected "ready", "partial", or "locked"`);
       if (!vm.description || typeof vm.description !== "string") e.push("BuildingDetailViewModel: description is missing");
       if (!Array.isArray(vm.actions)) { e.push("BuildingDetailViewModel: actions is not an array"); } else if (vm.actions.length === 0) { e.push("BuildingDetailViewModel: actions array is empty"); }
+      break;
+    }
+    case "inventory": {
+      if (!vm.title || typeof vm.title !== "string") e.push("InventoryViewModel: title is missing");
+      if (!Array.isArray(vm.trinkets)) e.push("InventoryViewModel: trinkets is not an array");
+      if (!Array.isArray(vm.heroes)) e.push("InventoryViewModel: heroes is not an array");
+      if (!Array.isArray(vm.filterOptions)) e.push("InventoryViewModel: filterOptions is not an array");
+      if (!vm.activeFilter || typeof vm.activeFilter !== "string") e.push("InventoryViewModel: activeFilter is missing");
       break;
     }
     case "provisioning": {

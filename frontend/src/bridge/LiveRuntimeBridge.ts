@@ -8,6 +8,7 @@ import type {
   TownBuildingSummary,
   HeroDetailViewModel,
   BuildingDetailViewModel,
+  InventoryViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
@@ -172,6 +173,54 @@ const createLiveHeroDetailViewModel = (hero: TownHeroSummary): HeroDetailViewMod
   isAfflicted: hero.isAfflicted,
   heroDescription: "A brave hero ready for adventure.",
   talent: "Versatile"
+});
+
+const createLiveInventoryViewModel = (): InventoryViewModel => ({
+  kind: "inventory",
+  title: "饰品仓库",
+  trinkets: [
+    {
+      name: "新兵护符",
+      description: "+5% 闪避",
+      rarity: "普通",
+      isEquipped: false
+    },
+    {
+      name: "古老圣徽",
+      description: "+10% 疾病抗性",
+      rarity: "稀有",
+      isEquipped: true
+    },
+    {
+      name: "勇者之证",
+      description: "+8 最大生命值",
+      rarity: "普通",
+      isEquipped: false
+    }
+  ],
+  heroes: [
+    {
+      heroId: "hero-hunter-live-01",
+      heroName: "Yuan",
+      classLabel: "Hunter",
+      leftTrinket: {
+        name: "古老圣徽",
+        description: "+10% 疾病抗性",
+        rarity: "稀有",
+        isEquipped: true
+      },
+      rightTrinket: undefined
+    },
+    {
+      heroId: "hero-white-live-01",
+      heroName: "Mei",
+      classLabel: "White",
+      leftTrinket: undefined,
+      rightTrinket: undefined
+    }
+  ],
+  filterOptions: ["全部", "普通", "稀有", "史诗", "传说", "已装备"],
+  activeFilter: "全部"
 });
 
 const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): BuildingDetailViewModel => {
@@ -399,6 +448,13 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       }
+      case "open-inventory":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "inventory",
+          viewModel: createLiveInventoryViewModel()
+        };
+        break;
       case "building-action":
         this.snapshot = {
           ...this.snapshot,

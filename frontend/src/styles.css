@@ -3297,6 +3297,232 @@ button {
   gap: 4px;
 }
 
+/* ── Inventory / 饰品仓库 ─────────────────────────────── */
+
+.inventory-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 20px 8px;
+  border-bottom: 1px solid rgba(160, 204, 188, 0.08);
+}
+
+.inventory-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--panel-text);
+  margin: 0;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+}
+
+.inventory-subtitle {
+  font-size: 0.78rem;
+  color: rgba(218, 198, 168, 0.55);
+  letter-spacing: 0.04em;
+}
+
+.inventory-filter-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 20px;
+  border-bottom: 1px solid rgba(160, 204, 188, 0.06);
+  overflow-x: auto;
+}
+
+.inventory-filter-pill {
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+  color: rgba(218, 198, 168, 0.6);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.inventory-filter-pill:hover {
+  border-color: rgba(160, 204, 188, 0.3);
+  color: rgba(218, 198, 168, 0.85);
+}
+
+.inventory-filter-pill--active {
+  border-color: rgba(160, 204, 188, 0.45);
+  background: rgba(160, 204, 188, 0.1);
+  color: var(--panel-text);
+}
+
+.inventory-content {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+  padding: 16px 20px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.inventory-left,
+.inventory-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.inventory-section-title {
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: rgba(218, 198, 168, 0.7);
+  margin: 0 0 4px;
+  letter-spacing: 0.04em;
+}
+
+.inventory-hero-card {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.25) 100%);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inventory-hero-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inventory-hero-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--panel-text);
+}
+
+.inventory-hero-class {
+  font-size: 0.72rem;
+  color: rgba(218, 198, 168, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.inventory-hero-trinkets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.inventory-trinket-slot {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 56px;
+}
+
+.inventory-trinket-slot--empty {
+  border-style: dashed;
+  opacity: 0.6;
+}
+
+.inventory-trinket-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--panel-text);
+}
+
+.inventory-trinket-desc {
+  font-size: 0.68rem;
+  color: rgba(218, 198, 168, 0.55);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.inventory-trinket-placeholder {
+  font-size: 0.72rem;
+  color: rgba(218, 198, 168, 0.35);
+  text-align: center;
+  align-self: center;
+}
+
+.inventory-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: rgba(218, 198, 168, 0.4);
+  font-size: 0.85rem;
+}
+
+.inventory-trinket-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.inventory-trinket-card {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.25) 100%);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.15s ease;
+}
+
+.inventory-trinket-card:hover {
+  border-color: rgba(160, 204, 188, 0.2);
+}
+
+.inventory-trinket-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.inventory-trinket-card-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--panel-text);
+}
+
+.inventory-trinket-rarity-badge {
+  font-size: 0.6rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.trinket-rarity-common { color: rgba(218, 198, 168, 0.7); }
+.trinket-rarity-uncommon { color: #7ecf7e; }
+.trinket-rarity-rare { color: #4aa3df; }
+.trinket-rarity-epic { color: #a855f7; }
+.trinket-rarity-legendary { color: #f59e0b; }
+
+.inventory-trinket-card-desc {
+  font-size: 0.72rem;
+  color: rgba(218, 198, 168, 0.55);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.inventory-trinket-restriction {
+  font-size: 0.65rem;
+  color: rgba(218, 198, 168, 0.4);
+  font-style: italic;
+}
+
 /* ── Responsive: collapse to portrait on narrow screens ─ */
 @media (max-width: 920px) {
   .app-shell {
@@ -3319,5 +3545,13 @@ button {
 
   .viewport-title {
     font-size: 1rem;
+  }
+
+  .inventory-content {
+    grid-template-columns: 1fr;
+  }
+
+  .inventory-trinket-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   }
 }

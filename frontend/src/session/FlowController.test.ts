@@ -14,6 +14,7 @@ import {
   replayReadySnapshot,
   replayHeroDetailSnapshot,
   replayBuildingDetailSnapshot,
+  replayInventorySnapshot,
   startupSnapshot,
   provisioningSnapshot,
   expeditionSnapshot,
@@ -69,6 +70,11 @@ describe("FlowController", () => {
       expect(screen).toBe("building-detail");
     });
 
+    it("returns inventory screen for inventory view model", () => {
+      const screen = resolveScreen(replayInventorySnapshot);
+      expect(screen).toBe("inventory");
+    });
+
     it("returns provisioning screen for provisioning view model", () => {
       const screen = resolveScreen(provisioningSnapshot);
       expect(screen).toBe("provisioning");
@@ -102,7 +108,7 @@ describe("FlowController", () => {
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "inventory", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -111,6 +117,7 @@ describe("ScreenKey exhaustiveness", () => {
       town: replayReadySnapshot,
       "hero-detail": replayHeroDetailSnapshot,
       "building-detail": replayBuildingDetailSnapshot,
+      inventory: replayInventorySnapshot,
       provisioning: provisioningSnapshot,
       expedition: expeditionSnapshot,
       result: resultSnapshot,

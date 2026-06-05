@@ -4,6 +4,7 @@ export type FlowState =
   | "boot"
   | "load"
   | "town"
+  | "inventory"
   | "provisioning"
   | "expedition"
   | "combat"
@@ -107,6 +108,24 @@ export interface TrinketItem {
   name: string;
   description: string;
   icon?: string;
+  rarity?: string;
+  classRestriction?: string;
+  isEquipped: boolean;
+}
+
+export interface InventoryViewModel {
+  kind: "inventory";
+  title: string;
+  trinkets: ReadonlyArray<TrinketItem>;
+  heroes: ReadonlyArray<{
+    heroId: string;
+    heroName: string;
+    classLabel: string;
+    leftTrinket?: TrinketItem;
+    rightTrinket?: TrinketItem;
+  }>;
+  filterOptions: ReadonlyArray<string>;
+  activeFilter: string;
 }
 
 export interface SkillDetail {
@@ -270,6 +289,7 @@ export type DdgcViewModel =
   | TownViewModel
   | HeroDetailViewModel
   | BuildingDetailViewModel
+  | InventoryViewModel
   | ProvisioningViewModel
   | ExpeditionSetupViewModel
   | ExpeditionResultViewModel
@@ -288,6 +308,7 @@ export type DdgcFrontendIntent =
   | { type: "boot"; mode: RuntimeMode }
   | { type: "open-hero"; heroId: string }
   | { type: "open-building"; buildingId: string }
+  | { type: "open-inventory" }
   | { type: "building-action"; actionId: string }
   | { type: "start-provisioning" }
   | { type: "toggle-hero-selection"; heroId: string }

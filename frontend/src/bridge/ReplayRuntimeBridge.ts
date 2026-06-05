@@ -3,6 +3,7 @@ import {
   replayReadySnapshot,
   replayHeroDetailViewModel,
   replayBuildingDetailViewModel,
+  replayInventoryViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
@@ -76,6 +77,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       }
+      case "open-inventory":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "inventory",
+          viewModel: replayInventoryViewModel
+        };
+        break;
       case "building-action":
         this.snapshot = {
           ...this.snapshot,

@@ -9,6 +9,7 @@ interface TownShellScreenProps {
   viewModel: TownViewModel;
   onOpenHero: (heroId: string) => void;
   onOpenBuilding: (buildingId: string) => void;
+  onOpenInventory: () => void;
   onStartProvisioning: () => void;
 }
 
@@ -273,6 +274,7 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                   aria-label="饰品仓库"
                   data-source-prefab="UI_Shared/UI_Panels/BottomPanel/SideButtons/RealmInventory"
                   data-source-rect="anchoredPosition=(-340,-80) sizeDelta=(136,136)"
+                  onClick={props.onOpenInventory}
                 >
                   饰品仓库
                 </button>

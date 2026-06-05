@@ -11,6 +11,7 @@ import type {
   ExpeditionSetupViewModel,
   FatalErrorViewModel,
   HeroDetailViewModel,
+  InventoryViewModel,
   ProvisioningViewModel,
   ReturnViewModel,
   TownViewModel,
@@ -27,6 +28,7 @@ import { StartupScreen } from "../screens/startup/StartupScreen";
 import { TownShellScreen } from "../screens/town/TownShellScreen";
 import { HeroDetailScreen } from "../screens/town/HeroDetailScreen";
 import { BuildingScreenRouter } from "../screens/town/BuildingScreenRouter";
+import { TrinketInventoryScreen } from "../screens/town/TrinketInventoryScreen";
 import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
@@ -109,6 +111,9 @@ export function DdgcApp() {
             onOpenBuilding={(buildingId) => {
               void dispatchIntent(bridge, { type: "open-building", buildingId });
             }}
+            onOpenInventory={() => {
+              void dispatchIntent(bridge, { type: "open-inventory" });
+            }}
             onStartProvisioning={() => {
               void dispatchIntent(bridge, { type: "start-provisioning" });
             }}
@@ -134,6 +139,16 @@ export function DdgcApp() {
             }}
             onAction={(actionId) => {
               void dispatchIntent(bridge, { type: "building-action", actionId });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "inventory" && snapshot().viewModel.kind === "inventory"}
+        >
+          <TrinketInventoryScreen
+            viewModel={snapshot().viewModel as InventoryViewModel}
+            onReturn={() => {
+              void dispatchIntent(bridge, { type: "return-to-town" });
             }}
           />
         </Match>
