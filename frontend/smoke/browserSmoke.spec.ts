@@ -404,26 +404,47 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page);
 
     await expect(
-      page.locator(".eyebrow").filter({ hasText: "Expedition Complete" }),
-      "Result screen eyebrow must be visible"
+      page.locator('[data-testid="dungeon-settlement-screen"]'),
+      "Dungeon settlement screen root must mount"
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Expedition Complete" }),
-      "Result screen heading must be visible"
+      page.locator(".eyebrow").filter({ hasText: "副本结算" }),
+      "Settlement eyebrow (副本结算) must be visible"
     ).toBeVisible();
     await expect(
-      page.getByText("Victory"),
-      "Victory outcome must be visible"
+      page.getByText("收集的奖励"),
+      "Settlement reward label must be visible"
     ).toBeVisible();
     await expect(
-      page.getByText("Ancient Gold Coin"),
-      "Loot must be visible"
+      page.getByText("收集的宝藏"),
+      "Settlement treasure label must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("收集的传家宝"),
+      "Settlement heirloom label must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("英雄状态"),
+      "Settlement hero status label must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".settlement-treasure-value").filter({ hasText: "250" }),
+      "Settlement treasure value must come from runtime data"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-blocker="heirloom-counts-not-wired"]'),
+      "Heirloom blocker must be surfaced for observability"
     ).toBeVisible();
     await expectFidelity(
       page.locator(".expedition-viewport"),
       "Result screen"
     );
     await expectFullPageFidelity(page, "Result screen");
+
+    // Screenshot coverage of the dungeon settlement page
+    await expect(page.locator(".settlement-book")).toHaveScreenshot("dungeon-settlement.png", {
+      maxDiffPixels: 200,
+    });
 
     // Landscape viewport check for result screen
     await expect(
@@ -617,12 +638,16 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page);
 
     await expect(
-      page.locator(".eyebrow").filter({ hasText: "Expedition Complete" }),
-      "Live result screen eyebrow must be visible"
+      page.locator('[data-testid="dungeon-settlement-screen"]'),
+      "Live dungeon settlement screen root must mount"
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Expedition Complete" }),
-      "Live result screen heading must be visible"
+      page.locator(".eyebrow").filter({ hasText: "副本结算" }),
+      "Live settlement eyebrow (副本结算) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("收集的奖励"),
+      "Live settlement reward label must be visible"
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Proceed to Return" }).click();

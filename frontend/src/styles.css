@@ -3297,6 +3297,362 @@ button {
   gap: 4px;
 }
 
+/* ── Dungeon Settlement (副本结算) book-style layout ─────────
+ * Mirrors Assets/Prefabs/UI/DungeonSettlementWindow.prefab
+ *   SettlementBook → open book spread with left/right pages
+ *   RewardBar      → 5-segment tier visualization
+ *   TreasureLine   → gold total
+ *   HeirloomRow    → 3 placeholder heirloom counters
+ *   HeroList       → portrait + name + HP/stress orbs
+ */
+.settlement-content {
+  padding: 18px 24px;
+}
+
+.settlement-book {
+  display: flex;
+  width: 100%;
+  max-width: 980px;
+  min-height: 520px;
+  margin: 0 auto;
+  border-radius: 14px;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.35) 50%, rgba(0, 0, 0, 0.55) 100%),
+    linear-gradient(180deg, #e8e0d0 0%, #d8cfc0 100%);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  color: #2b2622;
+}
+
+.settlement-page {
+  flex: 1 1 50%;
+  padding: 28px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.settlement-page--left {
+  background:
+    radial-gradient(ellipse 80% 40% at 20% 10%, rgba(255, 255, 255, 0.25), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
+}
+
+.settlement-page--right {
+  background:
+    radial-gradient(ellipse 80% 40% at 80% 10%, rgba(255, 255, 255, 0.25), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
+}
+
+.settlement-spine {
+  flex: 0 0 28px;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.55) 0%, rgba(60, 50, 40, 0.9) 30%, rgba(40, 32, 26, 0.95) 50%, rgba(60, 50, 40, 0.9) 70%, rgba(0, 0, 0, 0.55) 100%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.04) 0,
+      rgba(255, 255, 255, 0.04) 2px,
+      transparent 2px,
+      transparent 6px
+    );
+  box-shadow:
+    inset 2px 0 6px rgba(0, 0, 0, 0.5),
+    inset -2px 0 6px rgba(0, 0, 0, 0.5);
+}
+
+.settlement-outcome {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.settlement-outcome-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--heading-font);
+  font-size: 1.4rem;
+  font-weight: 700;
+  flex: 0 0 auto;
+  background: rgba(0, 0, 0, 0.15);
+  border: 2px solid rgba(0, 0, 0, 0.25);
+}
+
+.settlement-outcome--success .settlement-outcome-icon {
+  color: #5a4a18;
+  background: rgba(232, 200, 74, 0.55);
+  border-color: rgba(90, 74, 24, 0.6);
+}
+
+.settlement-outcome--failure .settlement-outcome-icon {
+  color: #4a1a14;
+  background: rgba(234, 119, 103, 0.55);
+  border-color: rgba(80, 24, 18, 0.6);
+}
+
+.settlement-outcome--partial .settlement-outcome-icon {
+  color: #5a3a0c;
+  background: rgba(232, 168, 56, 0.55);
+  border-color: rgba(90, 58, 12, 0.6);
+}
+
+.settlement-outcome-label {
+  font-family: var(--heading-font);
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.settlement-outcome--success .settlement-outcome-label { color: #4a5a1a; }
+.settlement-outcome--failure .settlement-outcome-label { color: #7a2a1e; }
+.settlement-outcome--partial .settlement-outcome-label { color: #6a4a0e; }
+
+.settlement-outcome-sub {
+  font-size: 0.8rem;
+  color: #4a423a;
+  opacity: 0.85;
+}
+
+.settlement-section-title {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #3a322a;
+  text-transform: uppercase;
+}
+
+.settlement-reward-bar {
+  display: flex;
+  gap: 4px;
+  height: 18px;
+  margin-bottom: 8px;
+}
+
+.settlement-reward-segment {
+  flex: 1 1 auto;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.settlement-reward-segment--gold {
+  background: linear-gradient(180deg, #f5de7a, #d4b03a);
+  border-color: rgba(110, 90, 28, 0.6);
+}
+
+.settlement-reward-segment--silver {
+  background: linear-gradient(180deg, #e2e2e2, #a0a0a0);
+  border-color: rgba(80, 80, 80, 0.6);
+}
+
+.settlement-reward-segment--bronze {
+  background: linear-gradient(180deg, #d49c6e, #a06838);
+  border-color: rgba(90, 56, 28, 0.6);
+}
+
+.settlement-reward-legend {
+  display: flex;
+  gap: 12px;
+  font-size: 0.7rem;
+  color: #4a423a;
+}
+
+.settlement-reward-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.settlement-reward-tag::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+}
+
+.settlement-reward-tag--gold::before {
+  background: linear-gradient(180deg, #f5de7a, #d4b03a);
+}
+
+.settlement-reward-tag--silver::before {
+  background: linear-gradient(180deg, #e2e2e2, #a0a0a0);
+}
+
+.settlement-reward-tag--bronze::before {
+  background: linear-gradient(180deg, #d49c6e, #a06838);
+}
+
+.settlement-treasure {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.settlement-treasure-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.settlement-treasure-value {
+  font-family: var(--heading-font);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #5a4a18;
+}
+
+.settlement-heirloom-row {
+  display: flex;
+  gap: 18px;
+}
+
+.settlement-heirloom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  min-width: 64px;
+}
+
+.settlement-heirloom-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.settlement-heirloom-icon--crest {
+  background: radial-gradient(circle at 30% 30%, #82aaff, #2a3e6e);
+}
+
+.settlement-heirloom-icon--deed {
+  background: radial-gradient(circle at 30% 30%, #c0c0c0, #505050);
+}
+
+.settlement-heirloom-icon--portrait {
+  background: radial-gradient(circle at 30% 30%, #d49c6e, #6a3e1e);
+}
+
+.settlement-heirloom-value {
+  font-family: var(--heading-font);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #3a322a;
+}
+
+.settlement-heroes-section {
+  flex: 1 1 auto;
+}
+
+.settlement-hero-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settlement-hero-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.settlement-hero-row[data-hero-status="dead"] {
+  opacity: 0.65;
+  filter: grayscale(0.6);
+}
+
+.settlement-hero-portrait {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.settlement-hero-portrait--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settlement-hero-portrait-letter {
+  font-family: var(--heading-font);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #4a423a;
+}
+
+.settlement-hero-info {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settlement-hero-name {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #2b2622;
+}
+
+.settlement-hero-orbs {
+  display: flex;
+  gap: 8px;
+}
+
+.settlement-hero-orb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.settlement-hero-orb--hp { background: linear-gradient(180deg, #5bbd6e, #3a8a48); }
+.settlement-hero-orb--stress { background: linear-gradient(180deg, #e8a838, #b87a22); }
+.settlement-hero-orb--wounded { background: linear-gradient(180deg, #ea7767, #a83a2c); }
+.settlement-hero-orb--stressed { background: linear-gradient(180deg, #ea7767, #a83a2c); }
+.settlement-hero-orb--healthy { background: linear-gradient(180deg, #5bbd6e, #3a8a48); }
+
+/* Responsive: stack book pages on narrow viewports */
+@media (max-width: 920px) {
+  .settlement-book {
+    flex-direction: column;
+    max-height: none;
+  }
+
+  .settlement-spine {
+    display: none;
+  }
+}
+
 /* ── Responsive: collapse to portrait on narrow screens ─ */
 @media (max-width: 920px) {
   .app-shell {
