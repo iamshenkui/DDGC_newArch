@@ -315,6 +315,11 @@ test.describe("browser smoke: fidelity gates", () => {
       page.locator(".building-detail-name"),
       "Building name must be visible (DDGC display name 试炼场 = Guild)"
     ).toHaveText("试炼场");
+
+    // Guild building defaults to "use" tab; switch to upgrade tab to see actions
+    await page.locator('.guild-tab[data-tab-id="upgrade"]').click();
+    await settle(page, 300);
+
     await expect(
       page.locator(".building-action-card-header").filter({ hasText: "Train Combat Skill" }),
       "Building action must be visible"
@@ -686,5 +691,127 @@ test.describe("browser smoke: fidelity gates", () => {
     await expectFullPageFidelity(page, "Town after live meta-loop");
 
     expectNoErrors(pageErrors, consoleErrors, "Live boot flow");
+  });
+
+  // ── Guild building usage tab test ──────────────────────────
+  test("guild building usage tab — 公会界面-试炼场-使用", async ({ page }) => {
+    const { consoleErrors, pageErrors } = setupErrorCollectors(page);
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+
+    // Boot replay
+    await page.getByRole("button", { name: "Boot Replay" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 8_000 });
+    await settle(page);
+
+    // Open the Guild building
+    await page.locator('[data-building-id="guild"]').click();
+    await settle(page, 800);
+
+    // Verify building header
+    await expect(
+      page.locator(".building-detail-name"),
+      "Guild building name (试炼场) must be visible"
+    ).toHaveText("试炼场");
+
+    // Verify tabs exist
+    await expect(
+      page.locator('.guild-tab[data-tab-id="upgrade"]'),
+      "Upgrade tab (升级设施) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.guild-tab[data-tab-id="use"]'),
+      "Use tab (使用设施) must be visible"
+    ).toBeVisible();
+
+    // Default tab should be "use" (使用设施)
+    await expect(
+      page.locator('.guild-tab--active[data-tab-id="use"]'),
+      "Use tab must be active by default"
+    ).toBeVisible();
+
+    // Verify use facility panel elements
+    await expect(
+      page.locator(".guild-use-content"),
+      "Guild use facility panel must be visible"
+    ).toBeVisible();
+
+    // Hero preview should show selected hero from first slot
+    await expect(
+      page.locator(".guild-hero-preview-name"),
+      "Hero preview name must be visible"
+    ).toBeVisible();
+
+    // Leave button (离开) must be present
+    await expect(
+      page.locator('.guild-leave-btn'),
+      "Leave button (离开) must be visible"
+    ).toBeVisible();
+
+    // Training slots list
+    await expect(
+      page.locator(".guild-slots-list"),
+      "Training slots list must be visible"
+    ).toBeVisible();
+
+    // At least one slot row should be visible
+    await expect(
+      page.locator(".guild-slot-row").first(),
+      "At least one training slot row must be visible"
+    ).toBeVisible();
+
+    // Resource strip
+    await expect(
+      page.locator(".guild-resource-strip"),
+      "Resource strip must be visible"
+    ).toBeVisible();
+
+    // Gold resource should show value
+    await expect(
+      page.locator(".guild-resource-item--gold .guild-resource-value"),
+      "Gold resource value must be visible"
+    ).toBeVisible();
+
+    // Switch to upgrade tab
+    await page.locator('.guild-tab[data-tab-id="upgrade"]').click();
+    await settle(page, 300);
+
+    await expect(
+      page.locator('.guild-tab--active[data-tab-id="upgrade"]'),
+      "Upgrade tab must become active after click"
+    ).toBeVisible();
+
+    // Upgrade panel should show action cards
+    await expect(
+      page.locator(".building-action-card").first(),
+      "Building action cards must be visible on upgrade tab"
+    ).toBeVisible();
+
+    // Return to town button on upgrade tab
+    await expect(
+      page.locator('.building-return-btn'),
+      "Return to Town button must be visible on upgrade tab"
+    ).toBeVisible();
+
+    // Switch back to use tab before doing fidelity checks
+    await page.locator('.guild-tab[data-tab-id="use"]').click();
+    await settle(page, 300);
+
+    // Fidelity checks — must be done while still on the building screen
+    await expectFidelity(page.locator(".app-frame"), "Guild building screen");
+    await expectFullPageFidelity(page, "Guild building screen");
+
+    // Click 离开 to return to town
+    await page.locator('.guild-leave-btn').click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("城镇中枢"),
+      "Must be back at town after clicking 离开"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Guild usage tab flow");
   });
 });

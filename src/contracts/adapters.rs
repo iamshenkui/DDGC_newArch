@@ -835,6 +835,92 @@ pub fn building_detail_from_campaign(
     // Determine upgrade requirement
     let upgrade_requirement = building_upgrade_hint(building_id);
 
+    // Guild-specific: populate heroes, training slots, and resources
+    let (heroes, training_slots, resources) = if building_id == "guild" {
+        let roster: Vec<crate::contracts::viewmodels::TownHeroViewModel> = campaign
+            .roster
+            .iter()
+            .map(|hero| {
+                let is_wounded = hero.health < hero.max_health;
+                let is_afflicted = hero.stress >= hero.max_stress;
+                crate::contracts::viewmodels::TownHeroViewModel {
+                    id: hero.id.clone(),
+                    name: hero.id.clone(),
+                    class_id: hero.class_id.clone(),
+                    class_name: hero.class_id.clone(),
+                    health: hero.health,
+                    max_health: hero.max_health,
+                    stress: hero.stress,
+                    max_stress: hero.max_stress,
+                    is_wounded,
+                    is_afflicted,
+                    level: hero.level,
+                    xp: hero.xp,
+                    positive_quirks: hero.quirks.positive.clone(),
+                    negative_quirks: hero.quirks.negative.clone(),
+                    diseases: hero.quirks.diseases.clone(),
+                }
+            })
+            .collect();
+
+        let slots: Vec<crate::contracts::viewmodels::GuildTrainingSlot> = roster
+            .iter()
+            .enumerate()
+            .map(|(idx, hero)| {
+                let mut trainings = vec![
+                    crate::contracts::viewmodels::GuildTrainingCell {
+                        name: if idx == 0 { "Combat Mastery".to_string() } else { String::new() },
+                        is_available: idx == 0,
+                        is_locked: idx != 0,
+                    },
+                    crate::contracts::viewmodels::GuildTrainingCell {
+                        name: String::new(),
+                        is_available: false,
+                        is_locked: true,
+                    },
+                    crate::contracts::viewmodels::GuildTrainingCell {
+                        name: String::new(),
+                        is_available: false,
+                        is_locked: true,
+                    },
+                    crate::contracts::viewmodels::GuildTrainingCell {
+                        name: String::new(),
+                        is_available: false,
+                        is_locked: true,
+                    },
+                ];
+                // If hero is wounded, lock all trainings
+                if hero.is_wounded {
+                    for t in &mut trainings {
+                        t.is_available = false;
+                        t.is_locked = true;
+                    }
+                }
+                crate::contracts::viewmodels::GuildTrainingSlot {
+                    slot_index: idx,
+                    hero_id: Some(hero.id.clone()),
+                    hero_name: Some(hero.name.clone()),
+                    hero_class_label: Some(hero.class_name.clone()),
+                    trainings,
+                    cost: "200 Gold".to_string(),
+                    is_locked: false,
+                }
+            })
+            .collect();
+
+        let res = crate::contracts::viewmodels::GuildResources {
+            gold: campaign.gold,
+            shards: 10,
+            deeds: 10,
+            crests: 10,
+            portraits: 30,
+        };
+
+        (Some(roster), Some(slots), Some(res))
+    } else {
+        (None, None, None)
+    };
+
     Ok(BuildingDetailViewModel {
         kind: "building-detail".to_string(),
         building_id: building_id.to_string(),
@@ -843,6 +929,9 @@ pub fn building_detail_from_campaign(
         description,
         actions,
         upgrade_requirement,
+        heroes,
+        training_slots,
+        resources,
     })
 }
 

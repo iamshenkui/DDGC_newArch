@@ -203,7 +203,60 @@ export const replayBuildingDetailViewModel: BuildingDetailViewModel = {
       isUnsupported: true
     }
   ],
-  upgradeRequirement: "Reach Town Level 2 to unlock weapon and armor upgrades."
+  currentUpgrade: "Training Hall Level 1",
+  upgradeRequirement: "Reach Town Level 2 to unlock weapon and armor upgrades.",
+  heroes: townHeroes,
+  trainingSlots: [
+    {
+      slotIndex: 0,
+      heroId: "hero-hunter-01",
+      heroName: "Shen",
+      heroClassLabel: "Hunter",
+      trainings: [
+        { name: "Combat Mastery", icon: "skill_combat", isAvailable: true, isLocked: false },
+        { name: "", isAvailable: false, isLocked: true },
+        { name: "", isAvailable: false, isLocked: true },
+        { name: "", isAvailable: false, isLocked: true }
+      ],
+      cost: "200 Gold",
+      isLocked: false
+    },
+    {
+      slotIndex: 1,
+      heroId: undefined,
+      heroName: undefined,
+      heroClassLabel: "White",
+      trainings: [
+        { name: "", isAvailable: false, isLocked: true },
+        { name: "", isAvailable: false, isLocked: true },
+        { name: "", isAvailable: false, isLocked: true },
+        { name: "", isAvailable: false, isLocked: true }
+      ],
+      cost: "200 Gold",
+      isLocked: false
+    },
+    {
+      slotIndex: 2,
+      heroId: undefined,
+      heroName: undefined,
+      heroClassLabel: "Black",
+      trainings: [
+        { name: "", isAvailable: false, isLocked: true },
+        { name: "", isAvailable: false, isLocked: true },
+        { name: "", isAvailable: false, isLocked: true },
+        { name: "", isAvailable: false, isLocked: true }
+      ],
+      cost: "200 Gold",
+      isLocked: false
+    }
+  ],
+  resources: {
+    gold: 3895,
+    shards: 10,
+    deeds: 10,
+    crests: 10,
+    portraits: 30
+  }
 };
 
 export const replayBlacksmithBuildingDetailViewModel: BuildingDetailViewModel = {

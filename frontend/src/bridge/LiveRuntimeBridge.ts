@@ -255,7 +255,7 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
     ]
   };
 
-  return {
+  const baseVm: BuildingDetailViewModel = {
     kind: "building-detail",
     buildingId: building.id,
     label: building.label,
@@ -265,6 +265,47 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
     currentUpgrade: config.currentUpgrade,
     upgradeRequirement: config.upgradeRequirement
   };
+
+  if (building.id === "guild") {
+    baseVm.heroes = createLiveTownViewModel().heroes;
+    baseVm.trainingSlots = [
+      {
+        slotIndex: 0,
+        heroId: "hero-hunter-live-01",
+        heroName: "Yuan",
+        heroClassLabel: "Hunter",
+        trainings: [
+          { name: "Combat Mastery", icon: "skill_combat", isAvailable: true, isLocked: false },
+          { name: "", isAvailable: false, isLocked: true },
+          { name: "", isAvailable: false, isLocked: true },
+          { name: "", isAvailable: false, isLocked: true }
+        ],
+        cost: "200 Gold",
+        isLocked: false
+      },
+      {
+        slotIndex: 1,
+        heroClassLabel: "White",
+        trainings: [
+          { name: "", isAvailable: false, isLocked: true },
+          { name: "", isAvailable: false, isLocked: true },
+          { name: "", isAvailable: false, isLocked: true },
+          { name: "", isAvailable: false, isLocked: true }
+        ],
+        cost: "200 Gold",
+        isLocked: false
+      }
+    ];
+    baseVm.resources = {
+      gold: 500,
+      shards: 10,
+      deeds: 10,
+      crests: 10,
+      portraits: 30
+    };
+  }
+
+  return baseVm;
 };
 
 const createLiveProvisioningViewModel = (): ProvisioningViewModel => ({

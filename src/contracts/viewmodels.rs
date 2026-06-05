@@ -344,6 +344,51 @@ impl BuildingStatus {
     }
 }
 
+/// Guild training slot for the 使用设施 (Use Facility) tab.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GuildTrainingSlot {
+    /// Slot index (0-based).
+    pub slot_index: usize,
+    /// Hero ID assigned to this slot (if any).
+    pub hero_id: Option<String>,
+    /// Hero display name (if assigned).
+    pub hero_name: Option<String>,
+    /// Hero class label (if assigned).
+    pub hero_class_label: Option<String>,
+    /// Training options for this slot.
+    pub trainings: Vec<GuildTrainingCell>,
+    /// Cost to use this slot.
+    pub cost: String,
+    /// Whether this slot is locked.
+    pub is_locked: bool,
+}
+
+/// A single training cell within a guild slot.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GuildTrainingCell {
+    /// Training name (empty if not assigned).
+    pub name: String,
+    /// Whether this training is available.
+    pub is_available: bool,
+    /// Whether this training cell is locked.
+    pub is_locked: bool,
+}
+
+/// Resource strip displayed at the bottom of the guild usage screen.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GuildResources {
+    /// Gold amount.
+    pub gold: u32,
+    /// Heirloom shards.
+    pub shards: u32,
+    /// Heirloom deeds.
+    pub deeds: u32,
+    /// Heirloom crests.
+    pub crests: u32,
+    /// Portrait currency.
+    pub portraits: u32,
+}
+
 /// Building detail view model — full building inspection for town interactions.
 ///
 /// This view model represents the detailed state of a single town building,
@@ -364,6 +409,12 @@ pub struct BuildingDetailViewModel {
     pub actions: Vec<BuildingAction>,
     /// Requirement for upgrading this building (if upgradeable).
     pub upgrade_requirement: Option<String>,
+    /// Heroes available for guild training (guild building only).
+    pub heroes: Option<Vec<TownHeroViewModel>>,
+    /// Training slots for guild usage (guild building only).
+    pub training_slots: Option<Vec<GuildTrainingSlot>>,
+    /// Resource costs displayed at bottom of guild usage screen.
+    pub resources: Option<GuildResources>,
 }
 
 impl BuildingDetailViewModel {
@@ -377,6 +428,9 @@ impl BuildingDetailViewModel {
             description: String::new(),
             actions: Vec::new(),
             upgrade_requirement: None,
+            heroes: None,
+            training_slots: None,
+            resources: None,
         }
     }
 }

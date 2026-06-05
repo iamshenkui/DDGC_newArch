@@ -60,6 +60,30 @@ export interface BuildingAction {
   isUnsupported: boolean;
 }
 
+export interface GuildTrainingSlot {
+  slotIndex: number;
+  heroId?: string;
+  heroName?: string;
+  heroClassLabel?: string;
+  heroPortrait?: string;
+  trainings: ReadonlyArray<{
+    name: string;
+    icon?: string;
+    isAvailable: boolean;
+    isLocked: boolean;
+  }>;
+  cost: string;
+  isLocked: boolean;
+}
+
+export interface GuildResources {
+  gold: number;
+  shards: number;
+  deeds: number;
+  crests: number;
+  portraits: number;
+}
+
 export interface BuildingDetailViewModel {
   kind: "building-detail";
   buildingId: string;
@@ -69,6 +93,12 @@ export interface BuildingDetailViewModel {
   actions: ReadonlyArray<BuildingAction>;
   currentUpgrade?: string;
   upgradeRequirement?: string;
+  /** Heroes available for guild training (guild building only). */
+  heroes?: ReadonlyArray<TownHeroSummary>;
+  /** Training slots for guild usage (guild building only). */
+  trainingSlots?: ReadonlyArray<GuildTrainingSlot>;
+  /** Resource costs displayed at bottom of guild usage screen. */
+  resources?: GuildResources;
 }
 
 export interface HeroProgression {
