@@ -60,6 +60,21 @@ export interface BuildingAction {
   isUnsupported: boolean;
 }
 
+export interface ForgeSlot {
+  id: string;
+  status: "empty" | "occupied" | "locked";
+  label?: string;
+  itemName?: string;
+  itemLevel?: number;
+}
+
+export interface ResourceCounter {
+  id: string;
+  label: string;
+  value: number;
+  icon?: string;
+}
+
 export interface BuildingDetailViewModel {
   kind: "building-detail";
   buildingId: string;
@@ -69,6 +84,16 @@ export interface BuildingDetailViewModel {
   actions: ReadonlyArray<BuildingAction>;
   currentUpgrade?: string;
   upgradeRequirement?: string;
+  /** Forge-specific: NPC character displayed on the left panel */
+  npcName?: string;
+  npcTitle?: string;
+  npcPortrait?: string;
+  /** Forge-specific: tab state (upgrade vs use facility) */
+  activeTab?: "upgrade" | "use";
+  /** Forge-specific: equipment/forge slot grid */
+  forgeSlots?: ReadonlyArray<ForgeSlot>;
+  /** Forge-specific: bottom resource bar (e.g. materials, gold) */
+  resources?: ReadonlyArray<ResourceCounter>;
 }
 
 export interface HeroProgression {

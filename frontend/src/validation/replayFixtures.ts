@@ -239,7 +239,29 @@ export const replayBlacksmithBuildingDetailViewModel: BuildingDetailViewModel = 
     }
   ],
   currentUpgrade: "Forge Level 2",
-  upgradeRequirement: "Reach Town Level 3 to unlock armor upgrades."
+  upgradeRequirement: "Reach Town Level 3 to unlock armor upgrades.",
+  npcName: "铁匠",
+  npcTitle: "锻造师",
+  activeTab: "use",
+  forgeSlots: [
+    { id: "slot-1", status: "empty", label: "Weapon Slot 1" },
+    { id: "slot-2", status: "locked", label: "Weapon Slot 2" },
+    { id: "slot-3", status: "locked", label: "Weapon Slot 3" },
+    { id: "slot-4", status: "locked", label: "Weapon Slot 4" },
+    { id: "slot-5", status: "locked", label: "Weapon Slot 5" },
+    { id: "slot-6", status: "empty", label: "Armor Slot 1" },
+    { id: "slot-7", status: "locked", label: "Armor Slot 2" },
+    { id: "slot-8", status: "locked", label: "Armor Slot 3" },
+    { id: "slot-9", status: "locked", label: "Armor Slot 4" },
+    { id: "slot-10", status: "locked", label: "Armor Slot 5" }
+  ],
+  resources: [
+    { id: "mat-iron", label: "铁锭", value: 10 },
+    { id: "mat-leather", label: "皮革", value: 10 },
+    { id: "mat-crystal", label: "水晶", value: 10 },
+    { id: "mat-essence", label: "精华", value: 20 },
+    { id: "gold", label: "金币", value: 4295 }
+  ]
 };
 
 export const replaySanitariumBuildingDetailViewModel: BuildingDetailViewModel = {
