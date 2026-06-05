@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, ExpeditionResultViewModel, ReturnViewModel } from "../bridge/contractTypes";
+import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, CombatViewModel, ExpeditionResultViewModel, ReturnViewModel } from "../bridge/contractTypes";
 import { LiveRuntimeBridge } from "../bridge/LiveRuntimeBridge";
 import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 
@@ -303,6 +303,93 @@ describe("provisioning and expedition launch flow", () => {
     const launchSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
     expect(launchSnapshot.flowState).toBe("result");
     expect(launchSnapshot.viewModel.kind).toBe("result");
+  });
+});
+
+describe("combat flow via bridges", () => {
+  it("replay enter-combat from expedition transitions to combat state", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "enter-combat" });
+
+    expect(snapshot.flowState).toBe("combat");
+    expect(snapshot.viewModel.kind).toBe("combat");
+    const combatVm = snapshot.viewModel as CombatViewModel;
+    expect(combatVm.phase).toBe("character-hit");
+    expect(combatVm.party.length).toBeGreaterThan(0);
+    expect(combatVm.enemies.length).toBeGreaterThan(0);
+  });
+
+  it("replay continue-from-combat transitions to result state", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "enter-combat" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "continue-from-combat" });
+
+    expect(snapshot.flowState).toBe("result");
+    expect(snapshot.viewModel.kind).toBe("result");
+  });
+
+  it("replay flee-combat transitions to return state", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "enter-combat" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "flee-combat" });
+
+    expect(snapshot.flowState).toBe("return");
+    expect(snapshot.viewModel.kind).toBe("return");
+  });
+
+  it("replay use-skill updates combat state", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "enter-combat" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "use-skill", skillId: "skill-1" });
+
+    expect(snapshot.flowState).toBe("combat");
+    expect(snapshot.viewModel.kind).toBe("combat");
+    const combatVm = snapshot.viewModel as CombatViewModel;
+    expect(combatVm.hitLog).toContain("Skill used");
+  });
+
+  it("live enter-combat from expedition transitions to combat state", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "enter-combat" });
+
+    expect(snapshot.flowState).toBe("combat");
+    expect(snapshot.viewModel.kind).toBe("combat");
+    const combatVm = snapshot.viewModel as CombatViewModel;
+    expect(combatVm.party.length).toBeGreaterThan(0);
+    expect(combatVm.enemies.length).toBeGreaterThan(0);
+  });
+
+  it("live continue-from-combat transitions to result state", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "enter-combat" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "continue-from-combat" });
+
+    expect(snapshot.flowState).toBe("result");
+    expect(snapshot.viewModel.kind).toBe("result");
   });
 });
 

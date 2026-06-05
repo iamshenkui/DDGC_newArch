@@ -687,4 +687,126 @@ test.describe("browser smoke: fidelity gates", () => {
 
     expectNoErrors(pageErrors, consoleErrors, "Live boot flow");
   });
+
+  test("combat screen — character hit flow and fidelity", async ({ page }) => {
+    const { consoleErrors, pageErrors } = setupErrorCollectors(page);
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+
+    // Boot replay and navigate to expedition
+    await page.getByRole("button", { name: "Boot Replay" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 8_000 });
+    await settle(page);
+
+    // Town → Provisioning
+    await page.locator(".estate-embark-button").click();
+    await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    // Provisioning → Expedition
+    await page.getByRole("button", { name: "Confirm & Launch Expedition" }).click();
+    await settle(page);
+
+    // Expedition → Combat (via Enter Combat button)
+    await page.getByTestId("enter-combat-btn").click();
+    await page.waitForSelector(".combat-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    // Verify combat screen elements
+    await expect(
+      page.getByTestId("combat-screen"),
+      "Combat viewport must be visible"
+    ).toBeVisible();
+
+    await expect(
+      page.locator(".combat-title"),
+      "Combat title must be visible"
+    ).toBeVisible();
+
+    await expect(
+      page.getByTestId("combat-status-panel"),
+      "Combat status panel must be visible"
+    ).toBeVisible();
+
+    await expect(
+      page.getByTestId("combat-map-panel"),
+      "Combat map panel must be visible"
+    ).toBeVisible();
+
+    await expect(
+      page.getByTestId("combat-settings-btn"),
+      "Combat settings button must be visible"
+    ).toBeVisible();
+
+    // Verify hit damage floater in character-hit phase
+    await expect(
+      page.getByTestId("combat-hit-damage"),
+      "Hit damage floater must be visible in character-hit phase"
+    ).toBeVisible();
+
+    // Verify combat log
+    await expect(
+      page.getByTestId("combat-log"),
+      "Combat log must be visible"
+    ).toBeVisible();
+
+    // Verify skill slots
+    await expect(
+      page.getByTestId("combat-skill-0"),
+      "First skill slot must be visible"
+    ).toBeVisible();
+
+    // Verify map rooms
+    await expect(
+      page.getByTestId("combat-map-room-r1"),
+      "Map room r1 must be visible"
+    ).toBeVisible();
+
+    await expect(
+      page.getByTestId("combat-map-room-r6"),
+      "Map room r6 (boss) must be visible"
+    ).toBeVisible();
+
+    // Fidelity check
+    await expectFidelity(page.locator(".combat-viewport"), "Combat screen");
+    await expectFullPageFidelity(page, "Combat screen");
+
+    // Landscape viewport check
+    await expect(
+      page.locator(".combat-viewport"),
+      "Combat screen must use .combat-viewport landscape layout"
+    ).toBeVisible();
+
+    // Combat → Result (continue)
+    await page.getByTestId("combat-continue-btn").click();
+    await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.locator(".eyebrow").filter({ hasText: "Expedition Complete" }),
+      "Result screen must appear after continue-from-combat"
+    ).toBeVisible();
+
+    // Result → Return
+    await page.getByRole("button", { name: "Proceed to Return" }).click();
+    await settle(page);
+
+    await expect(
+      page.locator(".eyebrow").filter({ hasText: "Expedition Concluded" }),
+      "Return screen must appear after result"
+    ).toBeVisible();
+
+    // Return → Town
+    await page.getByRole("button", { name: "Resume Town Activities" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("城镇中枢"),
+      "Must be back at town after combat flow"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Combat flow");
+  });
 });

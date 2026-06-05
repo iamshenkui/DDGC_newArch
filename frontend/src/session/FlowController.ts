@@ -7,10 +7,11 @@ import type {
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   HeroDetailViewModel,
-  BuildingDetailViewModel
+  BuildingDetailViewModel,
+  CombatViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "combat" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -39,6 +40,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "expedition") {
     return "expedition";
+  }
+
+  if (snapshot.viewModel.kind === "combat") {
+    return "combat";
   }
 
   if (snapshot.viewModel.kind === "result") {
@@ -125,6 +130,39 @@ export function canTransition(
       }
       if (!snapshot.viewModel.isLaunchable) {
         return { allowed: false, reason: "expedition is not launchable" };
+      }
+      return { allowed: true };
+
+    case "enter-combat":
+      if (screen !== "expedition") {
+        return { allowed: false, reason: "enter-combat is only valid in expedition" };
+      }
+      return { allowed: true };
+
+    case "continue-from-combat":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "continue-from-combat is only valid in combat" };
+      }
+      if (snapshot.viewModel.kind !== "combat") {
+        return { allowed: false, reason: "viewModel is not a combat view model" };
+      }
+      return { allowed: true };
+
+    case "flee-combat":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "flee-combat is only valid in combat" };
+      }
+      return { allowed: true };
+
+    case "use-skill":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "use-skill is only valid in combat" };
+      }
+      return { allowed: true };
+
+    case "open-combat-settings":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "open-combat-settings is only valid in combat" };
       }
       return { allowed: true };
 

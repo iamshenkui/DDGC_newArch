@@ -1,6 +1,7 @@
 import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
+  CombatViewModel,
   DdgcFrontendSnapshot,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
@@ -516,6 +517,93 @@ export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
   isLaunchable: true
 };
 
+export const replayCombatViewModel: CombatViewModel = {
+  kind: "combat",
+  title: "Dungeon Combat",
+  dungeonName: "The Depths Await",
+  roundLabel: "Round 3",
+  phase: "character-hit",
+  party: [
+    {
+      id: "hero-hunter-01",
+      name: "Shen",
+      classLabel: "Hunter",
+      hp: "28 / 42",
+      maxHp: "42",
+      stress: "24",
+      maxStress: "200",
+      isActive: false,
+      isHit: true,
+      skills: [
+        { name: "Hunting Bow", isAvailable: true },
+        { name: "Rapid Shot", isAvailable: false },
+        { name: "Mark", isAvailable: true },
+        { name: "Advice", isAvailable: true },
+        { name: "Dodge", isAvailable: false }
+      ]
+    },
+    {
+      id: "hero-white-01",
+      name: "Bai Xiu",
+      classLabel: "White",
+      hp: "41 / 41",
+      maxHp: "41",
+      stress: "12",
+      maxStress: "200",
+      isActive: true,
+      isHit: false,
+      skills: [
+        { name: "Heal", isAvailable: true },
+        { name: "Bless", isAvailable: true },
+        { name: "Smite", isAvailable: false },
+        { name: "Shield", isAvailable: true },
+        { name: "Pray", isAvailable: true }
+      ]
+    }
+  ],
+  enemies: [
+    {
+      id: "enemy-cultist-01",
+      name: "Cultist Acolyte",
+      hp: "45 / 60",
+      maxHp: "60",
+      isHit: false
+    },
+    {
+      id: "enemy-abom-01",
+      name: "Shambling Abomination",
+      hp: "12 / 80",
+      maxHp: "80",
+      isHit: true
+    }
+  ],
+  hitTargetHeroId: "hero-hunter-01",
+  hitDamage: "10",
+  hitLog: "Cultist Acolyte strikes Shen for 10 damage.",
+  activeHeroId: "hero-white-01",
+  roomMap: {
+    rooms: [
+      { id: "r1", x: 0, y: 2, kind: "combat", isCurrent: true, isCleared: false },
+      { id: "r2", x: 1, y: 2, kind: "corridor", isCurrent: false, isCleared: true },
+      { id: "r3", x: 2, y: 1, kind: "event", isCurrent: false, isCleared: true },
+      { id: "r4", x: 2, y: 3, kind: "combat", isCurrent: false, isCleared: false },
+      { id: "r5", x: 3, y: 2, kind: "treasure", isCurrent: false, isCleared: false },
+      { id: "r6", x: 4, y: 2, kind: "boss", isCurrent: false, isCleared: false }
+    ],
+    connections: [
+      { from: "r1", to: "r2" },
+      { from: "r2", to: "r3" },
+      { from: "r2", to: "r4" },
+      { from: "r3", to: "r5" },
+      { from: "r4", to: "r5" },
+      { from: "r5", to: "r6" }
+    ]
+  },
+  turnCount: 3,
+  isFleeAvailable: true,
+  settingsLabel: "设置"
+};
+
 export const replayResultViewModel: ExpeditionResultViewModel = {
   kind: "result",
   title: "Expedition Complete",
@@ -827,6 +915,14 @@ export const expeditionSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing expedition launch screen."
 };
 
+// Combat flow snapshot
+export const combatSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "combat",
+  viewModel: replayCombatViewModel,
+  debugMessage: "Replay bridge showing combat screen (character hit)."
+};
+
 // Result snapshots (success, failure, partial)
 export const resultSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -932,7 +1028,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     town: ["town", "hero-detail", "building-detail"],
     provisioning: ["provisioning"],
     expedition: ["expedition"],
-    combat: ["expedition"],
+    combat: ["combat"],
     result: ["result"],
     return: ["return"],
   };
@@ -1010,6 +1106,21 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (typeof vm.isLaunchable !== "boolean") e.push("ExpeditionSetupViewModel: isLaunchable is not a boolean");
       if (!vm.supplyLevel || typeof vm.supplyLevel !== "string") e.push("ExpeditionSetupViewModel: supplyLevel is missing");
       if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ExpeditionSetupViewModel: provisionCost is missing");
+      break;
+    }
+    case "combat": {
+      if (!vm.title || typeof vm.title !== "string") e.push("CombatViewModel: title is missing");
+      if (!vm.dungeonName || typeof vm.dungeonName !== "string") e.push("CombatViewModel: dungeonName is missing");
+      if (!vm.roundLabel || typeof vm.roundLabel !== "string") e.push("CombatViewModel: roundLabel is missing");
+      if (!vm.phase || typeof vm.phase !== "string") e.push("CombatViewModel: phase is missing");
+      if (!Array.isArray(vm.party)) { e.push("CombatViewModel: party is not an array"); } else if (vm.party.length === 0) { e.push("CombatViewModel: party array is empty"); }
+      if (!Array.isArray(vm.enemies)) { e.push("CombatViewModel: enemies is not an array"); } else if (vm.enemies.length === 0) { e.push("CombatViewModel: enemies array is empty"); }
+      if (!vm.hitLog || typeof vm.hitLog !== "string") e.push("CombatViewModel: hitLog is missing");
+      if (!vm.activeHeroId || typeof vm.activeHeroId !== "string") e.push("CombatViewModel: activeHeroId is missing");
+      if (!vm.roomMap || typeof vm.roomMap !== "object") e.push("CombatViewModel: roomMap is missing");
+      if (typeof vm.turnCount !== "number") e.push("CombatViewModel: turnCount is not a number");
+      if (typeof vm.isFleeAvailable !== "boolean") e.push("CombatViewModel: isFleeAvailable is not a boolean");
+      if (!vm.settingsLabel || typeof vm.settingsLabel !== "string") e.push("CombatViewModel: settingsLabel is missing");
       break;
     }
     case "result": {

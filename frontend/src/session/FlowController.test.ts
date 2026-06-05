@@ -17,6 +17,7 @@ import {
   startupSnapshot,
   provisioningSnapshot,
   expeditionSnapshot,
+  combatSnapshot,
   resultSnapshot,
   failureResultSnapshot,
   partialResultSnapshot,
@@ -79,6 +80,11 @@ describe("FlowController", () => {
       expect(screen).toBe("expedition");
     });
 
+    it("returns combat screen for combat view model", () => {
+      const screen = resolveScreen(combatSnapshot);
+      expect(screen).toBe("combat");
+    });
+
     it("returns result screen for result view model", () => {
       const screen = resolveScreen(resultSnapshot);
       expect(screen).toBe("result");
@@ -113,6 +119,7 @@ describe("ScreenKey exhaustiveness", () => {
       "building-detail": replayBuildingDetailSnapshot,
       provisioning: provisioningSnapshot,
       expedition: expeditionSnapshot,
+      combat: combatSnapshot,
       result: resultSnapshot,
       return: returnSnapshot,
       unsupported: unsupportedSnapshot,
@@ -352,6 +359,68 @@ describe("canTransition - result and return meta-loop continuation", () => {
       const validation = canTransition(replayReadySnapshot, { type: "toggle-hero-selection", heroId: "hero-hunter-01" });
       expect(validation.allowed).toBe(false);
       expect(validation.reason).toContain("only valid in provisioning");
+    });
+
+    it("allows enter-combat from expedition", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "enter-combat" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects enter-combat when not in expedition", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "enter-combat" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in expedition");
+    });
+  });
+
+  describe("combat screen transitions", () => {
+    it("allows continue-from-combat in combat", () => {
+      const validation = canTransition(combatSnapshot, { type: "continue-from-combat" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects continue-from-combat when not in combat", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "continue-from-combat" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in combat");
+    });
+
+    it("allows flee-combat in combat", () => {
+      const validation = canTransition(combatSnapshot, { type: "flee-combat" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects flee-combat when not in combat", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "flee-combat" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in combat");
+    });
+
+    it("allows use-skill in combat", () => {
+      const validation = canTransition(combatSnapshot, { type: "use-skill", skillId: "skill-1" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects use-skill when not in combat", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "use-skill", skillId: "skill-1" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in combat");
+    });
+
+    it("allows open-combat-settings in combat", () => {
+      const validation = canTransition(combatSnapshot, { type: "open-combat-settings" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects open-combat-settings when not in combat", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "open-combat-settings" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in combat");
+    });
+
+    it("allows return-to-town from combat", () => {
+      const validation = canTransition(combatSnapshot, { type: "return-to-town" });
+      expect(validation.allowed).toBe(true);
     });
   });
 

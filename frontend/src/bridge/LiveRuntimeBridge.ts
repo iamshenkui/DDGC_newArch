@@ -10,6 +10,7 @@ import type {
   BuildingDetailViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  CombatViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
 } from "./contractTypes";
@@ -301,6 +302,93 @@ const createLiveExpeditionViewModel = (): ExpeditionSetupViewModel => ({
   isLaunchable: true
 });
 
+const createLiveCombatViewModel = (): CombatViewModel => ({
+  kind: "combat",
+  title: "Dungeon Combat",
+  dungeonName: "The Azure Lantern Expedition",
+  roundLabel: "Round 2",
+  phase: "character-hit",
+  party: [
+    {
+      id: "hero-hunter-live-01",
+      name: "Yuan",
+      classLabel: "Hunter",
+      hp: "32 / 42",
+      maxHp: "42",
+      stress: "8",
+      maxStress: "200",
+      isActive: false,
+      isHit: true,
+      skills: [
+        { name: "Hunting Bow", isAvailable: true },
+        { name: "Rapid Shot", isAvailable: true },
+        { name: "Mark", isAvailable: false },
+        { name: "Advice", isAvailable: true },
+        { name: "Dodge", isAvailable: true }
+      ]
+    },
+    {
+      id: "hero-white-live-01",
+      name: "Mei",
+      classLabel: "White",
+      hp: "41 / 41",
+      maxHp: "41",
+      stress: "4",
+      maxStress: "200",
+      isActive: true,
+      isHit: false,
+      skills: [
+        { name: "Heal", isAvailable: true },
+        { name: "Bless", isAvailable: true },
+        { name: "Smite", isAvailable: true },
+        { name: "Shield", isAvailable: false },
+        { name: "Pray", isAvailable: true }
+      ]
+    }
+  ],
+  enemies: [
+    {
+      id: "enemy-skeleton-01",
+      name: "Risen Skeleton",
+      hp: "20 / 40",
+      maxHp: "40",
+      isHit: false
+    },
+    {
+      id: "enemy-necro-01",
+      name: "Lesser Necromancer",
+      hp: "35 / 50",
+      maxHp: "50",
+      isHit: true
+    }
+  ],
+  hitTargetHeroId: "hero-hunter-live-01",
+  hitDamage: "10",
+  hitLog: "Risen Skeleton strikes Yuan for 10 damage.",
+  activeHeroId: "hero-white-live-01",
+  roomMap: {
+    rooms: [
+      { id: "r1", x: 0, y: 2, kind: "combat", isCurrent: true, isCleared: false },
+      { id: "r2", x: 1, y: 2, kind: "corridor", isCurrent: false, isCleared: true },
+      { id: "r3", x: 2, y: 1, kind: "event", isCurrent: false, isCleared: true },
+      { id: "r4", x: 2, y: 3, kind: "combat", isCurrent: false, isCleared: false },
+      { id: "r5", x: 3, y: 2, kind: "treasure", isCurrent: false, isCleared: false },
+      { id: "r6", x: 4, y: 2, kind: "boss", isCurrent: false, isCleared: false }
+    ],
+    connections: [
+      { from: "r1", to: "r2" },
+      { from: "r2", to: "r3" },
+      { from: "r2", to: "r4" },
+      { from: "r3", to: "r5" },
+      { from: "r4", to: "r5" },
+      { from: "r5", to: "r6" }
+    ]
+  },
+  turnCount: 2,
+  isFleeAvailable: true,
+  settingsLabel: "设置"
+});
+
 const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
   kind: "result",
   title: "Expedition Complete",
@@ -442,6 +530,49 @@ export class LiveRuntimeBridge implements RuntimeBridge {
           ...this.snapshot,
           flowState: "result",
           viewModel: createLiveResultViewModel()
+        };
+        break;
+      case "enter-combat":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "combat",
+          viewModel: createLiveCombatViewModel()
+        };
+        break;
+      case "use-skill": {
+        const combatVm = this.snapshot.viewModel as CombatViewModel;
+        const updatedParty = combatVm.party.map((hero) =>
+          hero.id === combatVm.activeHeroId
+            ? {
+                ...hero,
+                skills: hero.skills.map((s, i) =>
+                  i === 0 ? { ...s, isAvailable: false } : s
+                )
+              }
+            : hero
+        );
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...combatVm,
+            party: updatedParty,
+            hitLog: `Skill used: ${intent.skillId}.`
+          }
+        };
+        break;
+      }
+      case "continue-from-combat":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "result",
+          viewModel: createLiveResultViewModel()
+        };
+        break;
+      case "flee-combat":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "return",
+          viewModel: createLiveReturnViewModel()
         };
         break;
       case "return-to-town":

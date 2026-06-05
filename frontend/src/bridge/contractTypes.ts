@@ -1,5 +1,69 @@
 import type { RuntimeMode } from "../app/runtimeMode";
 
+export type CombatPhase = "player-turn" | "enemy-turn" | "character-hit" | "resolution";
+
+export interface CombatSkillSlot {
+  name: string;
+  icon?: string;
+  isAvailable: boolean;
+}
+
+export interface CombatHeroState {
+  id: string;
+  name: string;
+  classLabel: string;
+  hp: string;
+  maxHp: string;
+  stress: string;
+  maxStress: string;
+  isActive: boolean;
+  isHit: boolean;
+  skills: ReadonlyArray<CombatSkillSlot>;
+}
+
+export interface CombatEnemyState {
+  id: string;
+  name: string;
+  hp: string;
+  maxHp: string;
+  isHit: boolean;
+}
+
+export interface MapRoomNode {
+  id: string;
+  x: number;
+  y: number;
+  kind: "combat" | "boss" | "event" | "corridor" | "treasure";
+  isCurrent: boolean;
+  isCleared: boolean;
+}
+
+export interface MapConnection {
+  from: string;
+  to: string;
+}
+
+export interface CombatViewModel {
+  kind: "combat";
+  title: string;
+  dungeonName: string;
+  roundLabel: string;
+  phase: CombatPhase;
+  party: ReadonlyArray<CombatHeroState>;
+  enemies: ReadonlyArray<CombatEnemyState>;
+  hitTargetHeroId?: string;
+  hitDamage?: string;
+  hitLog: string;
+  activeHeroId: string;
+  roomMap: {
+    rooms: ReadonlyArray<MapRoomNode>;
+    connections: ReadonlyArray<MapConnection>;
+  };
+  turnCount: number;
+  isFleeAvailable: boolean;
+  settingsLabel: string;
+}
+
 export type FlowState =
   | "boot"
   | "load"
@@ -272,6 +336,7 @@ export type DdgcViewModel =
   | BuildingDetailViewModel
   | ProvisioningViewModel
   | ExpeditionSetupViewModel
+  | CombatViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
   | UnsupportedViewModel
@@ -293,6 +358,11 @@ export type DdgcFrontendIntent =
   | { type: "toggle-hero-selection"; heroId: string }
   | { type: "confirm-provisioning" }
   | { type: "launch-expedition" }
+  | { type: "enter-combat" }
+  | { type: "use-skill"; skillId: string }
+  | { type: "continue-from-combat" }
+  | { type: "flee-combat" }
+  | { type: "open-combat-settings" }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }
   | { type: "resume-from-return" };
