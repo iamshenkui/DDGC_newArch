@@ -29,7 +29,7 @@ import { HeroDetailScreen } from "../screens/town/HeroDetailScreen";
 import { BuildingScreenRouter } from "../screens/town/BuildingScreenRouter";
 import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
-import { ResultScreen } from "../screens/expedition/ResultScreen";
+import { DungeonSettlementScreen } from "../screens/expedition/DungeonSettlementScreen";
 import { ReturnScreen } from "../screens/expedition/ReturnScreen";
 
 function createBridge(mode: RuntimeMode): RuntimeBridge {
@@ -169,7 +169,7 @@ export function DdgcApp() {
         <Match
           when={screen() === "result" && snapshot().viewModel.kind === "result"}
         >
-          <ResultScreen
+          <DungeonSettlementScreen
             viewModel={snapshot().viewModel as ExpeditionResultViewModel}
             onContinue={() => {
               void dispatchIntent(bridge, { type: "continue-from-result" });

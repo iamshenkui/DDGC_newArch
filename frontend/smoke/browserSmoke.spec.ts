@@ -404,16 +404,16 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page);
 
     await expect(
-      page.locator(".eyebrow").filter({ hasText: "Expedition Complete" }),
-      "Result screen eyebrow must be visible"
+      page.locator(".eyebrow").filter({ hasText: "副本结算" }),
+      "Settlement screen eyebrow (副本结算) must be visible"
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Expedition Complete" }),
-      "Result screen heading must be visible"
+      "Settlement screen heading must be visible"
     ).toBeVisible();
     await expect(
-      page.getByText("Victory"),
-      "Victory outcome must be visible"
+      page.getByText("通关"),
+      "通关 outcome must be visible"
     ).toBeVisible();
     await expect(
       page.getByText("Ancient Gold Coin"),
@@ -421,18 +421,18 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toBeVisible();
     await expectFidelity(
       page.locator(".expedition-viewport"),
-      "Result screen"
+      "Dungeon settlement screen"
     );
-    await expectFullPageFidelity(page, "Result screen");
+    await expectFullPageFidelity(page, "Dungeon settlement screen");
 
-    // Landscape viewport check for result screen
+    // Landscape viewport check for settlement screen
     await expect(
       page.locator(".expedition-viewport"),
-      "Result screen must use .expedition-viewport landscape layout"
+      "Settlement screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5e. Result → Return
-    await page.getByRole("button", { name: "Proceed to Return" }).click();
+    // 5e. Settlement → Return
+    await page.getByRole("button", { name: "继续返程" }).click();
     await settle(page);
 
     await expect(
@@ -617,15 +617,15 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page);
 
     await expect(
-      page.locator(".eyebrow").filter({ hasText: "Expedition Complete" }),
-      "Live result screen eyebrow must be visible"
+      page.locator(".eyebrow").filter({ hasText: "副本结算" }),
+      "Live settlement screen eyebrow (副本结算) must be visible"
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Expedition Complete" }),
-      "Live result screen heading must be visible"
+      "Live settlement screen heading must be visible"
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Proceed to Return" }).click();
+    await page.getByRole("button", { name: "继续返程" }).click();
     await settle(page);
 
     await expect(
