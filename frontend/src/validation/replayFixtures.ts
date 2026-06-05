@@ -391,14 +391,55 @@ export const replayGardenBuildingDetailViewModel: BuildingDetailViewModel = {
   description: "提供特殊休整与恢复服务，在宁静的花园中治愈身心。",
   actions: [
     {
+      id: "upgrade-healing-fountain",
+      label: "治愈之泉",
+      description: "升级花园中的治愈之泉，提高英雄生命值恢复量。",
+      cost: "500 Gold",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "upgrade-stress-grove",
+      label: "静谧林道",
+      description: "扩建静谧林道，进一步降低英雄的压力值。",
+      cost: "400 Gold",
+      isAvailable: false,
+      isUnsupported: false
+    },
+    {
+      id: "upgrade-hero-slot",
+      label: "英雄休憩位",
+      description: "增加可同时接受花园服务的英雄数量。",
+      cost: "600 Gold",
+      isAvailable: false,
+      isUnsupported: false
+    },
+    {
+      id: "upgrade-master-gardener",
+      label: "首席园丁",
+      description: "聘请首席园丁，解锁高级花园服务。",
+      cost: "1000 Gold",
+      isAvailable: false,
+      isUnsupported: true
+    },
+    {
       id: "rest",
       label: "休整",
       description: "在花园中休整，恢复英雄生命值并降低压力。",
       cost: "200 Gold",
       isAvailable: true,
       isUnsupported: false
+    },
+    {
+      id: "talk",
+      label: "对话",
+      description: "与花园管理者交谈，了解花园的故事与秘密。",
+      cost: "0 Gold",
+      isAvailable: true,
+      isUnsupported: false
     }
   ],
+  currentUpgrade: "Garden Level 1",
   upgradeRequirement: "Reach Town Level 2 to unlock garden upgrades."
 };
 

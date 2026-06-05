@@ -3297,6 +3297,278 @@ button {
   gap: 4px;
 }
 
+/* ── Garden Building Screen (天国花园) ─────────────────────
+ * Mirrors GardenWindow.prefab from reference:
+ *   公会界面-天国花园-升级.png
+ *
+ * Layout: left character panel + right tabbed content
+ * Tabs: 升级设施 (Upgrade) / 使用设施 (Use)
+ */
+
+.garden-detail-content {
+  grid-template-columns: 280px 1fr;
+}
+
+.garden-detail-left {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.garden-character-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+}
+
+.garden-character-frame {
+  width: 180px;
+  height: 220px;
+  border-radius: var(--radius-md);
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 25%, rgba(27, 50, 44, 0.4), transparent 70%),
+    radial-gradient(ellipse at center, rgba(6, 12, 10, 0.7), rgba(0, 0, 0, 0.9));
+  border: 2px solid rgba(160, 204, 188, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 60px rgba(0, 0, 0, 0.3);
+}
+
+.garden-character-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 30%, rgba(198, 212, 106, 0.06), transparent 70%);
+  pointer-events: none;
+}
+
+.garden-character-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.garden-character-initial {
+  font-family: var(--heading-font);
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+  opacity: 0.35;
+  text-shadow: 0 0 30px rgba(198, 212, 106, 0.2);
+}
+
+.garden-character-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+}
+
+.garden-talk-btn,
+.garden-leave-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-family: var(--heading-font);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.garden-talk-btn {
+  background: rgba(20, 30, 38, 0.7);
+  border: 1px solid rgba(160, 204, 188, 0.14);
+  color: var(--panel-text);
+}
+
+.garden-talk-btn:hover {
+  background: rgba(198, 212, 106, 0.1);
+  border-color: rgba(198, 212, 106, 0.3);
+  transform: translateY(-1px);
+}
+
+.garden-leave-btn {
+  background: rgba(91, 189, 110, 0.12);
+  border: 1px solid rgba(91, 189, 110, 0.25);
+  color: #5bbd6e;
+}
+
+.garden-leave-btn:hover {
+  background: rgba(91, 189, 110, 0.2);
+  border-color: rgba(91, 189, 110, 0.4);
+  transform: translateY(-1px);
+}
+
+.garden-tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid rgba(160, 204, 188, 0.1);
+  margin-bottom: 14px;
+}
+
+.garden-tab-btn {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--panel-muted);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  text-transform: none;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.garden-tab-btn:hover {
+  color: var(--panel-text);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.garden-tab-btn--active {
+  color: var(--panel-accent);
+  border-bottom-color: var(--panel-accent);
+}
+
+.garden-tab-check {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.garden-upgrade-panel,
+.garden-use-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Diamond upgrade slots */
+.garden-upgrade-slots {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+}
+
+.garden-upgrade-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 60px;
+}
+
+.garden-upgrade-slot-diamond {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(160, 204, 188, 0.15);
+  transform: rotate(45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.garden-upgrade-slot--available .garden-upgrade-slot-diamond {
+  background: rgba(198, 212, 106, 0.12);
+  border-color: rgba(198, 212, 106, 0.4);
+  box-shadow: 0 0 12px rgba(198, 212, 106, 0.15);
+}
+
+.garden-upgrade-slot--unsupported .garden-upgrade-slot-diamond {
+  background: rgba(234, 119, 103, 0.08);
+  border-color: rgba(234, 119, 103, 0.25);
+}
+
+.garden-upgrade-slot-number {
+  transform: rotate(-45deg);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--panel-muted);
+}
+
+.garden-upgrade-slot--available .garden-upgrade-slot-number {
+  color: var(--panel-accent);
+}
+
+.garden-upgrade-slot-label {
+  font-size: 0.65rem;
+  color: var(--panel-muted);
+  text-align: center;
+  max-width: 70px;
+  line-height: 1.2;
+}
+
+.garden-upgrade-slot-cost {
+  font-size: 0.6rem;
+  color: var(--panel-accent);
+  opacity: 0.8;
+}
+
+/* Construction progress */
+.garden-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+}
+
+.garden-progress-label {
+  font-size: 0.78rem;
+  color: var(--panel-muted);
+  white-space: nowrap;
+}
+
+.garden-progress-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.garden-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--panel-accent), var(--panel-accent-strong));
+  transition: width 0.4s ease;
+}
+
+.garden-progress-value {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--panel-accent);
+  min-width: 36px;
+  text-align: right;
+}
+
 /* ── Responsive: collapse to portrait on narrow screens ─ */
 @media (max-width: 920px) {
   .app-shell {
@@ -3319,5 +3591,14 @@ button {
 
   .viewport-title {
     font-size: 1rem;
+  }
+
+  .garden-detail-content {
+    grid-template-columns: 1fr;
+  }
+
+  .garden-character-frame {
+    width: 140px;
+    height: 170px;
   }
 }

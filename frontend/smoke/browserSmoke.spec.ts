@@ -493,6 +493,113 @@ test.describe("browser smoke: fidelity gates", () => {
     expectNoErrors(pageErrors, consoleErrors, "Phase 5 (meta-loop)");
   });
 
+  // ── Garden building screen test (HB-iamshenkui-GameMigration-16) ──
+  test("garden building screen — tabs, upgrade slots, actions", async ({ page }) => {
+    const { consoleErrors, pageErrors } = setupErrorCollectors(page);
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+
+    // Boot replay
+    await page.getByRole("button", { name: "Boot Replay" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 8_000 });
+    await settle(page);
+
+    // Open garden building
+    await page.locator('[data-building-id="garden"]').click();
+    await settle(page, 800);
+
+    // Verify garden building screen is rendered
+    await expect(
+      page.locator(".building-detail-name"),
+      "Garden building name must be visible (天国花园)"
+    ).toHaveText("天国花园");
+
+    // Verify tabs are present
+    const upgradeTab = page.locator('.garden-tab-btn[data-tab="upgrade"]');
+    const useTab = page.locator('.garden-tab-btn[data-tab="use"]');
+
+    await expect(upgradeTab, "Upgrade tab (升级设施) must be visible").toBeVisible();
+    await expect(useTab, "Use tab (使用设施) must be visible").toBeVisible();
+
+    // Upgrade tab should be active by default
+    await expect(
+      upgradeTab,
+      "Upgrade tab must be active by default"
+    ).toHaveClass(/garden-tab-btn--active/);
+
+    // Verify upgrade slots (diamonds) are rendered
+    await expect(
+      page.locator(".garden-upgrade-slot"),
+      "Upgrade slots must be rendered"
+    ).toHaveCount(4);
+
+    // Verify construction progress bar
+    await expect(
+      page.locator(".garden-progress-label"),
+      "Construction progress label must be visible"
+    ).toHaveText("建设进度");
+
+    // Verify left panel character frame
+    await expect(
+      page.locator(".garden-character-frame"),
+      "Character frame must be visible"
+    ).toBeVisible();
+
+    // Verify 对话 and 离开 buttons
+    await expect(
+      page.locator(".garden-talk-btn"),
+      "Talk button (对话) must be visible"
+    ).toHaveText("对话");
+    await expect(
+      page.locator(".garden-leave-btn"),
+      "Leave button (离开) must be visible"
+    ).toHaveText("离开");
+
+    // Verify upgrade action cards
+    await expect(
+      page.locator(".building-action-card-header").filter({ hasText: "治愈之泉" }),
+      "Upgrade action '治愈之泉' must be visible"
+    ).toBeVisible();
+
+    // Switch to Use tab
+    await useTab.click();
+    await settle(page, 200);
+
+    await expect(
+      useTab,
+      "Use tab must become active after click"
+    ).toHaveClass(/garden-tab-btn--active/);
+
+    // Verify use actions
+    await expect(
+      page.locator(".building-action-card-header").filter({ hasText: "休整" }),
+      "Use action '休整' must be visible in use tab"
+    ).toBeVisible();
+
+    // Fidelity check
+    await expectFidelity(page.locator(".app-frame"), "Garden building screen");
+    await expectFullPageFidelity(page, "Garden building screen");
+
+    // Landscape viewport check
+    await expect(
+      page.locator(".app-frame"),
+      "Garden building screen must use .app-frame landscape layout"
+    ).toBeVisible();
+
+    // Return to town
+    await page.getByRole("button", { name: "Return to Town" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("城镇中枢"),
+      "Must be back at town after garden screen"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Garden building screen");
+  });
+
   // ── Live boot test ─────────────────────────────────────────
   test("live boot exercises live bridge path", async ({ page }) => {
     const { consoleErrors, pageErrors } = setupErrorCollectors(page);
