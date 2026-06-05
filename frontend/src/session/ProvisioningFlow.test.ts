@@ -8,6 +8,7 @@ import type {
 } from "../bridge/contractTypes";
 import {
   provisioningSnapshot,
+  transitionSnapshot,
   expeditionSnapshot,
   resultSnapshot,
   returnSnapshot,
@@ -180,26 +181,41 @@ describe("Provisioning → Expedition → Launch flow validation", () => {
     expect(resolveScreen(provisioningSnapshot)).toBe("provisioning");
   });
 
-  it("proves expedition flow from provisioning screen", () => {
+  it("proves transition flow from provisioning screen", () => {
     // Start from provisioning
     expect(resolveScreen(provisioningSnapshot)).toBe("provisioning");
 
-    // Verify confirm-provisioning leads to expedition
+    // Verify confirm-provisioning leads to transition
     const confirmValidation = canTransition(provisioningSnapshot, { type: "confirm-provisioning" });
     expect(confirmValidation.allowed).toBe(true);
+
+    // Verify transition screen would resolve
+    expect(resolveScreen(transitionSnapshot)).toBe("transition");
+  });
+
+  it("proves expedition flow from transition screen", () => {
+    // Start from transition
+    expect(resolveScreen(transitionSnapshot)).toBe("transition");
+
+    // Verify dismiss-transition leads to expedition
+    const dismissValidation = canTransition(transitionSnapshot, { type: "dismiss-transition" });
+    expect(dismissValidation.allowed).toBe(true);
 
     // Verify expedition screen would resolve
     expect(resolveScreen(expeditionSnapshot)).toBe("expedition");
   });
 
-  it("proves complete town → provision → expedition → launch path", () => {
+  it("proves complete town → provision → transition → expedition → launch path", () => {
     // Step 1: Town can start provisioning
     expect(canTransition(replayReadySnapshot, { type: "start-provisioning" }).allowed).toBe(true);
 
-    // Step 2: Provisioning can confirm
+    // Step 2: Provisioning can confirm (goes to transition)
     expect(canTransition(provisioningSnapshot, { type: "confirm-provisioning" }).allowed).toBe(true);
 
-    // Step 3: Expedition can launch
+    // Step 3: Transition can dismiss (goes to expedition)
+    expect(canTransition(transitionSnapshot, { type: "dismiss-transition" }).allowed).toBe(true);
+
+    // Step 4: Expedition can launch
     expect(canTransition(expeditionSnapshot, { type: "launch-expedition" }).allowed).toBe(true);
   });
 

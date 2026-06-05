@@ -36,8 +36,12 @@ test("UIR-008: end-to-end provisioning + launch flow without errors", async ({ p
     await page.locator(".provisioning-roster-hero:not([disabled])").first().click();
   }
 
-  // Confirm & Launch should reach the expedition screen
+  // Confirm & Launch → transition → expedition
   await page.getByRole("button", { name: /Confirm & Launch Expedition/ }).click();
+  await page.waitForSelector(".transition-viewport", { timeout: 5_000 });
+  await expect(page.locator(".transition-title")).toBeVisible();
+
+  await page.locator(".transition-viewport").click();
   await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
   // Confirm we have an expedition title
   await expect(page.locator(".expedition-title")).toBeVisible();

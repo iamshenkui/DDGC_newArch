@@ -104,7 +104,7 @@ describe("build-run smoke: intent dispatch round-trip", () => {
 });
 
 describe("build-run smoke: flow state transitions", () => {
-  it("replay: town → provisioning → expedition → result", async () => {
+  it("replay: town → provisioning → transition → expedition → result", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
 
@@ -114,7 +114,11 @@ describe("build-run smoke: flow state transitions", () => {
     const provVm = provSnap.viewModel as ProvisioningViewModel;
     expect(provVm.isReadyToLaunch).toBe(true);
 
-    const expSnap = await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    const transSnap = await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    expect(transSnap.flowState).toBe("transition");
+    expect(transSnap.viewModel.kind).toBe("transition");
+
+    const expSnap = await bridge.dispatchIntent({ type: "dismiss-transition" });
     expect(expSnap.flowState).toBe("expedition");
     expect(expSnap.viewModel.kind).toBe("expedition");
     const expVm = expSnap.viewModel as ExpeditionSetupViewModel;
@@ -127,7 +131,7 @@ describe("build-run smoke: flow state transitions", () => {
     expect(resultVm.outcome).toBe("success");
   });
 
-  it("live: town → provisioning → expedition → result", async () => {
+  it("live: town → provisioning → transition → expedition → result", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
 
@@ -135,7 +139,11 @@ describe("build-run smoke: flow state transitions", () => {
     expect(provSnap.flowState).toBe("provisioning");
     expect(provSnap.viewModel.kind).toBe("provisioning");
 
-    const expSnap = await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    const transSnap = await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    expect(transSnap.flowState).toBe("transition");
+    expect(transSnap.viewModel.kind).toBe("transition");
+
+    const expSnap = await bridge.dispatchIntent({ type: "dismiss-transition" });
     expect(expSnap.flowState).toBe("expedition");
     expect(expSnap.viewModel.kind).toBe("expedition");
 

@@ -16,6 +16,7 @@ import {
   replayBuildingDetailSnapshot,
   startupSnapshot,
   provisioningSnapshot,
+  transitionSnapshot,
   expeditionSnapshot,
   resultSnapshot,
   failureResultSnapshot,
@@ -74,6 +75,11 @@ describe("FlowController", () => {
       expect(screen).toBe("provisioning");
     });
 
+    it("returns transition screen for transition view model", () => {
+      const screen = resolveScreen(transitionSnapshot);
+      expect(screen).toBe("transition");
+    });
+
     it("returns expedition screen for expedition setup view model", () => {
       const screen = resolveScreen(expeditionSnapshot);
       expect(screen).toBe("expedition");
@@ -102,7 +108,7 @@ describe("FlowController", () => {
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "transition", "expedition", "result", "return", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -112,6 +118,7 @@ describe("ScreenKey exhaustiveness", () => {
       "hero-detail": replayHeroDetailSnapshot,
       "building-detail": replayBuildingDetailSnapshot,
       provisioning: provisioningSnapshot,
+      transition: transitionSnapshot,
       expedition: expeditionSnapshot,
       result: resultSnapshot,
       return: returnSnapshot,
@@ -253,6 +260,61 @@ describe("canTransition - result and return meta-loop continuation", () => {
       const validation = canTransition(replayLoadingSnapshot, { type: "return-to-town" });
       expect(validation.allowed).toBe(false);
       expect(validation.reason).toContain("already in town");
+    });
+
+    it("allows return-to-town from transition screen as fallback action", () => {
+      const validation = canTransition(transitionSnapshot, { type: "return-to-town" });
+      expect(validation.allowed).toBe(true);
+    });
+  });
+
+  describe("transition screen transitions", () => {
+    it("allows dismiss-transition when on transition screen", () => {
+      const validation = canTransition(transitionSnapshot, { type: "dismiss-transition" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects dismiss-transition when not on transition screen", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "dismiss-transition" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on transition screen");
+    });
+
+    it("rejects dismiss-transition when transition is not dismissible", () => {
+      const nonDismissibleSnapshot: DdgcFrontendSnapshot = {
+        ...transitionSnapshot,
+        viewModel: {
+          ...transitionSnapshot.viewModel,
+          isDismissible: false,
+        } as TransitionViewModel,
+      };
+      const validation = canTransition(nonDismissibleSnapshot, { type: "dismiss-transition" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not dismissible");
+    });
+
+    it("allows return-from-transition when on transition screen", () => {
+      const validation = canTransition(transitionSnapshot, { type: "return-from-transition" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects return-from-transition when not on transition screen", () => {
+      const validation = canTransition(provisioningSnapshot, { type: "return-from-transition" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on transition screen");
+    });
+
+    it("rejects return-from-transition when return is not available", () => {
+      const noReturnSnapshot: DdgcFrontendSnapshot = {
+        ...transitionSnapshot,
+        viewModel: {
+          ...transitionSnapshot.viewModel,
+          canReturn: false,
+        } as TransitionViewModel,
+      };
+      const validation = canTransition(noReturnSnapshot, { type: "return-from-transition" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not available");
     });
   });
 

@@ -22,8 +22,13 @@ test("UIR-009: capture result and return screens", async ({ page }) => {
   await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
   await page.waitForTimeout(400);
 
-  // Launch expedition
+  // Launch expedition (goes through transition)
   await page.getByRole("button", { name: "Confirm & Launch Expedition" }).click();
+  await page.waitForSelector(".transition-viewport", { timeout: 5_000 });
+  await page.waitForTimeout(400);
+
+  await page.locator(".transition-viewport").click();
+  await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
   await page.waitForTimeout(400);
 
   // Launch to result

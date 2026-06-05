@@ -365,10 +365,36 @@ test.describe("browser smoke: fidelity gates", () => {
       "Provisioning screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5c. Provisioning → Expedition
+    // 5c. Provisioning → Transition
     await page
       .getByRole("button", { name: "Confirm & Launch Expedition" })
       .click();
+    await page.waitForSelector(".transition-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.locator(".transition-title"),
+      "Transition screen region name must be visible"
+    ).toHaveText("朱雀大陆");
+    await expect(
+      page.locator(".transition-flavor-text"),
+      "Transition screen flavor text must be visible"
+    ).toBeVisible();
+    await expectFidelity(
+      page.locator(".transition-viewport"),
+      "Transition screen"
+    );
+    await expectFullPageFidelity(page, "Transition screen");
+
+    // Landscape viewport check for transition screen
+    await expect(
+      page.locator(".transition-viewport"),
+      "Transition screen must use .transition-viewport landscape layout"
+    ).toBeVisible();
+
+    // 5d. Transition → Expedition
+    await page.locator(".transition-viewport").click();
+    await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
     await settle(page);
 
     await expect(
@@ -606,6 +632,16 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page);
 
     await page.getByRole("button", { name: "Confirm & Launch Expedition" }).click();
+    await page.waitForSelector(".transition-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.locator(".transition-title"),
+      "Live transition screen region name must be visible"
+    ).toHaveText("朱雀大陆");
+
+    await page.locator(".transition-viewport").click();
+    await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
     await settle(page);
 
     await expect(

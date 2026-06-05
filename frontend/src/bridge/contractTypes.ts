@@ -5,6 +5,7 @@ export type FlowState =
   | "load"
   | "town"
   | "provisioning"
+  | "transition"
   | "expedition"
   | "combat"
   | "result"
@@ -253,6 +254,17 @@ export interface ReturnViewModel {
   isTownResumeAvailable: boolean;
 }
 
+export interface TransitionViewModel {
+  kind: "transition";
+  title: string;
+  regionName: string;
+  subtitle: string;
+  flavorText: string;
+  promptText: string;
+  isDismissible: boolean;
+  canReturn: boolean;
+}
+
 export interface UnsupportedViewModel {
   kind: "unsupported";
   title: string;
@@ -271,6 +283,7 @@ export type DdgcViewModel =
   | HeroDetailViewModel
   | BuildingDetailViewModel
   | ProvisioningViewModel
+  | TransitionViewModel
   | ExpeditionSetupViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
@@ -292,6 +305,8 @@ export type DdgcFrontendIntent =
   | { type: "start-provisioning" }
   | { type: "toggle-hero-selection"; heroId: string }
   | { type: "confirm-provisioning" }
+  | { type: "dismiss-transition" }
+  | { type: "return-from-transition" }
   | { type: "launch-expedition" }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }

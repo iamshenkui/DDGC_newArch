@@ -14,6 +14,7 @@ import type {
   ProvisioningViewModel,
   ReturnViewModel,
   TownViewModel,
+  TransitionViewModel,
   UnsupportedViewModel
 } from "../bridge/contractTypes";
 import { fatalSnapshot } from "../validation/replayFixtures";
@@ -28,6 +29,7 @@ import { TownShellScreen } from "../screens/town/TownShellScreen";
 import { HeroDetailScreen } from "../screens/town/HeroDetailScreen";
 import { BuildingScreenRouter } from "../screens/town/BuildingScreenRouter";
 import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
+import { TransitionScreen } from "../screens/transition/TransitionScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
 import { ReturnScreen } from "../screens/expedition/ReturnScreen";
@@ -150,6 +152,19 @@ export function DdgcApp() {
             }}
             onReturnToTown={() => {
               void dispatchIntent(bridge, { type: "return-to-town" });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "transition" && snapshot().viewModel.kind === "transition"}
+        >
+          <TransitionScreen
+            viewModel={snapshot().viewModel as TransitionViewModel}
+            onDismiss={() => {
+              void dispatchIntent(bridge, { type: "dismiss-transition" });
+            }}
+            onReturn={() => {
+              void dispatchIntent(bridge, { type: "return-from-transition" });
             }}
           />
         </Match>

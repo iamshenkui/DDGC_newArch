@@ -5,6 +5,7 @@ import type {
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
+  TransitionViewModel,
   FatalErrorViewModel,
   HeroDetailViewModel,
   ProvisioningViewModel,
@@ -474,6 +475,17 @@ export const replayCampingTrainerBuildingDetailViewModel: BuildingDetailViewMode
   upgradeRequirement: "Reach Town Level 2 to unlock advanced camping skills."
 };
 
+export const replayTransitionViewModel: TransitionViewModel = {
+  kind: "transition",
+  title: "Entering Region",
+  regionName: "朱雀大陆",
+  subtitle: "Vermilion Bird Continent",
+  flavorText: "绝望的炙烤，仿佛连太阳都被焚尽",
+  promptText: "按 [空格] 或 [点击] 继续游戏",
+  isDismissible: true,
+  canReturn: true,
+};
+
 export const replayProvisioningViewModel: ProvisioningViewModel = {
   kind: "provisioning",
   title: "Provision Expedition",
@@ -849,6 +861,14 @@ export const partialResultSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing partial result screen."
 };
 
+// Transition flow snapshot
+export const transitionSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "transition",
+  viewModel: replayTransitionViewModel,
+  debugMessage: "Replay bridge showing transition screen."
+};
+
 // Return flow snapshot
 export const returnSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -877,7 +897,7 @@ export function validateSnapshotContract(snapshot: DdgcFrontendSnapshot): string
   }
 
   // FlowState must be a valid FlowState
-  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "result", "return"];
+  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "transition", "expedition", "combat", "result", "return"];
   if (!validFlowStates.includes(snapshot.flowState as FlowState)) {
     errors.push(
       `flowState "${String(snapshot.flowState)}" is not a valid FlowState. ` +
@@ -931,6 +951,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     load: ["boot-load"],
     town: ["town", "hero-detail", "building-detail"],
     provisioning: ["provisioning"],
+    transition: ["transition"],
     expedition: ["expedition"],
     combat: ["expedition"],
     result: ["result"],
@@ -998,6 +1019,16 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ProvisioningViewModel: provisionCost is missing");
       if (!vm.campaignName || typeof vm.campaignName !== "string") e.push("ProvisioningViewModel: campaignName is missing");
       if (!vm.expeditionLabel || typeof vm.expeditionLabel !== "string") e.push("ProvisioningViewModel: expeditionLabel is missing");
+      break;
+    }
+    case "transition": {
+      if (!vm.title || typeof vm.title !== "string") e.push("TransitionViewModel: title is missing");
+      if (!vm.regionName || typeof vm.regionName !== "string") e.push("TransitionViewModel: regionName is missing");
+      if (!vm.subtitle || typeof vm.subtitle !== "string") e.push("TransitionViewModel: subtitle is missing");
+      if (!vm.flavorText || typeof vm.flavorText !== "string") e.push("TransitionViewModel: flavorText is missing");
+      if (!vm.promptText || typeof vm.promptText !== "string") e.push("TransitionViewModel: promptText is missing");
+      if (typeof vm.isDismissible !== "boolean") e.push("TransitionViewModel: isDismissible is not a boolean");
+      if (typeof vm.canReturn !== "boolean") e.push("TransitionViewModel: canReturn is not a boolean");
       break;
     }
     case "expedition": {

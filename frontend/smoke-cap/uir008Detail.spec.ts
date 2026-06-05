@@ -39,9 +39,19 @@ test("UIR-008: detailed capture for visual review", async ({ page }) => {
     });
   }
 
-  // Confirm and Launch
+  // Confirm and Launch → transition
   await page.getByRole("button", { name: /Confirm & Launch Expedition/ }).click();
+  await page.waitForSelector(".transition-viewport", { timeout: 5_000 });
   await page.waitForTimeout(800);
+
+  await page.locator(".transition-viewport").screenshot({
+    path: "test-results/uir008-detail-transition.png"
+  });
+
+  // Dismiss transition → expedition
+  await page.locator(".transition-viewport").click();
+  await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
+  await page.waitForTimeout(400);
 
   await page.locator(".expedition-viewport").screenshot({
     path: "test-results/uir008-detail-expedition.png"

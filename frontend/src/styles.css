@@ -3321,3 +3321,212 @@ button {
     font-size: 1rem;
   }
 }
+
+/* ── Transition Screen ───────────────────────────────────────────────
+ * Cinematic interstitial between major game states.
+ * Mirrors original DDGC TransitionWindow.prefab layout.
+ * Reference: reference/ref_image/跨际元契约/1系统界面/转场.png
+ */
+.transition-viewport {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Atmospheric background layers */
+.transition-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: #0a0a0c;
+}
+
+.transition-backdrop-scorch {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 100%, rgba(180, 60, 30, 0.25), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 70% 80%, rgba(140, 40, 20, 0.2), transparent 60%);
+}
+
+.transition-backdrop-ruins {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(10, 12, 16, 0.3) 0%, transparent 30%, rgba(10, 12, 16, 0.5) 100%);
+  /* Subtle silhouette texture suggestion */
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 100%, black 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 100%, black 30%, transparent 80%);
+}
+
+.transition-backdrop-vignette {
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 180px 60px rgba(0, 0, 0, 0.7);
+}
+
+/* Top-left ornate emblem (compass / region seal) */
+.transition-ornament {
+  position: absolute;
+  top: 28px;
+  left: 28px;
+  z-index: 2;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.transition-ornament-ring {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid rgba(160, 204, 188, 0.35);
+  box-shadow: 0 0 12px rgba(160, 204, 188, 0.15), inset 0 0 8px rgba(160, 204, 188, 0.1);
+}
+
+.transition-ornament-core {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(198, 212, 106, 0.5), transparent 70%);
+  border: 1px solid rgba(198, 212, 106, 0.4);
+}
+
+.transition-ornament-spokes {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+}
+
+.transition-ornament-spokes span {
+  position: absolute;
+  width: 2px;
+  height: 10px;
+  background: rgba(160, 204, 188, 0.3);
+  left: 50%;
+  top: 0;
+  transform-origin: 50% 24px;
+  border-radius: 1px;
+}
+
+.transition-ornament-spokes span:nth-child(1) { transform: translateX(-50%) rotate(0deg); }
+.transition-ornament-spokes span:nth-child(2) { transform: translateX(-50%) rotate(90deg); }
+.transition-ornament-spokes span:nth-child(3) { transform: translateX(-50%) rotate(180deg); }
+.transition-ornament-spokes span:nth-child(4) { transform: translateX(-50%) rotate(270deg); }
+
+/* Center title cluster */
+.transition-title-cluster {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18vh;
+  text-align: center;
+}
+
+.transition-title-rule {
+  width: 80px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(160, 204, 188, 0.5), transparent);
+}
+
+.transition-title {
+  font-family: var(--heading-font);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  color: var(--panel-text);
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+  margin: 0;
+  letter-spacing: 0.15em;
+}
+
+.transition-subtitle {
+  font-size: 0.9rem;
+  color: var(--panel-muted);
+  margin: 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Bottom-right flavor text */
+.transition-flavor {
+  position: absolute;
+  bottom: 100px;
+  right: 40px;
+  z-index: 2;
+  max-width: 420px;
+  text-align: right;
+}
+
+.transition-flavor-text {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: rgba(242, 244, 239, 0.75);
+  font-style: italic;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+  margin: 0;
+}
+
+/* Bottom prompt bar */
+.transition-prompt-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px 28px;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.65), transparent);
+}
+
+.transition-back-btn {
+  flex-shrink: 0;
+}
+
+.transition-prompt-hint {
+  font-size: 0.85rem;
+  color: var(--panel-muted);
+  letter-spacing: 0.06em;
+  text-align: center;
+  flex: 1;
+  padding: 0 16px;
+}
+
+.transition-prompt-spacer {
+  flex-shrink: 0;
+  width: 110px;
+}
+
+/* Responsive: stack flavor text on narrow screens */
+@media (max-width: 720px) {
+  .transition-flavor {
+    right: 20px;
+    left: 20px;
+    max-width: none;
+    text-align: center;
+  }
+
+  .transition-prompt-bar {
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 20px;
+  }
+
+  .transition-prompt-spacer {
+    display: none;
+  }
+}

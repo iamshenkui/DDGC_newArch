@@ -10,7 +10,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "transition" | "expedition" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -35,6 +35,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "provisioning") {
     return "provisioning";
+  }
+
+  if (snapshot.viewModel.kind === "transition") {
+    return "transition";
   }
 
   if (snapshot.viewModel.kind === "expedition") {
@@ -113,6 +117,30 @@ export function canTransition(
       }
       if (!snapshot.viewModel.isReadyToLaunch) {
         return { allowed: false, reason: "not ready to launch expedition" };
+      }
+      return { allowed: true };
+
+    case "dismiss-transition":
+      if (screen !== "transition") {
+        return { allowed: false, reason: "dismiss-transition is only valid on transition screen" };
+      }
+      if (snapshot.viewModel.kind !== "transition") {
+        return { allowed: false, reason: "viewModel is not a transition view model" };
+      }
+      if (!snapshot.viewModel.isDismissible) {
+        return { allowed: false, reason: "transition is not dismissible" };
+      }
+      return { allowed: true };
+
+    case "return-from-transition":
+      if (screen !== "transition") {
+        return { allowed: false, reason: "return-from-transition is only valid on transition screen" };
+      }
+      if (snapshot.viewModel.kind !== "transition") {
+        return { allowed: false, reason: "viewModel is not a transition view model" };
+      }
+      if (!snapshot.viewModel.canReturn) {
+        return { allowed: false, reason: "return is not available from this transition" };
       }
       return { allowed: true };
 

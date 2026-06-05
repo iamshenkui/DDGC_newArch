@@ -4,6 +4,7 @@ import {
   replayHeroDetailViewModel,
   replayBuildingDetailViewModel,
   replayProvisioningViewModel,
+  replayTransitionViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
   replayReturnViewModel
@@ -16,7 +17,8 @@ import type {
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
-  ReturnViewModel
+  ReturnViewModel,
+  TransitionViewModel
 } from "./contractTypes";
 
 export class ReplayRuntimeBridge implements RuntimeBridge {
@@ -110,8 +112,22 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       case "confirm-provisioning":
         this.snapshot = {
           ...this.snapshot,
+          flowState: "transition",
+          viewModel: replayTransitionViewModel as TransitionViewModel
+        };
+        break;
+      case "dismiss-transition":
+        this.snapshot = {
+          ...this.snapshot,
           flowState: "expedition",
           viewModel: replayExpeditionViewModel as ExpeditionSetupViewModel
+        };
+        break;
+      case "return-from-transition":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "provisioning",
+          viewModel: replayProvisioningViewModel as ProvisioningViewModel
         };
         break;
       case "launch-expedition":

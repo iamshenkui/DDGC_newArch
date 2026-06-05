@@ -9,6 +9,7 @@ import type {
   HeroDetailViewModel,
   BuildingDetailViewModel,
   ProvisioningViewModel,
+  TransitionViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
@@ -283,6 +284,17 @@ const createLiveProvisioningViewModel = (): ProvisioningViewModel => ({
   provisionCost: "100 Gold"
 });
 
+const createLiveTransitionViewModel = (): TransitionViewModel => ({
+  kind: "transition",
+  title: "Entering Region",
+  regionName: "朱雀大陆",
+  subtitle: "Vermilion Bird Continent",
+  flavorText: "绝望的炙烤，仿佛连太阳都被焚尽",
+  promptText: "按 [空格] 或 [点击] 继续游戏",
+  isDismissible: true,
+  canReturn: true,
+});
+
 const createLiveExpeditionViewModel = (): ExpeditionSetupViewModel => ({
   kind: "expedition",
   title: "Expedition Launch",
@@ -433,8 +445,22 @@ export class LiveRuntimeBridge implements RuntimeBridge {
       case "confirm-provisioning":
         this.snapshot = {
           ...this.snapshot,
+          flowState: "transition",
+          viewModel: createLiveTransitionViewModel()
+        };
+        break;
+      case "dismiss-transition":
+        this.snapshot = {
+          ...this.snapshot,
           flowState: "expedition",
           viewModel: createLiveExpeditionViewModel()
+        };
+        break;
+      case "return-from-transition":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "provisioning",
+          viewModel: createLiveProvisioningViewModel()
         };
         break;
       case "launch-expedition":
