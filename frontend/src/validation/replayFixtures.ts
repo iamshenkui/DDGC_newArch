@@ -2,6 +2,7 @@ import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
   DdgcFrontendSnapshot,
+  DungeonSelectViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
@@ -474,6 +475,59 @@ export const replayCampingTrainerBuildingDetailViewModel: BuildingDetailViewMode
   upgradeRequirement: "Reach Town Level 2 to unlock advanced camping skills."
 };
 
+export const replayDungeonSelectViewModel: DungeonSelectViewModel = {
+  kind: "dungeon-select",
+  title: "副本选择人物",
+  campaignName: "苍灯远征",
+  selectedDungeonId: null,
+  dungeons: [
+    {
+      id: "dungeon-ruins-01",
+      name: "废墟遗迹",
+      description: "古老的废墟中隐藏着危险的敌人和珍贵的宝藏。适合新手探险者磨练技艺。",
+      difficulty: "简单",
+      estimatedDuration: "短",
+      recommendedLevel: 1,
+      provisionCost: "100 Gold",
+      supplyLevel: "基础",
+      rewards: ["古金币", "初级装备", "经验值"],
+      isAvailable: true
+    },
+    {
+      id: "dungeon-forest-01",
+      name: "迷雾森林",
+      description: "被浓雾笼罩的古老森林，里面栖息着诡异的生物。需要一定的准备才能深入。",
+      difficulty: "普通",
+      estimatedDuration: "中等",
+      recommendedLevel: 2,
+      provisionCost: "150 Gold",
+      supplyLevel: "标准",
+      rewards: ["神秘宝石", "中级装备", "大量经验值"],
+      isAvailable: true
+    },
+    {
+      id: "dungeon-depths-01",
+      name: "深渊裂隙",
+      description: "通往未知位面的裂隙，充满了极度危险的敌人。只有经验丰富的队伍才能挑战。",
+      difficulty: "困难",
+      estimatedDuration: "长",
+      recommendedLevel: 4,
+      provisionCost: "300 Gold",
+      supplyLevel: "充足",
+      rewards: ["传奇遗物", "高级装备", "稀有材料"],
+      isAvailable: false,
+      lockReason: "需要城镇等级 3"
+    }
+  ],
+  party: [
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", health: 38, maxHealth: 42, stress: "17", maxStress: "200", level: 2, xp: 240, isWounded: true, isAfflicted: false, isSelected: false },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", health: 41, maxHealth: 41, stress: "8", maxStress: "200", level: 2, xp: 180, isWounded: false, isAfflicted: false, isSelected: false },
+    { id: "hero-black-01", name: "Hei Zhen", classLabel: "Black", hp: "34 / 40", maxHp: "40", health: 34, maxHealth: 40, stress: "24", maxStress: "200", level: 1, xp: 60, isWounded: true, isAfflicted: false, isSelected: false }
+  ],
+  maxPartySize: 4,
+  isReadyToProceed: false
+};
+
 export const replayProvisioningViewModel: ProvisioningViewModel = {
   kind: "provisioning",
   title: "Provision Expedition",
@@ -811,6 +865,14 @@ export const startupSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Startup screen fixture - ready to boot into replay or live mode."
 };
 
+// Dungeon select flow snapshot
+export const dungeonSelectSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "dungeon-select",
+  viewModel: replayDungeonSelectViewModel,
+  debugMessage: "Replay bridge showing dungeon select screen."
+};
+
 // Provisioning flow snapshot
 export const provisioningSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -877,7 +939,7 @@ export function validateSnapshotContract(snapshot: DdgcFrontendSnapshot): string
   }
 
   // FlowState must be a valid FlowState
-  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "result", "return"];
+  const validFlowStates: FlowState[] = ["boot", "load", "town", "dungeon-select", "provisioning", "expedition", "combat", "result", "return"];
   if (!validFlowStates.includes(snapshot.flowState as FlowState)) {
     errors.push(
       `flowState "${String(snapshot.flowState)}" is not a valid FlowState. ` +
@@ -930,6 +992,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     boot: ["boot-load"],
     load: ["boot-load"],
     town: ["town", "hero-detail", "building-detail"],
+    "dungeon-select": ["dungeon-select"],
     provisioning: ["provisioning"],
     expedition: ["expedition"],
     combat: ["expedition"],
@@ -987,6 +1050,15 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!["ready", "partial", "locked"].includes(vm.status as string)) e.push(`BuildingDetailViewModel: status is "${String(vm.status)}", expected "ready", "partial", or "locked"`);
       if (!vm.description || typeof vm.description !== "string") e.push("BuildingDetailViewModel: description is missing");
       if (!Array.isArray(vm.actions)) { e.push("BuildingDetailViewModel: actions is not an array"); } else if (vm.actions.length === 0) { e.push("BuildingDetailViewModel: actions array is empty"); }
+      break;
+    }
+    case "dungeon-select": {
+      if (!vm.title || typeof vm.title !== "string") e.push("DungeonSelectViewModel: title is missing");
+      if (!Array.isArray(vm.dungeons)) { e.push("DungeonSelectViewModel: dungeons is not an array"); } else if (vm.dungeons.length === 0) { e.push("DungeonSelectViewModel: dungeons array is empty"); }
+      if (!Array.isArray(vm.party)) { e.push("DungeonSelectViewModel: party is not an array"); }
+      if (typeof vm.maxPartySize !== "number") e.push("DungeonSelectViewModel: maxPartySize is not a number");
+      if (typeof vm.isReadyToProceed !== "boolean") e.push("DungeonSelectViewModel: isReadyToProceed is not a boolean");
+      if (!vm.campaignName || typeof vm.campaignName !== "string") e.push("DungeonSelectViewModel: campaignName is missing");
       break;
     }
     case "provisioning": {

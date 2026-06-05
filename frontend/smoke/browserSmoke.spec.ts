@@ -333,16 +333,56 @@ test.describe("browser smoke: fidelity gates", () => {
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
 
     // ── Phase 5: Full meta-loop ─────────────────────────────
-    // Town → Provisioning → Expedition → Result → Return → Town
+    // Town → Dungeon Select → Provisioning → Expedition → Result → Return → Town
 
     // 5a. Return to town
     await page.getByRole("button", { name: "Return to Town" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
 
-    // 5b. Town → Provisioning
+    // 5b. Town → Dungeon Select
     await page.locator(".estate-embark-button").click();
     await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("位面探索"),
+      "Dungeon select eyebrow must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("副本选择人物"),
+      "Dungeon select title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".dungeon-list-panel"),
+      "Dungeon list panel must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".dungeon-detail-panel"),
+      "Dungeon detail panel must be visible"
+    ).toBeVisible();
+    await expectFidelity(
+      page.locator(".expedition-viewport"),
+      "Dungeon select screen"
+    );
+    await expectFullPageFidelity(page, "Dungeon select screen");
+
+    // Landscape viewport check for dungeon select
+    await expect(
+      page.locator(".expedition-viewport"),
+      "Dungeon select screen must use .expedition-viewport landscape layout"
+    ).toBeVisible();
+
+    // Select a dungeon
+    await page.locator('[data-dungeon-id="dungeon-ruins-01"]').click();
+    await settle(page);
+
+    // Select heroes
+    await page.locator('.dungeon-select-roster-hero').first().click();
+    await settle(page);
+
+    // 5c. Dungeon Select → Provisioning
+    await page.getByRole("button", { name: "确认出征" }).click();
     await settle(page);
 
     await expect(
@@ -365,7 +405,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Provisioning screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5c. Provisioning → Expedition
+    // 5d. Provisioning → Expedition
     await page
       .getByRole("button", { name: "Confirm & Launch Expedition" })
       .click();
@@ -595,7 +635,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Live building detail screen must use .app-frame landscape layout"
     ).toBeVisible();
 
-    // Full live flow: provisioning → expedition → result → return
+    // Full live flow: dungeon-select → provisioning → expedition → result → return
     await page.getByRole("button", { name: "Return to Town" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
@@ -603,6 +643,19 @@ test.describe("browser smoke: fidelity gates", () => {
     // Launch expedition from live (button text may differ)
     await page.locator(".estate-embark-button").click();
     await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("副本选择人物"),
+      "Live dungeon select title must be visible"
+    ).toBeVisible();
+
+    // Select a dungeon and hero, then confirm
+    await page.locator('[data-dungeon-id="dungeon-ruins-live"]').click();
+    await settle(page);
+    await page.locator('.dungeon-select-roster-hero').first().click();
+    await settle(page);
+    await page.getByRole("button", { name: "确认出征" }).click();
     await settle(page);
 
     await page.getByRole("button", { name: "Confirm & Launch Expedition" }).click();

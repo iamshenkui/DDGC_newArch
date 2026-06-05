@@ -15,6 +15,7 @@ import {
   replayHeroDetailSnapshot,
   replayBuildingDetailSnapshot,
   startupSnapshot,
+  dungeonSelectSnapshot,
   provisioningSnapshot,
   expeditionSnapshot,
   resultSnapshot,
@@ -102,7 +103,7 @@ describe("FlowController", () => {
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "dungeon-select", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -111,6 +112,7 @@ describe("ScreenKey exhaustiveness", () => {
       town: replayReadySnapshot,
       "hero-detail": replayHeroDetailSnapshot,
       "building-detail": replayBuildingDetailSnapshot,
+      "dungeon-select": dungeonSelectSnapshot,
       provisioning: provisioningSnapshot,
       expedition: expeditionSnapshot,
       result: resultSnapshot,

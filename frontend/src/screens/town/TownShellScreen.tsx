@@ -9,7 +9,7 @@ interface TownShellScreenProps {
   viewModel: TownViewModel;
   onOpenHero: (heroId: string) => void;
   onOpenBuilding: (buildingId: string) => void;
-  onStartProvisioning: () => void;
+  onStartDungeonSelect: () => void;
 }
 
 const ESTATE_STAGE_WIDTH = 1920;
@@ -310,7 +310,7 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                 {/* ── BottomPanel/EmbarkButton — primary expedition CTA ── */}
                 <button
                   class="estate-embark-button"
-                  onClick={props.onStartProvisioning}
+                  onClick={props.onStartDungeonSelect}
                   data-source-scene="EstateManagement.unity"
                   data-source-prefab="UI_Shared/UI_Panels/BottomPanel/EmbarkButton"
                   data-source-rect="anchorMin=(0,0) anchorMax=(0,0) pivot=(0.5,0.5) anchoredPosition=(20,20) sizeDelta=(968,968)"

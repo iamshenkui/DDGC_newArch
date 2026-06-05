@@ -8,6 +8,7 @@ import type {
   TownBuildingSummary,
   HeroDetailViewModel,
   BuildingDetailViewModel,
+  DungeonSelectViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
@@ -267,6 +268,45 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
   };
 };
 
+const createLiveDungeonSelectViewModel = (): DungeonSelectViewModel => ({
+  kind: "dungeon-select",
+  title: "副本选择人物",
+  campaignName: "新档位面",
+  selectedDungeonId: null,
+  dungeons: [
+    {
+      id: "dungeon-ruins-live",
+      name: "废墟遗迹",
+      description: "古老的废墟中隐藏着危险的敌人和珍贵的宝藏。",
+      difficulty: "简单",
+      estimatedDuration: "短",
+      recommendedLevel: 1,
+      provisionCost: "100 Gold",
+      supplyLevel: "基础",
+      rewards: ["古金币", "初级装备"],
+      isAvailable: true
+    },
+    {
+      id: "dungeon-forest-live",
+      name: "迷雾森林",
+      description: "被浓雾笼罩的古老森林。",
+      difficulty: "普通",
+      estimatedDuration: "中等",
+      recommendedLevel: 2,
+      provisionCost: "150 Gold",
+      supplyLevel: "标准",
+      rewards: ["神秘宝石", "中级装备"],
+      isAvailable: true
+    }
+  ],
+  party: [
+    { id: "hero-hunter-live-01", name: "Yuan", classLabel: "Hunter", hp: "42 / 42", maxHp: "42", health: 42, maxHealth: 42, stress: "0", maxStress: "200", level: 1, xp: 0, isWounded: false, isAfflicted: false, isSelected: false },
+    { id: "hero-white-live-01", name: "Mei", classLabel: "White", hp: "41 / 41", maxHp: "41", health: 41, maxHealth: 41, stress: "0", maxStress: "200", level: 1, xp: 0, isWounded: false, isAfflicted: false, isSelected: false }
+  ],
+  maxPartySize: 4,
+  isReadyToProceed: false
+});
+
 const createLiveProvisioningViewModel = (): ProvisioningViewModel => ({
   kind: "provisioning",
   title: "Provision Expedition",
@@ -403,6 +443,55 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         this.snapshot = {
           ...this.snapshot,
           debugMessage: `Live: building action intent received for ${intent.actionId}.`
+        };
+        break;
+      case "start-dungeon-select":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-select",
+          viewModel: createLiveDungeonSelectViewModel()
+        };
+        break;
+      case "select-dungeon": {
+        const dsVm = this.snapshot.viewModel as DungeonSelectViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...dsVm,
+            selectedDungeonId: intent.dungeonId,
+            isReadyToProceed:
+              dsVm.party.filter((h) => h.isSelected).length >= 1 &&
+              dsVm.party.filter((h) => h.isSelected).length <= dsVm.maxPartySize
+          }
+        };
+        break;
+      }
+      case "toggle-dungeon-hero": {
+        const dsVm2 = this.snapshot.viewModel as DungeonSelectViewModel;
+        const updatedParty = dsVm2.party.map((hero) =>
+          hero.id === intent.heroId
+            ? { ...hero, isSelected: !hero.isSelected }
+            : hero
+        );
+        const selectedCount = updatedParty.filter((h) => h.isSelected).length;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...dsVm2,
+            party: updatedParty,
+            isReadyToProceed:
+              dsVm2.selectedDungeonId !== null &&
+              selectedCount >= 1 &&
+              selectedCount <= dsVm2.maxPartySize
+          }
+        };
+        break;
+      }
+      case "confirm-dungeon-selection":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "provisioning",
+          viewModel: createLiveProvisioningViewModel()
         };
         break;
       case "start-provisioning":

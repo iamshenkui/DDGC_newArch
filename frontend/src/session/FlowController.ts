@@ -10,7 +10,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "dungeon-select" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -31,6 +31,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "building-detail") {
     return "building-detail";
+  }
+
+  if (snapshot.viewModel.kind === "dungeon-select") {
+    return "dungeon-select";
   }
 
   if (snapshot.viewModel.kind === "provisioning") {
@@ -95,6 +99,36 @@ export function canTransition(
     case "return-to-town":
       if (screen === "town" || screen === "startup" || screen === "loading") {
         return { allowed: false, reason: "already in town or transitioning" };
+      }
+      return { allowed: true };
+
+    case "start-dungeon-select":
+      if (screen !== "town") {
+        return { allowed: false, reason: "start-dungeon-select is only valid in town" };
+      }
+      return { allowed: true };
+
+    case "select-dungeon":
+      if (screen !== "dungeon-select") {
+        return { allowed: false, reason: "select-dungeon is only valid in dungeon-select" };
+      }
+      return { allowed: true };
+
+    case "toggle-dungeon-hero":
+      if (screen !== "dungeon-select") {
+        return { allowed: false, reason: "toggle-dungeon-hero is only valid in dungeon-select" };
+      }
+      return { allowed: true };
+
+    case "confirm-dungeon-selection":
+      if (screen !== "dungeon-select") {
+        return { allowed: false, reason: "confirm-dungeon-selection is only valid in dungeon-select" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-select") {
+        return { allowed: false, reason: "viewModel is not a dungeon-select view model" };
+      }
+      if (!snapshot.viewModel.isReadyToProceed) {
+        return { allowed: false, reason: "dungeon selection is not ready to proceed" };
       }
       return { allowed: true };
 

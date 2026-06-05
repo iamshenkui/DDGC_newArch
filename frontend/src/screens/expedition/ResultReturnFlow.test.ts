@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { resolveScreen, canTransition } from "../../session/FlowController";
 import type {
   DdgcFrontendSnapshot,
+  DungeonSelectViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
 } from "../../bridge/contractTypes";
@@ -12,6 +13,7 @@ import {
   partialResultSnapshot,
   returnSnapshot,
   replayReadySnapshot,
+  dungeonSelectSnapshot,
   provisioningSnapshot,
   expeditionSnapshot,
   startupSnapshot,
@@ -113,6 +115,104 @@ describe("Return screen view model contract validation", () => {
   });
 });
 
+describe("Dungeon select screen view model contract validation", () => {
+  it("validates dungeon select view model fields", () => {
+    const vm = dungeonSelectSnapshot.viewModel as DungeonSelectViewModel;
+    expect(vm.kind).toBe("dungeon-select");
+    expect(vm).toHaveProperty("title");
+    expect(vm).toHaveProperty("campaignName");
+    expect(vm).toHaveProperty("selectedDungeonId");
+    expect(vm).toHaveProperty("dungeons");
+    expect(vm).toHaveProperty("party");
+    expect(vm).toHaveProperty("maxPartySize");
+    expect(vm).toHaveProperty("isReadyToProceed");
+  });
+
+  it("validates dungeon option contract fields", () => {
+    const vm = dungeonSelectSnapshot.viewModel as DungeonSelectViewModel;
+    for (const dungeon of vm.dungeons) {
+      expect(dungeon).toHaveProperty("id");
+      expect(dungeon).toHaveProperty("name");
+      expect(dungeon).toHaveProperty("description");
+      expect(dungeon).toHaveProperty("difficulty");
+      expect(dungeon).toHaveProperty("estimatedDuration");
+      expect(dungeon).toHaveProperty("recommendedLevel");
+      expect(dungeon).toHaveProperty("provisionCost");
+      expect(dungeon).toHaveProperty("supplyLevel");
+      expect(dungeon).toHaveProperty("rewards");
+      expect(dungeon).toHaveProperty("isAvailable");
+    }
+  });
+
+  it("validates dungeon select hero contract fields", () => {
+    const vm = dungeonSelectSnapshot.viewModel as DungeonSelectViewModel;
+    for (const hero of vm.party) {
+      expect(hero).toHaveProperty("id");
+      expect(hero).toHaveProperty("name");
+      expect(hero).toHaveProperty("classLabel");
+      expect(hero).toHaveProperty("hp");
+      expect(hero).toHaveProperty("isSelected");
+    }
+  });
+});
+
+describe("Dungeon select screen resolution", () => {
+  it("resolves dungeon-select screen for dungeon select view model", () => {
+    const screen = resolveScreen(dungeonSelectSnapshot);
+    expect(screen).toBe("dungeon-select");
+  });
+});
+
+describe("Dungeon select transition validation", () => {
+  it("allows start-dungeon-select from town screen", () => {
+    const validation = canTransition(replayReadySnapshot, { type: "start-dungeon-select" });
+    expect(validation.allowed).toBe(true);
+  });
+
+  it("rejects start-dungeon-select from non-town screens", () => {
+    const nonTownScreens: DdgcFrontendSnapshot[] = [
+      dungeonSelectSnapshot,
+      provisioningSnapshot,
+      expeditionSnapshot,
+      resultSnapshot,
+      returnSnapshot,
+      startupSnapshot,
+    ];
+    for (const snap of nonTownScreens) {
+      const validation = canTransition(snap, { type: "start-dungeon-select" });
+      expect(validation.allowed).toBe(false);
+    }
+  });
+
+  it("allows select-dungeon from dungeon-select screen", () => {
+    const validation = canTransition(dungeonSelectSnapshot, { type: "select-dungeon", dungeonId: "dungeon-01" });
+    expect(validation.allowed).toBe(true);
+  });
+
+  it("rejects select-dungeon from non-dungeon-select screens", () => {
+    const nonDungeonSelectScreens: DdgcFrontendSnapshot[] = [
+      replayReadySnapshot,
+      provisioningSnapshot,
+      expeditionSnapshot,
+      resultSnapshot,
+    ];
+    for (const snap of nonDungeonSelectScreens) {
+      const validation = canTransition(snap, { type: "select-dungeon", dungeonId: "dungeon-01" });
+      expect(validation.allowed).toBe(false);
+    }
+  });
+
+  it("allows toggle-dungeon-hero from dungeon-select screen", () => {
+    const validation = canTransition(dungeonSelectSnapshot, { type: "toggle-dungeon-hero", heroId: "hero-01" });
+    expect(validation.allowed).toBe(true);
+  });
+
+  it("allows return-to-town from dungeon-select screen", () => {
+    const validation = canTransition(dungeonSelectSnapshot, { type: "return-to-town" });
+    expect(validation.allowed).toBe(true);
+  });
+});
+
 describe("Result screen resolution", () => {
   it("resolves result screen for success result view model", () => {
     const screen = resolveScreen(resultSnapshot);
@@ -144,6 +244,7 @@ describe("Result screen transition validation", () => {
   it("rejects continue-from-result from non-result screens", () => {
     const nonResultScreens: DdgcFrontendSnapshot[] = [
       replayReadySnapshot,
+      dungeonSelectSnapshot,
       provisioningSnapshot,
       expeditionSnapshot,
       returnSnapshot,
@@ -186,6 +287,7 @@ describe("Return screen transition validation", () => {
   it("rejects resume-from-return from non-return screens", () => {
     const nonReturnScreens: DdgcFrontendSnapshot[] = [
       replayReadySnapshot,
+      dungeonSelectSnapshot,
       provisioningSnapshot,
       expeditionSnapshot,
       resultSnapshot,
@@ -272,14 +374,15 @@ describe("Result return meta-loop continuation proof", () => {
   });
 
   it("proves full expedition cycle closes without dead-end", () => {
-    // Full cycle: town → provisioning → expedition → combat → result → town → provisioning
-    expect(canTransition(replayReadySnapshot, { type: "start-provisioning" }).allowed).toBe(true);
+    // Full cycle: town → dungeon-select → provisioning → expedition → combat → result → town
+    expect(canTransition(replayReadySnapshot, { type: "start-dungeon-select" }).allowed).toBe(true);
+    expect(canTransition(dungeonSelectSnapshot, { type: "confirm-dungeon-selection" }).allowed).toBe(false); // no heroes selected in fixture
     expect(canTransition(provisioningSnapshot, { type: "confirm-provisioning" }).allowed).toBe(true);
     expect(canTransition(expeditionSnapshot, { type: "launch-expedition" }).allowed).toBe(true);
     expect(canTransition(resultSnapshot, { type: "continue-from-result" }).allowed).toBe(true);
 
-    // Cycle completes: back in town, can provision again
-    expect(canTransition(replayReadySnapshot, { type: "start-provisioning" }).allowed).toBe(true);
+    // Cycle completes: back in town, can start dungeon select again
+    expect(canTransition(replayReadySnapshot, { type: "start-dungeon-select" }).allowed).toBe(true);
   });
 
   it("proves all three result outcomes can close the meta-loop", () => {

@@ -3,6 +3,7 @@ import {
   replayReadySnapshot,
   replayHeroDetailViewModel,
   replayBuildingDetailViewModel,
+  replayDungeonSelectViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
@@ -13,6 +14,7 @@ import type {
   DdgcFrontendIntent,
   DdgcFrontendSnapshot,
   TownViewModel,
+  DungeonSelectViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
@@ -80,6 +82,55 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         this.snapshot = {
           ...this.snapshot,
           debugMessage: `Replay: building action intent received for ${intent.actionId}.`
+        };
+        break;
+      case "start-dungeon-select":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-select",
+          viewModel: replayDungeonSelectViewModel as DungeonSelectViewModel
+        };
+        break;
+      case "select-dungeon": {
+        const dsVm = this.snapshot.viewModel as DungeonSelectViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...dsVm,
+            selectedDungeonId: intent.dungeonId,
+            isReadyToProceed:
+              dsVm.party.filter((h) => h.isSelected).length >= 1 &&
+              dsVm.party.filter((h) => h.isSelected).length <= dsVm.maxPartySize
+          }
+        };
+        break;
+      }
+      case "toggle-dungeon-hero": {
+        const dsVm2 = this.snapshot.viewModel as DungeonSelectViewModel;
+        const updatedParty = dsVm2.party.map((hero) =>
+          hero.id === intent.heroId
+            ? { ...hero, isSelected: !hero.isSelected }
+            : hero
+        );
+        const selectedCount = updatedParty.filter((h) => h.isSelected).length;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...dsVm2,
+            party: updatedParty,
+            isReadyToProceed:
+              dsVm2.selectedDungeonId !== null &&
+              selectedCount >= 1 &&
+              selectedCount <= dsVm2.maxPartySize
+          }
+        };
+        break;
+      }
+      case "confirm-dungeon-selection":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "provisioning",
+          viewModel: replayProvisioningViewModel as ProvisioningViewModel
         };
         break;
       case "start-provisioning":

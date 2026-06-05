@@ -11,6 +11,7 @@ import type {
   ExpeditionSetupViewModel,
   FatalErrorViewModel,
   HeroDetailViewModel,
+  DungeonSelectViewModel,
   ProvisioningViewModel,
   ReturnViewModel,
   TownViewModel,
@@ -27,6 +28,7 @@ import { StartupScreen } from "../screens/startup/StartupScreen";
 import { TownShellScreen } from "../screens/town/TownShellScreen";
 import { HeroDetailScreen } from "../screens/town/HeroDetailScreen";
 import { BuildingScreenRouter } from "../screens/town/BuildingScreenRouter";
+import { DungeonSelectScreen } from "../screens/expedition/DungeonSelectScreen";
 import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
@@ -109,8 +111,8 @@ export function DdgcApp() {
             onOpenBuilding={(buildingId) => {
               void dispatchIntent(bridge, { type: "open-building", buildingId });
             }}
-            onStartProvisioning={() => {
-              void dispatchIntent(bridge, { type: "start-provisioning" });
+            onStartDungeonSelect={() => {
+              void dispatchIntent(bridge, { type: "start-dungeon-select" });
             }}
           />
         </Match>
@@ -134,6 +136,25 @@ export function DdgcApp() {
             }}
             onAction={(actionId) => {
               void dispatchIntent(bridge, { type: "building-action", actionId });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "dungeon-select" && snapshot().viewModel.kind === "dungeon-select"}
+        >
+          <DungeonSelectScreen
+            viewModel={snapshot().viewModel as DungeonSelectViewModel}
+            onSelectDungeon={(dungeonId) => {
+              void dispatchIntent(bridge, { type: "select-dungeon", dungeonId });
+            }}
+            onToggleHeroSelection={(heroId) => {
+              void dispatchIntent(bridge, { type: "toggle-dungeon-hero", heroId });
+            }}
+            onConfirmSelection={() => {
+              void dispatchIntent(bridge, { type: "confirm-dungeon-selection" });
+            }}
+            onReturnToTown={() => {
+              void dispatchIntent(bridge, { type: "return-to-town" });
             }}
           />
         </Match>
