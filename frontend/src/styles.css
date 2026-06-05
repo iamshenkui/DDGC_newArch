@@ -3321,3 +3321,433 @@ button {
     font-size: 1rem;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Guild Building Screen — Tab Bar + Trial Selection Panel
+   Mirrors GuildWindow/TabBar and GuildWindow/RightPanel/TrialSelection
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Guild Tab Bar ── */
+.guild-tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid rgba(160, 204, 188, 0.1);
+  margin-bottom: 8px;
+}
+
+.guild-tab-btn {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--panel-muted);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  font-family: var(--page-font);
+}
+
+.guild-tab-btn:hover {
+  color: var(--panel-text);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.guild-tab-btn--active {
+  color: var(--panel-accent);
+  border-bottom-color: var(--panel-accent);
+}
+
+/* ── Guild Trial Selection Panel ── */
+.guild-trial-panel {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+  min-height: 480px;
+}
+
+.guild-trial-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.guild-trial-npc-portrait {
+  width: 100%;
+  aspect-ratio: 3/4;
+  border-radius: var(--radius-md);
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 25%, rgba(27, 50, 44, 0.5), transparent 70%),
+    radial-gradient(ellipse at center, rgba(6, 12, 10, 0.8), rgba(0, 0, 0, 0.95));
+  border: 2px solid rgba(160, 204, 188, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 60px rgba(0, 0, 0, 0.3);
+}
+
+.guild-trial-npc-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.guild-trial-npc-label {
+  font-family: var(--heading-font);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+  opacity: 0.6;
+  text-shadow: 0 0 20px rgba(198, 212, 106, 0.2);
+}
+
+.guild-trial-section-title {
+  margin: 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--panel-accent);
+  font-family: var(--heading-font);
+}
+
+.guild-trial-selected-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.guild-trial-hero-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+}
+
+.guild-trial-hero-portrait {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, rgba(198, 212, 106, 0.12), rgba(0, 0, 0, 0.3));
+  border: 1px solid rgba(198, 212, 106, 0.15);
+  flex-shrink: 0;
+}
+
+.guild-trial-hero-initial {
+  font-family: var(--heading-font);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+}
+
+.guild-trial-hero-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.guild-trial-hero-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--panel-text);
+}
+
+.guild-trial-hero-class {
+  font-size: 0.7rem;
+  color: var(--panel-muted);
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  width: fit-content;
+}
+
+.guild-trial-hero-level {
+  font-size: 0.72rem;
+  color: var(--panel-accent);
+  font-weight: 600;
+}
+
+.guild-trial-hero-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.guild-trial-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.guild-trial-stat-label {
+  font-size: 0.75rem;
+  color: var(--panel-muted);
+}
+
+.guild-trial-stat-value {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--panel-text);
+}
+
+.guild-trial-hero-status {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  width: fit-content;
+}
+
+.guild-trial-hero-status--wounded {
+  color: #e8a838;
+  background: rgba(232, 168, 56, 0.15);
+  border: 1px solid rgba(232, 168, 56, 0.25);
+}
+
+.guild-trial-hero-status--afflicted {
+  color: #ea7767;
+  background: rgba(234, 119, 103, 0.15);
+  border: 1px solid rgba(234, 119, 103, 0.25);
+}
+
+.guild-trial-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+.guild-trial-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  font-family: var(--page-font);
+}
+
+.guild-trial-btn--talk {
+  background: rgba(198, 212, 106, 0.1);
+  border: 1px solid rgba(198, 212, 106, 0.25);
+  color: var(--panel-accent);
+}
+
+.guild-trial-btn--talk:hover {
+  background: rgba(198, 212, 106, 0.18);
+  border-color: rgba(198, 212, 106, 0.4);
+  transform: translateY(-1px);
+}
+
+.guild-trial-btn--leave {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  color: var(--panel-text);
+}
+
+.guild-trial-btn--leave:hover {
+  background: rgba(234, 119, 103, 0.1);
+  border-color: rgba(234, 119, 103, 0.25);
+  color: #ea7767;
+  transform: translateY(-1px);
+}
+
+/* ── Right Column: Roster List ── */
+.guild-trial-right {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.guild-trial-roster-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(160, 204, 188, 0.1);
+}
+
+.guild-trial-roster-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--panel-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--heading-font);
+}
+
+.guild-trial-roster-count {
+  font-size: 0.72rem;
+  color: var(--panel-muted);
+}
+
+.guild-trial-roster-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  max-height: 440px;
+}
+
+.guild-trial-roster-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 50px 60px 36px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(160, 204, 188, 0.06);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.guild-trial-roster-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(160, 204, 188, 0.15);
+}
+
+.guild-trial-roster-row--selected {
+  background: rgba(198, 212, 106, 0.06);
+  border-color: rgba(198, 212, 106, 0.25);
+}
+
+.guild-trial-row-portrait {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, rgba(198, 212, 106, 0.1), rgba(0, 0, 0, 0.3));
+  border: 1px solid rgba(198, 212, 106, 0.12);
+}
+
+.guild-trial-row-initial {
+  font-family: var(--heading-font);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+}
+
+.guild-trial-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.guild-trial-row-name {
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--panel-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.guild-trial-row-class {
+  font-size: 0.65rem;
+  color: var(--panel-muted);
+}
+
+.guild-trial-row-level {
+  font-size: 0.75rem;
+  color: var(--panel-accent);
+  font-weight: 600;
+  text-align: center;
+}
+
+.guild-trial-row-status {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.guild-trial-status-orb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.guild-trial-status-orb--healthy {
+  background: #5bbd6e;
+  border: 1px solid rgba(91, 189, 110, 0.4);
+  box-shadow: 0 0 4px rgba(91, 189, 110, 0.3);
+}
+
+.guild-trial-status-orb--wounded {
+  background: #e8a838;
+  border: 1px solid rgba(232, 168, 56, 0.4);
+  box-shadow: 0 0 4px rgba(232, 168, 56, 0.3);
+}
+
+.guild-trial-status-orb--afflicted {
+  background: #ea7767;
+  border: 1px solid rgba(234, 119, 103, 0.4);
+  box-shadow: 0 0 4px rgba(234, 119, 103, 0.3);
+}
+
+.guild-trial-row-checkbox {
+  display: flex;
+  justify-content: center;
+}
+
+.guild-trial-checkbox-box {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid rgba(160, 204, 188, 0.25);
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--panel-accent);
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.guild-trial-checkbox-box--checked {
+  background: rgba(198, 212, 106, 0.15);
+  border-color: rgba(198, 212, 106, 0.5);
+}
+
+/* Responsive: stack trial panel on narrow screens */
+@media (max-width: 920px) {
+  .guild-trial-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .guild-trial-left {
+    order: 2;
+  }
+
+  .guild-trial-right {
+    order: 1;
+  }
+
+  .guild-trial-roster-row {
+    grid-template-columns: 36px 1fr 40px 50px 32px;
+    gap: 6px;
+    padding: 8px;
+  }
+}

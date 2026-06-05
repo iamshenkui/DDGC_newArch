@@ -332,6 +332,74 @@ test.describe("browser smoke: fidelity gates", () => {
 
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
 
+    // ── Phase 4b: Guild Trial Selection (使用设施 tab) ───────
+    // Click the "使用设施" tab to open the trial selection panel
+    await page.locator('[data-tab-id="use"]').click();
+    await settle(page, 400);
+
+    // Verify trial selection panel elements
+    await expect(
+      page.locator(".guild-trial-panel"),
+      "Guild trial selection panel must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".guild-trial-section-title").filter({ hasText: "选择人物" }),
+      "Trial selection '选择人物' header must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".guild-trial-roster-list"),
+      "Hero roster list must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".guild-trial-roster-row"),
+      "Roster rows must render"
+    ).toHaveCount(3);
+
+    // Verify roster contains expected heroes
+    await expect(
+      page.locator(".guild-trial-row-name").filter({ hasText: "Shen" }),
+      "Roster must contain Shen"
+    ).toBeVisible();
+    await expect(
+      page.locator(".guild-trial-row-name").filter({ hasText: "Bai Xiu" }),
+      "Roster must contain Bai Xiu"
+    ).toBeVisible();
+
+    // Click a hero row to select
+    await page.locator('[data-hero-id="hero-white-01"]').click();
+    await settle(page, 200);
+
+    // Verify selected hero detail updates
+    await expect(
+      page.locator(".guild-trial-hero-name"),
+      "Selected hero name must update to Bai Xiu"
+    ).toHaveText("Bai Xiu");
+
+    // Verify Talk and Leave buttons
+    await expect(
+      page.getByRole("button", { name: "对话" }),
+      "Talk button must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "离开" }),
+      "Leave button must be visible"
+    ).toBeVisible();
+
+    // Click Leave to return to upgrade tab
+    await page.getByRole("button", { name: "离开" }).click();
+    await settle(page, 200);
+
+    await expect(
+      page.locator(".building-action-card-header").filter({ hasText: "Train Combat Skill" }),
+      "Must return to upgrade tab after leaving trial selection"
+    ).toBeVisible();
+
+    // Fidelity — trial selection is a completed product surface
+    await expectFidelity(page.locator(".app-frame"), "Guild trial selection screen");
+    await expectFullPageFidelity(page, "Guild trial selection screen");
+
+    expectNoErrors(pageErrors, consoleErrors, "Phase 4b (guild trial selection)");
+
     // ── Phase 5: Full meta-loop ─────────────────────────────
     // Town → Provisioning → Expedition → Result → Return → Town
 

@@ -174,7 +174,7 @@ const createLiveHeroDetailViewModel = (hero: TownHeroSummary): HeroDetailViewMod
   talent: "Versatile"
 });
 
-const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): BuildingDetailViewModel => {
+const createLiveBuildingDetailViewModel = (building: TownBuildingSummary, heroes: ReadonlyArray<TownHeroSummary>): BuildingDetailViewModel => {
   const buildingConfigs: Record<string, {
     description: string;
     actions: Array<{
@@ -255,6 +255,21 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
     ]
   };
 
+  const roster = building.id === "guild"
+    ? heroes.map((h) => ({
+        id: h.id,
+        name: h.name,
+        classLabel: h.classLabel,
+        level: h.level,
+        hp: h.hp.split(" / ")[0] ?? h.hp,
+        maxHp: h.hp.split(" / ")[1] ?? h.maxHp,
+        stress: h.stress,
+        maxStress: h.maxStress,
+        isWounded: h.isWounded,
+        isAfflicted: h.isAfflicted
+      }))
+    : undefined;
+
   return {
     kind: "building-detail",
     buildingId: building.id,
@@ -263,7 +278,8 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
     description: config.description,
     actions: config.actions,
     currentUpgrade: config.currentUpgrade,
-    upgradeRequirement: config.upgradeRequirement
+    upgradeRequirement: config.upgradeRequirement,
+    roster
   };
 };
 
@@ -395,7 +411,7 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         this.snapshot = {
           ...this.snapshot,
           flowState: "town",
-          viewModel: createLiveBuildingDetailViewModel(building)
+          viewModel: createLiveBuildingDetailViewModel(building, townVm.heroes)
         };
         break;
       }

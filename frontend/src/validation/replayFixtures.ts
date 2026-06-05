@@ -203,7 +203,45 @@ export const replayBuildingDetailViewModel: BuildingDetailViewModel = {
       isUnsupported: true
     }
   ],
-  upgradeRequirement: "Reach Town Level 2 to unlock weapon and armor upgrades."
+  upgradeRequirement: "Reach Town Level 2 to unlock weapon and armor upgrades.",
+  roster: [
+    {
+      id: "hero-hunter-01",
+      name: "Shen",
+      classLabel: "Hunter",
+      level: 2,
+      hp: "38",
+      maxHp: "42",
+      stress: "17",
+      maxStress: "200",
+      isWounded: true,
+      isAfflicted: false
+    },
+    {
+      id: "hero-white-01",
+      name: "Bai Xiu",
+      classLabel: "White",
+      level: 2,
+      hp: "41",
+      maxHp: "41",
+      stress: "8",
+      maxStress: "200",
+      isWounded: false,
+      isAfflicted: false
+    },
+    {
+      id: "hero-black-01",
+      name: "Hei Zhen",
+      classLabel: "Black",
+      level: 1,
+      hp: "34",
+      maxHp: "40",
+      stress: "24",
+      maxStress: "200",
+      isWounded: true,
+      isAfflicted: false
+    }
+  ]
 };
 
 export const replayBlacksmithBuildingDetailViewModel: BuildingDetailViewModel = {

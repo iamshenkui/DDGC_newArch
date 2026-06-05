@@ -3,6 +3,16 @@ import {
   replayReadySnapshot,
   replayHeroDetailViewModel,
   replayBuildingDetailViewModel,
+  replayBlacksmithBuildingDetailViewModel,
+  replaySanitariumBuildingDetailViewModel,
+  replayStagecoachBuildingDetailViewModel,
+  replayAbbeyBuildingDetailViewModel,
+  replayTavernBuildingDetailViewModel,
+  replayGraveyardBuildingDetailViewModel,
+  replayGardenBuildingDetailViewModel,
+  replayLegacyTowerBuildingDetailViewModel,
+  replayMarketBuildingDetailViewModel,
+  replayCampingTrainerBuildingDetailViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayResultViewModel,
@@ -64,11 +74,35 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       case "open-building": {
         const townVm = this.snapshot.viewModel as TownViewModel;
         const building = townVm.buildings.find((b) => b.id === intent.buildingId) ?? townVm.buildings[0];
+        const baseVm =
+          building.id === "guild"
+            ? replayBuildingDetailViewModel
+            : building.id === "blacksmith"
+              ? replayBlacksmithBuildingDetailViewModel
+              : building.id === "sanitarium"
+                ? replaySanitariumBuildingDetailViewModel
+                : building.id === "stagecoach"
+                  ? replayStagecoachBuildingDetailViewModel
+                  : building.id === "abbey"
+                    ? replayAbbeyBuildingDetailViewModel
+                    : building.id === "tavern"
+                      ? replayTavernBuildingDetailViewModel
+                      : building.id === "graveyard"
+                        ? replayGraveyardBuildingDetailViewModel
+                        : building.id === "garden"
+                          ? replayGardenBuildingDetailViewModel
+                          : building.id === "legacytower"
+                            ? replayLegacyTowerBuildingDetailViewModel
+                            : building.id === "market"
+                              ? replayMarketBuildingDetailViewModel
+                              : building.id === "campingtrainer"
+                                ? replayCampingTrainerBuildingDetailViewModel
+                                : replayBuildingDetailViewModel;
         this.snapshot = {
           ...this.snapshot,
           flowState: "town",
           viewModel: {
-            ...replayBuildingDetailViewModel,
+            ...baseVm,
             buildingId: building.id,
             label: building.label,
             status: building.status
