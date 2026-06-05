@@ -399,8 +399,49 @@ test.describe("browser smoke: fidelity gates", () => {
       "Expedition launch screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5d. Expedition → Result (success)
+    // 5d. Expedition → Combat
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await page.waitForSelector(".combat-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("Dungeon Combat"),
+      "Combat eyebrow must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "The Depths Await" }),
+      "Combat expedition name must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".combat-unit--hero"),
+      "Hero units must be visible"
+    ).toHaveCount(2);
+    await expect(
+      page.locator(".combat-unit--enemy"),
+      "Enemy units must be visible"
+    ).toHaveCount(2);
+    await expect(
+      page.locator(".combat-map-node"),
+      "Dungeon map nodes must be visible"
+    ).toHaveCount(4);
+    await expect(
+      page.locator(".combat-skill-btn"),
+      "Skill buttons must be visible"
+    ).toHaveCount(4);
+    await expectFidelity(
+      page.locator(".combat-viewport"),
+      "Combat screen"
+    );
+    await expectFullPageFidelity(page, "Combat screen");
+
+    // Landscape viewport check for combat screen
+    await expect(
+      page.locator(".combat-viewport"),
+      "Combat screen must use .combat-viewport landscape layout"
+    ).toBeVisible();
+
+    // 5e. Combat → Result (success)
+    await page.getByRole("button", { name: "Finish Combat" }).click();
     await settle(page);
 
     await expect(
@@ -431,7 +472,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Result screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5e. Result → Return
+    // 5f. Result → Return
     await page.getByRole("button", { name: "Proceed to Return" }).click();
     await settle(page);
 
@@ -614,6 +655,23 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await page.waitForSelector(".combat-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.locator(".combat-viewport"),
+      "Live combat screen must use .combat-viewport landscape layout"
+    ).toBeVisible();
+    await expect(
+      page.locator(".combat-unit--hero"),
+      "Live combat hero units must render"
+    ).toHaveCount(2);
+    await expect(
+      page.locator(".combat-unit--enemy"),
+      "Live combat enemy units must render"
+    ).toHaveCount(2);
+
+    await page.getByRole("button", { name: "Finish Combat" }).click();
     await settle(page);
 
     await expect(

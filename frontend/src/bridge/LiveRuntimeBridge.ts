@@ -10,6 +10,7 @@ import type {
   BuildingDetailViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  CombatViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
 } from "./contractTypes";
@@ -301,6 +302,36 @@ const createLiveExpeditionViewModel = (): ExpeditionSetupViewModel => ({
   isLaunchable: true
 });
 
+const createLiveCombatViewModel = (): CombatViewModel => ({
+  kind: "combat",
+  title: "Dungeon Combat",
+  expeditionName: "The Azure Lantern Expedition",
+  round: 1,
+  turn: "player",
+  heroes: [
+    { id: "hero-hunter-live-01", name: "Yuan", classLabel: "Hunter", hp: "42 / 42", maxHp: "42", stress: "0", maxStress: "200", position: 1 },
+    { id: "hero-white-live-01", name: "Mei", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "0", maxStress: "200", position: 2 }
+  ],
+  enemies: [
+    { id: "enemy-live-01", name: "Shadow Fiend", hp: "80 / 100", maxHp: "100", position: 1, size: 1 },
+    { id: "enemy-live-02", name: "Void Spawn", hp: "15 / 20", maxHp: "20", position: 2, size: 1 }
+  ],
+  selectedHeroId: "hero-hunter-live-01",
+  skills: [
+    { id: "skill-1", name: "Basic Attack", description: "A simple melee attack.", target: "enemy", cooldown: 0 },
+    { id: "skill-2", name: "Precise Strike", description: "An accurate attack with increased crit chance.", target: "enemy", cooldown: 0 },
+    { id: "skill-3", name: "Defensive Stance", description: "Increase dodge for one round.", target: "self", cooldown: 1 },
+    { id: "skill-4", name: "Inspire", description: "Reduce ally stress.", target: "ally", cooldown: 2 }
+  ],
+  torchLevel: 100,
+  dungeonMap: [
+    { id: "room-1", type: "entrance", isCurrent: false, isExplored: true },
+    { id: "room-2", type: "combat", isCurrent: true, isExplored: false },
+    { id: "room-3", type: "exit", isCurrent: false, isExplored: false }
+  ],
+  isRetreatAvailable: true
+});
+
 const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
   kind: "result",
   title: "Expedition Complete",
@@ -438,6 +469,37 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "launch-expedition":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "combat",
+          viewModel: createLiveCombatViewModel()
+        };
+        break;
+      case "select-combat-hero": {
+        const combatVm = this.snapshot.viewModel as CombatViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...combatVm,
+            selectedHeroId: intent.heroId
+          }
+        };
+        break;
+      }
+      case "use-skill":
+        this.snapshot = {
+          ...this.snapshot,
+          debugMessage: `Live: skill used ${intent.skillId}.`
+        };
+        break;
+      case "retreat-from-combat":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "result",
+          viewModel: createLiveResultViewModel()
+        };
+        break;
+      case "finish-combat":
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",

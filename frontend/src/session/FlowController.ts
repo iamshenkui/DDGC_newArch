@@ -10,7 +10,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "combat" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -39,6 +39,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "expedition") {
     return "expedition";
+  }
+
+  if (snapshot.viewModel.kind === "combat") {
+    return "combat";
   }
 
   if (snapshot.viewModel.kind === "result") {
@@ -149,6 +153,30 @@ export function canTransition(
     case "toggle-hero-selection":
       if (screen !== "provisioning") {
         return { allowed: false, reason: "toggle-hero-selection is only valid in provisioning" };
+      }
+      return { allowed: true };
+
+    case "select-combat-hero":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "select-combat-hero is only valid in combat" };
+      }
+      return { allowed: true };
+
+    case "use-skill":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "use-skill is only valid in combat" };
+      }
+      return { allowed: true };
+
+    case "retreat-from-combat":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "retreat-from-combat is only valid in combat" };
+      }
+      return { allowed: true };
+
+    case "finish-combat":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "finish-combat is only valid in combat" };
       }
       return { allowed: true };
 

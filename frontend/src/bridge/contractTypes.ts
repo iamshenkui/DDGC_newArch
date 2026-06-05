@@ -215,6 +215,56 @@ export interface ExpeditionSetupViewModel {
   isLaunchable: boolean;
 }
 
+export interface CombatHero {
+  id: string;
+  name: string;
+  classLabel: string;
+  hp: string;
+  maxHp: string;
+  stress: string;
+  maxStress: string;
+  position: number;
+}
+
+export interface CombatEnemy {
+  id: string;
+  name: string;
+  hp: string;
+  maxHp: string;
+  position: number;
+  size: number;
+}
+
+export interface CombatSkill {
+  id: string;
+  name: string;
+  description: string;
+  target: "enemy" | "ally" | "self";
+  cooldown: number;
+}
+
+export interface DungeonMapNode {
+  id: string;
+  type: "entrance" | "combat" | "boss" | "treasure" | "rest" | "exit";
+  isCurrent: boolean;
+  isExplored: boolean;
+}
+
+export interface CombatViewModel {
+  kind: "combat";
+  title: string;
+  expeditionName: string;
+  round: number;
+  turn: "player" | "enemy";
+  heroes: ReadonlyArray<CombatHero>;
+  enemies: ReadonlyArray<CombatEnemy>;
+  selectedHeroId: string;
+  skills: ReadonlyArray<CombatSkill>;
+  torchLevel: number;
+  dungeonMap: ReadonlyArray<DungeonMapNode>;
+  isRetreatAvailable: boolean;
+}
+
 export interface ExpeditionResultViewModel {
   kind: "result";
   title: string;
@@ -272,6 +322,7 @@ export type DdgcViewModel =
   | BuildingDetailViewModel
   | ProvisioningViewModel
   | ExpeditionSetupViewModel
+  | CombatViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
   | UnsupportedViewModel
@@ -295,4 +346,8 @@ export type DdgcFrontendIntent =
   | { type: "launch-expedition" }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }
-  | { type: "resume-from-return" };
+  | { type: "resume-from-return" }
+  | { type: "select-combat-hero"; heroId: string }
+  | { type: "use-skill"; skillId: string }
+  | { type: "retreat-from-combat" }
+  | { type: "finish-combat" };

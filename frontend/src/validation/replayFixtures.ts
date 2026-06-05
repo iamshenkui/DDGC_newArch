@@ -1,6 +1,7 @@
 import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
+  CombatViewModel,
   DdgcFrontendSnapshot,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
@@ -516,6 +517,37 @@ export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
   isLaunchable: true
 };
 
+export const replayCombatViewModel: CombatViewModel = {
+  kind: "combat",
+  title: "Dungeon Combat",
+  expeditionName: "The Depths Await",
+  round: 1,
+  turn: "player",
+  heroes: [
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", stress: "17", maxStress: "200", position: 1 },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "8", maxStress: "200", position: 2 }
+  ],
+  enemies: [
+    { id: "enemy-boss-01", name: "Dimensional Devourer", hp: "120 / 150", maxHp: "150", position: 1, size: 2 },
+    { id: "enemy-minion-01", name: "Ash Spawn", hp: "18 / 25", maxHp: "25", position: 3, size: 1 }
+  ],
+  selectedHeroId: "hero-hunter-01",
+  skills: [
+    { id: "skill-1", name: "Hunting Bow", description: "Ranged attack that marks the target.", target: "enemy", cooldown: 0 },
+    { id: "skill-2", name: "Rapid Shot", description: "Fire two quick shots at the target.", target: "enemy", cooldown: 0 },
+    { id: "skill-3", name: "Marked for Death", description: "Mark a target to take increased damage.", target: "enemy", cooldown: 1 },
+    { id: "skill-4", name: "Batty Advice", description: "Grant a random buff to an ally.", target: "ally", cooldown: 2 }
+  ],
+  torchLevel: 75,
+  dungeonMap: [
+    { id: "room-1", type: "entrance", isCurrent: false, isExplored: true },
+    { id: "room-2", type: "combat", isCurrent: false, isExplored: true },
+    { id: "room-3", type: "boss", isCurrent: true, isExplored: false },
+    { id: "room-4", type: "exit", isCurrent: false, isExplored: false }
+  ],
+  isRetreatAvailable: true
+};
+
 export const replayResultViewModel: ExpeditionResultViewModel = {
   kind: "result",
   title: "Expedition Complete",
@@ -827,6 +859,14 @@ export const expeditionSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing expedition launch screen."
 };
 
+// Combat flow snapshot
+export const combatSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "combat",
+  viewModel: replayCombatViewModel,
+  debugMessage: "Replay bridge showing dungeon combat screen."
+};
+
 // Result snapshots (success, failure, partial)
 export const resultSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -932,7 +972,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     town: ["town", "hero-detail", "building-detail"],
     provisioning: ["provisioning"],
     expedition: ["expedition"],
-    combat: ["expedition"],
+    combat: ["combat"],
     result: ["result"],
     return: ["return"],
   };
@@ -1010,6 +1050,19 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (typeof vm.isLaunchable !== "boolean") e.push("ExpeditionSetupViewModel: isLaunchable is not a boolean");
       if (!vm.supplyLevel || typeof vm.supplyLevel !== "string") e.push("ExpeditionSetupViewModel: supplyLevel is missing");
       if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ExpeditionSetupViewModel: provisionCost is missing");
+      break;
+    }
+    case "combat": {
+      if (!vm.title || typeof vm.title !== "string") e.push("CombatViewModel: title is missing");
+      if (!vm.expeditionName || typeof vm.expeditionName !== "string") e.push("CombatViewModel: expeditionName is missing");
+      if (typeof vm.round !== "number") e.push("CombatViewModel: round is not a number");
+      if (vm.turn !== "player" && vm.turn !== "enemy") e.push(`CombatViewModel: turn is "${String(vm.turn)}", expected "player" or "enemy"`);
+      if (!Array.isArray(vm.heroes)) { e.push("CombatViewModel: heroes is not an array"); } else if (vm.heroes.length === 0) { e.push("CombatViewModel: heroes array is empty"); }
+      if (!Array.isArray(vm.enemies)) { e.push("CombatViewModel: enemies is not an array"); }
+      if (!Array.isArray(vm.skills)) { e.push("CombatViewModel: skills is not an array"); }
+      if (typeof vm.torchLevel !== "number") e.push("CombatViewModel: torchLevel is not a number");
+      if (!Array.isArray(vm.dungeonMap)) { e.push("CombatViewModel: dungeonMap is not an array"); }
+      if (typeof vm.isRetreatAvailable !== "boolean") e.push("CombatViewModel: isRetreatAvailable is not a boolean");
       break;
     }
     case "result": {

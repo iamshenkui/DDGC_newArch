@@ -5,6 +5,7 @@ import {
   replayBuildingDetailViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
+  replayCombatViewModel,
   replayResultViewModel,
   replayReturnViewModel
 } from "../validation/replayFixtures";
@@ -15,6 +16,7 @@ import type {
   TownViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  CombatViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel
 } from "./contractTypes";
@@ -115,6 +117,37 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "launch-expedition":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "combat",
+          viewModel: replayCombatViewModel as CombatViewModel
+        };
+        break;
+      case "select-combat-hero": {
+        const combatVm = this.snapshot.viewModel as CombatViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...combatVm,
+            selectedHeroId: intent.heroId
+          }
+        };
+        break;
+      }
+      case "use-skill":
+        this.snapshot = {
+          ...this.snapshot,
+          debugMessage: `Replay: skill used ${intent.skillId}.`
+        };
+        break;
+      case "retreat-from-combat":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "result",
+          viewModel: replayFailureResultViewModel as ExpeditionResultViewModel
+        };
+        break;
+      case "finish-combat":
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",
