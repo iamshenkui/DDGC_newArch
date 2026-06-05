@@ -60,6 +60,18 @@ export interface BuildingAction {
   isUnsupported: boolean;
 }
 
+export interface TreatmentSlot {
+  id: string;
+  label: string;
+  description?: string;
+  heroId?: string;
+  heroName?: string;
+  heroClassLabel?: string;
+  heroPortrait?: string;
+  cost: string;
+  isAvailable: boolean;
+}
+
 export interface BuildingDetailViewModel {
   kind: "building-detail";
   buildingId: string;
@@ -69,6 +81,10 @@ export interface BuildingDetailViewModel {
   actions: ReadonlyArray<BuildingAction>;
   currentUpgrade?: string;
   upgradeRequirement?: string;
+  /** Treatment slots for sanitarium-style buildings (e.g. 心理疾病, 异星细胞工坊) */
+  treatmentSlots?: ReadonlyArray<TreatmentSlot>;
+  /** NPC portrait URL/path for buildings that show an attendant (e.g. sanitarium doctor) */
+  npcPortrait?: string;
 }
 
 export interface HeroProgression {

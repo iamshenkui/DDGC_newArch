@@ -247,7 +247,7 @@ export const replaySanitariumBuildingDetailViewModel: BuildingDetailViewModel = 
   buildingId: "sanitarium",
   label: "细胞修复站",
   status: "ready",
-  description: "The sanitarium provides treatment for physical and mental afflictions. Cure diseases, reduce stress, and remove negative quirks.",
+  description: "细胞修复站提供心理疾病与身体异常的专业治疗服务，可治愈怪癖、清除疾病并恢复英雄状态。",
   actions: [
     {
       id: "cure-disease",
@@ -274,7 +274,23 @@ export const replaySanitariumBuildingDetailViewModel: BuildingDetailViewModel = 
       isUnsupported: false
     }
   ],
-  upgradeRequirement: "Reach Town Level 2 to unlock quirk removal."
+  upgradeRequirement: "Reach Town Level 2 to unlock quirk removal.",
+  treatmentSlots: [
+    {
+      id: "slot-mental",
+      label: "心理疾病",
+      description: "治疗英雄的心理疾病与负面精神状态。",
+      cost: "250 Gold",
+      isAvailable: true
+    },
+    {
+      id: "slot-alien-cell",
+      label: "异星细胞工坊",
+      description: "清除英雄体内的异星细胞感染与特殊疾病。",
+      cost: "300 Gold",
+      isAvailable: true
+    }
+  ]
 };
 
 export const replayStagecoachBuildingDetailViewModel: BuildingDetailViewModel = {
