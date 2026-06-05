@@ -332,6 +332,80 @@ test.describe("browser smoke: fidelity gates", () => {
 
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
 
+    // ── Phase 4b: Blacksmith building detail (upgrade screen) ──
+    // Return to town first
+    await page.getByRole("button", { name: "Return to Town" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    // Open the Blacksmith building
+    await page.locator('[data-building-id="blacksmith"]').click();
+    await settle(page, 800);
+
+    // Blacksmith building name (Chinese display name)
+    await expect(
+      page.locator(".building-detail-name"),
+      "Blacksmith building name must be visible (DDGC display name 锻造舱 = Blacksmith)"
+    ).toHaveText("锻造舱");
+
+    // Tab bar must show upgrade/use tabs
+    await expect(
+      page.locator('.blacksmith-tab-btn[data-tab="upgrade"]'),
+      "Blacksmith upgrade tab must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.blacksmith-tab-btn[data-tab="use"]'),
+      "Blacksmith use tab must be visible"
+    ).toBeVisible();
+
+    // Upgrade panel must show weapon and armor categories
+    await expect(
+      page.locator('[data-category-id="weapon"] .blacksmith-upgrade-category-label'),
+      "Weapon forging category must be visible"
+    ).toHaveText("武器锻造");
+    await expect(
+      page.locator('[data-category-id="armor"] .blacksmith-upgrade-category-label'),
+      "Armor enhancement category must be visible"
+    ).toHaveText("护甲强化");
+
+    // Each category must have 5 upgrade slots
+    await expect(
+      page.locator('[data-category-id="weapon"] .blacksmith-upgrade-slot'),
+      "Weapon category must have 5 upgrade slots"
+    ).toHaveCount(5);
+    await expect(
+      page.locator('[data-category-id="armor"] .blacksmith-upgrade-slot'),
+      "Armor category must have 5 upgrade slots"
+    ).toHaveCount(5);
+
+    // NPC buttons must be present
+    await expect(
+      page.locator('.blacksmith-npc-btn--talk'),
+      "Talk button must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.blacksmith-npc-btn--leave'),
+      "Leave button must be visible"
+    ).toBeVisible();
+
+    // Resource bar must show resources
+    await expect(
+      page.locator('.blacksmith-resource-bar'),
+      "Resource bar must be visible"
+    ).toBeVisible();
+
+    // Fidelity — blacksmith building detail is a completed product surface
+    await expectFidelity(page.locator(".app-frame"), "Blacksmith building detail screen");
+    await expectFullPageFidelity(page, "Blacksmith building detail screen");
+
+    // Landscape viewport check
+    await expect(
+      page.locator(".app-frame"),
+      "Blacksmith building detail screen must use .app-frame landscape layout"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Phase 4b (blacksmith building detail)");
+
     // ── Phase 5: Full meta-loop ─────────────────────────────
     // Town → Provisioning → Expedition → Result → Return → Town
 
@@ -594,6 +668,34 @@ test.describe("browser smoke: fidelity gates", () => {
       page.locator(".app-frame"),
       "Live building detail screen must use .app-frame landscape layout"
     ).toBeVisible();
+
+    // Live blacksmith building (upgrade screen)
+    await page.getByRole("button", { name: "Return to Town" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await page.locator('[data-building-id="blacksmith"]').click();
+    await settle(page, 800);
+
+    await expect(
+      page.locator(".building-detail-name"),
+      "Live blacksmith name must be visible (锻造舱)"
+    ).toHaveText("锻造舱");
+    await expect(
+      page.locator('.blacksmith-tab-btn[data-tab="upgrade"]'),
+      "Live blacksmith upgrade tab must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-category-id="weapon"]'),
+      "Live blacksmith weapon category must be visible"
+    ).toBeVisible();
+    await expectFidelity(
+      page.locator(".app-frame"),
+      "Live blacksmith building detail screen"
+    );
+    await expectFullPageFidelity(page, "Live blacksmith building detail screen");
+
+    expectNoErrors(pageErrors, consoleErrors, "Live blacksmith building detail");
 
     // Full live flow: provisioning → expedition → result → return
     await page.getByRole("button", { name: "Return to Town" }).click();

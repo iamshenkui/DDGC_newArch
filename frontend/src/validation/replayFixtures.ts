@@ -239,7 +239,37 @@ export const replayBlacksmithBuildingDetailViewModel: BuildingDetailViewModel = 
     }
   ],
   currentUpgrade: "Forge Level 2",
-  upgradeRequirement: "Reach Town Level 3 to unlock armor upgrades."
+  upgradeRequirement: "Reach Town Level 3 to unlock armor upgrades.",
+  upgradeCategories: [
+    {
+      id: "weapon",
+      label: "武器锻造",
+      slots: [
+        { level: 1, label: "初级锻造", isUnlocked: true, isCurrent: false, cost: "200 Gold" },
+        { level: 2, label: "中级锻造", isUnlocked: true, isCurrent: true, cost: "400 Gold" },
+        { level: 3, label: "高级锻造", isUnlocked: true, isCurrent: false, cost: "600 Gold" },
+        { level: 4, label: "大师锻造", isUnlocked: false, isCurrent: false, cost: "1000 Gold" },
+        { level: 5, label: "传说锻造", isUnlocked: false, isCurrent: false, cost: "2000 Gold" }
+      ]
+    },
+    {
+      id: "armor",
+      label: "护甲强化",
+      slots: [
+        { level: 1, label: "初级强化", isUnlocked: true, isCurrent: false, cost: "150 Gold" },
+        { level: 2, label: "中级强化", isUnlocked: true, isCurrent: true, cost: "350 Gold" },
+        { level: 3, label: "高级强化", isUnlocked: false, isCurrent: false, cost: "550 Gold" },
+        { level: 4, label: "大师强化", isUnlocked: false, isCurrent: false, cost: "900 Gold" },
+        { level: 5, label: "传说强化", isUnlocked: false, isCurrent: false, cost: "1800 Gold" }
+      ]
+    }
+  ],
+  resources: [
+    { type: "gem", label: "Gem", amount: 10 },
+    { type: "shard", label: "Shard", amount: 10 },
+    { type: "core", label: "Core", amount: 10 },
+    { type: "gold", label: "Gold", amount: 20 }
+  ]
 };
 
 export const replaySanitariumBuildingDetailViewModel: BuildingDetailViewModel = {

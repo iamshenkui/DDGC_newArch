@@ -60,6 +60,28 @@ export interface BuildingAction {
   isUnsupported: boolean;
 }
 
+export interface BuildingUpgradeSlot {
+  level: number;
+  label: string;
+  isUnlocked: boolean;
+  isCurrent: boolean;
+  cost?: string;
+}
+
+export interface BuildingUpgradeCategory {
+  id: string;
+  label: string;
+  icon?: string;
+  slots: ReadonlyArray<BuildingUpgradeSlot>;
+}
+
+export interface BuildingResource {
+  type: string;
+  label: string;
+  amount: number;
+  icon?: string;
+}
+
 export interface BuildingDetailViewModel {
   kind: "building-detail";
   buildingId: string;
@@ -69,6 +91,10 @@ export interface BuildingDetailViewModel {
   actions: ReadonlyArray<BuildingAction>;
   currentUpgrade?: string;
   upgradeRequirement?: string;
+  /** Upgrade slot grid — used by buildings with level-based upgrade trees (e.g. blacksmith). */
+  upgradeCategories?: ReadonlyArray<BuildingUpgradeCategory>;
+  /** Resource cost bar — displayed at the bottom of building screens. */
+  resources?: ReadonlyArray<BuildingResource>;
 }
 
 export interface HeroProgression {

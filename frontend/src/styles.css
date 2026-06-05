@@ -3321,3 +3321,604 @@ button {
     font-size: 1rem;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   Blacksmith Upgrade Screen (公会界面-锻造仓-升级)
+   Reference: reference/ref_image/跨际元契约/2主界面/公会界面-锻造仓-升级.png
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.blacksmith-frame {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Main content: left (NPC) + right (upgrade grid) ── */
+.blacksmith-content {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 920px) {
+  .blacksmith-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Left panel: NPC portrait + buttons ── */
+.blacksmith-left {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.blacksmith-npc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+}
+
+.blacksmith-npc-portrait {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--radius-sm);
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 25%, rgba(27, 50, 44, 0.4), transparent 70%),
+    radial-gradient(ellipse at center, rgba(6, 12, 10, 0.7), rgba(0, 0, 0, 0.9));
+  border: 2px solid rgba(160, 204, 188, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 0 40px rgba(0, 0, 0, 0.2);
+}
+
+.blacksmith-npc-portrait::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 30%, rgba(198, 212, 106, 0.04), transparent 70%);
+  pointer-events: none;
+}
+
+.blacksmith-npc-portrait::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(160, 204, 188, 0.06);
+  border-radius: calc(var(--radius-sm) - 4px);
+  pointer-events: none;
+}
+
+.blacksmith-npc-initial {
+  font-family: var(--heading-font);
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+  opacity: 0.25;
+  text-shadow: 0 0 20px rgba(198, 212, 106, 0.15);
+}
+
+.blacksmith-npc-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.blacksmith-npc-btn {
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  border: 1px solid rgba(160, 204, 188, 0.12);
+}
+
+.blacksmith-npc-btn--talk {
+  background: rgba(20, 35, 30, 0.6);
+  color: var(--panel-text);
+}
+
+.blacksmith-npc-btn--talk:hover {
+  background: rgba(198, 212, 106, 0.1);
+  border-color: rgba(198, 212, 106, 0.25);
+  transform: translateY(-1px);
+}
+
+.blacksmith-npc-btn--leave {
+  background: rgba(20, 30, 35, 0.5);
+  color: var(--panel-muted);
+}
+
+.blacksmith-npc-btn--leave:hover {
+  background: rgba(234, 119, 103, 0.08);
+  border-color: rgba(234, 119, 103, 0.2);
+  color: rgba(244, 220, 210, 0.9);
+}
+
+/* ── Right panel: tab bar + upgrade grid ── */
+.blacksmith-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 400px;
+}
+
+/* Tab bar */
+.blacksmith-tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid rgba(160, 204, 188, 0.1);
+}
+
+.blacksmith-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--panel-muted);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  letter-spacing: 0.04em;
+}
+
+.blacksmith-tab-btn:hover {
+  color: var(--panel-text);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.blacksmith-tab-btn--active {
+  color: var(--panel-accent);
+  border-bottom-color: var(--panel-accent);
+}
+
+.blacksmith-tab-check {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* Upgrade panel */
+.blacksmith-upgrade-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+}
+
+.blacksmith-upgrade-category {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.blacksmith-upgrade-category-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.blacksmith-upgrade-category-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.blacksmith-upgrade-category-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--panel-text);
+  letter-spacing: 0.02em;
+}
+
+/* Upgrade slot grid */
+.blacksmith-upgrade-slots {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.blacksmith-upgrade-slot {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  position: relative;
+  border: 2px solid;
+  background: transparent;
+  padding: 0;
+}
+
+.blacksmith-upgrade-slot--locked {
+  border-color: rgba(160, 204, 188, 0.12);
+  background: rgba(0, 0, 0, 0.2);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.blacksmith-upgrade-slot--locked:hover {
+  border-color: rgba(160, 204, 188, 0.18);
+}
+
+.blacksmith-upgrade-slot--unlocked {
+  border-color: rgba(160, 204, 188, 0.25);
+  background: rgba(20, 35, 30, 0.4);
+}
+
+.blacksmith-upgrade-slot--unlocked:hover {
+  border-color: rgba(198, 212, 106, 0.4);
+  background: rgba(198, 212, 106, 0.08);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.blacksmith-upgrade-slot--current {
+  border-color: rgba(198, 212, 106, 0.5);
+  background: rgba(198, 212, 106, 0.1);
+  box-shadow: 0 0 8px rgba(198, 212, 106, 0.1);
+}
+
+.blacksmith-upgrade-slot--current:hover {
+  border-color: rgba(198, 212, 106, 0.7);
+  background: rgba(198, 212, 106, 0.15);
+}
+
+.blacksmith-upgrade-slot-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--panel-accent);
+  box-shadow: 0 0 6px rgba(198, 212, 106, 0.4);
+}
+
+.blacksmith-upgrade-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--panel-muted);
+  font-size: 0.85rem;
+}
+
+/* Use panel */
+.blacksmith-use-panel {
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+}
+
+/* ── Resource bar ── */
+.blacksmith-resource-bar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  justify-content: flex-start;
+}
+
+.blacksmith-resource-slot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--panel-text);
+}
+
+.blacksmith-resource-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.blacksmith-resource-amount {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 1.5rem;
+  text-align: right;
+}
+
+/* ── Building detail shared styles (retained from existing) ── */
+.building-detail-content {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+}
+
+.building-detail-left {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.building-detail-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.building-info-card {
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+}
+
+.building-info-card-title {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--panel-accent);
+  font-family: var(--heading-font);
+}
+
+.building-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.building-info-row:last-child {
+  border-bottom: none;
+}
+
+.building-info-label {
+  font-size: 0.78rem;
+  color: var(--panel-muted);
+}
+
+.building-info-value {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--panel-text);
+}
+
+.building-action-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.building-action-section-title {
+  margin: 0 0 4px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--panel-accent);
+  font-family: var(--heading-font);
+}
+
+.building-action-card {
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.building-action-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.building-action-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--panel-text);
+}
+
+.building-action-pill {
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.building-action-pill--unsupported {
+  color: var(--panel-muted);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.building-action-pill--unavailable {
+  color: #e8a838;
+  background: rgba(232, 168, 56, 0.1);
+  border: 1px solid rgba(232, 168, 56, 0.2);
+}
+
+.building-action-pill--info {
+  color: #82aaff;
+  background: rgba(130, 170, 255, 0.08);
+  border: 1px solid rgba(130, 170, 255, 0.15);
+}
+
+.building-action-desc {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--panel-muted);
+  line-height: 1.4;
+}
+
+.building-action-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.building-action-cost {
+  font-size: 0.75rem;
+  color: var(--panel-muted);
+}
+
+.building-action-cost strong {
+  color: var(--panel-text);
+  font-weight: 600;
+}
+
+.building-action-cost-unavailable {
+  color: rgba(232, 168, 56, 0.7);
+}
+
+.building-action-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  border: 1px solid transparent;
+}
+
+.building-action-btn--primary {
+  background: linear-gradient(135deg, var(--panel-accent), var(--panel-accent-strong));
+  color: #15200b;
+  border-color: rgba(198, 212, 106, 0.3);
+}
+
+.building-action-btn--primary:hover {
+  box-shadow: 0 4px 12px rgba(159, 191, 59, 0.25);
+  transform: translateY(-1px);
+}
+
+.building-action-btn--disabled {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--panel-muted);
+  border-color: rgba(255, 255, 255, 0.06);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.building-return-row {
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+}
+
+.building-return-btn {
+  padding: 10px 28px;
+  border-radius: var(--radius-sm);
+  background: rgba(20, 30, 35, 0.5);
+  color: var(--panel-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  letter-spacing: 0.04em;
+}
+
+.building-return-btn:hover {
+  background: rgba(198, 212, 106, 0.08);
+  border-color: rgba(198, 212, 106, 0.2);
+  color: var(--panel-text);
+}
+
+/* ── Building detail header styles ── */
+.building-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(160, 204, 188, 0.1);
+}
+
+.building-detail-sprite {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.building-detail-sprite-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.building-detail-sprite-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--heading-font);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+  opacity: 0.4;
+}
+
+.building-detail-title-area {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.building-detail-eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--panel-accent);
+}
+
+.building-detail-name {
+  margin: 0;
+  font-family: var(--heading-font);
+  font-size: 1.4rem;
+  color: var(--panel-text);
+  line-height: 1.2;
+}
+
+.building-detail-status {
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.building-detail-desc {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: var(--panel-muted);
+  line-height: 1.4;
+  max-width: 60ch;
+}

@@ -175,20 +175,12 @@ const createLiveHeroDetailViewModel = (hero: TownHeroSummary): HeroDetailViewMod
 });
 
 const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): BuildingDetailViewModel => {
-  const buildingConfigs: Record<string, {
-    description: string;
-    actions: Array<{
-      id: string;
-      label: string;
-      description: string;
-      cost: string;
-      isAvailable: boolean;
-      isUnsupported: boolean;
-    }>;
-    currentUpgrade?: string;
-    upgradeRequirement?: string;
-  }> = {
+  const buildingConfigs: Record<string, BuildingDetailViewModel> = {
     stagecoach: {
+      kind: "building-detail",
+      buildingId: "stagecoach",
+      label: building.label,
+      status: building.status,
       description: "The stagecoach offers new recruits from the surrounding region. Recruit heroes to expand your party roster.",
       actions: [
         {
@@ -210,6 +202,10 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
       ]
     },
     guild: {
+      kind: "building-detail",
+      buildingId: "guild",
+      label: building.label,
+      status: building.status,
       description: "The guild provides skill training and party capability review. Upgrade your heroes' abilities.",
       currentUpgrade: "Training Hall Level 1",
       actions: [
@@ -238,10 +234,70 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
           isUnsupported: false
         }
       ]
+    },
+    blacksmith: {
+      kind: "building-detail",
+      buildingId: "blacksmith",
+      label: building.label,
+      status: building.status,
+      description: "The blacksmith forges and upgrades weapons and armor. Enhance your heroes' equipment to improve their combat effectiveness.",
+      currentUpgrade: "Forge Level 1",
+      actions: [
+        {
+          id: "upgrade-weapon",
+          label: "Upgrade Weapon",
+          description: "Enhance a hero's weapon to deal more damage in combat.",
+          cost: "400 Gold",
+          isAvailable: true,
+          isUnsupported: false
+        },
+        {
+          id: "upgrade-armor",
+          label: "Upgrade Armor",
+          description: "Improve a hero's armor for better protection against enemy attacks.",
+          cost: "350 Gold",
+          isAvailable: false,
+          isUnsupported: false
+        }
+      ],
+      upgradeCategories: [
+        {
+          id: "weapon",
+          label: "武器锻造",
+          slots: [
+            { level: 1, label: "初级锻造", isUnlocked: true, isCurrent: true, cost: "200 Gold" },
+            { level: 2, label: "中级锻造", isUnlocked: false, isCurrent: false, cost: "400 Gold" },
+            { level: 3, label: "高级锻造", isUnlocked: false, isCurrent: false, cost: "600 Gold" },
+            { level: 4, label: "大师锻造", isUnlocked: false, isCurrent: false, cost: "1000 Gold" },
+            { level: 5, label: "传说锻造", isUnlocked: false, isCurrent: false, cost: "2000 Gold" }
+          ]
+        },
+        {
+          id: "armor",
+          label: "护甲强化",
+          slots: [
+            { level: 1, label: "初级强化", isUnlocked: true, isCurrent: true, cost: "150 Gold" },
+            { level: 2, label: "中级强化", isUnlocked: false, isCurrent: false, cost: "350 Gold" },
+            { level: 3, label: "高级强化", isUnlocked: false, isCurrent: false, cost: "550 Gold" },
+            { level: 4, label: "大师强化", isUnlocked: false, isCurrent: false, cost: "900 Gold" },
+            { level: 5, label: "传说强化", isUnlocked: false, isCurrent: false, cost: "1800 Gold" }
+          ]
+        }
+      ],
+      resources: [
+        { type: "gem", label: "Gem", amount: 10 },
+        { type: "shard", label: "Shard", amount: 10 },
+        { type: "core", label: "Core", amount: 10 },
+        { type: "gold", label: "Gold", amount: 20 }
+      ]
     }
   };
 
   const config = buildingConfigs[building.id] ?? {
+    kind: "building-detail",
+    buildingId: building.id,
+    label: building.label,
+    status: building.status,
     description: building.summary,
     actions: [
       {
@@ -255,16 +311,7 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
     ]
   };
 
-  return {
-    kind: "building-detail",
-    buildingId: building.id,
-    label: building.label,
-    status: building.status,
-    description: config.description,
-    actions: config.actions,
-    currentUpgrade: config.currentUpgrade,
-    upgradeRequirement: config.upgradeRequirement
-  };
+  return config;
 };
 
 const createLiveProvisioningViewModel = (): ProvisioningViewModel => ({
