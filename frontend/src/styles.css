@@ -3321,3 +3321,500 @@ button {
     font-size: 1rem;
   }
 }
+
+/* ── Guild Hero Archive (公会界面-英雄档案) ─────────────────────
+ * Mirrors GuildWindow.prefab hierarchy:
+ *   GuildWindow/HeroRoster → horizontal hero strip
+ *   GuildWindow/LeftPanel/HeroProfile → selected hero card
+ *   GuildWindow/RightPanel/UpgradeWindow → skill training + equipment upgrades
+ */
+
+/* Hero Roster Strip */
+.guild-hero-roster {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+}
+
+.guild-roster-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.guild-roster-title {
+  font-family: var(--heading-font);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--panel-accent);
+  letter-spacing: 0.06em;
+}
+
+.guild-roster-count {
+  font-size: 0.7rem;
+  color: var(--panel-muted);
+}
+
+.guild-roster-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px 4px 8px;
+}
+
+.guild-roster-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.guild-roster-scroll::-webkit-scrollbar-thumb {
+  background: rgba(160, 204, 188, 0.15);
+  border-radius: 999px;
+}
+
+.guild-roster-card {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  border-radius: var(--radius-sm);
+  background: rgba(10, 18, 14, 0.6);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  min-width: 110px;
+  max-width: 130px;
+  text-align: left;
+}
+
+.guild-roster-card:hover {
+  background: rgba(20, 35, 28, 0.75);
+  border-color: rgba(160, 204, 188, 0.25);
+  transform: translateY(-2px);
+}
+
+.guild-roster-card--selected {
+  background: rgba(24, 42, 32, 0.8);
+  border-color: rgba(198, 212, 106, 0.4);
+  box-shadow: 0 0 16px rgba(198, 212, 106, 0.08);
+}
+
+.guild-roster-card--selected:hover {
+  border-color: rgba(198, 212, 106, 0.5);
+}
+
+.guild-roster-portrait {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  overflow: hidden;
+  min-height: 70px;
+}
+
+.guild-roster-portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  display: block;
+}
+
+.guild-roster-portrait-letter {
+  font-family: var(--heading-font);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+  text-shadow: 0 0 12px rgba(198, 212, 106, 0.3);
+}
+
+.guild-roster-level {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #f2f4ef;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid rgba(198, 212, 106, 0.2);
+}
+
+.guild-roster-status {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.guild-roster-status--wounded {
+  color: #e8a838;
+  background: rgba(232, 168, 56, 0.15);
+  border: 1px solid rgba(232, 168, 56, 0.25);
+}
+
+.guild-roster-status--afflicted {
+  color: #ea7767;
+  background: rgba(234, 119, 103, 0.2);
+  border: 1px solid rgba(234, 119, 103, 0.3);
+}
+
+.guild-roster-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.guild-roster-name {
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: var(--panel-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.guild-roster-class {
+  font-size: 0.62rem;
+  color: var(--panel-muted);
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.guild-roster-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.guild-roster-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.guild-roster-bar-label {
+  font-size: 0.58rem;
+  color: var(--panel-muted);
+  width: 16px;
+  flex: 0 0 auto;
+  font-weight: 600;
+}
+
+.guild-roster-bar-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.guild-roster-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.guild-roster-bar-fill--hp {
+  background: linear-gradient(90deg, #5bbd6e, #82d18f);
+}
+
+.guild-roster-bar-fill--stress {
+  background: linear-gradient(90deg, #e8a838, #ea7767);
+}
+
+/* Selected Hero Detail Layout */
+.guild-hero-detail {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 18px;
+}
+
+.guild-hero-detail-left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.guild-hero-profile-card {
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.guild-hero-profile-portrait {
+  width: 160px;
+  height: 190px;
+  border-radius: var(--radius-sm);
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 25%, rgba(27, 50, 44, 0.5), transparent 70%),
+    radial-gradient(ellipse at center, rgba(6, 12, 10, 0.8), rgba(0, 0, 0, 0.95));
+  border: 2px solid rgba(160, 204, 188, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  align-self: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 60px rgba(0, 0, 0, 0.3);
+}
+
+.guild-hero-profile-portrait::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 50% at 50% 30%, rgba(198, 212, 106, 0.06), transparent 70%);
+  pointer-events: none;
+}
+
+.guild-hero-profile-portrait::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(160, 204, 188, 0.08);
+  border-radius: calc(var(--radius-sm) - 4px);
+  pointer-events: none;
+}
+
+.guild-hero-profile-portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  display: block;
+}
+
+.guild-hero-profile-portrait-letter {
+  font-family: var(--heading-font);
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+  opacity: 0.3;
+  text-shadow: 0 0 30px rgba(198, 212, 106, 0.2);
+}
+
+.guild-hero-profile-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.guild-hero-profile-name {
+  margin: 0;
+  font-family: var(--heading-font);
+  font-size: 1.1rem;
+  color: var(--panel-text);
+}
+
+.guild-hero-profile-class {
+  font-size: 0.72rem;
+  color: var(--panel-muted);
+  padding: 2px 10px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.guild-hero-profile-level {
+  font-size: 0.75rem;
+  color: var(--panel-accent);
+  font-weight: 600;
+}
+
+.guild-hero-profile-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.guild-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.guild-stat-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--panel-muted);
+  width: 36px;
+  flex: 0 0 auto;
+}
+
+.guild-stat-track {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.guild-stat-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.guild-stat-fill--hp {
+  background: linear-gradient(90deg, #5bbd6e, #82d18f);
+}
+
+.guild-stat-fill--stress {
+  background: linear-gradient(90deg, #e8a838, #ea7767);
+}
+
+.guild-stat-value {
+  font-size: 0.7rem;
+  color: var(--panel-text);
+  font-weight: 600;
+  width: 60px;
+  text-align: right;
+}
+
+.guild-hero-profile-tags {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.guild-hero-tag {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.guild-hero-tag--wounded {
+  color: #e8a838;
+  background: rgba(232, 168, 56, 0.15);
+  border: 1px solid rgba(232, 168, 56, 0.2);
+}
+
+.guild-hero-tag--afflicted {
+  color: #ea7767;
+  background: rgba(234, 119, 103, 0.15);
+  border: 1px solid rgba(234, 119, 103, 0.2);
+}
+
+.guild-hero-tag--disease {
+  color: #ea7767;
+  background: rgba(234, 119, 103, 0.1);
+  border: 1px solid rgba(234, 119, 103, 0.15);
+}
+
+.guild-hero-profile-quirks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guild-quirk-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.guild-quirk-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--panel-muted);
+}
+
+.guild-quirk-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.guild-quirk-chip {
+  font-size: 0.68rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+.guild-quirk-chip--positive {
+  color: #5bbd6e;
+  background: rgba(91, 189, 110, 0.1);
+  border: 1px solid rgba(91, 189, 110, 0.15);
+}
+
+.guild-quirk-chip--negative {
+  color: #ea7767;
+  background: rgba(234, 119, 103, 0.1);
+  border: 1px solid rgba(234, 119, 103, 0.15);
+}
+
+/* Right panel — actions */
+.guild-hero-detail-right {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.guild-actions-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 0 4px 6px;
+  border-bottom: 1px solid rgba(160, 204, 188, 0.1);
+}
+
+.guild-actions-title {
+  font-family: var(--heading-font);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--panel-accent);
+  letter-spacing: 0.04em;
+}
+
+.guild-actions-subtitle {
+  font-size: 0.72rem;
+  color: var(--panel-muted);
+  letter-spacing: 0.04em;
+}
+
+.guild-no-heroes {
+  padding: 24px;
+  text-align: center;
+  color: var(--panel-muted);
+  font-size: 0.85rem;
+}
+
+/* Guild responsive */
+@media (max-width: 920px) {
+  .guild-hero-detail {
+    grid-template-columns: 1fr;
+  }
+
+  .guild-hero-profile-portrait {
+    width: 120px;
+    height: 145px;
+  }
+}

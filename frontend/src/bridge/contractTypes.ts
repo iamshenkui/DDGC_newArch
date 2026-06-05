@@ -69,6 +69,8 @@ export interface BuildingDetailViewModel {
   actions: ReadonlyArray<BuildingAction>;
   currentUpgrade?: string;
   upgradeRequirement?: string;
+  /** Guild context: roster of heroes available for training/review */
+  heroes?: ReadonlyArray<TownHeroSummary>;
 }
 
 export interface HeroProgression {

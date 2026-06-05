@@ -296,7 +296,7 @@ test.describe("browser smoke: fidelity gates", () => {
 
     expectNoErrors(pageErrors, consoleErrors, "Phase 3 (hero detail)");
 
-    // ── Phase 4: Building detail ───────────────────────────
+    // ── Phase 4: Building detail — Guild Hero Archive (公会界面-英雄档案) ──
     // Return to town first
     await page.getByRole("button", { name: "Return to Town" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
@@ -315,9 +315,58 @@ test.describe("browser smoke: fidelity gates", () => {
       page.locator(".building-detail-name"),
       "Building name must be visible (DDGC display name 试炼场 = Guild)"
     ).toHaveText("试炼场");
+
+    // Guild Hero Archive — hero roster strip must render
+    await expect(
+      page.locator(".guild-hero-roster"),
+      "Guild hero roster must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".guild-roster-title"),
+      "Guild roster title (英雄名册) must be visible"
+    ).toHaveText("英雄名册");
+    // Replay fixture has 3 heroes in the roster
+    await expect(
+      page.locator(".guild-roster-card"),
+      "Guild roster must show all available heroes"
+    ).toHaveCount(3);
+
+    // First hero should be selected by default (Shen — Hunter)
+    await expect(
+      page.locator(".guild-roster-card--selected"),
+      "First hero must be selected by default"
+    ).toHaveAttribute("data-hero-id", "hero-hunter-01");
+
+    // Selected hero profile must render
+    await expect(
+      page.locator(".guild-hero-profile-name"),
+      "Selected hero name must be visible"
+    ).toHaveText("Shen");
+    await expect(
+      page.locator(".guild-hero-profile-class"),
+      "Selected hero class must be visible"
+    ).toHaveText("Hunter");
+
+    // Hero selection — click second hero (Bai Xiu)
+    await page.locator('[data-hero-id="hero-white-01"]').click();
+    await settle(page, 200);
+    await expect(
+      page.locator(".guild-hero-profile-name"),
+      "After selection, second hero name must be visible"
+    ).toHaveText("Bai Xiu");
+    await expect(
+      page.locator(".guild-roster-card--selected"),
+      "Second hero must be selected after click"
+    ).toHaveAttribute("data-hero-id", "hero-white-01");
+
+    // Training actions must be visible
     await expect(
       page.locator(".building-action-card-header").filter({ hasText: "Train Combat Skill" }),
       "Building action must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".building-action-card-header").filter({ hasText: "Train Camping Skill" }),
+      "Camping skill training must be visible"
     ).toBeVisible();
 
     // Fidelity — building detail is a completed product surface

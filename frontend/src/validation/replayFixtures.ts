@@ -203,7 +203,8 @@ export const replayBuildingDetailViewModel: BuildingDetailViewModel = {
       isUnsupported: true
     }
   ],
-  upgradeRequirement: "Reach Town Level 2 to unlock weapon and armor upgrades."
+  upgradeRequirement: "Reach Town Level 2 to unlock weapon and armor upgrades.",
+  heroes: townHeroes
 };
 
 export const replayBlacksmithBuildingDetailViewModel: BuildingDetailViewModel = {
