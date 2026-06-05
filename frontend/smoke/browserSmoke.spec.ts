@@ -493,6 +493,77 @@ test.describe("browser smoke: fidelity gates", () => {
     expectNoErrors(pageErrors, consoleErrors, "Phase 5 (meta-loop)");
   });
 
+  // ── Camping Trainer building screen test ───────────────────
+  test("campingtrainer building screen renders hero and skill slots", async ({ page }) => {
+    const { consoleErrors, pageErrors } = setupErrorCollectors(page);
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+
+    await page.getByRole("button", { name: "Boot Replay" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 8_000 });
+    await settle(page);
+
+    // Open campingtrainer building
+    await page.locator('[data-building-id="campingtrainer"]').click();
+    await settle(page, 800);
+
+    // Building name
+    await expect(
+      page.locator(".building-detail-name"),
+      "Camping trainer building name must be visible (空间分析)"
+    ).toHaveText("空间分析");
+
+    // Hero panel
+    await expect(
+      page.locator(".camping-trainer-hero-name"),
+      "Hero name 刘星 must be visible"
+    ).toHaveText("刘星");
+
+    await expect(
+      page.locator(".camping-trainer-hero-leave-btn"),
+      "Leave button (离开) must be visible"
+    ).toBeVisible();
+
+    // Skill panel
+    await expect(
+      page.locator(".camping-trainer-parchment-title"),
+      "Skill unlock title (解锁技能) must be visible"
+    ).toHaveText("解锁技能");
+
+    // Skill slots count = 7 (4 unlocked + 3 locked)
+    await expect(
+      page.locator(".camping-trainer-skill-slot"),
+      "Must render 7 skill slots"
+    ).toHaveCount(7);
+
+    // Unlocked slots have unlock buttons
+    const unlockedSlots = page.locator(".camping-trainer-skill-slot:not(.camping-trainer-skill-slot--locked)");
+    await expect(unlockedSlots, "Must have 4 unlocked slots").toHaveCount(4);
+
+    // Locked slots
+    const lockedSlots = page.locator(".camping-trainer-skill-slot--locked");
+    await expect(lockedSlots, "Must have 3 locked slots").toHaveCount(3);
+
+    // Return to town
+    await expect(
+      page.getByRole("button", { name: "Return to Town" }),
+      "Return to Town must be visible"
+    ).toBeVisible();
+
+    // Fidelity
+    await expectFidelity(page.locator(".app-frame"), "Camping trainer building screen");
+    await expectFullPageFidelity(page, "Camping trainer building screen");
+
+    // Landscape viewport
+    await expect(
+      page.locator(".app-frame"),
+      "Camping trainer screen must use .app-frame landscape layout"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Camping trainer building screen");
+  });
+
   // ── Live boot test ─────────────────────────────────────────
   test("live boot exercises live bridge path", async ({ page }) => {
     const { consoleErrors, pageErrors } = setupErrorCollectors(page);

@@ -463,15 +463,81 @@ export const replayCampingTrainerBuildingDetailViewModel: BuildingDetailViewMode
   description: "营火与露营训练相关服务，提升队伍在远征中的生存能力。",
   actions: [
     {
-      id: "train-camping",
-      label: "露营训练",
-      description: "训练英雄的露营技能，提高远征中的恢复效果。",
-      cost: "150 Gold",
+      id: "unlock-skill-1",
+      label: "精准射击",
+      description: "提高远程攻击命中率。",
+      cost: "10 蓝晶",
       isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "unlock-skill-2",
+      label: "疾风步",
+      description: "提升闪避能力。",
+      cost: "10 紫晶",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "unlock-skill-3",
+      label: "坚韧意志",
+      description: "降低压力积累速度。",
+      cost: "10 蓝晶",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "unlock-skill-4",
+      label: "野外生存",
+      description: "提高露营恢复效果。",
+      cost: "10 紫晶",
+      isAvailable: true,
+      isUnsupported: false
+    },
+    {
+      id: "unlock-skill-5",
+      label: "洞察先机",
+      description: "提升先手概率。",
+      cost: "30 金币",
+      isAvailable: false,
+      isUnsupported: false
+    },
+    {
+      id: "unlock-skill-6",
+      label: "极限突破",
+      description: "解锁隐藏潜能。",
+      cost: "50 金币",
+      isAvailable: false,
+      isUnsupported: false
+    },
+    {
+      id: "unlock-skill-7",
+      label: "次元感知",
+      description: "感知隐藏房间。",
+      cost: "100 金币",
+      isAvailable: false,
       isUnsupported: false
     }
   ],
-  upgradeRequirement: "Reach Town Level 2 to unlock advanced camping skills."
+  upgradeRequirement: "Reach Town Level 2 to unlock advanced camping skills.",
+  hero: {
+    id: "hero-liuxing-01",
+    name: "刘星",
+    classLabel: "Hunter",
+    hp: "40 / 42",
+    maxHp: "42",
+    health: 40,
+    maxHealth: 42,
+    stress: "12",
+    maxStress: "200",
+    level: 2,
+    xp: 180,
+    isWounded: false,
+    isAfflicted: false,
+    positiveQuirks: ["steady"],
+    negativeQuirks: [],
+    diseases: []
+  }
 };
 
 export const replayProvisioningViewModel: ProvisioningViewModel = {

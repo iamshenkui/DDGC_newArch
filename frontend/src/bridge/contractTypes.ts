@@ -69,6 +69,8 @@ export interface BuildingDetailViewModel {
   actions: ReadonlyArray<BuildingAction>;
   currentUpgrade?: string;
   upgradeRequirement?: string;
+  /** Optional hero context for hero-specific building windows (e.g. camping trainer). */
+  hero?: TownHeroSummary;
 }
 
 export interface HeroProgression {
