@@ -868,6 +868,9 @@ test.describe("browser smoke: fidelity gates", () => {
     await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
     await settle(page);
 
+    await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
+    await settle(page);
+
     await page.getByRole("button", { name: "Confirm & Launch Expedition" }).click();
     await settle(page);
 

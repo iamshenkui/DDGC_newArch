@@ -233,7 +233,7 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                             </svg>
                           </span>
                           <span class="party-slot-empty-hint">Open Slot</span>
-                          <span class="party-slot-empty-sub">Select a hero</span>
+                          <span class="party-slot-empty-sub">Awaiting assignment</span>
                         </div>
                       );
                     }
@@ -244,10 +244,8 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                     });
 
                     return (
-                      <button
-                        class="party-slot party-slot--selected"
-                        onClick={() => props.onToggleHero(hero.heroId)}
-                        title={`Remove ${hero.heroName}`}
+                      <div
+                        class="party-slot party-slot--selected party-slot--read-only"
                         data-hero-id={hero.heroId}
                       >
                         <span class="party-slot-level">Lv{hero.level}</span>
@@ -299,7 +297,7 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                             </div>
                           </div>
                         </div>
-                      </button>
+                      </div>
                     );
                   }}
                 </For>
