@@ -10,6 +10,7 @@ import {
   replayReturnViewModel
 } from "../validation/replayFixtures";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
+import { canTransition } from "../session/FlowController";
 import type {
   DdgcFrontendIntent,
   DdgcFrontendSnapshot,
@@ -160,6 +161,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "continue-from-dungeon":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: continue-from-dungeon rejected until dungeon assist is ready."
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",

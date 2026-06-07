@@ -232,6 +232,20 @@ describe("provisioning and expedition launch flow", () => {
     expect(["success", "failure", "partial"]).toContain(resultVm.outcome);
   });
 
+  it("replay rejects continue-from-dungeon before assist action is used", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+
+    expect(snapshot.flowState).toBe("dungeon-assist");
+    expect(snapshot.viewModel.kind).toBe("dungeon-assist");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
   it("replay return-to-town from provisioning returns to town", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
@@ -278,6 +292,20 @@ describe("provisioning and expedition launch flow", () => {
     expect(snapshot.viewModel.kind).toBe("dungeon-assist");
     const assistVm = snapshot.viewModel as DungeonAssistViewModel;
     expect(assistVm.party.length).toBeGreaterThan(0);
+  });
+
+  it("live rejects continue-from-dungeon before assist action is used", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+
+    expect(snapshot.flowState).toBe("dungeon-assist");
+    expect(snapshot.viewModel.kind).toBe("dungeon-assist");
+    expect(snapshot.debugMessage).toContain("rejected");
   });
 
   it("town -> provision -> launch path is reproducible in replay", async () => {

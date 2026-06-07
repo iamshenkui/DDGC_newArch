@@ -1,5 +1,6 @@
 import type { RuntimeMode } from "../app/runtimeMode";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
+import { canTransition } from "../session/FlowController";
 import type {
   DdgcFrontendIntent,
   DdgcFrontendSnapshot,
@@ -502,6 +503,13 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "continue-from-dungeon":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: continue-from-dungeon rejected until dungeon assist is ready."
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",
