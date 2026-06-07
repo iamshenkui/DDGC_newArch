@@ -158,6 +158,12 @@ export function canTransition(
       if (screen !== "combat") {
         return { allowed: false, reason: "use-skill is only valid in combat" };
       }
+      if (snapshot.viewModel.kind !== "combat") {
+        return { allowed: false, reason: "viewModel is not a combat view model" };
+      }
+      if (snapshot.viewModel.phase === "character-hit") {
+        return { allowed: false, reason: "use-skill is not valid during character-hit acknowledgement" };
+      }
       return { allowed: true };
 
     case "open-combat-settings":

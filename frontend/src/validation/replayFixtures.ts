@@ -532,13 +532,13 @@ export const replayCombatViewModel: CombatViewModel = {
       maxHp: "42",
       stress: "24",
       maxStress: "200",
-      isActive: false,
+      isActive: true,
       isHit: true,
       skills: [
-        { name: "Hunting Bow", isAvailable: true },
+        { name: "Hunting Bow", isAvailable: false },
         { name: "Rapid Shot", isAvailable: false },
-        { name: "Mark", isAvailable: true },
-        { name: "Advice", isAvailable: true },
+        { name: "Mark", isAvailable: false },
+        { name: "Advice", isAvailable: false },
         { name: "Dodge", isAvailable: false }
       ]
     },
@@ -550,14 +550,14 @@ export const replayCombatViewModel: CombatViewModel = {
       maxHp: "41",
       stress: "12",
       maxStress: "200",
-      isActive: true,
+      isActive: false,
       isHit: false,
       skills: [
-        { name: "Heal", isAvailable: true },
-        { name: "Bless", isAvailable: true },
+        { name: "Heal", isAvailable: false },
+        { name: "Bless", isAvailable: false },
         { name: "Smite", isAvailable: false },
-        { name: "Shield", isAvailable: true },
-        { name: "Pray", isAvailable: true }
+        { name: "Shield", isAvailable: false },
+        { name: "Pray", isAvailable: false }
       ]
     }
   ],
@@ -574,13 +574,13 @@ export const replayCombatViewModel: CombatViewModel = {
       name: "Shambling Abomination",
       hp: "12 / 80",
       maxHp: "80",
-      isHit: true
+      isHit: false
     }
   ],
   hitTargetHeroId: "hero-hunter-01",
   hitDamage: "10",
   hitLog: "Cultist Acolyte strikes Shen for 10 damage.",
-  activeHeroId: "hero-white-01",
+  activeHeroId: "hero-hunter-01",
   roomMap: {
     rooms: [
       { id: "r1", x: 0, y: 2, kind: "combat", isCurrent: true, isCleared: false },

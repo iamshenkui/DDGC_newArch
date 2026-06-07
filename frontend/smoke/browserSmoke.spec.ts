@@ -756,6 +756,10 @@ test.describe("browser smoke: fidelity gates", () => {
       page.getByTestId("combat-skill-0"),
       "First skill slot must be visible"
     ).toBeVisible();
+    await expect(
+      page.getByTestId("combat-skill-0"),
+      "Skill slots must be disabled while acknowledging character-hit damage"
+    ).toBeDisabled();
 
     // Verify map rooms
     await expect(

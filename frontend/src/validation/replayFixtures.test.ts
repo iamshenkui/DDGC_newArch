@@ -307,6 +307,7 @@ describe("replay fixtures — hero and campaign state consistency", () => {
       expect(vm.enemies.length).toBeGreaterThan(0);
       expect(vm.hitLog).toBeTruthy();
       expect(vm.activeHeroId).toBeTruthy();
+      expect(vm.activeHeroId).toBe(vm.hitTargetHeroId);
       expect(vm.roomMap.rooms.length).toBeGreaterThan(0);
       expect(typeof vm.turnCount).toBe("number");
       expect(typeof vm.isFleeAvailable).toBe("boolean");
@@ -318,6 +319,8 @@ describe("replay fixtures — hero and campaign state consistency", () => {
       const hitHero = vm.party.find((h) => h.id === vm.hitTargetHeroId);
       expect(hitHero).toBeDefined();
       expect(hitHero!.isHit).toBe(true);
+      expect(hitHero!.isActive).toBe(true);
+      expect(vm.enemies.some((enemy) => enemy.isHit)).toBe(false);
     });
 
     it("has skills for each party member", () => {

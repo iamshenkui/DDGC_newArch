@@ -317,14 +317,14 @@ const createLiveCombatViewModel = (): CombatViewModel => ({
       maxHp: "42",
       stress: "8",
       maxStress: "200",
-      isActive: false,
+      isActive: true,
       isHit: true,
       skills: [
-        { name: "Hunting Bow", isAvailable: true },
-        { name: "Rapid Shot", isAvailable: true },
+        { name: "Hunting Bow", isAvailable: false },
+        { name: "Rapid Shot", isAvailable: false },
         { name: "Mark", isAvailable: false },
-        { name: "Advice", isAvailable: true },
-        { name: "Dodge", isAvailable: true }
+        { name: "Advice", isAvailable: false },
+        { name: "Dodge", isAvailable: false }
       ]
     },
     {
@@ -335,14 +335,14 @@ const createLiveCombatViewModel = (): CombatViewModel => ({
       maxHp: "41",
       stress: "4",
       maxStress: "200",
-      isActive: true,
+      isActive: false,
       isHit: false,
       skills: [
-        { name: "Heal", isAvailable: true },
-        { name: "Bless", isAvailable: true },
-        { name: "Smite", isAvailable: true },
+        { name: "Heal", isAvailable: false },
+        { name: "Bless", isAvailable: false },
+        { name: "Smite", isAvailable: false },
         { name: "Shield", isAvailable: false },
-        { name: "Pray", isAvailable: true }
+        { name: "Pray", isAvailable: false }
       ]
     }
   ],
@@ -359,13 +359,13 @@ const createLiveCombatViewModel = (): CombatViewModel => ({
       name: "Lesser Necromancer",
       hp: "35 / 50",
       maxHp: "50",
-      isHit: true
+      isHit: false
     }
   ],
   hitTargetHeroId: "hero-hunter-live-01",
   hitDamage: "10",
   hitLog: "Risen Skeleton strikes Yuan for 10 damage.",
-  activeHeroId: "hero-white-live-01",
+  activeHeroId: "hero-hunter-live-01",
   roomMap: {
     rooms: [
       { id: "r1", x: 0, y: 2, kind: "combat", isCurrent: true, isCleared: false },
@@ -541,6 +541,13 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         break;
       case "use-skill": {
         const combatVm = this.snapshot.viewModel as CombatViewModel;
+        if (combatVm.phase === "character-hit") {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: skill intent ignored during character-hit acknowledgement."
+          };
+          break;
+        }
         const updatedParty = combatVm.party.map((hero) =>
           hero.id === combatVm.activeHeroId
             ? {

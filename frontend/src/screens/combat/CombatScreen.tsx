@@ -78,6 +78,7 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
   const displayHero = () => hitHero() ?? activeHero() ?? props.viewModel.party[0];
 
   const isCharacterHitPhase = () => props.viewModel.phase === "character-hit";
+  const canUseSkills = () => !isCharacterHitPhase();
 
   return (
     <div
@@ -298,16 +299,16 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
                     {(skill, index) => (
                       <button
                         class={`combat-skill-slot${
-                          skill.isAvailable
+                          canUseSkills() && skill.isAvailable
                             ? " combat-skill-slot--available"
                             : " combat-skill-slot--cooldown"
                         }`}
                         onClick={() => {
-                          if (skill.isAvailable) {
+                          if (canUseSkills() && skill.isAvailable) {
                             props.onUseSkill(`${hero().id}-skill-${index()}`);
                           }
                         }}
-                        disabled={!skill.isAvailable}
+                        disabled={!canUseSkills() || !skill.isAvailable}
                         data-testid={`combat-skill-${index()}`}
                         title={skill.name}
                       >

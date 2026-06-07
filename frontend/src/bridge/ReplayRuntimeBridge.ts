@@ -132,6 +132,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       case "use-skill": {
         const combatVm = this.snapshot.viewModel as CombatViewModel;
+        if (combatVm.phase === "character-hit") {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: skill intent ignored during character-hit acknowledgement."
+          };
+          break;
+        }
         const updatedParty = combatVm.party.map((hero) =>
           hero.id === combatVm.activeHeroId
             ? {

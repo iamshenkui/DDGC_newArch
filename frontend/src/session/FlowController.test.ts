@@ -396,9 +396,10 @@ describe("canTransition - result and return meta-loop continuation", () => {
       expect(validation.reason).toContain("only valid in combat");
     });
 
-    it("allows use-skill in combat", () => {
+    it("rejects use-skill during character-hit acknowledgement", () => {
       const validation = canTransition(combatSnapshot, { type: "use-skill", skillId: "skill-1" });
-      expect(validation.allowed).toBe(true);
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("character-hit");
     });
 
     it("rejects use-skill when not in combat", () => {

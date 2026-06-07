@@ -349,19 +349,22 @@ describe("combat flow via bridges", () => {
     expect(snapshot.viewModel.kind).toBe("return");
   });
 
-  it("replay use-skill updates combat state", async () => {
+  it("replay ignores use-skill during character-hit acknowledgement", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
     await bridge.dispatchIntent({ type: "enter-combat" });
+    const before = bridge.currentSnapshot().viewModel as CombatViewModel;
 
     const snapshot = await bridge.dispatchIntent({ type: "use-skill", skillId: "skill-1" });
 
     expect(snapshot.flowState).toBe("combat");
     expect(snapshot.viewModel.kind).toBe("combat");
     const combatVm = snapshot.viewModel as CombatViewModel;
-    expect(combatVm.hitLog).toContain("Skill used");
+    expect(combatVm.hitLog).toBe(before.hitLog);
+    expect(combatVm.party).toEqual(before.party);
+    expect(snapshot.debugMessage).toContain("ignored during character-hit");
   });
 
   it("live enter-combat from expedition transitions to combat state", async () => {
