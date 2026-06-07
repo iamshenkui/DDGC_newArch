@@ -958,6 +958,7 @@ export class LiveRuntimeBridge implements RuntimeBridge {
           viewModel: createLiveDungeonInteractionViewModel()
         };
         break;
+      }
       case "proceed-dungeon":
         this.snapshot = {
           ...this.snapshot,
@@ -978,7 +979,6 @@ export class LiveRuntimeBridge implements RuntimeBridge {
           viewModel: createLiveResultViewModel()
         };
         break;
-      }
       case "return-to-town":
         if (!canTransition(this.snapshot, intent).allowed) {
           this.snapshot = {

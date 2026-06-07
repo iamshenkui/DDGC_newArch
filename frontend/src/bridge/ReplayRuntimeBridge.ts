@@ -483,6 +483,7 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           viewModel: replayDungeonInteractionViewModel as DungeonInteractionViewModel
         };
         break;
+      }
       case "proceed-dungeon":
         this.snapshot = {
           ...this.snapshot,
@@ -503,7 +504,6 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           viewModel: replayResultViewModel as ExpeditionResultViewModel
         };
         break;
-      }
       case "return-to-town":
         if (!canTransition(this.snapshot, intent).allowed) {
           this.snapshot = {

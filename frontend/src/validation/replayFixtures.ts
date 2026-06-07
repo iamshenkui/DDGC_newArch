@@ -1324,8 +1324,6 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (typeof vm.minimapCols !== "number") e.push("DungeonMapViewModel: minimapCols is not a number");
       break;
     }
-      break;
-    }
     case "result": {
       if (!vm.title || typeof vm.title !== "string") e.push("ExpeditionResultViewModel: title is missing");
       if (vm.outcome !== "success" && vm.outcome !== "failure" && vm.outcome !== "partial") e.push(`ExpeditionResultViewModel: outcome is "${String(vm.outcome)}", expected "success", "failure", or "partial"`);
