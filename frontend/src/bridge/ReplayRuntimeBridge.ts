@@ -68,24 +68,34 @@ function createReplayFleeResultViewModel(): ExpeditionResultViewModel {
   };
 }
 
-function acknowledgeReplayCombatHit(combatVm: CombatViewModel): CombatViewModel {
-  const activeHero = combatVm.party.find((hero) => hero.id === combatVm.activeHeroId);
-  const selectedSkillId =
-    activeHero?.skills.find((skill) => skill.cooldownRemaining === 0)?.id ??
-    activeHero?.skills[0]?.id;
+function createReplayCharacterHitCombatViewModel(combatVm: CombatViewModel): CombatViewModel {
+  const hitHeroId = combatVm.activeHeroId;
+  const hitHero = combatVm.party.find((hero) => hero.id === hitHeroId);
+  const targetedEnemy = combatVm.enemies.find((enemy) => enemy.isTargeted);
+  const hitDamage = "10";
+  const hitLog = `${targetedEnemy?.name ?? "Enemy"} retaliates and strikes ${hitHero?.name ?? "hero"} for ${hitDamage} damage.`;
 
   return {
     ...combatVm,
-    phase: "player-turn",
-    turnPhase: "player",
-    selectedSkillId,
-    party: combatVm.party.map((hero) => ({ ...hero, isHit: false })),
+    phase: "character-hit",
+    turnPhase: "enemy",
+    isPlayerTurn: false,
+    selectedSkillId: undefined,
+    party: combatVm.party.map((hero) =>
+      hero.id === hitHeroId
+        ? { ...hero, isHit: true }
+        : { ...hero, isHit: false }
+    ),
     enemies: combatVm.enemies.map((enemy) => ({ ...enemy, isHit: false })),
-    hitTargetHeroId: undefined,
-    hitDamage: undefined,
-    hitLog: undefined,
-    isPlayerTurn: true,
-    combatLog: [...combatVm.combatLog, "Hit acknowledged. Player command restored."]
+    hitTargetHeroId: hitHeroId,
+    hitDamage,
+    hitLog,
+    combatLog: [
+      ...combatVm.combatLog,
+      `${hitHero?.name ?? "Hero"} attacks ${targetedEnemy?.name ?? "target"}.`,
+      hitLog,
+      "Acknowledge the hit before issuing the next command."
+    ]
   };
 }
 
@@ -376,11 +386,14 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
             break;
           }
         }
-        this.snapshot = {
-          ...this.snapshot,
-          flowState: "result",
-          viewModel: replayResultViewModel as ExpeditionResultViewModel
-        };
+        if (this.snapshot.viewModel.kind === "combat") {
+          this.snapshot = {
+            ...this.snapshot,
+            flowState: "combat",
+            viewModel: createReplayCharacterHitCombatViewModel(this.snapshot.viewModel),
+            debugMessage: "Replay: combat resolved into character-hit phase."
+          };
+        }
         break;
       case "continue-from-combat":
         if (!canTransition(this.snapshot, intent).allowed) {
@@ -390,14 +403,12 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           };
           break;
         }
-        if (this.snapshot.viewModel.kind === "combat") {
-          this.snapshot = {
-            ...this.snapshot,
-            flowState: "combat",
-            viewModel: acknowledgeReplayCombatHit(this.snapshot.viewModel),
-            debugMessage: "Replay: character-hit acknowledgement accepted."
-          };
-        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "result",
+          viewModel: replayResultViewModel as ExpeditionResultViewModel,
+          debugMessage: "Replay: character-hit acknowledged; transitioning to result."
+        };
         break;
       case "open-combat-settings":
         if (!canTransition(this.snapshot, intent).allowed) {

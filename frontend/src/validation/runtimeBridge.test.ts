@@ -696,6 +696,110 @@ describe("provisioning and expedition launch flow", () => {
   });
 });
 
+describe("combat character-hit resolution flow", () => {
+  it("replay confirm-attack transitions to character-hit phase before result", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    const combatSnapshot = await enterCombatRoom(bridge);
+
+    expect(combatSnapshot.viewModel.kind).toBe("combat");
+    const preCombatVm = combatSnapshot.viewModel as CombatViewModel;
+    expect(preCombatVm.phase).not.toBe("character-hit");
+
+    const hitSnapshot = await bridge.dispatchIntent({ type: "confirm-attack" });
+    expect(hitSnapshot.flowState).toBe("combat");
+    expect(hitSnapshot.viewModel.kind).toBe("combat");
+    const hitVm = hitSnapshot.viewModel as CombatViewModel;
+    expect(hitVm.phase).toBe("character-hit");
+    expect(hitVm.isPlayerTurn).toBe(false);
+    expect(hitVm.hitTargetHeroId).toBeTruthy();
+    expect(hitVm.hitDamage).toBeTruthy();
+    expect(hitVm.hitLog).toBeTruthy();
+    expect(hitVm.party.some((hero) => hero.isHit)).toBe(true);
+  });
+
+  it("replay continue-from-combat after character-hit transitions to result", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await enterCombatRoom(bridge);
+    await bridge.dispatchIntent({ type: "confirm-attack" });
+
+    const resultSnapshot = await bridge.dispatchIntent({ type: "continue-from-combat" });
+    expect(resultSnapshot.flowState).toBe("result");
+    expect(resultSnapshot.viewModel.kind).toBe("result");
+    const resultVm = resultSnapshot.viewModel as ExpeditionResultViewModel;
+    expect(resultVm.isContinueAvailable).toBe(true);
+  });
+
+  it("live confirm-attack transitions to character-hit phase before result", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    const combatSnapshot = await enterCombatRoom(bridge);
+
+    expect(combatSnapshot.viewModel.kind).toBe("combat");
+    const preCombatVm = combatSnapshot.viewModel as CombatViewModel;
+    expect(preCombatVm.phase).not.toBe("character-hit");
+
+    const hitSnapshot = await bridge.dispatchIntent({ type: "confirm-attack" });
+    expect(hitSnapshot.flowState).toBe("combat");
+    expect(hitSnapshot.viewModel.kind).toBe("combat");
+    const hitVm = hitSnapshot.viewModel as CombatViewModel;
+    expect(hitVm.phase).toBe("character-hit");
+    expect(hitVm.isPlayerTurn).toBe(false);
+    expect(hitVm.hitTargetHeroId).toBeTruthy();
+    expect(hitVm.hitDamage).toBeTruthy();
+    expect(hitVm.hitLog).toBeTruthy();
+    expect(hitVm.party.some((hero) => hero.isHit)).toBe(true);
+  });
+
+  it("live continue-from-combat after character-hit transitions to result", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await enterCombatRoom(bridge);
+    await bridge.dispatchIntent({ type: "confirm-attack" });
+
+    const resultSnapshot = await bridge.dispatchIntent({ type: "continue-from-combat" });
+    expect(resultSnapshot.flowState).toBe("result");
+    expect(resultSnapshot.viewModel.kind).toBe("result");
+    const resultVm = resultSnapshot.viewModel as ExpeditionResultViewModel;
+    expect(resultVm.isContinueAvailable).toBe(true);
+  });
+
+  it("replay rejects continue-from-combat outside character-hit phase", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await enterCombatRoom(bridge);
+
+    const snapshot = await bridge.dispatchIntent({ type: "continue-from-combat" });
+    expect(snapshot.flowState).toBe("combat");
+    expect(snapshot.viewModel.kind).toBe("combat");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("live rejects continue-from-combat outside character-hit phase", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await enterCombatRoom(bridge);
+
+    const snapshot = await bridge.dispatchIntent({ type: "continue-from-combat" });
+    expect(snapshot.flowState).toBe("combat");
+    expect(snapshot.viewModel.kind).toBe("combat");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+});
+
 describe("result and return meta-loop continuation", () => {
   it("continue-from-result transitions to return state", async () => {
     const bridge = new ReplayRuntimeBridge();
