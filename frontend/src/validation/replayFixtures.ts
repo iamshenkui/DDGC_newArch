@@ -749,6 +749,8 @@ export const replayCombatSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing combat scene - character attack phase."
 };
 
+export const combatSnapshot = replayCombatSnapshot;
+
 export const replayReadySnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
   flowState: "town",
