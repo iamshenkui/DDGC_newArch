@@ -17,6 +17,7 @@ import {
   startupSnapshot,
   provisioningSnapshot,
   expeditionSnapshot,
+  dungeonInteractionSnapshot,
   resultSnapshot,
   failureResultSnapshot,
   partialResultSnapshot,
@@ -79,6 +80,11 @@ describe("FlowController", () => {
       expect(screen).toBe("expedition");
     });
 
+    it("returns dungeon-interaction screen for dungeon interaction view model", () => {
+      const screen = resolveScreen(dungeonInteractionSnapshot);
+      expect(screen).toBe("dungeon-interaction");
+    });
+
     it("returns result screen for result view model", () => {
       const screen = resolveScreen(resultSnapshot);
       expect(screen).toBe("result");
@@ -102,7 +108,7 @@ describe("FlowController", () => {
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "dungeon-interaction", "result", "return", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -113,6 +119,7 @@ describe("ScreenKey exhaustiveness", () => {
       "building-detail": replayBuildingDetailSnapshot,
       provisioning: provisioningSnapshot,
       expedition: expeditionSnapshot,
+      "dungeon-interaction": dungeonInteractionSnapshot,
       result: resultSnapshot,
       return: returnSnapshot,
       unsupported: unsupportedSnapshot,
