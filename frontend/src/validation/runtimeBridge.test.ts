@@ -350,6 +350,84 @@ describe("provisioning and expedition launch flow", () => {
     const resultVm = snapshot.viewModel as ExpeditionResultViewModel;
     expect(resultVm.outcome).toBe("success");
   });
+
+  it("replay enter-room with nonexistent roomId is rejected", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const beforeSnapshot = bridge.currentSnapshot();
+    expect(beforeSnapshot.viewModel.kind).toBe("dungeon-map");
+    const beforeMapVm = beforeSnapshot.viewModel as DungeonMapViewModel;
+    const beforeCurrentRoomId = beforeMapVm.currentRoomId;
+
+    const snapshot = await bridge.dispatchIntent({ type: "enter-room", roomId: "nonexistent-room" });
+
+    expect(snapshot.viewModel.kind).toBe("dungeon-map");
+    expect(snapshot.debugMessage).toContain("does not exist");
+    const mapVm = snapshot.viewModel as DungeonMapViewModel;
+    expect(mapVm.currentRoomId).toBe(beforeCurrentRoomId);
+  });
+
+  it("replay enter-room with unconnected roomId is rejected", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const beforeSnapshot = bridge.currentSnapshot();
+    const beforeMapVm = beforeSnapshot.viewModel as DungeonMapViewModel;
+    const beforeCurrentRoomId = beforeMapVm.currentRoomId;
+
+    // room-boss-1 is not connected to room-entrance
+    const snapshot = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-boss-1" });
+
+    expect(snapshot.viewModel.kind).toBe("dungeon-map");
+    expect(snapshot.debugMessage).toContain("not connected");
+    const mapVm = snapshot.viewModel as DungeonMapViewModel;
+    expect(mapVm.currentRoomId).toBe(beforeCurrentRoomId);
+  });
+
+  it("live enter-room with nonexistent roomId is rejected", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const beforeSnapshot = bridge.currentSnapshot();
+    const beforeMapVm = beforeSnapshot.viewModel as DungeonMapViewModel;
+    const beforeCurrentRoomId = beforeMapVm.currentRoomId;
+
+    const snapshot = await bridge.dispatchIntent({ type: "enter-room", roomId: "nonexistent-room" });
+
+    expect(snapshot.viewModel.kind).toBe("dungeon-map");
+    expect(snapshot.debugMessage).toContain("does not exist");
+    const mapVm = snapshot.viewModel as DungeonMapViewModel;
+    expect(mapVm.currentRoomId).toBe(beforeCurrentRoomId);
+  });
+
+  it("live enter-room with unconnected roomId is rejected", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const beforeSnapshot = bridge.currentSnapshot();
+    const beforeMapVm = beforeSnapshot.viewModel as DungeonMapViewModel;
+    const beforeCurrentRoomId = beforeMapVm.currentRoomId;
+
+    const snapshot = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-boss-1" });
+
+    expect(snapshot.viewModel.kind).toBe("dungeon-map");
+    expect(snapshot.debugMessage).toContain("not connected");
+    const mapVm = snapshot.viewModel as DungeonMapViewModel;
+    expect(mapVm.currentRoomId).toBe(beforeCurrentRoomId);
+  });
 });
 
 describe("result and return meta-loop continuation", () => {

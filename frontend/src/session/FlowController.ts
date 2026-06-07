@@ -139,6 +139,20 @@ export function canTransition(
       if (snapshot.viewModel.kind !== "dungeon-map") {
         return { allowed: false, reason: "viewModel is not a dungeon-map view model" };
       }
+      if (!intent.roomId || typeof intent.roomId !== "string") {
+        return { allowed: false, reason: "roomId is required and must be a string" };
+      }
+      {
+        const mapVm = snapshot.viewModel;
+        const targetRoom = mapVm.rooms.find((r) => r.id === intent.roomId);
+        if (!targetRoom) {
+          return { allowed: false, reason: `room "${intent.roomId}" does not exist in the dungeon` };
+        }
+        const currentRoom = mapVm.rooms.find((r) => r.id === mapVm.currentRoomId);
+        if (currentRoom && intent.roomId !== currentRoom.id && !currentRoom.connections.includes(intent.roomId)) {
+          return { allowed: false, reason: `room "${intent.roomId}" is not connected to the current room` };
+        }
+      }
       return { allowed: true };
 
     case "retreat-from-dungeon":

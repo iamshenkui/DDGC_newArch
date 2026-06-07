@@ -449,6 +449,11 @@ test.describe("browser smoke: fidelity gates", () => {
       "Room navigation must update current room"
     ).toBeVisible();
 
+    // 5e-b. Non-accessible room must not navigate
+    // room-boss-1 is not connected to room-combat-1; clicking it should keep current room
+    const inaccessibleRoom = page.locator('[data-room-id="room-boss-1"] .dungeon-room-btn');
+    await expect(inaccessibleRoom, "Non-accessible room button must be disabled").toBeDisabled();
+
     // 5f. Dungeon Map → Result (retreat from dungeon)
     await page.getByRole("button", { name: "Retreat" }).click();
     await settle(page);
@@ -750,5 +755,102 @@ test.describe("browser smoke: fidelity gates", () => {
     await expectFullPageFidelity(page, "Town after live meta-loop");
 
     expectNoErrors(pageErrors, consoleErrors, "Live boot flow");
+  });
+
+  test("complete-dungeon flow reaches success result", async ({ page }) => {
+    const { consoleErrors, pageErrors } = setupErrorCollectors(page);
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+
+    // Boot replay and go through provisioning → expedition → dungeon map
+    await page.getByRole("button", { name: "Boot Replay" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 8_000 });
+    await settle(page);
+
+    await page.locator(".estate-embark-button").click();
+    await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await page.getByRole("button", { name: "Confirm & Launch Expedition" }).click();
+    await settle(page);
+
+    await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await page.waitForSelector(".dungeon-map-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    // Navigate through enough rooms to reach 80% completion
+    // Path: entrance → empty-1 → treasure-1 → rest-1 → (backtrack) → entrance → combat-1 → curio-1 → shrine-1 → combat-2
+    const navigationPath = [
+      "room-empty-1",
+      "room-treasure-1",
+      "room-rest-1",
+      "room-treasure-1",
+      "room-empty-1",
+      "room-entrance",
+      "room-combat-1",
+      "room-curio-1",
+      "room-shrine-1",
+      "room-combat-2",
+    ];
+
+    for (const roomId of navigationPath) {
+      const roomBtn = page.locator(`[data-room-id="${roomId}"] .dungeon-room-btn`);
+      const isDisabled = await roomBtn.isDisabled().catch(() => true);
+      if (!isDisabled) {
+        await roomBtn.click();
+        await settle(page, 200);
+      }
+    }
+
+    // Verify dungeon is complete
+    await expect(
+      page.getByRole("button", { name: "Complete Expedition" }),
+      "Complete Expedition button must appear when dungeon is complete"
+    ).toBeVisible();
+
+    // Complete the dungeon
+    await page.getByRole("button", { name: "Complete Expedition" }).click();
+    await settle(page);
+
+    // Verify success result
+    await expect(
+      page.locator(".eyebrow").filter({ hasText: "Expedition Complete" }),
+      "Result screen eyebrow must be visible after completing dungeon"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Expedition Complete" }),
+      "Result screen heading must show success after completing dungeon"
+    ).toBeVisible();
+    await expect(
+      page.locator(".outcome-banner-title").filter({ hasText: "Victory" }),
+      "Victory outcome must be visible after completing dungeon"
+    ).toBeVisible();
+
+    await expectFidelity(
+      page.locator(".expedition-viewport"),
+      "Success result screen"
+    );
+    await expectFullPageFidelity(page, "Success result screen");
+
+    // Continue to return and then town
+    await page.getByRole("button", { name: "Proceed to Return" }).click();
+    await settle(page);
+
+    await expect(
+      page.locator(".eyebrow").filter({ hasText: "Expedition Concluded" }),
+      "Return screen eyebrow must be visible"
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "Resume Town Activities" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("城镇中枢"),
+      "Must be back at town after completing dungeon"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Complete dungeon flow");
   });
 });

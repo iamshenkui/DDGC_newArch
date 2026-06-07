@@ -394,6 +394,92 @@ describe("canTransition - result and return meta-loop continuation", () => {
     });
   });
 
+  describe("dungeon-map transitions", () => {
+    it("allows enter-room when room exists and is connected", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "room-combat-1" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects enter-room when not on dungeon-map screen", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "enter-room", roomId: "room-combat-1" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on dungeon-map screen");
+    });
+
+    it("rejects enter-room when not on dungeon-map screen (result)", () => {
+      const validation = canTransition(resultSnapshot, { type: "enter-room", roomId: "room-combat-1" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on dungeon-map screen");
+    });
+
+    it("rejects enter-room when roomId is missing", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("roomId is required");
+    });
+
+    it("rejects enter-room when room does not exist", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "nonexistent-room" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("does not exist");
+    });
+
+    it("rejects enter-room when room is not connected to current room", () => {
+      // room-boss-1 is not connected to room-entrance (the current room in the fixture)
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "room-boss-1" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not connected");
+    });
+
+    it("allows retreat-from-dungeon when retreat is available", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "retreat-from-dungeon" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects retreat-from-dungeon when not on dungeon-map screen", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "retreat-from-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on dungeon-map screen");
+    });
+
+    it("rejects retreat-from-dungeon when retreat is not available", () => {
+      const noRetreatSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonMapSnapshot,
+        viewModel: {
+          ...dungeonMapSnapshot.viewModel,
+          isRetreatAvailable: false
+        }
+      };
+      const validation = canTransition(noRetreatSnapshot, { type: "retreat-from-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("retreat is not available");
+    });
+
+    it("rejects complete-dungeon when dungeon is not complete", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "complete-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not complete");
+    });
+
+    it("allows complete-dungeon when dungeon is complete", () => {
+      const completeSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonMapSnapshot,
+        viewModel: {
+          ...dungeonMapSnapshot.viewModel,
+          isComplete: true
+        }
+      };
+      const validation = canTransition(completeSnapshot, { type: "complete-dungeon" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects complete-dungeon when not on dungeon-map screen", () => {
+      const validation = canTransition(resultSnapshot, { type: "complete-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on dungeon-map screen");
+    });
+  });
+
   describe("secondary interaction stability after result/return handoff", () => {
     it("open-hero is allowed after continue-from-result handoff to town", () => {
       // Verify from a fresh town state (simulating after continue-from-result)

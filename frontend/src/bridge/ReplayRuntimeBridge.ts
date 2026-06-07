@@ -125,6 +125,22 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       case "enter-room": {
         const mapVm = this.snapshot.viewModel as DungeonMapViewModel;
+        const targetRoom = mapVm.rooms.find((r) => r.id === intent.roomId);
+        if (!targetRoom) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `enter-room rejected: room "${intent.roomId}" does not exist`
+          };
+          break;
+        }
+        const currentRoom = mapVm.rooms.find((r) => r.id === mapVm.currentRoomId);
+        if (currentRoom && intent.roomId !== currentRoom.id && !currentRoom.connections.includes(intent.roomId)) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `enter-room rejected: room "${intent.roomId}" is not connected to the current room`
+          };
+          break;
+        }
         const updatedRooms = mapVm.rooms.map((room) =>
           room.id === intent.roomId
             ? { ...room, isVisited: true, isCurrent: true }
