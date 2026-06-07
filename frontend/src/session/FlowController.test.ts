@@ -5,6 +5,7 @@ import type {
   DdgcFrontendSnapshot,
   ExpeditionResultViewModel,
   ReturnViewModel,
+  DungeonMapViewModel,
 } from "../bridge/contractTypes";
 import {
   fatalSnapshot,
@@ -425,10 +426,30 @@ describe("canTransition - result and return meta-loop continuation", () => {
     });
 
     it("rejects enter-room when room is not connected to current room", () => {
-      // room-boss-1 is not connected to room-entrance (the current room in the fixture)
-      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "room-boss-1" });
+      // room-treasure-1 is revealed but not connected to room-entrance (the current room in the fixture)
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "room-treasure-1" });
       expect(validation.allowed).toBe(false);
       expect(validation.reason).toContain("not connected");
+    });
+
+    it("rejects enter-room when room is not revealed", () => {
+      // room-boss-1 has isRevealed: false in the fixture; construct a snapshot
+      // where room-boss-1 is connected to the current room so the only guard
+      // that fires is the isRevealed check.
+      const mapVm = dungeonMapSnapshot.viewModel as DungeonMapViewModel;
+      const revealedBossSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonMapSnapshot,
+        viewModel: {
+          ...mapVm,
+          currentRoomId: "room-rest-1",
+          rooms: mapVm.rooms.map((r) =>
+            r.id === "room-rest-1" ? { ...r, isCurrent: true, isVisited: true } : { ...r, isCurrent: false }
+          )
+        }
+      };
+      const validation = canTransition(revealedBossSnapshot, { type: "enter-room", roomId: "room-boss-1" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not revealed");
     });
 
     it("allows retreat-from-dungeon when retreat is available", () => {

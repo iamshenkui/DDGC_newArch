@@ -169,6 +169,17 @@ describe("build-run smoke: flow state transitions", () => {
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
     await bridge.dispatchIntent({ type: "launch-expedition" });
 
+    // Mark dungeon as complete before completing
+    const current = bridge.currentSnapshot();
+    const mapVm = current.viewModel as DungeonMapViewModel;
+    (bridge as any).snapshot = {
+      ...current,
+      viewModel: {
+        ...mapVm,
+        isComplete: true
+      }
+    };
+
     const resultSnap = await bridge.dispatchIntent({ type: "complete-dungeon" });
     expect(resultSnap.flowState).toBe("result");
     expect(resultSnap.viewModel.kind).toBe("result");
@@ -234,6 +245,17 @@ describe("build-run smoke: meta-loop continuation", () => {
     const mapSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
     expect(mapSnap.flowState).toBe("dungeon-map");
     expect(mapSnap.viewModel.kind).toBe("dungeon-map");
+
+    // Mark dungeon as complete before completing
+    const current = bridge.currentSnapshot();
+    const mapVm = current.viewModel as DungeonMapViewModel;
+    (bridge as any).snapshot = {
+      ...current,
+      viewModel: {
+        ...mapVm,
+        isComplete: true
+      }
+    };
 
     const resultSnap = await bridge.dispatchIntent({ type: "complete-dungeon" });
     expect(resultSnap.flowState).toBe("result");

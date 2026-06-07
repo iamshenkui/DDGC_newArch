@@ -148,6 +148,9 @@ export function canTransition(
         if (!targetRoom) {
           return { allowed: false, reason: `room "${intent.roomId}" does not exist in the dungeon` };
         }
+        if (!targetRoom.isRevealed) {
+          return { allowed: false, reason: `room "${intent.roomId}" is not revealed` };
+        }
         const currentRoom = mapVm.rooms.find((r) => r.id === mapVm.currentRoomId);
         if (currentRoom && intent.roomId !== currentRoom.id && !currentRoom.connections.includes(intent.roomId)) {
           return { allowed: false, reason: `room "${intent.roomId}" is not connected to the current room` };

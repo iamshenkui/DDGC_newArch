@@ -336,12 +336,36 @@ describe("provisioning and expedition launch flow", () => {
     expect(resultVm.outcome).toBe("partial");
   });
 
-  it("replay complete-dungeon transitions to result with success outcome", async () => {
+  it("replay complete-dungeon is rejected when dungeon is not complete", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
     await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "complete-dungeon" });
+
+    expect(snapshot.viewModel.kind).toBe("dungeon-map");
+    expect(snapshot.debugMessage).toContain("not complete");
+  });
+
+  it("replay complete-dungeon transitions to result when dungeon is complete", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    // Manually mark dungeon as complete for this test
+    const current = bridge.currentSnapshot();
+    const mapVm = current.viewModel as DungeonMapViewModel;
+    (bridge as any).snapshot = {
+      ...current,
+      viewModel: {
+        ...mapVm,
+        isComplete: true
+      }
+    };
 
     const snapshot = await bridge.dispatchIntent({ type: "complete-dungeon" });
 
@@ -427,6 +451,69 @@ describe("provisioning and expedition launch flow", () => {
     expect(snapshot.debugMessage).toContain("not connected");
     const mapVm = snapshot.viewModel as DungeonMapViewModel;
     expect(mapVm.currentRoomId).toBe(beforeCurrentRoomId);
+  });
+
+  it("replay enter-room with hidden roomId is rejected", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    // Navigate to room-rest-1 (connected to hidden room-boss-1)
+    await bridge.dispatchIntent({ type: "enter-room", roomId: "room-empty-1" });
+    await bridge.dispatchIntent({ type: "enter-room", roomId: "room-treasure-1" });
+    await bridge.dispatchIntent({ type: "enter-room", roomId: "room-rest-1" });
+
+    const beforeSnapshot = bridge.currentSnapshot();
+    const beforeMapVm = beforeSnapshot.viewModel as DungeonMapViewModel;
+    expect(beforeMapVm.currentRoomId).toBe("room-rest-1");
+
+    // room-boss-1 is connected to room-rest-1 but is hidden (isRevealed: false)
+    const snapshot = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-boss-1" });
+
+    expect(snapshot.viewModel.kind).toBe("dungeon-map");
+    expect(snapshot.debugMessage).toContain("not revealed");
+    const mapVm = snapshot.viewModel as DungeonMapViewModel;
+    expect(mapVm.currentRoomId).toBe("room-rest-1");
+  });
+
+  it("live enter-room with hidden roomId is rejected", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    // Navigate to room-rest-1 (connected to hidden room-boss-1)
+    await bridge.dispatchIntent({ type: "enter-room", roomId: "room-empty-1" });
+    await bridge.dispatchIntent({ type: "enter-room", roomId: "room-treasure-1" });
+    await bridge.dispatchIntent({ type: "enter-room", roomId: "room-rest-1" });
+
+    const beforeSnapshot = bridge.currentSnapshot();
+    const beforeMapVm = beforeSnapshot.viewModel as DungeonMapViewModel;
+    expect(beforeMapVm.currentRoomId).toBe("room-rest-1");
+
+    // room-boss-1 is connected to room-rest-1 but is hidden (isRevealed: false)
+    const snapshot = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-boss-1" });
+
+    expect(snapshot.viewModel.kind).toBe("dungeon-map");
+    expect(snapshot.debugMessage).toContain("not revealed");
+    const mapVm = snapshot.viewModel as DungeonMapViewModel;
+    expect(mapVm.currentRoomId).toBe("room-rest-1");
+  });
+
+  it("live complete-dungeon is rejected when dungeon is not complete", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "complete-dungeon" });
+
+    expect(snapshot.viewModel.kind).toBe("dungeon-map");
+    expect(snapshot.debugMessage).toContain("not complete");
   });
 });
 

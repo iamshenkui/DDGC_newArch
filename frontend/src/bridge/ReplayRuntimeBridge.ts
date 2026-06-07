@@ -141,6 +141,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           };
           break;
         }
+        if (!targetRoom.isRevealed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `enter-room rejected: room "${intent.roomId}" is not revealed`
+          };
+          break;
+        }
         const updatedRooms = mapVm.rooms.map((room) =>
           room.id === intent.roomId
             ? { ...room, isVisited: true, isCurrent: true }
@@ -174,13 +181,22 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           } as ExpeditionResultViewModel
         };
         break;
-      case "complete-dungeon":
+      case "complete-dungeon": {
+        const mapVm = this.snapshot.viewModel as DungeonMapViewModel;
+        if (!mapVm.isComplete) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `complete-dungeon rejected: dungeon is not complete`
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",
           viewModel: replayResultViewModel as ExpeditionResultViewModel
         };
         break;
+      }
       case "return-to-town":
         this.snapshot = replayReadySnapshot;
         break;
