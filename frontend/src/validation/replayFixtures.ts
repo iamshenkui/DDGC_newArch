@@ -701,6 +701,112 @@ export const replayReturnViewModel: ReturnViewModel = {
   isTownResumeAvailable: true
 };
 
+export const replayCombatViewModel = {
+  kind: "combat" as const,
+  title: "副本场景-人物攻击",
+  round: 1,
+  turnPhase: "player" as const,
+  activeHeroId: "hero-hunter-01",
+  party: [
+    {
+      id: "hero-hunter-01",
+      name: "Shen",
+      classLabel: "Hunter",
+      hp: "38 / 42",
+      maxHp: "42",
+      stress: "17",
+      maxStress: "200",
+      position: 1,
+      isActive: true,
+      isAlive: true,
+      skills: [
+        { id: "skill-1", name: "Hunting Bow", description: "Ranged attack that marks the target.", target: "Enemy", hitRating: "85%", critRating: "7%", cooldown: 0, cooldownRemaining: 0 },
+        { id: "skill-2", name: "Rapid Shot", description: "Fire two quick shots at the target.", target: "Enemy", hitRating: "75%", critRating: "5%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "skill-3", name: "Marked for Death", description: "Mark a target to take increased damage.", target: "Enemy", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 1 },
+        { id: "skill-4", name: "Batty Advice", description: "Grant a random buff to an ally.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 3, cooldownRemaining: 0 },
+        { id: "skill-5", name: "Dodge Stance", description: "Increase dodge for one turn.", target: "Self", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 0 }
+      ]
+    },
+    {
+      id: "hero-white-01",
+      name: "Bai Xiu",
+      classLabel: "White",
+      hp: "41 / 41",
+      maxHp: "41",
+      stress: "8",
+      maxStress: "200",
+      position: 2,
+      isActive: false,
+      isAlive: true,
+      skills: [
+        { id: "skill-w1", name: "Holy Light", description: "Deal light damage to an enemy.", target: "Enemy", hitRating: "90%", critRating: "3%", cooldown: 0, cooldownRemaining: 0 },
+        { id: "skill-w2", name: "Heal", description: "Restore health to an ally.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "skill-w3", name: "Bless", description: "Increase an ally's accuracy.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 0 },
+        { id: "skill-w4", name: "Smite", description: "Heavy damage to marked targets.", target: "Enemy", hitRating: "80%", critRating: "8%", cooldown: 2, cooldownRemaining: 1 },
+        { id: "skill-w5", name: "Prayer", description: "Reduce party stress.", target: "Party", hitRating: "100%", critRating: "0%", cooldown: 3, cooldownRemaining: 0 }
+      ]
+    },
+    {
+      id: "hero-black-01",
+      name: "Hei Zhen",
+      classLabel: "Black",
+      hp: "34 / 40",
+      maxHp: "40",
+      stress: "24",
+      maxStress: "200",
+      position: 3,
+      isActive: false,
+      isAlive: true,
+      skills: [
+        { id: "skill-b1", name: "Shadow Strike", description: "Attack from the shadows.", target: "Enemy", hitRating: "85%", critRating: "10%", cooldown: 0, cooldownRemaining: 0 },
+        { id: "skill-b2", name: "Smoke Bomb", description: "Blind enemies, reducing accuracy.", target: "Enemy", hitRating: "75%", critRating: "0%", cooldown: 2, cooldownRemaining: 0 },
+        { id: "skill-b3", name: "Poison Blade", description: "Apply poison to the target.", target: "Enemy", hitRating: "80%", critRating: "4%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "skill-b4", name: "Backstab", description: "High damage if target is marked.", target: "Enemy", hitRating: "70%", critRating: "12%", cooldown: 2, cooldownRemaining: 1 },
+        { id: "skill-b5", name: "Vanish", description: "Become untargetable for one turn.", target: "Self", hitRating: "100%", critRating: "0%", cooldown: 3, cooldownRemaining: 0 }
+      ]
+    }
+  ],
+  enemies: [
+    {
+      id: "enemy-moth-01",
+      name: "Moth Guardian",
+      hp: "120 / 150",
+      maxHp: "150",
+      position: 1,
+      isAlive: true,
+      isTargeted: true,
+      size: "large" as const
+    },
+    {
+      id: "enemy-larva-01",
+      name: "Larva Swarm",
+      hp: "30 / 30",
+      maxHp: "30",
+      position: 2,
+      isAlive: true,
+      isTargeted: false,
+      size: "small" as const
+    }
+  ],
+  selectedSkillId: "skill-1",
+  combatLog: [
+    "Round 1 begins...",
+    "Shen readies Hunting Bow.",
+    "Select a target to attack."
+  ],
+  isPlayerTurn: true,
+  canFlee: true
+};
+
+export const replayCombatSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "combat",
+  viewModel: replayCombatViewModel,
+  debugMessage: "Replay bridge showing combat scene - character attack phase."
+};
+
+export const combatSnapshot = replayCombatSnapshot;
+
 export const replayReadySnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
   flowState: "town",
@@ -1005,7 +1111,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     provisioning: ["provisioning"],
     expedition: ["expedition"],
     "dungeon-assist": ["dungeon-assist"],
-    combat: ["expedition"],
+    combat: ["combat"],
     "dungeon-map": ["dungeon-map"],
     result: ["result"],
     return: ["return"],
@@ -1129,6 +1235,18 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!vm.summary || typeof vm.summary !== "string") e.push("ReturnViewModel: summary is missing");
       if (!Array.isArray(vm.returningHeroes)) { e.push("ReturnViewModel: returningHeroes is not an array"); } else if (vm.returningHeroes.length === 0) { e.push("ReturnViewModel: returningHeroes array is empty"); }
       if (typeof vm.isTownResumeAvailable !== "boolean") e.push("ReturnViewModel: isTownResumeAvailable is not a boolean");
+      break;
+    }
+    case "combat": {
+      if (!vm.title || typeof vm.title !== "string") e.push("CombatViewModel: title is missing");
+      if (typeof vm.round !== "number") e.push("CombatViewModel: round is not a number");
+      if (vm.turnPhase !== "player" && vm.turnPhase !== "enemy") e.push(`CombatViewModel: turnPhase is "${String(vm.turnPhase)}", expected "player" or "enemy"`);
+      if (!vm.activeHeroId || typeof vm.activeHeroId !== "string") e.push("CombatViewModel: activeHeroId is missing");
+      if (!Array.isArray(vm.party)) { e.push("CombatViewModel: party is not an array"); } else if (vm.party.length === 0) { e.push("CombatViewModel: party array is empty"); }
+      if (!Array.isArray(vm.enemies)) { e.push("CombatViewModel: enemies is not an array"); } else if (vm.enemies.length === 0) { e.push("CombatViewModel: enemies array is empty"); }
+      if (!Array.isArray(vm.combatLog)) e.push("CombatViewModel: combatLog is not an array");
+      if (typeof vm.isPlayerTurn !== "boolean") e.push("CombatViewModel: isPlayerTurn is not a boolean");
+      if (typeof vm.canFlee !== "boolean") e.push("CombatViewModel: canFlee is not a boolean");
       break;
     }
     case "fatal": {

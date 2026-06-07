@@ -10,7 +10,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "dungeon-assist" | "dungeon-map" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "dungeon-assist" | "dungeon-map" | "combat" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -49,6 +49,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
     return "dungeon-map";
   }
 
+  if (snapshot.viewModel.kind === "combat") {
+    return "combat";
+  }
+
   if (snapshot.viewModel.kind === "result") {
     return "result";
   }
@@ -67,6 +71,15 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 export interface TransitionValidation {
   allowed: boolean;
   reason?: string;
+}
+
+function activeCombatHero(snapshot: DdgcFrontendSnapshot) {
+  const viewModel = snapshot.viewModel;
+  if (viewModel.kind !== "combat") {
+    return undefined;
+  }
+
+  return viewModel.party.find((hero) => hero.id === viewModel.activeHeroId);
 }
 
 export function canTransition(
@@ -97,6 +110,109 @@ export function canTransition(
       }
       if (!snapshot.viewModel.isTownResumeAvailable) {
         return { allowed: false, reason: "town resume is not available" };
+      }
+      return { allowed: true };
+
+    case "select-skill":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "select-skill is only valid in combat" };
+      }
+      if (snapshot.viewModel.kind !== "combat") {
+        return { allowed: false, reason: "viewModel is not a combat view model" };
+      }
+      if (!snapshot.viewModel.isPlayerTurn) {
+        return { allowed: false, reason: "not player turn" };
+      }
+      {
+        const activeHero = activeCombatHero(snapshot);
+        if (!activeHero || !activeHero.isAlive) {
+          return { allowed: false, reason: "active combat hero is missing or defeated" };
+        }
+        const skill = activeHero.skills.find((item) => item.id === intent.skillId);
+        if (!skill) {
+          return { allowed: false, reason: `combat skill ${intent.skillId} does not exist for active hero` };
+        }
+        if (skill.cooldownRemaining > 0) {
+          return { allowed: false, reason: `combat skill ${intent.skillId} is on cooldown` };
+        }
+      }
+      return { allowed: true };
+
+    case "select-target":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "select-target is only valid in combat" };
+      }
+      if (snapshot.viewModel.kind !== "combat") {
+        return { allowed: false, reason: "viewModel is not a combat view model" };
+      }
+      if (!snapshot.viewModel.isPlayerTurn) {
+        return { allowed: false, reason: "not player turn" };
+      }
+      {
+        const target = snapshot.viewModel.enemies.find((enemy) => enemy.id === intent.enemyId);
+        if (!target) {
+          return { allowed: false, reason: `combat target ${intent.enemyId} does not exist` };
+        }
+        if (!target.isAlive) {
+          return { allowed: false, reason: `combat target ${intent.enemyId} is defeated` };
+        }
+      }
+      return { allowed: true };
+
+    case "confirm-attack":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "confirm-attack is only valid in combat" };
+      }
+      if (snapshot.viewModel.kind !== "combat") {
+        return { allowed: false, reason: "viewModel is not a combat view model" };
+      }
+      if (!snapshot.viewModel.isPlayerTurn) {
+        return { allowed: false, reason: "not player turn" };
+      }
+      {
+        const combatVm = snapshot.viewModel;
+        const activeHero = activeCombatHero(snapshot);
+        if (!activeHero || !activeHero.isAlive) {
+          return { allowed: false, reason: "active combat hero is missing or defeated" };
+        }
+        const selectedSkill = activeHero.skills.find((skill) => skill.id === combatVm.selectedSkillId);
+        if (!selectedSkill) {
+          return { allowed: false, reason: "selected combat skill does not exist for active hero" };
+        }
+        if (selectedSkill.cooldownRemaining > 0) {
+          return { allowed: false, reason: `selected combat skill ${selectedSkill.id} is on cooldown` };
+        }
+        const selectedTarget = combatVm.enemies.find((enemy) => enemy.isTargeted);
+        if (!selectedTarget) {
+          return { allowed: false, reason: "no live combat target is selected" };
+        }
+        if (!selectedTarget.isAlive) {
+          return { allowed: false, reason: `selected combat target ${selectedTarget.id} is defeated` };
+        }
+      }
+      return { allowed: true };
+
+    case "flee-combat":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "flee-combat is only valid in combat" };
+      }
+      if (snapshot.viewModel.kind !== "combat") {
+        return { allowed: false, reason: "viewModel is not a combat view model" };
+      }
+      if (!snapshot.viewModel.canFlee) {
+        return { allowed: false, reason: "cannot flee this combat" };
+      }
+      return { allowed: true };
+
+    case "end-turn":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "end-turn is only valid in combat" };
+      }
+      if (snapshot.viewModel.kind !== "combat") {
+        return { allowed: false, reason: "viewModel is not a combat view model" };
+      }
+      if (!snapshot.viewModel.isPlayerTurn) {
+        return { allowed: false, reason: "not player turn" };
       }
       return { allowed: true };
 

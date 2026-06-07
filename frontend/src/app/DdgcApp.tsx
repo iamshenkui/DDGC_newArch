@@ -7,6 +7,7 @@ import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 import type { RuntimeBridge } from "../bridge/RuntimeBridge";
 import type {
   BuildingDetailViewModel,
+  CombatViewModel,
   DungeonAssistViewModel,
   DungeonMapViewModel,
   ExpeditionResultViewModel,
@@ -35,6 +36,7 @@ import { DungeonAssistScreen } from "../screens/dungeon/DungeonAssistScreen";
 import { DungeonMapScreen } from "../screens/dungeon/DungeonMapScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
 import { ReturnScreen } from "../screens/expedition/ReturnScreen";
+import { CombatScreen } from "../screens/combat/CombatScreen";
 
 function createBridge(mode: RuntimeMode): RuntimeBridge {
   return mode === "live" ? new LiveRuntimeBridge() : new ReplayRuntimeBridge();
@@ -202,6 +204,28 @@ export function DdgcApp() {
             }}
             onCompleteDungeon={() => {
               void dispatchIntent(bridge, { type: "complete-dungeon" });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "combat" && snapshot().viewModel.kind === "combat"}
+        >
+          <CombatScreen
+            viewModel={snapshot().viewModel as CombatViewModel}
+            onSelectSkill={(skillId) => {
+              void dispatchIntent(bridge, { type: "select-skill", skillId });
+            }}
+            onSelectTarget={(enemyId) => {
+              void dispatchIntent(bridge, { type: "select-target", enemyId });
+            }}
+            onConfirmAttack={() => {
+              void dispatchIntent(bridge, { type: "confirm-attack" });
+            }}
+            onFleeCombat={() => {
+              void dispatchIntent(bridge, { type: "flee-combat" });
+            }}
+            onEndTurn={() => {
+              void dispatchIntent(bridge, { type: "end-turn" });
             }}
           />
         </Match>

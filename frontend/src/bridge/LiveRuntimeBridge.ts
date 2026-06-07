@@ -15,6 +15,7 @@ import type {
   DungeonMapViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
+  CombatViewModel
 } from "./contractTypes";
 import { createTownBuildingSummary } from "../town/buildingCatalog";
 
@@ -390,6 +391,124 @@ const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
   isContinueAvailable: true
 });
 
+const createLiveFleeResultViewModel = (): ExpeditionResultViewModel => ({
+  ...createLiveResultViewModel(),
+  outcome: "failure",
+  summary: "The expedition party fled combat before completing the objective. Return to town and recover before trying again.",
+  lootAcquired: [],
+  resourcesGained: {
+    gold: 0,
+    supplies: -25,
+    experience: 15
+  }
+});
+
+const createLiveCombatViewModel = (): CombatViewModel => ({
+  kind: "combat",
+  title: "副本场景-人物攻击",
+  round: 1,
+  turnPhase: "player",
+  activeHeroId: "hero-hunter-live-01",
+  party: [
+    {
+      id: "hero-hunter-live-01",
+      name: "Yuan",
+      classLabel: "Hunter",
+      hp: "42 / 42",
+      maxHp: "42",
+      stress: "0",
+      maxStress: "200",
+      position: 1,
+      isActive: true,
+      isAlive: true,
+      skills: [
+        { id: "skill-1", name: "Hunting Bow", description: "Ranged attack that marks the target.", target: "Enemy", hitRating: "85%", critRating: "7%", cooldown: 0, cooldownRemaining: 0 },
+        { id: "skill-2", name: "Rapid Shot", description: "Fire two quick shots at the target.", target: "Enemy", hitRating: "75%", critRating: "5%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "skill-3", name: "Marked for Death", description: "Mark a target to take increased damage.", target: "Enemy", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 1 },
+        { id: "skill-4", name: "Batty Advice", description: "Grant a random buff to an ally.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 3, cooldownRemaining: 0 },
+        { id: "skill-5", name: "Dodge Stance", description: "Increase dodge for one turn.", target: "Self", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 0 }
+      ]
+    },
+    {
+      id: "hero-white-live-01",
+      name: "Mei",
+      classLabel: "White",
+      hp: "41 / 41",
+      maxHp: "41",
+      stress: "0",
+      maxStress: "200",
+      position: 2,
+      isActive: false,
+      isAlive: true,
+      skills: [
+        { id: "skill-w1", name: "Holy Light", description: "Deal light damage to an enemy.", target: "Enemy", hitRating: "90%", critRating: "3%", cooldown: 0, cooldownRemaining: 0 },
+        { id: "skill-w2", name: "Heal", description: "Restore health to an ally.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "skill-w3", name: "Bless", description: "Increase an ally's accuracy.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 0 },
+        { id: "skill-w4", name: "Smite", description: "Heavy damage to marked targets.", target: "Enemy", hitRating: "80%", critRating: "8%", cooldown: 2, cooldownRemaining: 1 },
+        { id: "skill-w5", name: "Prayer", description: "Reduce party stress.", target: "Party", hitRating: "100%", critRating: "0%", cooldown: 3, cooldownRemaining: 0 }
+      ]
+    }
+  ],
+  enemies: [
+    {
+      id: "enemy-moth-01",
+      name: "Moth Guardian",
+      hp: "120 / 150",
+      maxHp: "150",
+      position: 1,
+      isAlive: true,
+      isTargeted: true,
+      size: "large"
+    },
+    {
+      id: "enemy-larva-01",
+      name: "Larva Swarm",
+      hp: "30 / 30",
+      maxHp: "30",
+      position: 2,
+      isAlive: true,
+      isTargeted: false,
+      size: "small"
+    }
+  ],
+  selectedSkillId: "skill-1",
+  combatLog: [
+    "Round 1 begins...",
+    "Yuan readies Hunting Bow.",
+    "Select a target to attack."
+  ],
+  isPlayerTurn: true,
+  canFlee: true
+});
+
+const advanceLiveCombatTurn = (combatVm: CombatViewModel): CombatViewModel => {
+  const livingParty = combatVm.party.filter((hero) => hero.isAlive);
+  const activeIndex = livingParty.findIndex((hero) => hero.id === combatVm.activeHeroId);
+  const nextHero = livingParty[activeIndex + 1] ?? livingParty[0];
+  const startsNewRound = activeIndex < 0 || activeIndex === livingParty.length - 1;
+  const selectedSkillId =
+    nextHero?.skills.find((skill) => skill.cooldownRemaining === 0)?.id ??
+    nextHero?.skills[0]?.id;
+
+  return {
+    ...combatVm,
+    round: startsNewRound ? combatVm.round + 1 : combatVm.round,
+    activeHeroId: nextHero?.id ?? combatVm.activeHeroId,
+    selectedSkillId,
+    party: combatVm.party.map((hero) => ({
+      ...hero,
+      isActive: hero.id === nextHero?.id
+    })),
+    combatLog: [
+      ...combatVm.combatLog,
+      `${combatVm.party.find((hero) => hero.id === combatVm.activeHeroId)?.name ?? "Active hero"} ends their turn.`,
+      startsNewRound
+        ? `Round ${combatVm.round + 1} begins.`
+        : `${nextHero?.name ?? "Next hero"} is ready.`
+    ]
+  };
+};
+
 const createLiveReturnViewModel = (): ReturnViewModel => ({
   kind: "return",
   title: "Returning to Town",
@@ -603,6 +722,15 @@ export class LiveRuntimeBridge implements RuntimeBridge {
           };
           break;
         }
+        if (targetRoom.type === "combat") {
+          this.snapshot = {
+            ...this.snapshot,
+            flowState: "combat",
+            viewModel: createLiveCombatViewModel(),
+            debugMessage: `Live: entered combat room "${targetRoom.label}".`
+          };
+          break;
+        }
         const updatedRooms = mapVm.rooms.map((room) =>
           room.id === intent.roomId
             ? { ...room, isVisited: true, isCurrent: true }
@@ -624,6 +752,96 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       }
+      case "select-skill": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: combat skill ${intent.skillId} rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
+        const combatVm = this.snapshot.viewModel as CombatViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...combatVm,
+            selectedSkillId: intent.skillId
+          }
+        };
+        break;
+      }
+      case "select-target": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: combat target ${intent.enemyId} rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
+        const combatVm = this.snapshot.viewModel as CombatViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...combatVm,
+            enemies: combatVm.enemies.map((enemy) => ({
+              ...enemy,
+              isTargeted: enemy.id === intent.enemyId
+            }))
+          }
+        };
+        break;
+      }
+      case "confirm-attack":
+        {
+          const validation = canTransition(this.snapshot, intent);
+          if (!validation.allowed) {
+            this.snapshot = {
+              ...this.snapshot,
+              debugMessage: `Live: confirm-attack rejected: ${validation.reason ?? "invalid transition"}.`
+            };
+            break;
+          }
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "result",
+          viewModel: createLiveResultViewModel()
+        };
+        break;
+      case "end-turn": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: end-turn rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
+        const combatVm = this.snapshot.viewModel as CombatViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "combat",
+          viewModel: advanceLiveCombatTurn(combatVm),
+          debugMessage: "Live: combat end-turn intent advanced the active hero."
+        };
+        break;
+      }
+      case "flee-combat":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: flee-combat rejected outside combat."
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "result",
+          viewModel: createLiveFleeResultViewModel()
+        };
+        break;
       case "retreat-from-dungeon":
         this.snapshot = {
           ...this.snapshot,
