@@ -82,6 +82,10 @@ function activeCombatHero(snapshot: DdgcFrontendSnapshot) {
   return viewModel.party.find((hero) => hero.id === viewModel.activeHeroId);
 }
 
+function isCharacterHitAcknowledgement(snapshot: DdgcFrontendSnapshot): boolean {
+  return snapshot.viewModel.kind === "combat" && snapshot.viewModel.phase === "character-hit";
+}
+
 export function canTransition(
   snapshot: DdgcFrontendSnapshot,
   intent: DdgcFrontendIntent
@@ -157,6 +161,9 @@ export function canTransition(
       if (snapshot.viewModel.kind !== "combat") {
         return { allowed: false, reason: "viewModel is not a combat view model" };
       }
+      if (isCharacterHitAcknowledgement(snapshot)) {
+        return { allowed: false, reason: "select-target is not valid during character-hit acknowledgement" };
+      }
       if (!snapshot.viewModel.isPlayerTurn) {
         return { allowed: false, reason: "not player turn" };
       }
@@ -177,6 +184,9 @@ export function canTransition(
       }
       if (snapshot.viewModel.kind !== "combat") {
         return { allowed: false, reason: "viewModel is not a combat view model" };
+      }
+      if (isCharacterHitAcknowledgement(snapshot)) {
+        return { allowed: false, reason: "confirm-attack is not valid during character-hit acknowledgement" };
       }
       if (!snapshot.viewModel.isPlayerTurn) {
         return { allowed: false, reason: "not player turn" };
@@ -223,6 +233,9 @@ export function canTransition(
       if (!snapshot.viewModel.canFlee) {
         return { allowed: false, reason: "cannot flee this combat" };
       }
+      if (isCharacterHitAcknowledgement(snapshot)) {
+        return { allowed: false, reason: "flee-combat is not valid during character-hit acknowledgement" };
+      }
       return { allowed: true };
 
     case "end-turn":
@@ -231,6 +244,9 @@ export function canTransition(
       }
       if (snapshot.viewModel.kind !== "combat") {
         return { allowed: false, reason: "viewModel is not a combat view model" };
+      }
+      if (isCharacterHitAcknowledgement(snapshot)) {
+        return { allowed: false, reason: "end-turn is not valid during character-hit acknowledgement" };
       }
       if (!snapshot.viewModel.isPlayerTurn) {
         return { allowed: false, reason: "not player turn" };

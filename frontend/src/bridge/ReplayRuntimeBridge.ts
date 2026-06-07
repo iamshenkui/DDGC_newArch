@@ -98,6 +98,27 @@ function createReplayCharacterHitCombatViewModel(): CombatViewModel {
   };
 }
 
+function acknowledgeReplayCombatHit(combatVm: CombatViewModel): CombatViewModel {
+  const activeHero = combatVm.party.find((hero) => hero.id === combatVm.activeHeroId);
+  const selectedSkillId =
+    activeHero?.skills.find((skill) => skill.cooldownRemaining === 0)?.id ??
+    activeHero?.skills[0]?.id;
+
+  return {
+    ...combatVm,
+    phase: "player-turn",
+    turnPhase: "player",
+    selectedSkillId,
+    party: combatVm.party.map((hero) => ({ ...hero, isHit: false })),
+    enemies: combatVm.enemies.map((enemy) => ({ ...enemy, isHit: false })),
+    hitTargetHeroId: undefined,
+    hitDamage: undefined,
+    hitLog: undefined,
+    isPlayerTurn: true,
+    combatLog: [...combatVm.combatLog, "Hit acknowledged. Player command restored."]
+  };
+}
+
 export class ReplayRuntimeBridge implements RuntimeBridge {
   readonly id = "ddgc-replay-bridge";
   readonly mode: RuntimeMode = "replay";
@@ -434,6 +455,15 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           this.snapshot = {
             ...this.snapshot,
             debugMessage: "Replay: continue-from-combat rejected outside combat."
+          };
+          break;
+        }
+        if (this.snapshot.viewModel.kind === "combat" && this.snapshot.viewModel.phase === "character-hit") {
+          this.snapshot = {
+            ...this.snapshot,
+            flowState: "combat",
+            viewModel: acknowledgeReplayCombatHit(this.snapshot.viewModel),
+            debugMessage: "Replay: character-hit acknowledgement accepted."
           };
           break;
         }

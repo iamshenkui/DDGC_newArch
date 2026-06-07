@@ -167,6 +167,9 @@ export function DdgcApp() {
             onLaunchExpedition={() => {
               void dispatchIntent(bridge, { type: "launch-expedition" });
             }}
+            onEnterCombat={() => {
+              void dispatchIntent(bridge, { type: "enter-combat" });
+            }}
             onReturnToTown={() => {
               void dispatchIntent(bridge, { type: "return-to-town" });
             }}

@@ -509,6 +509,27 @@ const createLiveCharacterHitCombatViewModel = (): CombatViewModel => ({
   settingsLabel: "设置"
 });
 
+const acknowledgeLiveCombatHit = (combatVm: CombatViewModel): CombatViewModel => {
+  const activeHero = combatVm.party.find((hero) => hero.id === combatVm.activeHeroId);
+  const selectedSkillId =
+    activeHero?.skills.find((skill) => skill.cooldownRemaining === 0)?.id ??
+    activeHero?.skills[0]?.id;
+
+  return {
+    ...combatVm,
+    phase: "player-turn",
+    turnPhase: "player",
+    selectedSkillId,
+    party: combatVm.party.map((hero) => ({ ...hero, isHit: false })),
+    enemies: combatVm.enemies.map((enemy) => ({ ...enemy, isHit: false })),
+    hitTargetHeroId: undefined,
+    hitDamage: undefined,
+    hitLog: undefined,
+    isPlayerTurn: true,
+    combatLog: [...combatVm.combatLog, "Hit acknowledged. Player command restored."]
+  };
+};
+
 const advanceLiveCombatTurn = (combatVm: CombatViewModel): CombatViewModel => {
   const livingParty = combatVm.party.filter((hero) => hero.isAlive);
   const activeIndex = livingParty.findIndex((hero) => hero.id === combatVm.activeHeroId);
@@ -881,6 +902,15 @@ export class LiveRuntimeBridge implements RuntimeBridge {
           this.snapshot = {
             ...this.snapshot,
             debugMessage: "Live: continue-from-combat rejected outside combat."
+          };
+          break;
+        }
+        if (this.snapshot.viewModel.kind === "combat" && this.snapshot.viewModel.phase === "character-hit") {
+          this.snapshot = {
+            ...this.snapshot,
+            flowState: "combat",
+            viewModel: acknowledgeLiveCombatHit(this.snapshot.viewModel),
+            debugMessage: "Live: character-hit acknowledgement accepted."
           };
           break;
         }

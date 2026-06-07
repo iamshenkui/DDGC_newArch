@@ -434,6 +434,7 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
               <button
                 class="combat-flee-btn"
                 onClick={props.onFleeCombat}
+                disabled={isCharacterHitPhase()}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4" />
