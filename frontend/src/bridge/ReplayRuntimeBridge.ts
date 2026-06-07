@@ -6,6 +6,7 @@ import {
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayDungeonAssistViewModel,
+  replayDungeonMapViewModel,
   replayResultViewModel,
   replayReturnViewModel
 } from "../validation/replayFixtures";
@@ -18,6 +19,7 @@ import type {
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   DungeonAssistViewModel,
+  DungeonMapViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel
 } from "./contractTypes";
@@ -198,10 +200,84 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         }
         this.snapshot = {
           ...this.snapshot,
+          flowState: "dungeon-map",
+          viewModel: replayDungeonMapViewModel as DungeonMapViewModel
+        };
+        break;
+      case "enter-room": {
+        const mapVm = this.snapshot.viewModel as DungeonMapViewModel;
+        const targetRoom = mapVm.rooms.find((r) => r.id === intent.roomId);
+        if (!targetRoom) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `enter-room rejected: room "${intent.roomId}" does not exist`
+          };
+          break;
+        }
+        const currentRoom = mapVm.rooms.find((r) => r.id === mapVm.currentRoomId);
+        if (currentRoom && intent.roomId !== currentRoom.id && !currentRoom.connections.includes(intent.roomId)) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `enter-room rejected: room "${intent.roomId}" is not connected to the current room`
+          };
+          break;
+        }
+        if (targetRoom && !targetRoom.isRevealed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `enter-room rejected: room "${intent.roomId}" is not revealed`
+          };
+          break;
+        }
+        const updatedRooms = mapVm.rooms.map((room) =>
+          room.id === intent.roomId
+            ? { ...room, isVisited: true, isCurrent: true }
+            : { ...room, isCurrent: false }
+        );
+        const visitedCount = updatedRooms.filter((r) => r.isVisited).length;
+        const total = updatedRooms.length;
+        const newCompletion = Math.round((visitedCount / total) * 100);
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...mapVm,
+            currentRoomId: intent.roomId,
+            rooms: updatedRooms,
+            exploredCount: visitedCount,
+            completionPercent: newCompletion,
+            isComplete: newCompletion >= 80
+          }
+        };
+        break;
+      }
+      case "retreat-from-dungeon":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "result",
+          viewModel: {
+            ...replayResultViewModel,
+            outcome: "partial",
+            title: "Expedition Partial Success",
+            summary: "Your party retreated from the dungeon with what they could carry."
+          } as ExpeditionResultViewModel
+        };
+        break;
+      case "complete-dungeon": {
+        const mapVm = this.snapshot.viewModel as DungeonMapViewModel;
+        if (!mapVm.isComplete) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `complete-dungeon rejected: dungeon is not complete`
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
           flowState: "result",
           viewModel: replayResultViewModel as ExpeditionResultViewModel
         };
         break;
+      }
       case "return-to-town":
         if (!canTransition(this.snapshot, intent).allowed) {
           this.snapshot = {

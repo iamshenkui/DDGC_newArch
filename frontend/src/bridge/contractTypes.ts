@@ -8,6 +8,7 @@ export type FlowState =
   | "expedition"
   | "dungeon-assist"
   | "combat"
+  | "dungeon-map"
   | "result"
   | "return";
 
@@ -248,6 +249,51 @@ export interface DungeonAssistViewModel {
   canContinue: boolean;
 }
 
+export interface DungeonMapRoom {
+  id: string;
+  x: number;
+  y: number;
+  type: "entrance" | "combat" | "treasure" | "rest" | "boss" | "exit" | "empty" | "curio" | "shrine";
+  label: string;
+  isRevealed: boolean;
+  isVisited: boolean;
+  isCurrent: boolean;
+  connections: ReadonlyArray<string>;
+  difficulty?: string;
+  lootPreview?: string;
+}
+
+export interface DungeonMapHero {
+  id: string;
+  name: string;
+  classLabel: string;
+  hp: string;
+  maxHp: string;
+  stress: string;
+  maxStress: string;
+  isWounded: boolean;
+  isAfflicted: boolean;
+}
+
+export interface DungeonMapViewModel {
+  kind: "dungeon-map";
+  title: string;
+  expeditionName: string;
+  dungeonName: string;
+  currentRoomId: string;
+  rooms: ReadonlyArray<DungeonMapRoom>;
+  party: ReadonlyArray<DungeonMapHero>;
+  torchLevel: number;
+  maxTorchLevel: number;
+  exploredCount: number;
+  totalRooms: number;
+  completionPercent: number;
+  isRetreatAvailable: boolean;
+  isComplete: boolean;
+  minimapRows: number;
+  minimapCols: number;
+}
+
 export interface ExpeditionResultViewModel {
   kind: "result";
   title: string;
@@ -306,6 +352,7 @@ export type DdgcViewModel =
   | ProvisioningViewModel
   | ExpeditionSetupViewModel
   | DungeonAssistViewModel
+  | DungeonMapViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
   | UnsupportedViewModel
@@ -331,6 +378,9 @@ export type DdgcFrontendIntent =
   | { type: "select-assist-hero"; heroId: string }
   | { type: "use-assist-action"; actionId: string }
   | { type: "continue-from-dungeon" }
+  | { type: "enter-room"; roomId: string }
+  | { type: "retreat-from-dungeon" }
+  | { type: "complete-dungeon" }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }
   | { type: "resume-from-return" };

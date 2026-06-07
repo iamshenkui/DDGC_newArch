@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, DungeonAssistViewModel, ExpeditionResultViewModel, ReturnViewModel } from "../bridge/contractTypes";
+import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, DungeonAssistViewModel, DungeonMapViewModel, ExpeditionResultViewModel, ReturnViewModel } from "../bridge/contractTypes";
 import { LiveRuntimeBridge } from "../bridge/LiveRuntimeBridge";
 import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 
@@ -257,7 +257,7 @@ describe("provisioning and expedition launch flow", () => {
     expect(snapshot.debugMessage).toContain("rejected");
   });
 
-  it("replay continue-from-dungeon transitions to result state", async () => {
+  it("replay continue-from-dungeon transitions to dungeon-map state", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
@@ -267,11 +267,11 @@ describe("provisioning and expedition launch flow", () => {
 
     const snapshot = await bridge.dispatchIntent({ type: "continue-from-dungeon" });
 
-    expect(snapshot.flowState).toBe("result");
-    expect(snapshot.viewModel.kind).toBe("result");
-    const resultVm = snapshot.viewModel as ExpeditionResultViewModel;
-    expect(resultVm.kind).toBe("result");
-    expect(["success", "failure", "partial"]).toContain(resultVm.outcome);
+    expect(snapshot.flowState).toBe("dungeon-map");
+    expect(snapshot.viewModel.kind).toBe("dungeon-map");
+    const mapVm = snapshot.viewModel as DungeonMapViewModel;
+    expect(mapVm.rooms.length).toBeGreaterThan(0);
+    expect(mapVm.party.length).toBeGreaterThan(0);
   });
 
   it("replay rejects continue-from-dungeon before assist action is used", async () => {
@@ -462,6 +462,57 @@ describe("provisioning and expedition launch flow", () => {
     expect(snapshot.debugMessage).toContain("rejected");
   });
 
+  it("replay enter-room updates current room and exploration progress", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-combat-1" });
+
+    expect(snapshot.viewModel.kind).toBe("dungeon-map");
+    const mapVm = snapshot.viewModel as DungeonMapViewModel;
+    expect(mapVm.currentRoomId).toBe("room-combat-1");
+    expect(mapVm.exploredCount).toBeGreaterThan(1);
+  });
+
+  it("replay retreat-from-dungeon transitions to result with partial outcome", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "retreat-from-dungeon" });
+
+    expect(snapshot.flowState).toBe("result");
+    expect(snapshot.viewModel.kind).toBe("result");
+    const resultVm = snapshot.viewModel as ExpeditionResultViewModel;
+    expect(resultVm.outcome).toBe("partial");
+  });
+
+  it("replay complete-dungeon is rejected when dungeon is not complete", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "complete-dungeon" });
+
+    expect(snapshot.viewModel.kind).toBe("dungeon-map");
+    expect(snapshot.debugMessage).toContain("not complete");
+    const mapVm = snapshot.viewModel as DungeonMapViewModel;
+    expect(mapVm.isComplete).toBe(false);
+  });
+
   it("town -> provision -> launch path is reproducible in replay", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
@@ -514,6 +565,7 @@ describe("result and return meta-loop continuation", () => {
     await bridge.dispatchIntent({ type: "launch-expedition" });
     await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
     await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    await bridge.dispatchIntent({ type: "retreat-from-dungeon" });
 
     const snapshot = await bridge.dispatchIntent({ type: "continue-from-result" });
     expect(snapshot.flowState).toBe("return");
@@ -530,6 +582,7 @@ describe("result and return meta-loop continuation", () => {
     await bridge.dispatchIntent({ type: "launch-expedition" });
     await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
     await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    await bridge.dispatchIntent({ type: "retreat-from-dungeon" });
     await bridge.dispatchIntent({ type: "continue-from-result" });
 
     const snapshot = await bridge.dispatchIntent({ type: "resume-from-return" });
@@ -545,6 +598,7 @@ describe("result and return meta-loop continuation", () => {
     await bridge.dispatchIntent({ type: "launch-expedition" });
     await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
     await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    await bridge.dispatchIntent({ type: "retreat-from-dungeon" });
 
     const snapshot = await bridge.dispatchIntent({ type: "continue-from-result" });
     expect(snapshot.flowState).toBe("return");
@@ -561,6 +615,7 @@ describe("result and return meta-loop continuation", () => {
     await bridge.dispatchIntent({ type: "launch-expedition" });
     await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
     await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    await bridge.dispatchIntent({ type: "retreat-from-dungeon" });
     await bridge.dispatchIntent({ type: "continue-from-result" });
 
     const snapshot = await bridge.dispatchIntent({ type: "resume-from-return" });
@@ -578,8 +633,12 @@ describe("result and return meta-loop continuation", () => {
     await bridge.dispatchIntent({ type: "launch-expedition" });
     await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
 
-    // Continue from dungeon-assist -> result
-    const resultSnap = await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    // Continue from dungeon-assist -> dungeon-map -> result
+    const mapSnap = await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    expect(mapSnap.flowState).toBe("dungeon-map");
+    expect(mapSnap.viewModel.kind).toBe("dungeon-map");
+
+    const resultSnap = await bridge.dispatchIntent({ type: "retreat-from-dungeon" });
     expect(resultSnap.flowState).toBe("result");
     expect(resultSnap.viewModel.kind).toBe("result");
 
@@ -609,8 +668,9 @@ describe("result and return meta-loop continuation", () => {
     await bridge.dispatchIntent({ type: "launch-expedition" });
     await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
 
-    // Continue from dungeon-assist -> result -> return -> town
+    // Continue from dungeon-assist -> dungeon-map -> result -> return -> town
     await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    await bridge.dispatchIntent({ type: "retreat-from-dungeon" });
     await bridge.dispatchIntent({ type: "continue-from-result" });
     const townSnapshot = await bridge.dispatchIntent({ type: "resume-from-return" });
     expect(townSnapshot.flowState).toBe("town");

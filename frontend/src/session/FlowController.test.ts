@@ -5,6 +5,7 @@ import type {
   DdgcFrontendSnapshot,
   ExpeditionResultViewModel,
   ReturnViewModel,
+  DungeonMapViewModel,
 } from "../bridge/contractTypes";
 import {
   fatalSnapshot,
@@ -18,6 +19,7 @@ import {
   provisioningSnapshot,
   expeditionSnapshot,
   dungeonAssistSnapshot,
+  dungeonMapSnapshot,
   resultSnapshot,
   failureResultSnapshot,
   partialResultSnapshot,
@@ -85,6 +87,11 @@ describe("FlowController", () => {
       expect(screen).toBe("dungeon-assist");
     });
 
+    it("returns dungeon-map screen for dungeon map view model", () => {
+      const screen = resolveScreen(dungeonMapSnapshot);
+      expect(screen).toBe("dungeon-map");
+    });
+
     it("returns result screen for result view model", () => {
       const screen = resolveScreen(resultSnapshot);
       expect(screen).toBe("result");
@@ -108,7 +115,7 @@ describe("FlowController", () => {
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "dungeon-assist", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "dungeon-assist", "dungeon-map", "result", "return", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -120,6 +127,7 @@ describe("ScreenKey exhaustiveness", () => {
       provisioning: provisioningSnapshot,
       expedition: expeditionSnapshot,
       "dungeon-assist": dungeonAssistSnapshot,
+      "dungeon-map": dungeonMapSnapshot,
       result: resultSnapshot,
       return: returnSnapshot,
       unsupported: unsupportedSnapshot,
@@ -472,6 +480,113 @@ describe("canTransition - result and return meta-loop continuation", () => {
       const validation = canTransition(replayReadySnapshot, { type: "building-action", actionId: "train-combat" });
       expect(validation.allowed).toBe(false);
       expect(validation.reason).toContain("only valid in building-detail");
+    });
+  });
+
+  describe("dungeon-map transitions", () => {
+    it("allows enter-room when room exists and is connected", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "room-combat-1" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects enter-room when not on dungeon-map screen", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "enter-room", roomId: "room-combat-1" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on dungeon-map screen");
+    });
+
+    it("rejects enter-room when not on dungeon-map screen (result)", () => {
+      const validation = canTransition(resultSnapshot, { type: "enter-room", roomId: "room-combat-1" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on dungeon-map screen");
+    });
+
+    it("rejects enter-room when roomId is missing", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("roomId is required");
+    });
+
+    it("rejects enter-room when room does not exist", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "nonexistent-room" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("does not exist");
+    });
+
+    it("rejects enter-room when room is not connected to current room", () => {
+      // room-boss-1 is not connected to room-entrance (the current room in the fixture)
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "room-boss-1" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not connected");
+    });
+
+    it("rejects enter-room when room is hidden (not revealed)", () => {
+      // room-boss-1 is hidden in the fixture; make it connected to current room for this test
+      const mapVm = dungeonMapSnapshot.viewModel as DungeonMapViewModel;
+      const hiddenRoomSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonMapSnapshot,
+        viewModel: {
+          ...mapVm,
+          rooms: mapVm.rooms.map((r) =>
+            r.id === "room-entrance"
+              ? { ...r, connections: [...r.connections, "room-boss-1"] }
+              : r
+          )
+        }
+      };
+      const validation = canTransition(hiddenRoomSnapshot, { type: "enter-room", roomId: "room-boss-1" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not revealed");
+    });
+
+    it("allows retreat-from-dungeon when retreat is available", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "retreat-from-dungeon" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects retreat-from-dungeon when not on dungeon-map screen", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "retreat-from-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on dungeon-map screen");
+    });
+
+    it("rejects retreat-from-dungeon when retreat is not available", () => {
+      const mapVm = dungeonMapSnapshot.viewModel as DungeonMapViewModel;
+      const noRetreatSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonMapSnapshot,
+        viewModel: {
+          ...mapVm,
+          isRetreatAvailable: false
+        }
+      };
+      const validation = canTransition(noRetreatSnapshot, { type: "retreat-from-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("retreat is not available");
+    });
+
+    it("rejects complete-dungeon when dungeon is not complete", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "complete-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not complete");
+    });
+
+    it("allows complete-dungeon when dungeon is complete", () => {
+      const mapVm = dungeonMapSnapshot.viewModel as DungeonMapViewModel;
+      const completeSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonMapSnapshot,
+        viewModel: {
+          ...mapVm,
+          isComplete: true
+        }
+      };
+      const validation = canTransition(completeSnapshot, { type: "complete-dungeon" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects complete-dungeon when not on dungeon-map screen", () => {
+      const validation = canTransition(resultSnapshot, { type: "complete-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on dungeon-map screen");
     });
   });
 
