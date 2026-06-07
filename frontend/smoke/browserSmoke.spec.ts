@@ -399,8 +399,49 @@ test.describe("browser smoke: fidelity gates", () => {
       "Expedition launch screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5d. Expedition → Dungeon Map
+    // 5d. Expedition -> Dungeon Assist
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await page.waitForSelector("[data-testid='dungeon-assist-screen']", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.locator("[data-testid='dungeon-assist-screen']"),
+      "Dungeon assist screen must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("Dungeon Assist"),
+      "Dungeon assist eyebrow must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("QingLong Depths"),
+      "Dungeon name must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator("[data-testid='hero-detail-panel']"),
+      "Hero detail panel must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator("[data-testid='assist-action-panel']"),
+      "Assist action panel must be visible"
+    ).toBeVisible();
+    await expectFidelity(
+      page.locator(".dungeon-assist-viewport"),
+      "Dungeon assist screen"
+    );
+    await expectFullPageFidelity(page, "Dungeon assist screen");
+
+    // Landscape viewport check for dungeon-assist screen
+    await expect(
+      page.locator(".dungeon-assist-viewport"),
+      "Dungeon assist screen must use .dungeon-assist-viewport landscape layout"
+    ).toBeVisible();
+
+    // Use an assist action to enable continue
+    await page.locator("[data-testid='assist-action-heal-wound']").click();
+    await settle(page);
+
+    // 5e. Dungeon Assist -> Dungeon Map
+    await page.getByRole("button", { name: "Continue Expedition" }).click();
     await page.waitForSelector(".dungeon-map-viewport", { timeout: 5_000 });
     await settle(page);
 
@@ -440,7 +481,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Dungeon map screen must use .dungeon-map-viewport landscape layout"
     ).toBeVisible();
 
-    // 5e. Dungeon Map → navigate to a room
+    // 5f. Dungeon Map -> navigate to a room
     await page.locator('[data-room-id="room-combat-1"]').click();
     await settle(page);
 
@@ -449,12 +490,12 @@ test.describe("browser smoke: fidelity gates", () => {
       "Room navigation must update current room"
     ).toBeVisible();
 
-    // 5e-b. Non-accessible room must not navigate
+    // 5f-b. Non-accessible room must not navigate
     // room-boss-1 is not connected to room-combat-1; clicking it should keep current room
     const inaccessibleRoom = page.locator('[data-room-id="room-boss-1"] .dungeon-room-btn');
     await expect(inaccessibleRoom, "Non-accessible room button must be disabled").toBeDisabled();
 
-    // 5f. Dungeon Map → Result (retreat from dungeon)
+    // 5g. Dungeon Map -> Result (retreat from dungeon)
     await page.getByRole("button", { name: "Retreat" }).click();
     await settle(page);
 
@@ -486,7 +527,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Result screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5g. Result → Return
+    // 5h. Result -> Return
     await page.getByRole("button", { name: "Proceed to Return" }).click();
     await settle(page);
 
@@ -514,7 +555,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Return screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5h. Return → Town (back to the meta-loop)
+    // 5i. Return -> Town (back to the meta-loop)
     await page.getByRole("button", { name: "Resume Town Activities" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
@@ -669,6 +710,22 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await page.waitForSelector("[data-testid='dungeon-assist-screen']", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.locator("[data-testid='dungeon-assist-screen']"),
+      "Live dungeon assist screen must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("Dungeon Assist"),
+      "Live dungeon assist eyebrow must be visible"
+    ).toBeVisible();
+
+    await page.locator("[data-testid='assist-action-heal-wound']").click();
+    await settle(page);
+
+    await page.getByRole("button", { name: "Continue Expedition" }).click();
     await page.waitForSelector(".dungeon-map-viewport", { timeout: 5_000 });
     await settle(page);
 
@@ -681,7 +738,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Live dungeon rooms must render"
     ).toHaveCount(10);
 
-    // Retreat from live dungeon to result
+    // Retreat from live dungeon map to result
     await page.getByRole("button", { name: "Retreat" }).click();
     await settle(page);
 
@@ -763,7 +820,7 @@ test.describe("browser smoke: fidelity gates", () => {
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
 
-    // Boot replay and go through provisioning → expedition → dungeon map
+    // Boot replay and go through provisioning -> expedition -> dungeon assist -> dungeon map
     await page.getByRole("button", { name: "Boot Replay" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 8_000 });
     await settle(page);
@@ -776,6 +833,13 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page);
 
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await page.waitForSelector("[data-testid='dungeon-assist-screen']", { timeout: 5_000 });
+    await settle(page);
+
+    await page.locator("[data-testid='assist-action-heal-wound']").click();
+    await settle(page);
+
+    await page.getByRole("button", { name: "Continue Expedition" }).click();
     await page.waitForSelector(".dungeon-map-viewport", { timeout: 5_000 });
     await settle(page);
 

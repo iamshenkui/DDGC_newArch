@@ -1,5 +1,6 @@
 import type { RuntimeMode } from "../app/runtimeMode";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
+import { canTransition } from "../session/FlowController";
 import type {
   DdgcFrontendIntent,
   DdgcFrontendSnapshot,
@@ -10,6 +11,7 @@ import type {
   BuildingDetailViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  DungeonAssistViewModel,
   DungeonMapViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
@@ -302,6 +304,26 @@ const createLiveExpeditionViewModel = (): ExpeditionSetupViewModel => ({
   isLaunchable: true
 });
 
+const createLiveDungeonAssistViewModel = (): DungeonAssistViewModel => ({
+  kind: "dungeon-assist",
+  title: "Dungeon Assist",
+  dungeonName: "The Azure Lantern Expedition",
+  roomNumber: 1,
+  party: [
+    { id: "hero-hunter-live-01", name: "Yuan", classLabel: "Hunter", hp: "42 / 42", maxHp: "42", stress: "0", maxStress: "200", level: 1, isSelected: true },
+    { id: "hero-white-live-01", name: "Mei", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "0", maxStress: "200", level: 1, isSelected: false }
+  ],
+  selectedHeroId: "hero-hunter-live-01",
+  assistActions: [
+    { id: "heal-wound", label: "Heal", description: "Restore health to selected hero", iconType: "heal", isAvailable: true },
+    { id: "reduce-stress", label: "Calm", description: "Reduce stress of selected hero", iconType: "calm", isAvailable: true },
+    { id: "apply-buff", label: "Buff", description: "Apply a combat buff", iconType: "buff", isAvailable: false },
+    { id: "remove-debuff", label: "Cleanse", description: "Remove negative status", iconType: "cleanse", isAvailable: false },
+    { id: "guard-ally", label: "Guard", description: "Guard an ally", iconType: "guard", isAvailable: false }
+  ],
+  canContinue: false
+});
+
 const createLiveDungeonMapViewModel = (): DungeonMapViewModel => ({
   kind: "dungeon-map",
   title: "Dungeon Map",
@@ -472,6 +494,84 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "launch-expedition":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: launch-expedition rejected from current state."
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-assist",
+          viewModel: createLiveDungeonAssistViewModel()
+        };
+        break;
+      case "enter-dungeon-assist":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: enter-dungeon-assist rejected outside expedition."
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-assist",
+          viewModel: createLiveDungeonAssistViewModel()
+        };
+        break;
+      case "select-assist-hero": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: assist hero ${intent.heroId} rejected.`
+          };
+          break;
+        }
+        const assistVm = this.snapshot.viewModel as DungeonAssistViewModel;
+        const updatedParty = assistVm.party.map((hero) =>
+          hero.id === intent.heroId
+            ? { ...hero, isSelected: true }
+            : { ...hero, isSelected: false }
+        );
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...assistVm,
+            party: updatedParty,
+            selectedHeroId: intent.heroId
+          }
+        };
+        break;
+      }
+      case "use-assist-action": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: assist action ${intent.actionId} rejected.`
+          };
+          break;
+        }
+        const assistVm = this.snapshot.viewModel as DungeonAssistViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...assistVm,
+            canContinue: true
+          },
+          debugMessage: `Live: assist action ${intent.actionId} used.`
+        };
+        break;
+      }
+      case "continue-from-dungeon":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: continue-from-dungeon rejected until dungeon assist is ready."
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "dungeon-map",
@@ -553,9 +653,23 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "return-to-town":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: return-to-town rejected from current screen."
+          };
+          break;
+        }
         this.snapshot = createLiveTownSnapshot();
         break;
       case "continue-from-result":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: continue-from-result rejected outside result."
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "return",
@@ -563,6 +677,13 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "resume-from-return":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: resume-from-return rejected outside return."
+          };
+          break;
+        }
         this.snapshot = createLiveTownSnapshot();
         break;
     }

@@ -2,6 +2,7 @@ import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
   DdgcFrontendSnapshot,
+  DungeonAssistViewModel,
   ExpeditionSetupViewModel,
   DungeonMapViewModel,
   ExpeditionResultViewModel,
@@ -517,6 +518,27 @@ export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
   isLaunchable: true
 };
 
+export const replayDungeonAssistViewModel: DungeonAssistViewModel = {
+  kind: "dungeon-assist",
+  title: "Dungeon Assist",
+  dungeonName: "QingLong Depths",
+  roomNumber: 1,
+  party: [
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", stress: "17", maxStress: "200", level: 2, isSelected: true },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "8", maxStress: "200", level: 2, isSelected: false },
+    { id: "hero-black-01", name: "Hei Zhen", classLabel: "Black", hp: "34 / 40", maxHp: "40", stress: "24", maxStress: "200", level: 1, isSelected: false }
+  ],
+  selectedHeroId: "hero-hunter-01",
+  assistActions: [
+    { id: "heal-wound", label: "Heal", description: "Restore health to selected hero", iconType: "heal", isAvailable: true },
+    { id: "reduce-stress", label: "Calm", description: "Reduce stress of selected hero", iconType: "calm", isAvailable: true },
+    { id: "apply-buff", label: "Buff", description: "Apply a combat buff", iconType: "buff", isAvailable: false },
+    { id: "remove-debuff", label: "Cleanse", description: "Remove negative status", iconType: "cleanse", isAvailable: false },
+    { id: "guard-ally", label: "Guard", description: "Guard an ally", iconType: "guard", isAvailable: false }
+  ],
+  canContinue: false
+};
+
 export const replayDungeonMapViewModel: DungeonMapViewModel = {
   kind: "dungeon-map",
   title: "Dungeon Map",
@@ -861,6 +883,14 @@ export const expeditionSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing expedition launch screen."
 };
 
+// Dungeon assist flow snapshot
+export const dungeonAssistSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "dungeon-assist",
+  viewModel: replayDungeonAssistViewModel,
+  debugMessage: "Replay bridge showing dungeon assist screen."
+};
+
 // Dungeon map flow snapshot
 export const dungeonMapSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -919,7 +949,7 @@ export function validateSnapshotContract(snapshot: DdgcFrontendSnapshot): string
   }
 
   // FlowState must be a valid FlowState
-  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "dungeon-map", "result", "return"];
+  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "dungeon-assist", "combat", "dungeon-map", "result", "return"];
   if (!validFlowStates.includes(snapshot.flowState as FlowState)) {
     errors.push(
       `flowState "${String(snapshot.flowState)}" is not a valid FlowState. ` +
@@ -974,6 +1004,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     town: ["town", "hero-detail", "building-detail"],
     provisioning: ["provisioning"],
     expedition: ["expedition"],
+    "dungeon-assist": ["dungeon-assist"],
     combat: ["expedition"],
     "dungeon-map": ["dungeon-map"],
     result: ["result"],
@@ -1053,6 +1084,16 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (typeof vm.isLaunchable !== "boolean") e.push("ExpeditionSetupViewModel: isLaunchable is not a boolean");
       if (!vm.supplyLevel || typeof vm.supplyLevel !== "string") e.push("ExpeditionSetupViewModel: supplyLevel is missing");
       if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ExpeditionSetupViewModel: provisionCost is missing");
+      break;
+    }
+    case "dungeon-assist": {
+      if (!vm.title || typeof vm.title !== "string") e.push("DungeonAssistViewModel: title is missing");
+      if (!vm.dungeonName || typeof vm.dungeonName !== "string") e.push("DungeonAssistViewModel: dungeonName is missing");
+      if (typeof vm.roomNumber !== "number") e.push("DungeonAssistViewModel: roomNumber is not a number");
+      if (!Array.isArray(vm.party)) { e.push("DungeonAssistViewModel: party is not an array"); } else if (vm.party.length === 0) { e.push("DungeonAssistViewModel: party array is empty"); }
+      if (!vm.selectedHeroId || typeof vm.selectedHeroId !== "string") e.push("DungeonAssistViewModel: selectedHeroId is missing");
+      if (!Array.isArray(vm.assistActions)) e.push("DungeonAssistViewModel: assistActions is not an array");
+      if (typeof vm.canContinue !== "boolean") e.push("DungeonAssistViewModel: canContinue is not a boolean");
       break;
     }
     case "dungeon-map": {
