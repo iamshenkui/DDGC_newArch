@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { resolveScreen, canTransition, type ScreenKey } from "./FlowController";
 import type {
   DdgcFrontendSnapshot,
+  DungeonMapViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
 } from "../bridge/contractTypes";
@@ -17,6 +18,7 @@ import {
   startupSnapshot,
   provisioningSnapshot,
   expeditionSnapshot,
+  dungeonMapSnapshot,
   resultSnapshot,
   failureResultSnapshot,
   partialResultSnapshot,
@@ -79,6 +81,11 @@ describe("FlowController", () => {
       expect(screen).toBe("expedition");
     });
 
+    it("returns dungeon-map screen for dungeon-map view model", () => {
+      const screen = resolveScreen(dungeonMapSnapshot);
+      expect(screen).toBe("dungeon-map");
+    });
+
     it("returns result screen for result view model", () => {
       const screen = resolveScreen(resultSnapshot);
       expect(screen).toBe("result");
@@ -102,7 +109,7 @@ describe("FlowController", () => {
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "dungeon-map", "result", "return", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -113,6 +120,7 @@ describe("ScreenKey exhaustiveness", () => {
       "building-detail": replayBuildingDetailSnapshot,
       provisioning: provisioningSnapshot,
       expedition: expeditionSnapshot,
+      "dungeon-map": dungeonMapSnapshot,
       result: resultSnapshot,
       return: returnSnapshot,
       unsupported: unsupportedSnapshot,
@@ -376,6 +384,104 @@ describe("canTransition - result and return meta-loop continuation", () => {
       const validation = canTransition(expeditionSnapshot, { type: "open-building", buildingId: "guild" });
       expect(validation.allowed).toBe(false);
       expect(validation.reason).toContain("only valid in town");
+    });
+  });
+
+  describe("dungeon-map transitions", () => {
+    it("allows enter-room when roomId exists and is not cleared", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "room-4" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects enter-room when roomId is missing", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("roomId is required");
+    });
+
+    it("rejects enter-room when roomId does not exist", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "room-999" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("does not exist");
+    });
+
+    it("rejects enter-room when room is already cleared", () => {
+      const dungeonVm = dungeonMapSnapshot.viewModel as DungeonMapViewModel;
+      const clearedDungeonSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonMapSnapshot,
+        viewModel: {
+          ...dungeonVm,
+          rooms: [
+            { roomId: "room-1", kind: "combat", cleared: true, isCurrent: false },
+            { roomId: "room-2", kind: "corridor", cleared: false, isCurrent: true }
+          ],
+          totalRooms: 2,
+          roomsCleared: 1,
+          currentRoom: { roomId: "room-2", kind: "corridor", cleared: false, isCurrent: true }
+        }
+      };
+      const validation = canTransition(clearedDungeonSnapshot, { type: "enter-room", roomId: "room-1" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("already been cleared");
+    });
+
+    it("rejects enter-room when not on dungeon-map screen", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "enter-room", roomId: "room-1" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on dungeon-map screen");
+    });
+
+    it("rejects enter-room when dungeon is complete", () => {
+      const dungeonVm = dungeonMapSnapshot.viewModel as DungeonMapViewModel;
+      const completeDungeonSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonMapSnapshot,
+        viewModel: {
+          ...dungeonVm,
+          isComplete: true
+        }
+      };
+      const validation = canTransition(completeDungeonSnapshot, { type: "enter-room", roomId: "room-4" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("already complete");
+    });
+
+    it("allows flee-dungeon on dungeon-map screen", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "flee-dungeon" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects flee-dungeon when not on dungeon-map screen", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "flee-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on dungeon-map screen");
+    });
+
+    it("rejects flee-dungeon when dungeon is complete", () => {
+      const dungeonVm = dungeonMapSnapshot.viewModel as DungeonMapViewModel;
+      const completeDungeonSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonMapSnapshot,
+        viewModel: {
+          ...dungeonVm,
+          isComplete: true
+        }
+      };
+      const validation = canTransition(completeDungeonSnapshot, { type: "flee-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("cannot flee a completed dungeon");
+    });
+
+    it("rejects flee-dungeon when party has already fled", () => {
+      const dungeonVm = dungeonMapSnapshot.viewModel as DungeonMapViewModel;
+      const fledDungeonSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonMapSnapshot,
+        viewModel: {
+          ...dungeonVm,
+          partyFled: true
+        }
+      };
+      const validation = canTransition(fledDungeonSnapshot, { type: "flee-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("already fled");
     });
   });
 

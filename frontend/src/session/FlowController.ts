@@ -7,10 +7,11 @@ import type {
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   HeroDetailViewModel,
-  BuildingDetailViewModel
+  BuildingDetailViewModel,
+  DungeonMapViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "dungeon-map" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -39,6 +40,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "expedition") {
     return "expedition";
+  }
+
+  if (snapshot.viewModel.kind === "dungeon-map") {
+    return "dungeon-map";
   }
 
   if (snapshot.viewModel.kind === "result") {
@@ -125,6 +130,52 @@ export function canTransition(
       }
       if (!snapshot.viewModel.isLaunchable) {
         return { allowed: false, reason: "expedition is not launchable" };
+      }
+      return { allowed: true };
+
+    case "enter-room":
+      if (screen !== "dungeon-map") {
+        return { allowed: false, reason: "enter-room is only valid on dungeon-map screen" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-map") {
+        return { allowed: false, reason: "viewModel is not a dungeon-map view model" };
+      }
+      if (!intent.roomId || intent.roomId.length === 0) {
+        return { allowed: false, reason: "roomId is required" };
+      }
+      {
+        const dungeonVm = snapshot.viewModel as DungeonMapViewModel;
+        const targetRoom = dungeonVm.rooms.find((r) => r.roomId === intent.roomId);
+        if (!targetRoom) {
+          return { allowed: false, reason: `roomId "${intent.roomId}" does not exist in dungeon map` };
+        }
+        if (targetRoom.cleared) {
+          return { allowed: false, reason: `room "${intent.roomId}" has already been cleared` };
+        }
+        if (dungeonVm.isComplete) {
+          return { allowed: false, reason: "dungeon is already complete" };
+        }
+        if (dungeonVm.partyFled) {
+          return { allowed: false, reason: "party has fled the dungeon" };
+        }
+      }
+      return { allowed: true };
+
+    case "flee-dungeon":
+      if (screen !== "dungeon-map") {
+        return { allowed: false, reason: "flee-dungeon is only valid on dungeon-map screen" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-map") {
+        return { allowed: false, reason: "viewModel is not a dungeon-map view model" };
+      }
+      {
+        const dungeonVm = snapshot.viewModel as DungeonMapViewModel;
+        if (dungeonVm.isComplete) {
+          return { allowed: false, reason: "cannot flee a completed dungeon" };
+        }
+        if (dungeonVm.partyFled) {
+          return { allowed: false, reason: "party has already fled" };
+        }
       }
       return { allowed: true };
 

@@ -10,6 +10,7 @@ import type {
   BuildingDetailViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  DungeonMapViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
 } from "./contractTypes";
@@ -301,6 +302,32 @@ const createLiveExpeditionViewModel = (): ExpeditionSetupViewModel => ({
   isLaunchable: true
 });
 
+const createLiveDungeonMapViewModel = (): DungeonMapViewModel => ({
+  kind: "dungeon-map",
+  title: "Azure Lantern Depths",
+  dungeonType: "QingLong",
+  mapSize: "Short",
+  floor: 1,
+  rooms: [
+    { roomId: "room-1", kind: "combat", cleared: false, isCurrent: true },
+    { roomId: "room-2", kind: "corridor", cleared: false, isCurrent: false },
+    { roomId: "room-3", kind: "event", cleared: false, isCurrent: false, curioId: "curio-ancient-vase" },
+    { roomId: "room-4", kind: "combat", cleared: false, isCurrent: false, trapId: "trap-spike" },
+    { roomId: "room-5", kind: "boss", cleared: false, isCurrent: false }
+  ],
+  roomsCleared: 0,
+  totalRooms: 5,
+  currentRoom: { roomId: "room-1", kind: "combat", cleared: false, isCurrent: true },
+  goldCarried: 100,
+  torchlight: 100,
+  heroes: [
+    { id: "hero-hunter-live-01", name: "Yuan", classLabel: "Hunter", hp: "42 / 42", maxHp: "42", stress: "0", maxStress: "200", isAtDeathsDoor: false, isDead: false },
+    { id: "hero-white-live-01", name: "Mei", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "0", maxStress: "200", isAtDeathsDoor: false, isDead: false }
+  ],
+  isComplete: false,
+  partyFled: false
+});
+
 const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
   kind: "result",
   title: "Expedition Complete",
@@ -440,10 +467,47 @@ export class LiveRuntimeBridge implements RuntimeBridge {
       case "launch-expedition":
         this.snapshot = {
           ...this.snapshot,
-          flowState: "result",
-          viewModel: createLiveResultViewModel()
+          flowState: "dungeon",
+          viewModel: createLiveDungeonMapViewModel()
         };
         break;
+      case "enter-room": {
+        const dungeonVm = this.snapshot.viewModel as DungeonMapViewModel;
+        const updatedRooms = dungeonVm.rooms.map((room) =>
+          room.roomId === intent.roomId
+            ? { ...room, cleared: true, isCurrent: true }
+            : { ...room, isCurrent: false }
+        );
+        const clearedCount = updatedRooms.filter((r) => r.cleared).length;
+        const isComplete = clearedCount >= dungeonVm.totalRooms;
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: isComplete ? "result" : "dungeon",
+          viewModel: isComplete
+            ? createLiveResultViewModel()
+            : {
+                ...dungeonVm,
+                rooms: updatedRooms,
+                roomsCleared: clearedCount,
+                currentRoom: updatedRooms.find((r) => r.roomId === intent.roomId) ?? dungeonVm.currentRoom,
+                isComplete
+              }
+        };
+        break;
+      }
+      case "flee-dungeon": {
+        const dungeonVm = this.snapshot.viewModel as DungeonMapViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "return",
+          viewModel: {
+            ...createLiveReturnViewModel(),
+            title: "Retreating from Dungeon",
+            summary: "The party has fled the dungeon. Survivors are returning to town."
+          }
+        };
+        break;
+      }
       case "return-to-town":
         this.snapshot = createLiveTownSnapshot();
         break;

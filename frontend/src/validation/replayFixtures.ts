@@ -2,6 +2,7 @@ import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
   DdgcFrontendSnapshot,
+  DungeonMapViewModel,
   ExpeditionSetupViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
@@ -516,6 +517,32 @@ export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
   isLaunchable: true
 };
 
+export const replayDungeonMapViewModel: DungeonMapViewModel = {
+  kind: "dungeon-map",
+  title: "Azure Lantern Depths",
+  dungeonType: "QingLong",
+  mapSize: "Short",
+  floor: 1,
+  rooms: [
+    { roomId: "room-1", kind: "combat", cleared: true, isCurrent: false },
+    { roomId: "room-2", kind: "corridor", cleared: true, isCurrent: false },
+    { roomId: "room-3", kind: "event", cleared: false, isCurrent: true, curioId: "curio-ancient-vase" },
+    { roomId: "room-4", kind: "combat", cleared: false, isCurrent: false, trapId: "trap-spike" },
+    { roomId: "room-5", kind: "boss", cleared: false, isCurrent: false }
+  ],
+  roomsCleared: 2,
+  totalRooms: 5,
+  currentRoom: { roomId: "room-3", kind: "event", cleared: false, isCurrent: true, curioId: "curio-ancient-vase" },
+  goldCarried: 150,
+  torchlight: 85,
+  heroes: [
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "34 / 42", maxHp: "42", stress: "29", maxStress: "200", isAtDeathsDoor: false, isDead: false },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "33 / 41", maxHp: "41", stress: "16", maxStress: "200", isAtDeathsDoor: false, isDead: false }
+  ],
+  isComplete: false,
+  partyFled: false
+};
+
 export const replayResultViewModel: ExpeditionResultViewModel = {
   kind: "result",
   title: "Expedition Complete",
@@ -827,6 +854,14 @@ export const expeditionSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing expedition launch screen."
 };
 
+// Dungeon map flow snapshot
+export const dungeonMapSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "dungeon",
+  viewModel: replayDungeonMapViewModel,
+  debugMessage: "Replay bridge showing dungeon map screen."
+};
+
 // Result snapshots (success, failure, partial)
 export const resultSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -877,7 +912,7 @@ export function validateSnapshotContract(snapshot: DdgcFrontendSnapshot): string
   }
 
   // FlowState must be a valid FlowState
-  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "result", "return"];
+  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "dungeon", "combat", "result", "return"];
   if (!validFlowStates.includes(snapshot.flowState as FlowState)) {
     errors.push(
       `flowState "${String(snapshot.flowState)}" is not a valid FlowState. ` +
@@ -932,6 +967,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     town: ["town", "hero-detail", "building-detail"],
     provisioning: ["provisioning"],
     expedition: ["expedition"],
+    dungeon: ["dungeon-map"],
     combat: ["expedition"],
     result: ["result"],
     return: ["return"],
@@ -1010,6 +1046,21 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (typeof vm.isLaunchable !== "boolean") e.push("ExpeditionSetupViewModel: isLaunchable is not a boolean");
       if (!vm.supplyLevel || typeof vm.supplyLevel !== "string") e.push("ExpeditionSetupViewModel: supplyLevel is missing");
       if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ExpeditionSetupViewModel: provisionCost is missing");
+      break;
+    }
+    case "dungeon-map": {
+      if (!vm.title || typeof vm.title !== "string") e.push("DungeonMapViewModel: title is missing");
+      if (!vm.dungeonType || typeof vm.dungeonType !== "string") e.push("DungeonMapViewModel: dungeonType is missing");
+      if (!vm.mapSize || typeof vm.mapSize !== "string") e.push("DungeonMapViewModel: mapSize is missing");
+      if (typeof vm.floor !== "number") e.push("DungeonMapViewModel: floor is not a number");
+      if (!Array.isArray(vm.rooms)) { e.push("DungeonMapViewModel: rooms is not an array"); } else if (vm.rooms.length === 0) { e.push("DungeonMapViewModel: rooms array is empty"); }
+      if (typeof vm.roomsCleared !== "number") e.push("DungeonMapViewModel: roomsCleared is not a number");
+      if (typeof vm.totalRooms !== "number") e.push("DungeonMapViewModel: totalRooms is not a number");
+      if (typeof vm.goldCarried !== "number") e.push("DungeonMapViewModel: goldCarried is not a number");
+      if (typeof vm.torchlight !== "number") e.push("DungeonMapViewModel: torchlight is not a number");
+      if (!Array.isArray(vm.heroes)) { e.push("DungeonMapViewModel: heroes is not an array"); } else if (vm.heroes.length === 0) { e.push("DungeonMapViewModel: heroes array is empty"); }
+      if (typeof vm.isComplete !== "boolean") e.push("DungeonMapViewModel: isComplete is not a boolean");
+      if (typeof vm.partyFled !== "boolean") e.push("DungeonMapViewModel: partyFled is not a boolean");
       break;
     }
     case "result": {

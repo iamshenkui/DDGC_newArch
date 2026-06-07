@@ -9,7 +9,7 @@
  * 1. Startup → replay boot → town shell (deterministic replay bridge)
  * 2. Hero detail screen with tab navigation
  * 3. Building detail screen with actions
- * 4. Full meta-loop: provisioning → expedition → result → return → town
+ * 4. Full meta-loop: provisioning → expedition → dungeon map → result → return → town
  * 5. Live bridge boot path
  * 6. No page errors, no console errors
  * 7. Completed product surfaces free of placeholder/skeletal/reserved canvas language
@@ -399,8 +399,39 @@ test.describe("browser smoke: fidelity gates", () => {
       "Expedition launch screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5d. Expedition → Result (success)
+    // 5d. Expedition → Dungeon Map
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await page.waitForSelector(".dungeon-map-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("Dungeon Map"),
+      "Dungeon map eyebrow must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Azure Lantern Depths" }),
+      "Dungeon map title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".room-node"),
+      "Room nodes must be visible"
+    ).toHaveCount(5);
+    await expectFidelity(
+      page.locator(".dungeon-map-viewport"),
+      "Dungeon map screen"
+    );
+    await expectFullPageFidelity(page, "Dungeon map screen");
+
+    // Landscape viewport check for dungeon map
+    await expect(
+      page.locator(".dungeon-map-viewport"),
+      "Dungeon map screen must use .dungeon-map-viewport landscape layout"
+    ).toBeVisible();
+
+    // 5e. Dungeon Map → Result (enter rooms to clear dungeon)
+    await page.locator('[data-room-id="room-4"]').click();
+    await settle(page);
+    await page.locator('[data-room-id="room-5"]').click();
     await settle(page);
 
     await expect(
@@ -595,7 +626,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Live building detail screen must use .app-frame landscape layout"
     ).toBeVisible();
 
-    // Full live flow: provisioning → expedition → result → return
+    // Full live flow: provisioning → expedition → dungeon map → result → return
     await page.getByRole("button", { name: "Return to Town" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
@@ -614,6 +645,18 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await page.waitForSelector(".dungeon-map-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("Dungeon Map"),
+      "Live dungeon map eyebrow must be visible"
+    ).toBeVisible();
+
+    // Enter rooms to clear the dungeon
+    await page.locator('[data-room-id="room-4"]').click();
+    await settle(page);
+    await page.locator('[data-room-id="room-5"]').click();
     await settle(page);
 
     await expect(

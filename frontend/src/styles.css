@@ -3297,6 +3297,124 @@ button {
   gap: 4px;
 }
 
+/* ── Dungeon map viewport (mirrors expedition-viewport) ── */
+.dungeon-map-viewport {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, #0e1117 0%, #131e26 52%, #0f1116 100%);
+}
+
+/* ── Dungeon map room grid ────────────────────────────── */
+.dungeon-map-room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 14px;
+  padding: 18px;
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.room-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px 10px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, rgba(14, 24, 20, 0.8) 0%, rgba(10, 18, 14, 0.9) 100%);
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+  position: relative;
+  min-height: 90px;
+}
+
+.room-node:hover:not(:disabled) {
+  border-color: rgba(198, 212, 106, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.room-node:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+}
+
+.room-node--current {
+  border-color: rgba(198, 212, 106, 0.45);
+  box-shadow: 0 0 18px rgba(198, 212, 106, 0.12), inset 0 0 8px rgba(198, 212, 106, 0.06);
+}
+
+.room-node--cleared {
+  opacity: 0.5;
+  filter: grayscale(0.8);
+}
+
+.room-node--combat {
+  background: linear-gradient(180deg, rgba(24, 14, 14, 0.8) 0%, rgba(18, 10, 10, 0.9) 100%);
+}
+
+.room-node--boss {
+  background: linear-gradient(180deg, rgba(34, 14, 24, 0.85) 0%, rgba(24, 10, 18, 0.92) 100%);
+  border-color: rgba(198, 106, 148, 0.25);
+}
+
+.room-node--event {
+  background: linear-gradient(180deg, rgba(14, 24, 30, 0.8) 0%, rgba(10, 18, 24, 0.9) 100%);
+}
+
+.room-node--corridor {
+  background: linear-gradient(180deg, rgba(18, 18, 14, 0.8) 0%, rgba(14, 14, 10, 0.9) 100%);
+}
+
+.room-node-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--panel-text);
+}
+
+.room-node-badge {
+  font-size: 0.6rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.room-node-badge--current {
+  background: rgba(198, 212, 106, 0.18);
+  color: var(--panel-accent);
+  border: 1px solid rgba(198, 212, 106, 0.25);
+}
+
+.room-node-badge--cleared {
+  background: rgba(91, 189, 110, 0.14);
+  color: #5bbd6e;
+  border: 1px solid rgba(91, 189, 110, 0.2);
+}
+
+.room-node-badge--curio {
+  background: rgba(160, 120, 220, 0.14);
+  color: #b890e8;
+  border: 1px solid rgba(160, 120, 220, 0.2);
+}
+
+.room-node-badge--trap {
+  background: rgba(234, 119, 103, 0.14);
+  color: #ea7767;
+  border: 1px solid rgba(234, 119, 103, 0.2);
+}
+
 /* ── Responsive: collapse to portrait on narrow screens ─ */
 @media (max-width: 920px) {
   .app-shell {

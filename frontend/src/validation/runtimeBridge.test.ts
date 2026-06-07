@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, ExpeditionResultViewModel, ReturnViewModel } from "../bridge/contractTypes";
+import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, DungeonMapViewModel, ExpeditionResultViewModel, ReturnViewModel } from "../bridge/contractTypes";
 import { LiveRuntimeBridge } from "../bridge/LiveRuntimeBridge";
 import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 
@@ -200,7 +200,7 @@ describe("provisioning and expedition launch flow", () => {
     expect(expVm.isLaunchable).toBe(true);
   });
 
-  it("replay launch-expedition transitions to result state", async () => {
+  it("replay launch-expedition transitions to dungeon-map state", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
@@ -208,11 +208,10 @@ describe("provisioning and expedition launch flow", () => {
 
     const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
 
-    expect(snapshot.flowState).toBe("result");
-    expect(snapshot.viewModel.kind).toBe("result");
-    const resultVm = snapshot.viewModel as ExpeditionResultViewModel;
-    expect(resultVm.kind).toBe("result");
-    expect(["success", "failure", "partial"]).toContain(resultVm.outcome);
+    expect(snapshot.flowState).toBe("dungeon");
+    expect(snapshot.viewModel.kind).toBe("dungeon-map");
+    const dungeonVm = snapshot.viewModel as DungeonMapViewModel;
+    expect(dungeonVm.rooms.length).toBeGreaterThan(0);
   });
 
   it("replay return-to-town from provisioning returns to town", async () => {
@@ -249,7 +248,7 @@ describe("provisioning and expedition launch flow", () => {
     expect(snapshot.viewModel.kind).toBe("expedition");
   });
 
-  it("live launch-expedition transitions to result state", async () => {
+  it("live launch-expedition transitions to dungeon-map state", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
@@ -257,10 +256,10 @@ describe("provisioning and expedition launch flow", () => {
 
     const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
 
-    expect(snapshot.flowState).toBe("result");
-    expect(snapshot.viewModel.kind).toBe("result");
-    const resultVm = snapshot.viewModel as ExpeditionResultViewModel;
-    expect(resultVm.outcome).toBe("success");
+    expect(snapshot.flowState).toBe("dungeon");
+    expect(snapshot.viewModel.kind).toBe("dungeon-map");
+    const dungeonVm = snapshot.viewModel as DungeonMapViewModel;
+    expect(dungeonVm.rooms.length).toBeGreaterThan(0);
   });
 
   it("town -> provision -> launch path is reproducible in replay", async () => {
@@ -280,8 +279,8 @@ describe("provisioning and expedition launch flow", () => {
     expect(expSnapshot.viewModel.kind).toBe("expedition");
 
     const launchSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
-    expect(launchSnapshot.flowState).toBe("result");
-    expect(launchSnapshot.viewModel.kind).toBe("result");
+    expect(launchSnapshot.flowState).toBe("dungeon");
+    expect(launchSnapshot.viewModel.kind).toBe("dungeon-map");
   });
 
   it("town -> provision -> launch path is reproducible in live", async () => {
@@ -301,8 +300,8 @@ describe("provisioning and expedition launch flow", () => {
     expect(expSnapshot.viewModel.kind).toBe("expedition");
 
     const launchSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
-    expect(launchSnapshot.flowState).toBe("result");
-    expect(launchSnapshot.viewModel.kind).toBe("result");
+    expect(launchSnapshot.flowState).toBe("dungeon");
+    expect(launchSnapshot.viewModel.kind).toBe("dungeon-map");
   });
 });
 

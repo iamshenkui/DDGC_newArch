@@ -19,6 +19,7 @@ import type {
   BuildingDetailViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  DungeonMapViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel
 } from "../bridge/contractTypes";
@@ -104,7 +105,7 @@ describe("build-run smoke: intent dispatch round-trip", () => {
 });
 
 describe("build-run smoke: flow state transitions", () => {
-  it("replay: town → provisioning → expedition → result", async () => {
+  it("replay: town → provisioning → expedition → dungeon → result", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
 
@@ -120,14 +121,27 @@ describe("build-run smoke: flow state transitions", () => {
     const expVm = expSnap.viewModel as ExpeditionSetupViewModel;
     expect(expVm.isLaunchable).toBe(true);
 
-    const resultSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
-    expect(resultSnap.flowState).toBe("result");
-    expect(resultSnap.viewModel.kind).toBe("result");
-    const resultVm = resultSnap.viewModel as ExpeditionResultViewModel;
-    expect(resultVm.outcome).toBe("success");
+    const dungeonSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    expect(dungeonSnap.flowState).toBe("dungeon");
+    expect(dungeonSnap.viewModel.kind).toBe("dungeon-map");
+    const dungeonVm = dungeonSnap.viewModel as DungeonMapViewModel;
+    expect(dungeonVm.rooms.length).toBeGreaterThan(0);
+
+    // Enter all rooms to clear the dungeon and reach result
+    for (const room of dungeonVm.rooms) {
+      if (!room.cleared) {
+        const resultSnap = await bridge.dispatchIntent({ type: "enter-room", roomId: room.roomId });
+        if (resultSnap.flowState === "result") {
+          expect(resultSnap.viewModel.kind).toBe("result");
+          const resultVm = resultSnap.viewModel as ExpeditionResultViewModel;
+          expect(resultVm.outcome).toBe("success");
+          break;
+        }
+      }
+    }
   });
 
-  it("live: town → provisioning → expedition → result", async () => {
+  it("live: town → provisioning → expedition → dungeon → result", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
 
@@ -139,9 +153,21 @@ describe("build-run smoke: flow state transitions", () => {
     expect(expSnap.flowState).toBe("expedition");
     expect(expSnap.viewModel.kind).toBe("expedition");
 
-    const resultSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
-    expect(resultSnap.flowState).toBe("result");
-    expect(resultSnap.viewModel.kind).toBe("result");
+    const dungeonSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    expect(dungeonSnap.flowState).toBe("dungeon");
+    expect(dungeonSnap.viewModel.kind).toBe("dungeon-map");
+    const dungeonVm = dungeonSnap.viewModel as DungeonMapViewModel;
+
+    // Enter all rooms to clear the dungeon and reach result
+    for (const room of dungeonVm.rooms) {
+      if (!room.cleared) {
+        const resultSnap = await bridge.dispatchIntent({ type: "enter-room", roomId: room.roomId });
+        if (resultSnap.flowState === "result") {
+          expect(resultSnap.viewModel.kind).toBe("result");
+          break;
+        }
+      }
+    }
   });
 
   it("replay: provisioning → return-to-town", async () => {
@@ -193,13 +219,28 @@ describe("build-run smoke: meta-loop continuation", () => {
     expect(returnSnap.viewModel.kind).toBe("town");
   });
 
-  it("replay: full meta-loop cycle town → expedition → result → return → town", async () => {
+  it("replay: full meta-loop cycle town → expedition → dungeon → result → return → town", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
 
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const dungeonSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    expect(dungeonSnap.flowState).toBe("dungeon");
+    expect(dungeonSnap.viewModel.kind).toBe("dungeon-map");
+    const dungeonVm = dungeonSnap.viewModel as DungeonMapViewModel;
+
+    // Enter all rooms to clear the dungeon and reach result
+    for (const room of dungeonVm.rooms) {
+      if (!room.cleared) {
+        const resultSnap = await bridge.dispatchIntent({ type: "enter-room", roomId: room.roomId });
+        if (resultSnap.flowState === "result") {
+          expect(resultSnap.viewModel.kind).toBe("result");
+          break;
+        }
+      }
+    }
 
     const returnSnap = await bridge.dispatchIntent({ type: "continue-from-result" });
     expect(returnSnap.flowState).toBe("return");

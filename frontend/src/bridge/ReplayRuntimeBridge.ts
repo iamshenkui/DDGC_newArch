@@ -5,6 +5,7 @@ import {
   replayBuildingDetailViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
+  replayDungeonMapViewModel,
   replayResultViewModel,
   replayReturnViewModel
 } from "../validation/replayFixtures";
@@ -15,6 +16,7 @@ import type {
   TownViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  DungeonMapViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel
 } from "./contractTypes";
@@ -117,10 +119,46 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       case "launch-expedition":
         this.snapshot = {
           ...this.snapshot,
-          flowState: "result",
-          viewModel: replayResultViewModel as ExpeditionResultViewModel
+          flowState: "dungeon",
+          viewModel: replayDungeonMapViewModel as DungeonMapViewModel
         };
         break;
+      case "enter-room": {
+        const dungeonVm = this.snapshot.viewModel as DungeonMapViewModel;
+        const updatedRooms = dungeonVm.rooms.map((room) =>
+          room.roomId === intent.roomId
+            ? { ...room, cleared: true, isCurrent: true }
+            : { ...room, isCurrent: false }
+        );
+        const clearedCount = updatedRooms.filter((r) => r.cleared).length;
+        const isComplete = clearedCount >= dungeonVm.totalRooms;
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: isComplete ? "result" : "dungeon",
+          viewModel: isComplete
+            ? replayResultViewModel as ExpeditionResultViewModel
+            : {
+                ...dungeonVm,
+                rooms: updatedRooms,
+                roomsCleared: clearedCount,
+                currentRoom: updatedRooms.find((r) => r.roomId === intent.roomId) ?? dungeonVm.currentRoom,
+                isComplete
+              }
+        };
+        break;
+      }
+      case "flee-dungeon": {
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "return",
+          viewModel: {
+            ...replayReturnViewModel as ReturnViewModel,
+            title: "Retreating from Dungeon",
+            summary: "The party has fled the dungeon. Survivors are returning to town."
+          }
+        };
+        break;
+      }
       case "return-to-town":
         this.snapshot = replayReadySnapshot;
         break;

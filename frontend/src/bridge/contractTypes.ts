@@ -6,6 +6,7 @@ export type FlowState =
   | "town"
   | "provisioning"
   | "expedition"
+  | "dungeon"
   | "combat"
   | "result"
   | "return";
@@ -215,6 +216,44 @@ export interface ExpeditionSetupViewModel {
   isLaunchable: boolean;
 }
 
+export interface DungeonMapRoomViewModel {
+  roomId: string;
+  kind: "combat" | "boss" | "event" | "corridor" | "unknown";
+  cleared: boolean;
+  isCurrent: boolean;
+  curioId?: string;
+  trapId?: string;
+}
+
+export interface DungeonMapHeroViewModel {
+  id: string;
+  name: string;
+  classLabel: string;
+  hp: string;
+  maxHp: string;
+  stress: string;
+  maxStress: string;
+  isAtDeathsDoor: boolean;
+  isDead: boolean;
+}
+
+export interface DungeonMapViewModel {
+  kind: "dungeon-map";
+  title: string;
+  dungeonType: string;
+  mapSize: string;
+  floor: number;
+  rooms: ReadonlyArray<DungeonMapRoomViewModel>;
+  roomsCleared: number;
+  totalRooms: number;
+  currentRoom?: DungeonMapRoomViewModel;
+  goldCarried: number;
+  torchlight: number;
+  heroes: ReadonlyArray<DungeonMapHeroViewModel>;
+  isComplete: boolean;
+  partyFled: boolean;
+}
+
 export interface ExpeditionResultViewModel {
   kind: "result";
   title: string;
@@ -272,6 +311,7 @@ export type DdgcViewModel =
   | BuildingDetailViewModel
   | ProvisioningViewModel
   | ExpeditionSetupViewModel
+  | DungeonMapViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
   | UnsupportedViewModel
@@ -293,6 +333,8 @@ export type DdgcFrontendIntent =
   | { type: "toggle-hero-selection"; heroId: string }
   | { type: "confirm-provisioning" }
   | { type: "launch-expedition" }
+  | { type: "enter-room"; roomId: string }
+  | { type: "flee-dungeon" }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }
   | { type: "resume-from-return" };
