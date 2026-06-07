@@ -959,26 +959,53 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       }
-      case "proceed-dungeon":
+      case "proceed-dungeon": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: proceed-dungeon rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",
           viewModel: createLiveResultViewModel()
         };
         break;
-      case "interact-room":
+      }
+      case "interact-room": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: interact-room rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           debugMessage: `Live: room interaction intent received for ${intent.interactionId}.`
         };
         break;
-      case "retreat-dungeon":
+      }
+      case "retreat-dungeon": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: retreat-dungeon rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",
           viewModel: createLiveResultViewModel()
         };
         break;
+      }
       case "return-to-town":
         if (!canTransition(this.snapshot, intent).allowed) {
           this.snapshot = {

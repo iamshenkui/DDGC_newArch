@@ -1055,5 +1055,281 @@ describe("dungeon-interaction flow", () => {
     const dungeonVm = snapshot.viewModel as DungeonInteractionViewModel;
     expect(dungeonVm.isProceedAvailable).toBe(true);
   });
+
+  it("replay rejects interact-room outside dungeon-interaction", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "interact-room", interactionId: "investigate" });
+
+    expect(snapshot.flowState).toBe("town");
+    expect(snapshot.viewModel.kind).toBe("town");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("live rejects interact-room outside dungeon-interaction", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "interact-room", interactionId: "investigate" });
+
+    expect(snapshot.flowState).toBe("town");
+    expect(snapshot.viewModel.kind).toBe("town");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("replay rejects nonexistent and unavailable interactions", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    const mapSnapshot = bridge.currentSnapshot();
+    (bridge as unknown as { snapshot: typeof mapSnapshot }).snapshot = {
+      ...mapSnapshot,
+      viewModel: {
+        ...(mapSnapshot.viewModel as DungeonMapViewModel),
+        isComplete: true
+      }
+    };
+    await bridge.dispatchIntent({ type: "complete-dungeon" });
+
+    const unknownSnapshot = await bridge.dispatchIntent({ type: "interact-room", interactionId: "unknown-interaction" });
+    expect(unknownSnapshot.flowState).toBe("dungeon-interaction");
+    expect(unknownSnapshot.viewModel.kind).toBe("dungeon-interaction");
+    expect(unknownSnapshot.debugMessage).toContain("does not exist");
+
+    const dungeonVm = unknownSnapshot.viewModel as DungeonInteractionViewModel;
+    (bridge as unknown as { snapshot: typeof unknownSnapshot }).snapshot = {
+      ...unknownSnapshot,
+      viewModel: {
+        ...dungeonVm,
+        interactions: dungeonVm.interactions.map((i) =>
+          i.id === "investigate" ? { ...i, isAvailable: false } : i
+        )
+      }
+    };
+    const unavailableSnapshot = await bridge.dispatchIntent({ type: "interact-room", interactionId: "investigate" });
+    expect(unavailableSnapshot.flowState).toBe("dungeon-interaction");
+    expect(unavailableSnapshot.viewModel.kind).toBe("dungeon-interaction");
+    expect(unavailableSnapshot.debugMessage).toContain("not available");
+  });
+
+  it("live rejects nonexistent and unavailable interactions", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    const mapSnapshot = bridge.currentSnapshot();
+    (bridge as unknown as { snapshot: typeof mapSnapshot }).snapshot = {
+      ...mapSnapshot,
+      viewModel: {
+        ...(mapSnapshot.viewModel as DungeonMapViewModel),
+        isComplete: true
+      }
+    };
+    await bridge.dispatchIntent({ type: "complete-dungeon" });
+
+    const unknownSnapshot = await bridge.dispatchIntent({ type: "interact-room", interactionId: "unknown-interaction" });
+    expect(unknownSnapshot.flowState).toBe("dungeon-interaction");
+    expect(unknownSnapshot.viewModel.kind).toBe("dungeon-interaction");
+    expect(unknownSnapshot.debugMessage).toContain("does not exist");
+
+    const dungeonVm = unknownSnapshot.viewModel as DungeonInteractionViewModel;
+    (bridge as unknown as { snapshot: typeof unknownSnapshot }).snapshot = {
+      ...unknownSnapshot,
+      viewModel: {
+        ...dungeonVm,
+        interactions: dungeonVm.interactions.map((i) =>
+          i.id === "investigate" ? { ...i, isAvailable: false } : i
+        )
+      }
+    };
+    const unavailableSnapshot = await bridge.dispatchIntent({ type: "interact-room", interactionId: "investigate" });
+    expect(unavailableSnapshot.flowState).toBe("dungeon-interaction");
+    expect(unavailableSnapshot.viewModel.kind).toBe("dungeon-interaction");
+    expect(unavailableSnapshot.debugMessage).toContain("not available");
+  });
+
+  it("replay rejects proceed-dungeon outside dungeon-interaction", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "proceed-dungeon" });
+
+    expect(snapshot.flowState).toBe("town");
+    expect(snapshot.viewModel.kind).toBe("town");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("live rejects proceed-dungeon outside dungeon-interaction", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "proceed-dungeon" });
+
+    expect(snapshot.flowState).toBe("town");
+    expect(snapshot.viewModel.kind).toBe("town");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("replay rejects proceed-dungeon when proceed is not available", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    const mapSnapshot = bridge.currentSnapshot();
+    (bridge as unknown as { snapshot: typeof mapSnapshot }).snapshot = {
+      ...mapSnapshot,
+      viewModel: {
+        ...(mapSnapshot.viewModel as DungeonMapViewModel),
+        isComplete: true
+      }
+    };
+    await bridge.dispatchIntent({ type: "complete-dungeon" });
+    const dungeonSnapshot = bridge.currentSnapshot();
+    (bridge as unknown as { snapshot: typeof dungeonSnapshot }).snapshot = {
+      ...dungeonSnapshot,
+      viewModel: {
+        ...(dungeonSnapshot.viewModel as DungeonInteractionViewModel),
+        isProceedAvailable: false
+      }
+    };
+
+    const snapshot = await bridge.dispatchIntent({ type: "proceed-dungeon" });
+
+    expect(snapshot.flowState).toBe("dungeon-interaction");
+    expect(snapshot.viewModel.kind).toBe("dungeon-interaction");
+    expect(snapshot.debugMessage).toContain("not available");
+  });
+
+  it("live rejects proceed-dungeon when proceed is not available", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    const mapSnapshot = bridge.currentSnapshot();
+    (bridge as unknown as { snapshot: typeof mapSnapshot }).snapshot = {
+      ...mapSnapshot,
+      viewModel: {
+        ...(mapSnapshot.viewModel as DungeonMapViewModel),
+        isComplete: true
+      }
+    };
+    await bridge.dispatchIntent({ type: "complete-dungeon" });
+    const dungeonSnapshot = bridge.currentSnapshot();
+    (bridge as unknown as { snapshot: typeof dungeonSnapshot }).snapshot = {
+      ...dungeonSnapshot,
+      viewModel: {
+        ...(dungeonSnapshot.viewModel as DungeonInteractionViewModel),
+        isProceedAvailable: false
+      }
+    };
+
+    const snapshot = await bridge.dispatchIntent({ type: "proceed-dungeon" });
+
+    expect(snapshot.flowState).toBe("dungeon-interaction");
+    expect(snapshot.viewModel.kind).toBe("dungeon-interaction");
+    expect(snapshot.debugMessage).toContain("not available");
+  });
+
+  it("replay rejects retreat-dungeon outside dungeon-interaction", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "retreat-dungeon" });
+
+    expect(snapshot.flowState).toBe("town");
+    expect(snapshot.viewModel.kind).toBe("town");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("live rejects retreat-dungeon outside dungeon-interaction", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "retreat-dungeon" });
+
+    expect(snapshot.flowState).toBe("town");
+    expect(snapshot.viewModel.kind).toBe("town");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("replay rejects retreat-dungeon when retreat is not available", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    const mapSnapshot = bridge.currentSnapshot();
+    (bridge as unknown as { snapshot: typeof mapSnapshot }).snapshot = {
+      ...mapSnapshot,
+      viewModel: {
+        ...(mapSnapshot.viewModel as DungeonMapViewModel),
+        isComplete: true
+      }
+    };
+    await bridge.dispatchIntent({ type: "complete-dungeon" });
+    const dungeonSnapshot = bridge.currentSnapshot();
+    (bridge as unknown as { snapshot: typeof dungeonSnapshot }).snapshot = {
+      ...dungeonSnapshot,
+      viewModel: {
+        ...(dungeonSnapshot.viewModel as DungeonInteractionViewModel),
+        isRetreatAvailable: false
+      }
+    };
+
+    const snapshot = await bridge.dispatchIntent({ type: "retreat-dungeon" });
+
+    expect(snapshot.flowState).toBe("dungeon-interaction");
+    expect(snapshot.viewModel.kind).toBe("dungeon-interaction");
+    expect(snapshot.debugMessage).toContain("not available");
+  });
+
+  it("live rejects retreat-dungeon when retreat is not available", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    const mapSnapshot = bridge.currentSnapshot();
+    (bridge as unknown as { snapshot: typeof mapSnapshot }).snapshot = {
+      ...mapSnapshot,
+      viewModel: {
+        ...(mapSnapshot.viewModel as DungeonMapViewModel),
+        isComplete: true
+      }
+    };
+    await bridge.dispatchIntent({ type: "complete-dungeon" });
+    const dungeonSnapshot = bridge.currentSnapshot();
+    (bridge as unknown as { snapshot: typeof dungeonSnapshot }).snapshot = {
+      ...dungeonSnapshot,
+      viewModel: {
+        ...(dungeonSnapshot.viewModel as DungeonInteractionViewModel),
+        isRetreatAvailable: false
+      }
+    };
+
+    const snapshot = await bridge.dispatchIntent({ type: "retreat-dungeon" });
+
+    expect(snapshot.flowState).toBe("dungeon-interaction");
+    expect(snapshot.viewModel.kind).toBe("dungeon-interaction");
+    expect(snapshot.debugMessage).toContain("not available");
+  });
 });
 

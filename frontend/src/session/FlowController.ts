@@ -318,6 +318,15 @@ export function canTransition(
       if (snapshot.viewModel.kind !== "dungeon-interaction") {
         return { allowed: false, reason: "viewModel is not a dungeon-interaction view model" };
       }
+      {
+        const interaction = snapshot.viewModel.interactions.find((item) => item.id === intent.interactionId);
+        if (!interaction) {
+          return { allowed: false, reason: `interaction ${intent.interactionId} does not exist` };
+        }
+        if (!interaction.isAvailable) {
+          return { allowed: false, reason: `interaction ${intent.interactionId} is not available` };
+        }
+      }
       return { allowed: true };
 
     case "retreat-dungeon":

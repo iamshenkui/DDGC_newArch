@@ -606,6 +606,91 @@ describe("canTransition - result and return meta-loop continuation", () => {
     });
   });
 
+  describe("dungeon-interaction transitions", () => {
+    it("allows interact-room when interaction exists and is available", () => {
+      const validation = canTransition(dungeonInteractionSnapshot, { type: "interact-room", interactionId: "investigate" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects interact-room when not on dungeon-interaction screen", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "interact-room", interactionId: "investigate" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in dungeon-interaction");
+    });
+
+    it("rejects interact-room for nonexistent interaction", () => {
+      const validation = canTransition(dungeonInteractionSnapshot, { type: "interact-room", interactionId: "unknown-interaction" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("does not exist");
+    });
+
+    it("rejects interact-room for unavailable interaction", () => {
+      const dungeonVm = dungeonInteractionSnapshot.viewModel as DungeonInteractionViewModel;
+      const lockedInteractionSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonInteractionSnapshot,
+        viewModel: {
+          ...dungeonVm,
+          interactions: dungeonVm.interactions.map((i) =>
+            i.id === "investigate" ? { ...i, isAvailable: false } : i
+          )
+        }
+      };
+      const validation = canTransition(lockedInteractionSnapshot, { type: "interact-room", interactionId: "investigate" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not available");
+    });
+
+    it("allows proceed-dungeon when proceed is available", () => {
+      const validation = canTransition(dungeonInteractionSnapshot, { type: "proceed-dungeon" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects proceed-dungeon when not on dungeon-interaction screen", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "proceed-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in dungeon-interaction");
+    });
+
+    it("rejects proceed-dungeon when proceed is not available", () => {
+      const dungeonVm = dungeonInteractionSnapshot.viewModel as DungeonInteractionViewModel;
+      const noProceedSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonInteractionSnapshot,
+        viewModel: {
+          ...dungeonVm,
+          isProceedAvailable: false
+        }
+      };
+      const validation = canTransition(noProceedSnapshot, { type: "proceed-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("proceed is not available");
+    });
+
+    it("allows retreat-dungeon when retreat is available", () => {
+      const validation = canTransition(dungeonInteractionSnapshot, { type: "retreat-dungeon" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects retreat-dungeon when not on dungeon-interaction screen", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "retreat-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in dungeon-interaction");
+    });
+
+    it("rejects retreat-dungeon when retreat is not available", () => {
+      const dungeonVm = dungeonInteractionSnapshot.viewModel as DungeonInteractionViewModel;
+      const noRetreatSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonInteractionSnapshot,
+        viewModel: {
+          ...dungeonVm,
+          isRetreatAvailable: false
+        }
+      };
+      const validation = canTransition(noRetreatSnapshot, { type: "retreat-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("retreat is not available");
+    });
+  });
+
   describe("combat transitions", () => {
     it("allows valid player combat selection and attack intents", () => {
       expect(canTransition(combatSnapshot, { type: "select-skill", skillId: "skill-1" }).allowed).toBe(true);
