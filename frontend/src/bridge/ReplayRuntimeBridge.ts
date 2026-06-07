@@ -173,8 +173,8 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         }
         this.snapshot = {
           ...this.snapshot,
-          flowState: "combat",
-          viewModel: replayCombatViewModel as CombatViewModel
+          flowState: "dungeon-assist",
+          viewModel: replayDungeonAssistViewModel as DungeonAssistViewModel
         };
         break;
       case "enter-dungeon-assist":

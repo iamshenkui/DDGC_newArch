@@ -622,8 +622,8 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         }
         this.snapshot = {
           ...this.snapshot,
-          flowState: "combat",
-          viewModel: createLiveCombatViewModel()
+          flowState: "dungeon-assist",
+          viewModel: createLiveDungeonAssistViewModel()
         };
         break;
       case "enter-dungeon-assist":

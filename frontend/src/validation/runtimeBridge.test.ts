@@ -1,8 +1,19 @@
 import { describe, expect, it } from "vitest";
 
-import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, DungeonAssistViewModel, DungeonMapViewModel, CombatViewModel, ExpeditionResultViewModel, ReturnViewModel, DdgcFrontendSnapshot } from "../bridge/contractTypes";
+import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, DungeonAssistViewModel, DungeonMapViewModel, CombatViewModel, ExpeditionResultViewModel, ReturnViewModel, DdgcFrontendIntent, DdgcFrontendSnapshot } from "../bridge/contractTypes";
 import { LiveRuntimeBridge } from "../bridge/LiveRuntimeBridge";
 import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
+
+type TestRuntimeBridge = {
+  dispatchIntent(intent: DdgcFrontendIntent): Promise<DdgcFrontendSnapshot>;
+};
+
+async function enterCombatRoom(bridge: TestRuntimeBridge): Promise<DdgcFrontendSnapshot> {
+  await bridge.dispatchIntent({ type: "launch-expedition" });
+  await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+  await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+  return bridge.dispatchIntent({ type: "enter-room", roomId: "room-combat-1" });
+}
 
 describe("runtime bridge skeleton", () => {
   it("boots replay mode into the town shell placeholder", async () => {
@@ -200,7 +211,7 @@ describe("provisioning and expedition launch flow", () => {
     expect(expVm.isLaunchable).toBe(true);
   });
 
-  it("replay launch-expedition transitions to combat state", async () => {
+  it("replay launch-expedition transitions to dungeon-assist state", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
@@ -208,11 +219,11 @@ describe("provisioning and expedition launch flow", () => {
 
     const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
 
-    expect(snapshot.flowState).toBe("combat");
-    expect(snapshot.viewModel.kind).toBe("combat");
-    const combatVm = snapshot.viewModel as CombatViewModel;
-    expect(combatVm.party.length).toBeGreaterThan(0);
-    expect(combatVm.enemies.length).toBeGreaterThan(0);
+    expect(snapshot.flowState).toBe("dungeon-assist");
+    expect(snapshot.viewModel.kind).toBe("dungeon-assist");
+    const assistVm = snapshot.viewModel as DungeonAssistViewModel;
+    expect(assistVm.party.length).toBeGreaterThan(0);
+    expect(assistVm.assistActions.length).toBeGreaterThan(0);
   });
 
   it("replay rejects launch-expedition outside expedition", async () => {
@@ -357,7 +368,7 @@ describe("provisioning and expedition launch flow", () => {
     expect(snapshot.viewModel.kind).toBe("expedition");
   });
 
-  it("live launch-expedition transitions to combat state", async () => {
+  it("live launch-expedition transitions to dungeon-assist state", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
@@ -365,11 +376,11 @@ describe("provisioning and expedition launch flow", () => {
 
     const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
 
-    expect(snapshot.flowState).toBe("combat");
-    expect(snapshot.viewModel.kind).toBe("combat");
-    const combatVm = snapshot.viewModel as CombatViewModel;
-    expect(combatVm.party.length).toBeGreaterThan(0);
-    expect(combatVm.enemies.length).toBeGreaterThan(0);
+    expect(snapshot.flowState).toBe("dungeon-assist");
+    expect(snapshot.viewModel.kind).toBe("dungeon-assist");
+    const assistVm = snapshot.viewModel as DungeonAssistViewModel;
+    expect(assistVm.party.length).toBeGreaterThan(0);
+    expect(assistVm.assistActions.length).toBeGreaterThan(0);
   });
 
   it("live rejects launch-expedition outside expedition", async () => {
@@ -565,8 +576,8 @@ describe("provisioning and expedition launch flow", () => {
     expect(expSnapshot.viewModel.kind).toBe("expedition");
 
     const launchSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
-    expect(launchSnapshot.flowState).toBe("combat");
-    expect(launchSnapshot.viewModel.kind).toBe("combat");
+    expect(launchSnapshot.flowState).toBe("dungeon-assist");
+    expect(launchSnapshot.viewModel.kind).toBe("dungeon-assist");
   });
 
   it("town -> provision -> launch path is reproducible in live", async () => {
@@ -586,8 +597,8 @@ describe("provisioning and expedition launch flow", () => {
     expect(expSnapshot.viewModel.kind).toBe("expedition");
 
     const launchSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
-    expect(launchSnapshot.flowState).toBe("combat");
-    expect(launchSnapshot.viewModel.kind).toBe("combat");
+    expect(launchSnapshot.flowState).toBe("dungeon-assist");
+    expect(launchSnapshot.viewModel.kind).toBe("dungeon-assist");
   });
 
   it("replay guards combat intents outside combat", async () => {
@@ -625,7 +636,7 @@ describe("provisioning and expedition launch flow", () => {
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    const combatSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
+    const combatSnapshot = await enterCombatRoom(bridge);
 
     const missingSkillSnapshot = await bridge.dispatchIntent({ type: "select-skill", skillId: "missing-skill" });
     expect(missingSkillSnapshot.flowState).toBe("combat");
@@ -651,7 +662,7 @@ describe("provisioning and expedition launch flow", () => {
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    const combatSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
+    const combatSnapshot = await enterCombatRoom(bridge);
     const combatVm = combatSnapshot.viewModel as CombatViewModel;
 
     (bridge as unknown as { snapshot: DdgcFrontendSnapshot }).snapshot = {

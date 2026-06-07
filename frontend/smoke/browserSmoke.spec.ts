@@ -126,6 +126,48 @@ async function settle(page: Page, ms = 400): Promise<void> {
   await page.waitForTimeout(ms);
 }
 
+async function enterCombatRoomFromExpedition(page: Page, label: string): Promise<void> {
+  await page.getByRole("button", { name: "Launch Expedition" }).click();
+  await page.waitForSelector(".dungeon-assist-viewport", { timeout: 5_000 });
+  await settle(page);
+
+  await expect(
+    page.locator(".dungeon-assist-viewport"),
+    `${label} dungeon assist screen must be visible`
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "人物辅助" }),
+    `${label} dungeon assist actions must be visible`
+  ).toBeVisible();
+  await expectFidelity(
+    page.locator(".dungeon-assist-viewport"),
+    `${label} dungeon assist screen`
+  );
+
+  await page.getByTestId("assist-action-heal-wound").click();
+  await settle(page);
+  await page.getByRole("button", { name: "Continue Expedition" }).click();
+  await page.waitForSelector(".dungeon-map-viewport", { timeout: 5_000 });
+  await settle(page);
+
+  await expect(
+    page.locator(".dungeon-map-viewport"),
+    `${label} dungeon map screen must be visible`
+  ).toBeVisible();
+  await expect(
+    page.getByText("Dungeon Exploration"),
+    `${label} dungeon map title must be visible`
+  ).toBeVisible();
+  await expectFidelity(
+    page.locator(".dungeon-map-viewport"),
+    `${label} dungeon map screen`
+  );
+
+  await page.locator('[data-room-id="room-combat-1"] .dungeon-room-btn').click();
+  await page.waitForSelector(".combat-viewport", { timeout: 5_000 });
+  await settle(page);
+}
+
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
 test.describe("browser smoke: fidelity gates", () => {
@@ -399,10 +441,8 @@ test.describe("browser smoke: fidelity gates", () => {
       "Expedition launch screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5d. Expedition -> Combat
-    await page.getByRole("button", { name: "Launch Expedition" }).click();
-    await page.waitForSelector(".combat-viewport", { timeout: 5_000 });
-    await settle(page);
+    // 5d. Expedition -> Dungeon Assist -> Dungeon Map -> Combat
+    await enterCombatRoomFromExpedition(page, "Replay");
 
     await expect(
       page.locator(".combat-viewport"),
@@ -650,9 +690,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Live expedition launch title must be visible"
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Launch Expedition" }).click();
-    await page.waitForSelector(".combat-viewport", { timeout: 5_000 });
-    await settle(page);
+    await enterCombatRoomFromExpedition(page, "Live");
 
     await expect(
       page.locator(".combat-viewport"),
@@ -761,9 +799,7 @@ test.describe("browser smoke: fidelity gates", () => {
     await page.getByRole("button", { name: "Confirm & Launch Expedition" }).click();
     await settle(page);
 
-    await page.getByRole("button", { name: "Launch Expedition" }).click();
-    await page.waitForSelector(".combat-viewport", { timeout: 5_000 });
-    await settle(page);
+    await enterCombatRoomFromExpedition(page, "Replay combat flow");
 
     await expect(
       page.locator(".combat-viewport"),

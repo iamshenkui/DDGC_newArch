@@ -7,14 +7,13 @@
  * These tests validate:
  * 1. Deterministic boot into town shell (replay and live modes)
  * 2. Intent dispatch round-trip (open → return-to-town)
- * 3. Flow state transitions (town → provisioning → expedition → combat → result)
+ * 3. Flow state transitions (town → provisioning → expedition → dungeon → combat → result)
  * 4. Meta-loop continuation (result → town, return → town)
  */
 
 import { describe, expect, it } from "vitest";
 
 import type {
-  DdgcFrontendIntent,
   HeroDetailViewModel,
   BuildingDetailViewModel,
   ProvisioningViewModel,
@@ -105,7 +104,7 @@ describe("build-run smoke: intent dispatch round-trip", () => {
 });
 
 describe("build-run smoke: flow state transitions", () => {
-  it("replay: town → provisioning → expedition → combat → result", async () => {
+  it("replay: town → provisioning → expedition → dungeon-assist → dungeon-map → combat → result", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
 
@@ -121,7 +120,16 @@ describe("build-run smoke: flow state transitions", () => {
     const expVm = expSnap.viewModel as ExpeditionSetupViewModel;
     expect(expVm.isLaunchable).toBe(true);
 
-    const combatSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    const assistSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    expect(assistSnap.flowState).toBe("dungeon-assist");
+    expect(assistSnap.viewModel.kind).toBe("dungeon-assist");
+
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    const mapSnap = await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    expect(mapSnap.flowState).toBe("dungeon-map");
+    expect(mapSnap.viewModel.kind).toBe("dungeon-map");
+
+    const combatSnap = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-combat-1" });
     expect(combatSnap.flowState).toBe("combat");
     expect(combatSnap.viewModel.kind).toBe("combat");
     const combatVm = combatSnap.viewModel as CombatViewModel;
@@ -134,7 +142,7 @@ describe("build-run smoke: flow state transitions", () => {
     expect(resultVm.outcome).toBe("success");
   });
 
-  it("live: town → provisioning → expedition → combat", async () => {
+  it("live: town → provisioning → expedition → dungeon-assist → dungeon-map → combat", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
 
@@ -146,7 +154,16 @@ describe("build-run smoke: flow state transitions", () => {
     expect(expSnap.flowState).toBe("expedition");
     expect(expSnap.viewModel.kind).toBe("expedition");
 
-    const combatSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    const assistSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    expect(assistSnap.flowState).toBe("dungeon-assist");
+    expect(assistSnap.viewModel.kind).toBe("dungeon-assist");
+
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    const mapSnap = await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    expect(mapSnap.flowState).toBe("dungeon-map");
+    expect(mapSnap.viewModel.kind).toBe("dungeon-map");
+
+    const combatSnap = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-combat-1" });
     expect(combatSnap.flowState).toBe("combat");
     expect(combatSnap.viewModel.kind).toBe("combat");
     const combatVm = combatSnap.viewModel as CombatViewModel;
