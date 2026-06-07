@@ -974,7 +974,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     town: ["town", "hero-detail", "building-detail"],
     provisioning: ["provisioning"],
     expedition: ["expedition"],
-    combat: ["expedition", "dungeon-map"],
+    combat: ["expedition"],
     "dungeon-map": ["dungeon-map"],
     result: ["result"],
     return: ["return"],
