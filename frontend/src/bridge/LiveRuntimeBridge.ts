@@ -481,34 +481,6 @@ const createLiveCombatViewModel = (): CombatViewModel => ({
   canFlee: true
 });
 
-const createLiveCharacterHitCombatViewModel = (): CombatViewModel => ({
-  ...createLiveCombatViewModel(),
-  title: "Dungeon Combat",
-  dungeonName: "The Azure Lantern Expedition",
-  roundLabel: "Round 2",
-  phase: "character-hit",
-  round: 2,
-  activeHeroId: "hero-hunter-live-01",
-  party: createLiveCombatViewModel().party.map((hero) =>
-    hero.id === "hero-hunter-live-01"
-      ? { ...hero, hp: "32 / 42", stress: "8", isHit: true }
-      : { ...hero, isHit: false }
-  ),
-  enemies: createLiveCombatViewModel().enemies.map((enemy) => ({ ...enemy, isHit: false })),
-  selectedSkillId: undefined,
-  hitTargetHeroId: "hero-hunter-live-01",
-  hitDamage: "10",
-  hitLog: "Risen Skeleton strikes Yuan for 10 damage.",
-  combatLog: [
-    "Risen Skeleton strikes Yuan for 10 damage.",
-    "Acknowledge the hit before issuing the next command."
-  ],
-  isPlayerTurn: false,
-  isFleeAvailable: true,
-  turnCount: 2,
-  settingsLabel: "设置"
-});
-
 const acknowledgeLiveCombatHit = (combatVm: CombatViewModel): CombatViewModel => {
   const activeHero = combatVm.party.find((hero) => hero.id === combatVm.activeHeroId);
   const selectedSkillId =
@@ -675,20 +647,6 @@ export class LiveRuntimeBridge implements RuntimeBridge {
           viewModel: createLiveDungeonAssistViewModel()
         };
         break;
-      case "enter-combat":
-        if (!canTransition(this.snapshot, intent).allowed) {
-          this.snapshot = {
-            ...this.snapshot,
-            debugMessage: "Live: enter-combat rejected outside expedition."
-          };
-          break;
-        }
-        this.snapshot = {
-          ...this.snapshot,
-          flowState: "combat",
-          viewModel: createLiveCharacterHitCombatViewModel()
-        };
-        break;
       case "enter-dungeon-assist":
         if (!canTransition(this.snapshot, intent).allowed) {
           this.snapshot = {
@@ -830,30 +788,6 @@ export class LiveRuntimeBridge implements RuntimeBridge {
           viewModel: {
             ...combatVm,
             selectedSkillId: intent.skillId
-          }
-        };
-        break;
-      }
-      case "use-skill": {
-        const validation = canTransition(this.snapshot, intent);
-        if (!validation.allowed) {
-          this.snapshot = {
-            ...this.snapshot,
-            debugMessage:
-              this.snapshot.viewModel.kind === "combat" && this.snapshot.viewModel.phase === "character-hit"
-                ? "Live: skill intent ignored during character-hit acknowledgement."
-                : `Live: use-skill rejected: ${validation.reason ?? "invalid transition"}.`
-          };
-          break;
-        }
-        const combatVm = this.snapshot.viewModel as CombatViewModel;
-        this.snapshot = {
-          ...this.snapshot,
-          viewModel: {
-            ...combatVm,
-            selectedSkillId: intent.skillId,
-            hitLog: `Skill used: ${intent.skillId}.`,
-            combatLog: [...combatVm.combatLog, `Skill used: ${intent.skillId}.`]
           }
         };
         break;

@@ -8,7 +8,6 @@ import {
   replayDungeonAssistViewModel,
   replayDungeonMapViewModel,
   replayAttackCombatViewModel,
-  replayCombatViewModel,
   replayResultViewModel,
   replayReturnViewModel
 } from "../validation/replayFixtures";
@@ -66,35 +65,6 @@ function createReplayFleeResultViewModel(): ExpeditionResultViewModel {
       supplies: -20,
       experience: 20
     }
-  };
-}
-
-function createReplayCharacterHitCombatViewModel(): CombatViewModel {
-  return {
-    ...replayCombatViewModel,
-    title: "Dungeon Combat",
-    dungeonName: "The Depths Await",
-    roundLabel: "Round 3",
-    phase: "character-hit",
-    round: 3,
-    selectedSkillId: undefined,
-    party: replayCombatViewModel.party.map((hero) =>
-      hero.id === "hero-hunter-01"
-        ? { ...hero, hp: "28 / 42", stress: "24", isHit: true }
-        : { ...hero, isHit: false }
-    ),
-    enemies: replayCombatViewModel.enemies.map((enemy) => ({ ...enemy, isHit: false })),
-    hitTargetHeroId: "hero-hunter-01",
-    hitDamage: "10",
-    hitLog: "Cultist Acolyte strikes Shen for 10 damage.",
-    combatLog: [
-      "Cultist Acolyte strikes Shen for 10 damage.",
-      "Acknowledge the hit before issuing the next command."
-    ],
-    isPlayerTurn: false,
-    isFleeAvailable: true,
-    turnCount: 3,
-    settingsLabel: "设置"
   };
 }
 
@@ -226,20 +196,6 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           ...this.snapshot,
           flowState: "dungeon-assist",
           viewModel: replayDungeonAssistViewModel as DungeonAssistViewModel
-        };
-        break;
-      case "enter-combat":
-        if (!canTransition(this.snapshot, intent).allowed) {
-          this.snapshot = {
-            ...this.snapshot,
-            debugMessage: "Replay: enter-combat rejected outside expedition."
-          };
-          break;
-        }
-        this.snapshot = {
-          ...this.snapshot,
-          flowState: "combat",
-          viewModel: createReplayCharacterHitCombatViewModel()
         };
         break;
       case "enter-dungeon-assist":
@@ -383,30 +339,6 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           viewModel: {
             ...combatVm,
             selectedSkillId: intent.skillId
-          }
-        };
-        break;
-      }
-      case "use-skill": {
-        const validation = canTransition(this.snapshot, intent);
-        if (!validation.allowed) {
-          this.snapshot = {
-            ...this.snapshot,
-            debugMessage:
-              this.snapshot.viewModel.kind === "combat" && this.snapshot.viewModel.phase === "character-hit"
-                ? "Replay: skill intent ignored during character-hit acknowledgement."
-                : `Replay: use-skill rejected: ${validation.reason ?? "invalid transition"}.`
-          };
-          break;
-        }
-        const combatVm = this.snapshot.viewModel as CombatViewModel;
-        this.snapshot = {
-          ...this.snapshot,
-          viewModel: {
-            ...combatVm,
-            selectedSkillId: intent.skillId,
-            hitLog: `Skill used: ${intent.skillId}.`,
-            combatLog: [...combatVm.combatLog, `Skill used: ${intent.skillId}.`]
           }
         };
         break;

@@ -6,7 +6,6 @@ import { resolveChromeAsset, resolveHeroPortrait } from "../../assets/originalAs
 interface ExpeditionScreenProps {
   viewModel: ExpeditionSetupViewModel;
   onLaunchExpedition: () => void;
-  onEnterCombat?: () => void;
   onReturnToTown: () => void;
 }
 
@@ -324,15 +323,6 @@ export const ExpeditionScreen: Component<ExpeditionScreenProps> = (props) => {
           <button class="action-secondary" onClick={props.onReturnToTown}>
             Return to Town
           </button>
-          {props.onEnterCombat && (
-            <button
-              class="action-secondary"
-              onClick={props.onEnterCombat}
-              data-testid="enter-combat-btn"
-            >
-              Enter Combat
-            </button>
-          )}
           <button
             class="action-primary launch-primary"
             onClick={props.onLaunchExpedition}

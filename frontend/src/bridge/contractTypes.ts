@@ -439,7 +439,6 @@ export type DdgcFrontendIntent =
   | { type: "toggle-hero-selection"; heroId: string }
   | { type: "confirm-provisioning" }
   | { type: "launch-expedition" }
-  | { type: "enter-combat" }
   | { type: "enter-dungeon-assist" }
   | { type: "select-assist-hero"; heroId: string }
   | { type: "use-assist-action"; actionId: string }
@@ -450,7 +449,6 @@ export type DdgcFrontendIntent =
   | { type: "return-to-town" }
   | { type: "continue-from-result" }
   | { type: "resume-from-return" }
-  | { type: "use-skill"; skillId: string }
   | { type: "continue-from-combat" }
   | { type: "open-combat-settings" }
   | { type: "select-skill"; skillId: string }

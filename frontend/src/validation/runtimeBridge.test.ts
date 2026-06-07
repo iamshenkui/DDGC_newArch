@@ -226,30 +226,6 @@ describe("provisioning and expedition launch flow", () => {
     expect(assistVm.assistActions.length).toBeGreaterThan(0);
   });
 
-  it("replay enter-combat reaches character-hit and acknowledge keeps combat active", async () => {
-    const bridge = new ReplayRuntimeBridge();
-    await bridge.boot();
-    await bridge.dispatchIntent({ type: "start-provisioning" });
-    await bridge.dispatchIntent({ type: "confirm-provisioning" });
-
-    const hitSnapshot = await bridge.dispatchIntent({ type: "enter-combat" });
-    expect(hitSnapshot.flowState).toBe("combat");
-    expect(hitSnapshot.viewModel.kind).toBe("combat");
-    expect((hitSnapshot.viewModel as CombatViewModel).phase).toBe("character-hit");
-
-    const fleeSnapshot = await bridge.dispatchIntent({ type: "flee-combat" });
-    expect(fleeSnapshot.flowState).toBe("combat");
-    expect(fleeSnapshot.debugMessage).toContain("rejected");
-
-    const acknowledgeSnapshot = await bridge.dispatchIntent({ type: "continue-from-combat" });
-    expect(acknowledgeSnapshot.flowState).toBe("combat");
-    expect(acknowledgeSnapshot.viewModel.kind).toBe("combat");
-    const acknowledgedVm = acknowledgeSnapshot.viewModel as CombatViewModel;
-    expect(acknowledgedVm.phase).toBe("player-turn");
-    expect(acknowledgedVm.isPlayerTurn).toBe(true);
-    expect(acknowledgedVm.hitLog).toBeUndefined();
-  });
-
   it("replay rejects launch-expedition outside expedition", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
@@ -405,30 +381,6 @@ describe("provisioning and expedition launch flow", () => {
     const assistVm = snapshot.viewModel as DungeonAssistViewModel;
     expect(assistVm.party.length).toBeGreaterThan(0);
     expect(assistVm.assistActions.length).toBeGreaterThan(0);
-  });
-
-  it("live enter-combat reaches character-hit and acknowledge keeps combat active", async () => {
-    const bridge = new LiveRuntimeBridge();
-    await bridge.boot();
-    await bridge.dispatchIntent({ type: "start-provisioning" });
-    await bridge.dispatchIntent({ type: "confirm-provisioning" });
-
-    const hitSnapshot = await bridge.dispatchIntent({ type: "enter-combat" });
-    expect(hitSnapshot.flowState).toBe("combat");
-    expect(hitSnapshot.viewModel.kind).toBe("combat");
-    expect((hitSnapshot.viewModel as CombatViewModel).phase).toBe("character-hit");
-
-    const endTurnSnapshot = await bridge.dispatchIntent({ type: "end-turn" });
-    expect(endTurnSnapshot.flowState).toBe("combat");
-    expect(endTurnSnapshot.debugMessage).toContain("rejected");
-
-    const acknowledgeSnapshot = await bridge.dispatchIntent({ type: "continue-from-combat" });
-    expect(acknowledgeSnapshot.flowState).toBe("combat");
-    expect(acknowledgeSnapshot.viewModel.kind).toBe("combat");
-    const acknowledgedVm = acknowledgeSnapshot.viewModel as CombatViewModel;
-    expect(acknowledgedVm.phase).toBe("player-turn");
-    expect(acknowledgedVm.isPlayerTurn).toBe(true);
-    expect(acknowledgedVm.hitLog).toBeUndefined();
   });
 
   it("live rejects launch-expedition outside expedition", async () => {

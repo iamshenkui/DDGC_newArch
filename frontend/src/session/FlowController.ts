@@ -142,18 +142,6 @@ export function canTransition(
       }
       return { allowed: true };
 
-    case "use-skill":
-      if (screen !== "combat") {
-        return { allowed: false, reason: "use-skill is only valid in combat" };
-      }
-      if (snapshot.viewModel.kind !== "combat") {
-        return { allowed: false, reason: "viewModel is not a combat view model" };
-      }
-      if (snapshot.viewModel.phase === "character-hit") {
-        return { allowed: false, reason: "use-skill is not valid during character-hit acknowledgement" };
-      }
-      return { allowed: true };
-
     case "select-target":
       if (screen !== "combat") {
         return { allowed: false, reason: "select-target is only valid in combat" };
@@ -292,12 +280,6 @@ export function canTransition(
       }
       if (!snapshot.viewModel.isLaunchable) {
         return { allowed: false, reason: "expedition is not launchable" };
-      }
-      return { allowed: true };
-
-    case "enter-combat":
-      if (screen !== "expedition") {
-        return { allowed: false, reason: "enter-combat is only valid in expedition" };
       }
       return { allowed: true };
 
