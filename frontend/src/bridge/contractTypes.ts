@@ -6,6 +6,8 @@ export type FlowState =
   | "town"
   | "provisioning"
   | "expedition"
+  | "dungeon-assist"
+  | "dungeon-map"
   | "combat"
   | "dungeon-interaction"
   | "result"
@@ -241,6 +243,83 @@ export interface ExpeditionSetupViewModel {
   isLaunchable: boolean;
 }
 
+export interface DungeonAssistHero {
+  id: string;
+  name: string;
+  classLabel: string;
+  hp: string;
+  maxHp: string;
+  stress: string;
+  maxStress: string;
+  level: number;
+  isSelected: boolean;
+}
+
+export interface AssistAction {
+  id: string;
+  label: string;
+  description: string;
+  iconType: string;
+  isAvailable: boolean;
+  targetHeroId?: string;
+}
+
+export interface DungeonAssistViewModel {
+  kind: "dungeon-assist";
+  title: string;
+  dungeonName: string;
+  roomNumber: number;
+  party: ReadonlyArray<DungeonAssistHero>;
+  selectedHeroId: string;
+  assistActions: ReadonlyArray<AssistAction>;
+  canContinue: boolean;
+}
+
+export interface DungeonMapRoom {
+  id: string;
+  x: number;
+  y: number;
+  type: "entrance" | "combat" | "treasure" | "rest" | "boss" | "exit" | "empty" | "curio" | "shrine";
+  label: string;
+  isRevealed: boolean;
+  isVisited: boolean;
+  isCurrent: boolean;
+  connections: ReadonlyArray<string>;
+  difficulty?: string;
+  lootPreview?: string;
+}
+
+export interface DungeonMapHero {
+  id: string;
+  name: string;
+  classLabel: string;
+  hp: string;
+  maxHp: string;
+  stress: string;
+  maxStress: string;
+  isWounded: boolean;
+  isAfflicted: boolean;
+}
+
+export interface DungeonMapViewModel {
+  kind: "dungeon-map";
+  title: string;
+  expeditionName: string;
+  dungeonName: string;
+  currentRoomId: string;
+  rooms: ReadonlyArray<DungeonMapRoom>;
+  party: ReadonlyArray<DungeonMapHero>;
+  torchLevel: number;
+  maxTorchLevel: number;
+  exploredCount: number;
+  totalRooms: number;
+  completionPercent: number;
+  isRetreatAvailable: boolean;
+  isComplete: boolean;
+  minimapRows: number;
+  minimapCols: number;
+}
+
 export interface ExpeditionResultViewModel {
   kind: "result";
   title: string;
@@ -291,6 +370,70 @@ export interface FatalErrorViewModel {
   reason: string;
 }
 
+export type CombatPhase = "player-turn" | "enemy-turn" | "character-hit" | "resolution";
+
+export interface CombatSkill {
+  id: string;
+  name: string;
+  description: string;
+  target: string;
+  hitRating: string;
+  critRating: string;
+  cooldown: number;
+  cooldownRemaining: number;
+}
+
+export interface CombatHero {
+  id: string;
+  name: string;
+  classLabel: string;
+  hp: string;
+  maxHp: string;
+  stress: string;
+  maxStress: string;
+  position: number;
+  isActive: boolean;
+  isAlive: boolean;
+  isHit?: boolean;
+  skills: ReadonlyArray<CombatSkill>;
+  portrait?: string;
+}
+
+export interface CombatEnemy {
+  id: string;
+  name: string;
+  hp: string;
+  maxHp: string;
+  position: number;
+  isAlive: boolean;
+  isTargeted: boolean;
+  isHit?: boolean;
+  size: "small" | "medium" | "large";
+}
+
+export interface CombatViewModel {
+  kind: "combat";
+  title: string;
+  dungeonName?: string;
+  roundLabel?: string;
+  phase?: CombatPhase;
+  round: number;
+  turnPhase: "player" | "enemy";
+  activeHeroId: string;
+  party: ReadonlyArray<CombatHero>;
+  enemies: ReadonlyArray<CombatEnemy>;
+  selectedSkillId?: string;
+  combatLog: ReadonlyArray<string>;
+  hitTargetHeroId?: string;
+  hitDamage?: string;
+  hitLog?: string;
+  isPlayerTurn: boolean;
+  canFlee: boolean;
+  isFleeAvailable?: boolean;
+  turnCount?: number;
+  settingsLabel?: string;
+}
+
 export type DdgcViewModel =
   | BootLoadViewModel
   | TownViewModel
@@ -298,6 +441,9 @@ export type DdgcViewModel =
   | BuildingDetailViewModel
   | ProvisioningViewModel
   | ExpeditionSetupViewModel
+  | DungeonAssistViewModel
+  | DungeonMapViewModel
+  | CombatViewModel
   | DungeonInteractionViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
@@ -323,6 +469,20 @@ export type DdgcFrontendIntent =
   | { type: "proceed-dungeon" }
   | { type: "interact-room"; interactionId: string }
   | { type: "retreat-dungeon" }
+  | { type: "enter-dungeon-assist" }
+  | { type: "select-assist-hero"; heroId: string }
+  | { type: "use-assist-action"; actionId: string }
+  | { type: "continue-from-dungeon" }
+  | { type: "enter-room"; roomId: string }
+  | { type: "retreat-from-dungeon" }
+  | { type: "complete-dungeon" }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }
-  | { type: "resume-from-return" };
+  | { type: "resume-from-return" }
+  | { type: "continue-from-combat" }
+  | { type: "open-combat-settings" }
+  | { type: "select-skill"; skillId: string }
+  | { type: "select-target"; enemyId: string }
+  | { type: "confirm-attack" }
+  | { type: "flee-combat" }
+  | { type: "end-turn" };

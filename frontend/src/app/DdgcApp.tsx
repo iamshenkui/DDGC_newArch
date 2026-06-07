@@ -7,7 +7,10 @@ import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 import type { RuntimeBridge } from "../bridge/RuntimeBridge";
 import type {
   BuildingDetailViewModel,
+  CombatViewModel,
+  DungeonAssistViewModel,
   DungeonInteractionViewModel,
+  DungeonMapViewModel,
   ExpeditionResultViewModel,
   ExpeditionSetupViewModel,
   FatalErrorViewModel,
@@ -31,8 +34,11 @@ import { BuildingScreenRouter } from "../screens/town/BuildingScreenRouter";
 import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
 import { DungeonInteractionScreen } from "../screens/dungeon/DungeonInteractionScreen";
+import { DungeonAssistScreen } from "../screens/dungeon/DungeonAssistScreen";
+import { DungeonMapScreen } from "../screens/dungeon/DungeonMapScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
 import { ReturnScreen } from "../screens/expedition/ReturnScreen";
+import { CombatScreen } from "../screens/combat/CombatScreen";
 
 function createBridge(mode: RuntimeMode): RuntimeBridge {
   return mode === "live" ? new LiveRuntimeBridge() : new ReplayRuntimeBridge();
@@ -181,6 +187,69 @@ export function DdgcApp() {
             }}
             onRetreat={() => {
               void dispatchIntent(bridge, { type: "retreat-dungeon" });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "dungeon-assist" && snapshot().viewModel.kind === "dungeon-assist"}
+        >
+          <DungeonAssistScreen
+            viewModel={snapshot().viewModel as DungeonAssistViewModel}
+            onSelectHero={(heroId) => {
+              void dispatchIntent(bridge, { type: "select-assist-hero", heroId });
+            }}
+            onUseAssistAction={(actionId) => {
+              void dispatchIntent(bridge, { type: "use-assist-action", actionId });
+            }}
+            onContinue={() => {
+              void dispatchIntent(bridge, { type: "continue-from-dungeon" });
+            }}
+            onReturnToTown={() => {
+              void dispatchIntent(bridge, { type: "return-to-town" });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "dungeon-map" && snapshot().viewModel.kind === "dungeon-map"}
+        >
+          <DungeonMapScreen
+            viewModel={snapshot().viewModel as DungeonMapViewModel}
+            onEnterRoom={(roomId) => {
+              void dispatchIntent(bridge, { type: "enter-room", roomId });
+            }}
+            onRetreat={() => {
+              void dispatchIntent(bridge, { type: "retreat-from-dungeon" });
+            }}
+            onCompleteDungeon={() => {
+              void dispatchIntent(bridge, { type: "complete-dungeon" });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "combat" && snapshot().viewModel.kind === "combat"}
+        >
+          <CombatScreen
+            viewModel={snapshot().viewModel as CombatViewModel}
+            onSelectSkill={(skillId) => {
+              void dispatchIntent(bridge, { type: "select-skill", skillId });
+            }}
+            onSelectTarget={(enemyId) => {
+              void dispatchIntent(bridge, { type: "select-target", enemyId });
+            }}
+            onConfirmAttack={() => {
+              void dispatchIntent(bridge, { type: "confirm-attack" });
+            }}
+            onFleeCombat={() => {
+              void dispatchIntent(bridge, { type: "flee-combat" });
+            }}
+            onEndTurn={() => {
+              void dispatchIntent(bridge, { type: "end-turn" });
+            }}
+            onContinueCombat={() => {
+              void dispatchIntent(bridge, { type: "continue-from-combat" });
+            }}
+            onOpenSettings={() => {
+              void dispatchIntent(bridge, { type: "open-combat-settings" });
             }}
           />
         </Match>

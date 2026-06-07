@@ -5,6 +5,8 @@ import type {
   DdgcFrontendSnapshot,
   ExpeditionResultViewModel,
   ReturnViewModel,
+  DungeonMapViewModel,
+  CombatViewModel,
 } from "../bridge/contractTypes";
 import {
   fatalSnapshot,
@@ -18,6 +20,10 @@ import {
   provisioningSnapshot,
   expeditionSnapshot,
   dungeonInteractionSnapshot,
+  dungeonAssistSnapshot,
+  dungeonMapSnapshot,
+  combatSnapshot,
+  replayCombatViewModel,
   resultSnapshot,
   failureResultSnapshot,
   partialResultSnapshot,
@@ -85,6 +91,21 @@ describe("FlowController", () => {
       expect(screen).toBe("dungeon-interaction");
     });
 
+    it("returns dungeon-assist screen for dungeon assist view model", () => {
+      const screen = resolveScreen(dungeonAssistSnapshot);
+      expect(screen).toBe("dungeon-assist");
+    });
+
+    it("returns dungeon-map screen for dungeon map view model", () => {
+      const screen = resolveScreen(dungeonMapSnapshot);
+      expect(screen).toBe("dungeon-map");
+    });
+
+    it("returns combat screen for combat view model", () => {
+      const screen = resolveScreen(combatSnapshot);
+      expect(screen).toBe("combat");
+    });
+
     it("returns result screen for result view model", () => {
       const screen = resolveScreen(resultSnapshot);
       expect(screen).toBe("result");
@@ -108,7 +129,7 @@ describe("FlowController", () => {
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "dungeon-interaction", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "dungeon-assist", "dungeon-map", "combat", "dungeon-interaction", "result", "return", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -119,6 +140,9 @@ describe("ScreenKey exhaustiveness", () => {
       "building-detail": replayBuildingDetailSnapshot,
       provisioning: provisioningSnapshot,
       expedition: expeditionSnapshot,
+      "dungeon-assist": dungeonAssistSnapshot,
+      "dungeon-map": dungeonMapSnapshot,
+      combat: combatSnapshot,
       "dungeon-interaction": dungeonInteractionSnapshot,
       result: resultSnapshot,
       return: returnSnapshot,
@@ -316,6 +340,82 @@ describe("canTransition - result and return meta-loop continuation", () => {
     });
   });
 
+  describe("dungeon-assist flow transitions", () => {
+    it("allows enter-dungeon-assist from expedition", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "enter-dungeon-assist" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects enter-dungeon-assist when not in expedition", () => {
+      const validation = canTransition(provisioningSnapshot, { type: "enter-dungeon-assist" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in expedition");
+    });
+
+    it("allows select-assist-hero in dungeon-assist", () => {
+      const validation = canTransition(dungeonAssistSnapshot, { type: "select-assist-hero", heroId: "hero-hunter-01" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects select-assist-hero when not in dungeon-assist", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "select-assist-hero", heroId: "hero-hunter-01" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in dungeon-assist");
+    });
+
+    it("allows use-assist-action in dungeon-assist", () => {
+      const validation = canTransition(dungeonAssistSnapshot, { type: "use-assist-action", actionId: "heal-wound" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects select-assist-hero for unknown heroes", () => {
+      const validation = canTransition(dungeonAssistSnapshot, { type: "select-assist-hero", heroId: "unknown-hero" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("does not exist");
+    });
+
+    it("rejects use-assist-action for locked assist actions", () => {
+      const validation = canTransition(dungeonAssistSnapshot, { type: "use-assist-action", actionId: "apply-buff" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not available");
+    });
+
+    it("rejects use-assist-action for unknown assist actions", () => {
+      const validation = canTransition(dungeonAssistSnapshot, { type: "use-assist-action", actionId: "unknown-action" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("does not exist");
+    });
+
+    it("rejects use-assist-action when not in dungeon-assist", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "use-assist-action", actionId: "heal-wound" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in dungeon-assist");
+    });
+
+    it("rejects continue-from-dungeon when canContinue is false", () => {
+      const validation = canTransition(dungeonAssistSnapshot, { type: "continue-from-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("cannot continue");
+    });
+
+    it("allows continue-from-dungeon when canContinue is true", () => {
+      const readySnapshot: DdgcFrontendSnapshot = {
+        ...dungeonAssistSnapshot,
+        viewModel: {
+          ...dungeonAssistSnapshot.viewModel,
+          canContinue: true
+        } as DdgcFrontendSnapshot["viewModel"]
+      };
+      const validation = canTransition(readySnapshot, { type: "continue-from-dungeon" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("allows return-to-town from dungeon-assist", () => {
+      const validation = canTransition(dungeonAssistSnapshot, { type: "return-to-town" });
+      expect(validation.allowed).toBe(true);
+    });
+  });
+
   describe("provisioning flow transitions", () => {
     it("allows start-provisioning from town", () => {
       const validation = canTransition(replayReadySnapshot, { type: "start-provisioning" });
@@ -396,6 +496,224 @@ describe("canTransition - result and return meta-loop continuation", () => {
       const validation = canTransition(replayReadySnapshot, { type: "building-action", actionId: "train-combat" });
       expect(validation.allowed).toBe(false);
       expect(validation.reason).toContain("only valid in building-detail");
+    });
+  });
+
+  describe("dungeon-map transitions", () => {
+    it("allows enter-room when room exists and is connected", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "room-combat-1" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects enter-room when not on dungeon-map screen", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "enter-room", roomId: "room-combat-1" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on dungeon-map screen");
+    });
+
+    it("rejects enter-room when not on dungeon-map screen (result)", () => {
+      const validation = canTransition(resultSnapshot, { type: "enter-room", roomId: "room-combat-1" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on dungeon-map screen");
+    });
+
+    it("rejects enter-room when roomId is missing", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("roomId is required");
+    });
+
+    it("rejects enter-room when room does not exist", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "nonexistent-room" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("does not exist");
+    });
+
+    it("rejects enter-room when room is not connected to current room", () => {
+      // room-boss-1 is not connected to room-entrance (the current room in the fixture)
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "room-boss-1" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not connected");
+    });
+
+    it("rejects enter-room when room is hidden (not revealed)", () => {
+      // room-boss-1 is hidden in the fixture; make it connected to current room for this test
+      const mapVm = dungeonMapSnapshot.viewModel as DungeonMapViewModel;
+      const hiddenRoomSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonMapSnapshot,
+        viewModel: {
+          ...mapVm,
+          rooms: mapVm.rooms.map((r) =>
+            r.id === "room-entrance"
+              ? { ...r, connections: [...r.connections, "room-boss-1"] }
+              : r
+          )
+        }
+      };
+      const validation = canTransition(hiddenRoomSnapshot, { type: "enter-room", roomId: "room-boss-1" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not revealed");
+    });
+
+    it("allows retreat-from-dungeon when retreat is available", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "retreat-from-dungeon" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects retreat-from-dungeon when not on dungeon-map screen", () => {
+      const validation = canTransition(expeditionSnapshot, { type: "retreat-from-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on dungeon-map screen");
+    });
+
+    it("rejects retreat-from-dungeon when retreat is not available", () => {
+      const mapVm = dungeonMapSnapshot.viewModel as DungeonMapViewModel;
+      const noRetreatSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonMapSnapshot,
+        viewModel: {
+          ...mapVm,
+          isRetreatAvailable: false
+        }
+      };
+      const validation = canTransition(noRetreatSnapshot, { type: "retreat-from-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("retreat is not available");
+    });
+
+    it("rejects complete-dungeon when dungeon is not complete", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "complete-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not complete");
+    });
+
+    it("allows complete-dungeon when dungeon is complete", () => {
+      const mapVm = dungeonMapSnapshot.viewModel as DungeonMapViewModel;
+      const completeSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonMapSnapshot,
+        viewModel: {
+          ...mapVm,
+          isComplete: true
+        }
+      };
+      const validation = canTransition(completeSnapshot, { type: "complete-dungeon" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects complete-dungeon when not on dungeon-map screen", () => {
+      const validation = canTransition(resultSnapshot, { type: "complete-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on dungeon-map screen");
+    });
+  });
+
+  describe("combat transitions", () => {
+    it("allows valid player combat selection and attack intents", () => {
+      expect(canTransition(combatSnapshot, { type: "select-skill", skillId: "skill-1" }).allowed).toBe(true);
+      expect(canTransition(combatSnapshot, { type: "select-target", enemyId: "enemy-moth-01" }).allowed).toBe(true);
+      expect(canTransition(combatSnapshot, { type: "confirm-attack" }).allowed).toBe(true);
+    });
+
+    it("rejects missing and cooldown skills for the active hero", () => {
+      const missingSkill = canTransition(combatSnapshot, { type: "select-skill", skillId: "missing-skill" });
+      expect(missingSkill.allowed).toBe(false);
+      expect(missingSkill.reason).toContain("does not exist");
+
+      const cooldownSkill = canTransition(combatSnapshot, { type: "select-skill", skillId: "skill-3" });
+      expect(cooldownSkill.allowed).toBe(false);
+      expect(cooldownSkill.reason).toContain("cooldown");
+    });
+
+    it("rejects missing and defeated combat targets", () => {
+      const missingTarget = canTransition(combatSnapshot, { type: "select-target", enemyId: "missing-enemy" });
+      expect(missingTarget.allowed).toBe(false);
+      expect(missingTarget.reason).toContain("does not exist");
+
+      const combatVm = combatSnapshot.viewModel as CombatViewModel;
+      const deadTargetSnapshot: DdgcFrontendSnapshot = {
+        ...combatSnapshot,
+        viewModel: {
+          ...combatVm,
+          enemies: combatVm.enemies.map((enemy) =>
+            enemy.id === "enemy-larva-01"
+              ? { ...enemy, isAlive: false }
+              : enemy
+          )
+        }
+      };
+      const deadTarget = canTransition(deadTargetSnapshot, { type: "select-target", enemyId: "enemy-larva-01" });
+      expect(deadTarget.allowed).toBe(false);
+      expect(deadTarget.reason).toContain("defeated");
+    });
+
+    it("rejects confirm-attack with no live selected target", () => {
+      const combatVm = combatSnapshot.viewModel as CombatViewModel;
+      const noTargetSnapshot: DdgcFrontendSnapshot = {
+        ...combatSnapshot,
+        viewModel: {
+          ...combatVm,
+          enemies: combatVm.enemies.map((enemy) => ({ ...enemy, isTargeted: false }))
+        }
+      };
+      const noTarget = canTransition(noTargetSnapshot, { type: "confirm-attack" });
+      expect(noTarget.allowed).toBe(false);
+      expect(noTarget.reason).toContain("no live combat target");
+
+      const deadSelectedTargetSnapshot: DdgcFrontendSnapshot = {
+        ...combatSnapshot,
+        viewModel: {
+          ...combatVm,
+          enemies: combatVm.enemies.map((enemy) =>
+            enemy.isTargeted
+              ? { ...enemy, isAlive: false }
+              : enemy
+          )
+        }
+      };
+      const deadSelectedTarget = canTransition(deadSelectedTargetSnapshot, { type: "confirm-attack" });
+      expect(deadSelectedTarget.allowed).toBe(false);
+      expect(deadSelectedTarget.reason).toContain("defeated");
+    });
+
+    it("rejects combat-ending intents during character-hit acknowledgement", () => {
+      const characterHitSnapshot: DdgcFrontendSnapshot = {
+        ...combatSnapshot,
+        viewModel: replayCombatViewModel
+      };
+
+      expect(canTransition(characterHitSnapshot, { type: "continue-from-combat" }).allowed).toBe(true);
+
+      const selectSkill = canTransition(characterHitSnapshot, { type: "select-skill", skillId: "skill-1" });
+      expect(selectSkill.allowed).toBe(false);
+      expect(selectSkill.reason).toContain("character-hit acknowledgement");
+
+      const selectTarget = canTransition(characterHitSnapshot, { type: "select-target", enemyId: "enemy-moth-01" });
+      expect(selectTarget.allowed).toBe(false);
+      expect(selectTarget.reason).toContain("character-hit acknowledgement");
+
+      const confirmAttack = canTransition(characterHitSnapshot, { type: "confirm-attack" });
+      expect(confirmAttack.allowed).toBe(false);
+      expect(confirmAttack.reason).toContain("character-hit acknowledgement");
+
+      const flee = canTransition(characterHitSnapshot, { type: "flee-combat" });
+      expect(flee.allowed).toBe(false);
+      expect(flee.reason).toContain("character-hit acknowledgement");
+
+      const endTurn = canTransition(characterHitSnapshot, { type: "end-turn" });
+      expect(endTurn.allowed).toBe(false);
+      expect(endTurn.reason).toContain("character-hit acknowledgement");
+
+      const openSettings = canTransition(characterHitSnapshot, { type: "open-combat-settings" });
+      expect(openSettings.allowed).toBe(false);
+      expect(openSettings.reason).toContain("character-hit acknowledgement");
+
+      const returnToTown = canTransition(characterHitSnapshot, { type: "return-to-town" });
+      expect(returnToTown.allowed).toBe(false);
+      expect(returnToTown.reason).toContain("character-hit acknowledgement");
+    });
+
+    it("rejects continue-from-combat outside character-hit acknowledgement", () => {
+      expect(canTransition(combatSnapshot, { type: "continue-from-combat" }).allowed).toBe(false);
+      expect(canTransition(combatSnapshot, { type: "continue-from-combat" }).reason).toContain("character-hit acknowledgement");
     });
   });
 
