@@ -447,6 +447,11 @@ describe("result and return meta-loop continuation", () => {
   it("continue-from-result transitions to return state", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
 
     const snapshot = await bridge.dispatchIntent({ type: "continue-from-result" });
     expect(snapshot.flowState).toBe("return");
@@ -458,6 +463,12 @@ describe("result and return meta-loop continuation", () => {
   it("resume-from-return intent returns to town", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    await bridge.dispatchIntent({ type: "continue-from-result" });
 
     const snapshot = await bridge.dispatchIntent({ type: "resume-from-return" });
     expect(snapshot.flowState).toBe("town");
@@ -467,6 +478,11 @@ describe("result and return meta-loop continuation", () => {
   it("continue-from-result is handled in live bridge without error", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
 
     const snapshot = await bridge.dispatchIntent({ type: "continue-from-result" });
     expect(snapshot.flowState).toBe("return");
@@ -478,6 +494,12 @@ describe("result and return meta-loop continuation", () => {
   it("resume-from-return is handled in live bridge without error", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    await bridge.dispatchIntent({ type: "continue-from-result" });
 
     const snapshot = await bridge.dispatchIntent({ type: "resume-from-return" });
     expect(snapshot.flowState).toBe("town");

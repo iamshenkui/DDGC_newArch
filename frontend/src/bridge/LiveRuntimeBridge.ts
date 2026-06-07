@@ -538,9 +538,23 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "return-to-town":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: return-to-town rejected from current screen."
+          };
+          break;
+        }
         this.snapshot = createLiveTownSnapshot();
         break;
       case "continue-from-result":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: continue-from-result rejected outside result."
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "return",
@@ -548,6 +562,13 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "resume-from-return":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: resume-from-return rejected outside return."
+          };
+          break;
+        }
         this.snapshot = createLiveTownSnapshot();
         break;
     }

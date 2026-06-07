@@ -196,12 +196,26 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "return-to-town":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: return-to-town rejected from current screen."
+          };
+          break;
+        }
         this.snapshot = replayReadySnapshot;
         break;
       case "boot":
         this.snapshot = replayReadySnapshot;
         break;
       case "continue-from-result":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: continue-from-result rejected outside result."
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "return",
@@ -209,6 +223,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "resume-from-return":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: resume-from-return rejected outside return."
+          };
+          break;
+        }
         this.snapshot = replayReadySnapshot;
         break;
     }
