@@ -215,6 +215,37 @@ describe("provisioning and expedition launch flow", () => {
     expect(assistVm.canContinue).toBe(false);
   });
 
+  it("replay rejects launch-expedition outside expedition", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    expect(snapshot.flowState).toBe("town");
+    expect(snapshot.viewModel.kind).toBe("town");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("replay rejects launch-expedition when expedition is not launchable", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    const expeditionSnapshot = await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    (bridge as unknown as { snapshot: typeof expeditionSnapshot }).snapshot = {
+      ...expeditionSnapshot,
+      viewModel: {
+        ...(expeditionSnapshot.viewModel as ExpeditionSetupViewModel),
+        isLaunchable: false
+      }
+    };
+
+    const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    expect(snapshot.flowState).toBe("expedition");
+    expect(snapshot.viewModel.kind).toBe("expedition");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
   it("replay rejects enter-dungeon-assist outside expedition", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
@@ -338,6 +369,37 @@ describe("provisioning and expedition launch flow", () => {
     expect(snapshot.viewModel.kind).toBe("dungeon-assist");
     const assistVm = snapshot.viewModel as DungeonAssistViewModel;
     expect(assistVm.party.length).toBeGreaterThan(0);
+  });
+
+  it("live rejects launch-expedition outside expedition", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    expect(snapshot.flowState).toBe("town");
+    expect(snapshot.viewModel.kind).toBe("town");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("live rejects launch-expedition when expedition is not launchable", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    const expeditionSnapshot = await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    (bridge as unknown as { snapshot: typeof expeditionSnapshot }).snapshot = {
+      ...expeditionSnapshot,
+      viewModel: {
+        ...(expeditionSnapshot.viewModel as ExpeditionSetupViewModel),
+        isLaunchable: false
+      }
+    };
+
+    const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    expect(snapshot.flowState).toBe("expedition");
+    expect(snapshot.viewModel.kind).toBe("expedition");
+    expect(snapshot.debugMessage).toContain("rejected");
   });
 
   it("live rejects enter-dungeon-assist outside expedition", async () => {

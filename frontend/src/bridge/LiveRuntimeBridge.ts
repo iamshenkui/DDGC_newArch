@@ -460,6 +460,13 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "launch-expedition":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: launch-expedition rejected from current state."
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "dungeon-assist",

@@ -118,6 +118,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "launch-expedition":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: launch-expedition rejected from current state."
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "dungeon-assist",
