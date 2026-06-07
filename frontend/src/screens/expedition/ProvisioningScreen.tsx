@@ -224,7 +224,7 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
                           <span class="provisioning-hero-badge provisioning-hero-badge--wounded">受伤</span>
                         </Show>
                         <Show when={h.isAfflicted}>
-                          <span class="provisioning-hero-badge provisioning-hero-badge--afflicted">afflicted</span>
+                          <span class="provisioning-hero-badge provisioning-hero-badge--afflicted">受折磨</span>
                         </Show>
                         <Show when={!h.isWounded && !h.isAfflicted}>
                           <span class="provisioning-hero-badge provisioning-hero-badge--healthy">健康</span>
