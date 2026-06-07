@@ -9,6 +9,7 @@ import type {
   TownBuildingSummary,
   HeroDetailViewModel,
   BuildingDetailViewModel,
+  ExpeditionPlanningViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   DungeonAssistViewModel,
@@ -271,6 +272,74 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
     upgradeRequirement: config.upgradeRequirement
   };
 };
+
+const createLiveExpeditionPlanningViewModel = (): ExpeditionPlanningViewModel => ({
+  kind: "expedition-planning",
+  title: "Plane Exploration",
+  campaignName: "Fresh Campaign",
+  selectedPlaneId: "qinglong",
+  planes: [
+    {
+      id: "qinglong",
+      name: "青龙",
+      description: "The Azure Dragon plane — ancient forests shrouded in mist.",
+      difficulty: "Challenging",
+      difficultyPips: 3,
+      estimatedDuration: "Medium",
+      isLocked: false,
+      rewards: ["Dragon Scale", "Ancient Wood"],
+      objectives: ["Explore the forest depths", "Defeat the Azure Dragon"],
+      themeColor: "#4a9b8e"
+    },
+    {
+      id: "baihu",
+      name: "白虎",
+      description: "The White Tiger plane — fortress ruins where phantoms roam.",
+      difficulty: "Hard",
+      difficultyPips: 4,
+      estimatedDuration: "Long",
+      isLocked: false,
+      rewards: ["Tiger Fang", "Steel Fragment"],
+      objectives: ["Breach the fortress gates", "Defeat the White Tiger"],
+      themeColor: "#c9a959"
+    },
+    {
+      id: "zhuque",
+      name: "朱雀",
+      description: "The Vermilion Bird plane — fire temples where ghost flames dance.",
+      difficulty: "Very Hard",
+      difficultyPips: 5,
+      estimatedDuration: "Very Long",
+      isLocked: true,
+      lockReason: "Complete QingLong first",
+      rewards: ["Phoenix Feather", "Fire Gem"],
+      objectives: ["Navigate the burning temples", "Defeat the Vermilion Bird"],
+      themeColor: "#d4563c"
+    },
+    {
+      id: "xuanwu",
+      name: "玄武",
+      description: "The Black Tortoise plane — watery depths where serpents coil.",
+      difficulty: "Extreme",
+      difficultyPips: 5,
+      estimatedDuration: "Very Long",
+      isLocked: true,
+      lockReason: "Complete BaiHu first",
+      rewards: ["Turtle Shell", "Ice Crystal"],
+      objectives: ["Descend into the abyss", "Defeat the Black Tortoise"],
+      themeColor: "#4a6fa5"
+    }
+  ],
+  partySlots: [
+    { heroId: "hero-hunter-live-01", heroName: "Yuan", classLabel: "Hunter", hp: "42 / 42", stress: "0", level: 1 },
+    { heroId: "hero-white-live-01", heroName: "Mei", classLabel: "White", hp: "41 / 41", stress: "0", level: 1 },
+    null,
+    null
+  ],
+  maxPartySize: 4,
+  isReadyToProvision: true,
+  provisionCost: "100 Gold"
+});
 
 const createLiveProvisioningViewModel = (): ProvisioningViewModel => ({
   kind: "provisioning",
@@ -636,6 +705,49 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         this.snapshot = {
           ...this.snapshot,
           debugMessage: `Live: building action intent received for ${intent.actionId}.`
+        };
+        break;
+      case "start-expedition-planning":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "expedition-planning",
+          viewModel: createLiveExpeditionPlanningViewModel()
+        };
+        break;
+      case "select-plane": {
+        const planningVm = this.snapshot.viewModel as ExpeditionPlanningViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...planningVm,
+            selectedPlaneId: intent.planeId
+          }
+        };
+        break;
+      }
+      case "toggle-planning-hero": {
+        const planningVm = this.snapshot.viewModel as ExpeditionPlanningViewModel;
+        const updatedSlots = planningVm.partySlots.map((slot) => {
+          if (slot === null) return null;
+          if (slot.heroId === intent.heroId) return null;
+          return slot;
+        });
+        const filledCount = updatedSlots.filter((s) => s !== null).length;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...planningVm,
+            partySlots: updatedSlots,
+            isReadyToProvision: filledCount >= 1 && filledCount <= planningVm.maxPartySize
+          }
+        };
+        break;
+      }
+      case "proceed-to-provisioning":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "provisioning",
+          viewModel: createLiveProvisioningViewModel()
         };
         break;
       case "start-provisioning":

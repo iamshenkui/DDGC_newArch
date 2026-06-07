@@ -4,6 +4,7 @@ import type {
   DungeonInteractionViewModel,
   DdgcFrontendSnapshot,
   DungeonAssistViewModel,
+  ExpeditionPlanningViewModel,
   ExpeditionSetupViewModel,
   DungeonMapViewModel,
   ExpeditionResultViewModel,
@@ -475,6 +476,74 @@ export const replayCampingTrainerBuildingDetailViewModel: BuildingDetailViewMode
     }
   ],
   upgradeRequirement: "Reach Town Level 2 to unlock advanced camping skills."
+};
+
+export const replayExpeditionPlanningViewModel: ExpeditionPlanningViewModel = {
+  kind: "expedition-planning",
+  title: "Plane Exploration",
+  campaignName: "The Azure Lantern",
+  selectedPlaneId: "qinglong",
+  planes: [
+    {
+      id: "qinglong",
+      name: "青龙",
+      description: "The Azure Dragon plane — ancient forests shrouded in mist, home to mantis kin and tree spirits.",
+      difficulty: "Challenging",
+      difficultyPips: 3,
+      estimatedDuration: "Medium",
+      isLocked: false,
+      rewards: ["Dragon Scale", "Ancient Wood", "Mantis Essence"],
+      objectives: ["Explore the forest depths", "Defeat the Azure Dragon", "Collect dragon scales"],
+      themeColor: "#4a9b8e"
+    },
+    {
+      id: "baihu",
+      name: "白虎",
+      description: "The White Tiger plane — fortress ruins where armored phantoms and blade spirits roam.",
+      difficulty: "Hard",
+      difficultyPips: 4,
+      estimatedDuration: "Long",
+      isLocked: false,
+      rewards: ["Tiger Fang", "Steel Fragment", "Phantom Shard"],
+      objectives: [" breach the fortress gates", "Defeat the White Tiger", "Recover lost artifacts"],
+      themeColor: "#c9a959"
+    },
+    {
+      id: "zhuque",
+      name: "朱雀",
+      description: "The Vermilion Bird plane — fire temples where ghost flames dance and fox spirits lure travelers.",
+      difficulty: "Very Hard",
+      difficultyPips: 5,
+      estimatedDuration: "Very Long",
+      isLocked: true,
+      lockReason: "Complete QingLong first",
+      rewards: ["Phoenix Feather", "Fire Gem", "Fox Spirit Orb"],
+      objectives: ["Navigate the burning temples", "Defeat the Vermilion Bird", "Extinguish the eternal flame"],
+      themeColor: "#d4563c"
+    },
+    {
+      id: "xuanwu",
+      name: "玄武",
+      description: "The Black Tortoise plane — watery depths where serpents coil and frozen corpses drift.",
+      difficulty: "Extreme",
+      difficultyPips: 5,
+      estimatedDuration: "Very Long",
+      isLocked: true,
+      lockReason: "Complete BaiHu first",
+      rewards: ["Turtle Shell", "Ice Crystal", "Serpent Venom"],
+      objectives: ["Descend into the abyss", "Defeat the Black Tortoise", "Seal the water gate"],
+      themeColor: "#4a6fa5"
+    }
+  ],
+  partySlots: [
+    { heroId: "hero-hunter-01", heroName: "Shen", classLabel: "Hunter", hp: "38 / 42", stress: "17", level: 2 },
+    { heroId: "hero-white-01", heroName: "Bai Xiu", classLabel: "White", hp: "41 / 41", stress: "8", level: 2 },
+    null,
+    null
+  ],
+  maxPartySize: 4,
+  isReadyToProvision: true,
+  provisionCost: "150 Gold"
 };
 
 export const replayProvisioningViewModel: ProvisioningViewModel = {
@@ -1055,6 +1124,14 @@ export const startupSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Startup screen fixture - ready to boot into replay or live mode."
 };
 
+// Expedition planning flow snapshot
+export const expeditionPlanningSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "expedition-planning",
+  viewModel: replayExpeditionPlanningViewModel,
+  debugMessage: "Replay bridge showing expedition planning screen."
+};
+
 // Provisioning flow snapshot
 export const provisioningSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -1145,7 +1222,7 @@ export function validateSnapshotContract(snapshot: DdgcFrontendSnapshot): string
   }
 
   // FlowState must be a valid FlowState
-  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "dungeon-assist", "dungeon-map", "combat", "dungeon-interaction", "result", "return"];
+  const validFlowStates: FlowState[] = ["boot", "load", "town", "expedition-planning", "provisioning", "expedition", "dungeon-assist", "dungeon-map", "combat", "dungeon-interaction", "result", "return"];
   if (!validFlowStates.includes(snapshot.flowState as FlowState)) {
     errors.push(
       `flowState "${String(snapshot.flowState)}" is not a valid FlowState. ` +
@@ -1198,6 +1275,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     boot: ["boot-load"],
     load: ["boot-load"],
     town: ["town", "hero-detail", "building-detail"],
+    "expedition-planning": ["expedition-planning"],
     provisioning: ["provisioning"],
     expedition: ["expedition"],
     "dungeon-assist": ["dungeon-assist"],
@@ -1258,6 +1336,17 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!["ready", "partial", "locked"].includes(vm.status as string)) e.push(`BuildingDetailViewModel: status is "${String(vm.status)}", expected "ready", "partial", or "locked"`);
       if (!vm.description || typeof vm.description !== "string") e.push("BuildingDetailViewModel: description is missing");
       if (!Array.isArray(vm.actions)) { e.push("BuildingDetailViewModel: actions is not an array"); } else if (vm.actions.length === 0) { e.push("BuildingDetailViewModel: actions array is empty"); }
+      break;
+    }
+    case "expedition-planning": {
+      if (!vm.title || typeof vm.title !== "string") e.push("ExpeditionPlanningViewModel: title is missing");
+      if (!vm.campaignName || typeof vm.campaignName !== "string") e.push("ExpeditionPlanningViewModel: campaignName is missing");
+      if (!vm.selectedPlaneId || typeof vm.selectedPlaneId !== "string") e.push("ExpeditionPlanningViewModel: selectedPlaneId is missing");
+      if (!Array.isArray(vm.planes)) { e.push("ExpeditionPlanningViewModel: planes is not an array"); } else if (vm.planes.length === 0) { e.push("ExpeditionPlanningViewModel: planes array is empty"); }
+      if (!Array.isArray(vm.partySlots)) e.push("ExpeditionPlanningViewModel: partySlots is not an array");
+      if (typeof vm.maxPartySize !== "number") e.push("ExpeditionPlanningViewModel: maxPartySize is not a number");
+      if (typeof vm.isReadyToProvision !== "boolean") e.push("ExpeditionPlanningViewModel: isReadyToProvision is not a boolean");
+      if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ExpeditionPlanningViewModel: provisionCost is missing");
       break;
     }
     case "provisioning": {
