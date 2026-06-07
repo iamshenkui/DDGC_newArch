@@ -491,6 +491,13 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "use-assist-action": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: assist action ${intent.actionId} rejected.`
+          };
+          break;
+        }
         const assistVm = this.snapshot.viewModel as DungeonAssistViewModel;
         this.snapshot = {
           ...this.snapshot,

@@ -148,6 +148,18 @@ export function canTransition(
       if (screen !== "dungeon-assist") {
         return { allowed: false, reason: "use-assist-action is only valid in dungeon-assist" };
       }
+      if (snapshot.viewModel.kind !== "dungeon-assist") {
+        return { allowed: false, reason: "viewModel is not a dungeon-assist view model" };
+      }
+      {
+        const action = snapshot.viewModel.assistActions.find((item) => item.id === intent.actionId);
+        if (!action) {
+          return { allowed: false, reason: `assist action ${intent.actionId} does not exist` };
+        }
+        if (!action.isAvailable) {
+          return { allowed: false, reason: `assist action ${intent.actionId} is not available` };
+        }
+      }
       return { allowed: true };
 
     case "continue-from-dungeon":

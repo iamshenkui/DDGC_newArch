@@ -344,6 +344,18 @@ describe("canTransition - result and return meta-loop continuation", () => {
       expect(validation.allowed).toBe(true);
     });
 
+    it("rejects use-assist-action for locked assist actions", () => {
+      const validation = canTransition(dungeonAssistSnapshot, { type: "use-assist-action", actionId: "apply-buff" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not available");
+    });
+
+    it("rejects use-assist-action for unknown assist actions", () => {
+      const validation = canTransition(dungeonAssistSnapshot, { type: "use-assist-action", actionId: "unknown-action" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("does not exist");
+    });
+
     it("rejects use-assist-action when not in dungeon-assist", () => {
       const validation = canTransition(expeditionSnapshot, { type: "use-assist-action", actionId: "heal-wound" });
       expect(validation.allowed).toBe(false);

@@ -246,6 +246,26 @@ describe("provisioning and expedition launch flow", () => {
     expect(snapshot.debugMessage).toContain("rejected");
   });
 
+  it("replay rejects locked and unknown assist actions", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const lockedSnapshot = await bridge.dispatchIntent({ type: "use-assist-action", actionId: "apply-buff" });
+    expect(lockedSnapshot.flowState).toBe("dungeon-assist");
+    expect(lockedSnapshot.viewModel.kind).toBe("dungeon-assist");
+    expect((lockedSnapshot.viewModel as DungeonAssistViewModel).canContinue).toBe(false);
+    expect(lockedSnapshot.debugMessage).toContain("rejected");
+
+    const unknownSnapshot = await bridge.dispatchIntent({ type: "use-assist-action", actionId: "unknown-action" });
+    expect(unknownSnapshot.flowState).toBe("dungeon-assist");
+    expect(unknownSnapshot.viewModel.kind).toBe("dungeon-assist");
+    expect((unknownSnapshot.viewModel as DungeonAssistViewModel).canContinue).toBe(false);
+    expect(unknownSnapshot.debugMessage).toContain("rejected");
+  });
+
   it("replay return-to-town from provisioning returns to town", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
@@ -306,6 +326,26 @@ describe("provisioning and expedition launch flow", () => {
     expect(snapshot.flowState).toBe("dungeon-assist");
     expect(snapshot.viewModel.kind).toBe("dungeon-assist");
     expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("live rejects locked and unknown assist actions", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const lockedSnapshot = await bridge.dispatchIntent({ type: "use-assist-action", actionId: "apply-buff" });
+    expect(lockedSnapshot.flowState).toBe("dungeon-assist");
+    expect(lockedSnapshot.viewModel.kind).toBe("dungeon-assist");
+    expect((lockedSnapshot.viewModel as DungeonAssistViewModel).canContinue).toBe(false);
+    expect(lockedSnapshot.debugMessage).toContain("rejected");
+
+    const unknownSnapshot = await bridge.dispatchIntent({ type: "use-assist-action", actionId: "unknown-action" });
+    expect(unknownSnapshot.flowState).toBe("dungeon-assist");
+    expect(unknownSnapshot.viewModel.kind).toBe("dungeon-assist");
+    expect((unknownSnapshot.viewModel as DungeonAssistViewModel).canContinue).toBe(false);
+    expect(unknownSnapshot.debugMessage).toContain("rejected");
   });
 
   it("town -> provision -> launch path is reproducible in replay", async () => {
