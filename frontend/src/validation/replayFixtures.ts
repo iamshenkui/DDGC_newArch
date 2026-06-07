@@ -1,8 +1,12 @@
 import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
+  DungeonInteractionViewModel,
   DdgcFrontendSnapshot,
+  DungeonAssistViewModel,
+  ExpeditionPlanningViewModel,
   ExpeditionSetupViewModel,
+  DungeonMapViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
   FatalErrorViewModel,
@@ -474,6 +478,74 @@ export const replayCampingTrainerBuildingDetailViewModel: BuildingDetailViewMode
   upgradeRequirement: "Reach Town Level 2 to unlock advanced camping skills."
 };
 
+export const replayExpeditionPlanningViewModel: ExpeditionPlanningViewModel = {
+  kind: "expedition-planning",
+  title: "Plane Exploration",
+  campaignName: "The Azure Lantern",
+  selectedPlaneId: "qinglong",
+  planes: [
+    {
+      id: "qinglong",
+      name: "青龙",
+      description: "The Azure Dragon plane — ancient forests shrouded in mist, home to mantis kin and tree spirits.",
+      difficulty: "Challenging",
+      difficultyPips: 3,
+      estimatedDuration: "Medium",
+      isLocked: false,
+      rewards: ["Dragon Scale", "Ancient Wood", "Mantis Essence"],
+      objectives: ["Explore the forest depths", "Defeat the Azure Dragon", "Collect dragon scales"],
+      themeColor: "#4a9b8e"
+    },
+    {
+      id: "baihu",
+      name: "白虎",
+      description: "The White Tiger plane — fortress ruins where armored phantoms and blade spirits roam.",
+      difficulty: "Hard",
+      difficultyPips: 4,
+      estimatedDuration: "Long",
+      isLocked: false,
+      rewards: ["Tiger Fang", "Steel Fragment", "Phantom Shard"],
+      objectives: [" breach the fortress gates", "Defeat the White Tiger", "Recover lost artifacts"],
+      themeColor: "#c9a959"
+    },
+    {
+      id: "zhuque",
+      name: "朱雀",
+      description: "The Vermilion Bird plane — fire temples where ghost flames dance and fox spirits lure travelers.",
+      difficulty: "Very Hard",
+      difficultyPips: 5,
+      estimatedDuration: "Very Long",
+      isLocked: true,
+      lockReason: "Complete QingLong first",
+      rewards: ["Phoenix Feather", "Fire Gem", "Fox Spirit Orb"],
+      objectives: ["Navigate the burning temples", "Defeat the Vermilion Bird", "Extinguish the eternal flame"],
+      themeColor: "#d4563c"
+    },
+    {
+      id: "xuanwu",
+      name: "玄武",
+      description: "The Black Tortoise plane — watery depths where serpents coil and frozen corpses drift.",
+      difficulty: "Extreme",
+      difficultyPips: 5,
+      estimatedDuration: "Very Long",
+      isLocked: true,
+      lockReason: "Complete BaiHu first",
+      rewards: ["Turtle Shell", "Ice Crystal", "Serpent Venom"],
+      objectives: ["Descend into the abyss", "Defeat the Black Tortoise", "Seal the water gate"],
+      themeColor: "#4a6fa5"
+    }
+  ],
+  partySlots: [
+    { heroId: "hero-hunter-01", heroName: "Shen", classLabel: "Hunter", hp: "38 / 42", stress: "17", level: 2 },
+    { heroId: "hero-white-01", heroName: "Bai Xiu", classLabel: "White", hp: "41 / 41", stress: "8", level: 2 },
+    null,
+    null
+  ],
+  maxPartySize: 4,
+  isReadyToProvision: true,
+  provisionCost: "150 Gold"
+};
+
 export const replayProvisioningViewModel: ProvisioningViewModel = {
   kind: "provisioning",
   title: "战前补给",
@@ -523,6 +595,86 @@ export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
   supplyLevel: "Adequate",
   provisionCost: "150 Gold",
   isLaunchable: true
+};
+
+export const replayDungeonInteractionViewModel: DungeonInteractionViewModel = {
+  kind: "dungeon-interaction",
+  title: "Dungeon Interaction",
+  dungeonName: "The Depths Await",
+  roomType: "event",
+  roomLabel: "Ancient Altar",
+  roomDescription: "An ancient altar stands before you, covered in moss and faintly glowing runes. Something about it feels both inviting and dangerous.",
+  progress: {
+    currentRoom: 3,
+    totalRooms: 9,
+    roomsCleared: 2
+  },
+  party: [
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", stress: "17", maxStress: "200" },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "8", maxStress: "200" }
+  ],
+  interactions: [
+    { id: "investigate", label: "Investigate", description: "Examine the altar closely for clues or hidden mechanisms.", isAvailable: true },
+    { id: "use-item", label: "Use Item", description: "Attempt to use a provision or tool on the altar.", isAvailable: true },
+    { id: "pray", label: "Pray", description: "Offer a prayer at the altar. The outcome is uncertain.", isAvailable: true },
+    { id: "ignore", label: "Ignore", description: "Leave the altar untouched and proceed.", isAvailable: true }
+  ],
+  isProceedAvailable: true,
+  isRetreatAvailable: true
+};
+
+export const replayDungeonAssistViewModel: DungeonAssistViewModel = {
+  kind: "dungeon-assist",
+  title: "Dungeon Assist",
+  dungeonName: "QingLong Depths",
+  roomNumber: 1,
+  party: [
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", stress: "17", maxStress: "200", level: 2, isSelected: true },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "8", maxStress: "200", level: 2, isSelected: false },
+    { id: "hero-black-01", name: "Hei Zhen", classLabel: "Black", hp: "34 / 40", maxHp: "40", stress: "24", maxStress: "200", level: 1, isSelected: false }
+  ],
+  selectedHeroId: "hero-hunter-01",
+  assistActions: [
+    { id: "heal-wound", label: "Heal", description: "Restore health to selected hero", iconType: "heal", isAvailable: true },
+    { id: "reduce-stress", label: "Calm", description: "Reduce stress of selected hero", iconType: "calm", isAvailable: true },
+    { id: "apply-buff", label: "Buff", description: "Apply a combat buff", iconType: "buff", isAvailable: false },
+    { id: "remove-debuff", label: "Cleanse", description: "Remove negative status", iconType: "cleanse", isAvailable: false },
+    { id: "guard-ally", label: "Guard", description: "Guard an ally", iconType: "guard", isAvailable: false }
+  ],
+  canContinue: false
+};
+
+export const replayDungeonMapViewModel: DungeonMapViewModel = {
+  kind: "dungeon-map",
+  title: "Dungeon Map",
+  expeditionName: "The Depths Await",
+  dungeonName: "Azure Lantern Depths",
+  currentRoomId: "room-entrance",
+  rooms: [
+    { id: "room-entrance", x: 2, y: 4, type: "entrance", label: "Entrance", isRevealed: true, isVisited: true, isCurrent: true, connections: ["room-empty-1", "room-combat-1"] },
+    { id: "room-empty-1", x: 2, y: 3, type: "empty", label: "Hallway", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-entrance", "room-treasure-1"] },
+    { id: "room-combat-1", x: 3, y: 4, type: "combat", label: "Ambush", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-entrance", "room-curio-1"], difficulty: "Easy" },
+    { id: "room-treasure-1", x: 2, y: 2, type: "treasure", label: "Cache", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-empty-1", "room-rest-1"], lootPreview: "Gold + Relic" },
+    { id: "room-curio-1", x: 4, y: 4, type: "curio", label: "Strange Idol", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-combat-1", "room-shrine-1"] },
+    { id: "room-rest-1", x: 2, y: 1, type: "rest", label: "Safe Room", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-treasure-1", "room-boss-1"] },
+    { id: "room-shrine-1", x: 5, y: 4, type: "shrine", label: "Healing Shrine", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-curio-1", "room-combat-2"] },
+    { id: "room-combat-2", x: 5, y: 3, type: "combat", label: "Elite Guard", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-shrine-1", "room-exit"], difficulty: "Hard" },
+    { id: "room-boss-1", x: 2, y: 0, type: "boss", label: "Depths Guardian", isRevealed: false, isVisited: false, isCurrent: false, connections: ["room-rest-1"], difficulty: "Boss" },
+    { id: "room-exit", x: 5, y: 2, type: "exit", label: "Exit", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-combat-2"] }
+  ],
+  party: [
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", stress: "17", maxStress: "200", isWounded: true, isAfflicted: false },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "8", maxStress: "200", isWounded: false, isAfflicted: false }
+  ],
+  torchLevel: 75,
+  maxTorchLevel: 100,
+  exploredCount: 1,
+  totalRooms: 10,
+  completionPercent: 10,
+  isRetreatAvailable: true,
+  isComplete: false,
+  minimapRows: 5,
+  minimapCols: 6
 };
 
 export const replayResultViewModel: ExpeditionResultViewModel = {
@@ -653,6 +805,167 @@ export const replayReturnViewModel: ReturnViewModel = {
   ],
   isTownResumeAvailable: true
 };
+
+export const replayAttackCombatViewModel = {
+  kind: "combat" as const,
+  title: "副本场景-人物攻击",
+  round: 1,
+  turnPhase: "player" as const,
+  activeHeroId: "hero-hunter-01",
+  party: [
+    {
+      id: "hero-hunter-01",
+      name: "Shen",
+      classLabel: "Hunter",
+      hp: "38 / 42",
+      maxHp: "42",
+      stress: "17",
+      maxStress: "200",
+      position: 1,
+      isActive: true,
+      isAlive: true,
+      skills: [
+        { id: "skill-1", name: "Hunting Bow", description: "Ranged attack that marks the target.", target: "Enemy", hitRating: "85%", critRating: "7%", cooldown: 0, cooldownRemaining: 0 },
+        { id: "skill-2", name: "Rapid Shot", description: "Fire two quick shots at the target.", target: "Enemy", hitRating: "75%", critRating: "5%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "skill-3", name: "Marked for Death", description: "Mark a target to take increased damage.", target: "Enemy", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 1 },
+        { id: "skill-4", name: "Batty Advice", description: "Grant a random buff to an ally.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 3, cooldownRemaining: 0 },
+        { id: "skill-5", name: "Dodge Stance", description: "Increase dodge for one turn.", target: "Self", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 0 }
+      ]
+    },
+    {
+      id: "hero-white-01",
+      name: "Bai Xiu",
+      classLabel: "White",
+      hp: "41 / 41",
+      maxHp: "41",
+      stress: "8",
+      maxStress: "200",
+      position: 2,
+      isActive: false,
+      isAlive: true,
+      skills: [
+        { id: "skill-w1", name: "Holy Light", description: "Deal light damage to an enemy.", target: "Enemy", hitRating: "90%", critRating: "3%", cooldown: 0, cooldownRemaining: 0 },
+        { id: "skill-w2", name: "Heal", description: "Restore health to an ally.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "skill-w3", name: "Bless", description: "Increase an ally's accuracy.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 0 },
+        { id: "skill-w4", name: "Smite", description: "Heavy damage to marked targets.", target: "Enemy", hitRating: "80%", critRating: "8%", cooldown: 2, cooldownRemaining: 1 },
+        { id: "skill-w5", name: "Prayer", description: "Reduce party stress.", target: "Party", hitRating: "100%", critRating: "0%", cooldown: 3, cooldownRemaining: 0 }
+      ]
+    },
+    {
+      id: "hero-black-01",
+      name: "Hei Zhen",
+      classLabel: "Black",
+      hp: "34 / 40",
+      maxHp: "40",
+      stress: "24",
+      maxStress: "200",
+      position: 3,
+      isActive: false,
+      isAlive: true,
+      skills: [
+        { id: "skill-b1", name: "Shadow Strike", description: "Attack from the shadows.", target: "Enemy", hitRating: "85%", critRating: "10%", cooldown: 0, cooldownRemaining: 0 },
+        { id: "skill-b2", name: "Smoke Bomb", description: "Blind enemies, reducing accuracy.", target: "Enemy", hitRating: "75%", critRating: "0%", cooldown: 2, cooldownRemaining: 0 },
+        { id: "skill-b3", name: "Poison Blade", description: "Apply poison to the target.", target: "Enemy", hitRating: "80%", critRating: "4%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "skill-b4", name: "Backstab", description: "High damage if target is marked.", target: "Enemy", hitRating: "70%", critRating: "12%", cooldown: 2, cooldownRemaining: 1 },
+        { id: "skill-b5", name: "Vanish", description: "Become untargetable for one turn.", target: "Self", hitRating: "100%", critRating: "0%", cooldown: 3, cooldownRemaining: 0 }
+      ]
+    }
+  ],
+  enemies: [
+    {
+      id: "enemy-moth-01",
+      name: "Moth Guardian",
+      hp: "120 / 150",
+      maxHp: "150",
+      position: 1,
+      isAlive: true,
+      isTargeted: true,
+      size: "large" as const
+    },
+    {
+      id: "enemy-larva-01",
+      name: "Larva Swarm",
+      hp: "30 / 30",
+      maxHp: "30",
+      position: 2,
+      isAlive: true,
+      isTargeted: false,
+      size: "small" as const
+    }
+  ],
+  selectedSkillId: "skill-1",
+  combatLog: [
+    "Round 1 begins...",
+    "Shen readies Hunting Bow.",
+    "Select a target to attack."
+  ],
+  isPlayerTurn: true,
+  canFlee: true
+};
+
+export const replayCombatViewModel = {
+  ...replayAttackCombatViewModel,
+  title: "Dungeon Combat",
+  dungeonName: "The Depths Await",
+  roundLabel: "Round 3",
+  phase: "character-hit" as const,
+  round: 3,
+  selectedSkillId: undefined,
+  party: replayAttackCombatViewModel.party.map((hero) =>
+    hero.id === "hero-hunter-01"
+      ? {
+          ...hero,
+          hp: "28 / 42",
+          stress: "24",
+          isHit: true,
+          skills: hero.skills.map((skill) => ({ ...skill, isAvailable: false }))
+        }
+      : {
+          ...hero,
+          isHit: false,
+          skills: hero.skills.map((skill) => ({ ...skill, isAvailable: false }))
+        }
+  ),
+  enemies: replayAttackCombatViewModel.enemies.map((enemy) => ({ ...enemy, isHit: false })),
+  hitTargetHeroId: "hero-hunter-01",
+  hitDamage: "10",
+  hitLog: "Cultist Acolyte strikes Shen for 10 damage.",
+  combatLog: [
+    "Cultist Acolyte strikes Shen for 10 damage.",
+    "Acknowledge the hit before issuing the next command."
+  ],
+  roomMap: {
+    rooms: [
+      { id: "r1", x: 0, y: 2, kind: "combat" as const, isCurrent: true, isCleared: false },
+      { id: "r2", x: 1, y: 2, kind: "corridor" as const, isCurrent: false, isCleared: true },
+      { id: "r3", x: 2, y: 1, kind: "event" as const, isCurrent: false, isCleared: true },
+      { id: "r4", x: 2, y: 3, kind: "combat" as const, isCurrent: false, isCleared: false },
+      { id: "r5", x: 3, y: 2, kind: "treasure" as const, isCurrent: false, isCleared: false },
+      { id: "r6", x: 4, y: 2, kind: "boss" as const, isCurrent: false, isCleared: false }
+    ],
+    connections: [
+      { from: "r1", to: "r2" },
+      { from: "r2", to: "r3" },
+      { from: "r2", to: "r4" },
+      { from: "r3", to: "r5" },
+      { from: "r4", to: "r5" },
+      { from: "r5", to: "r6" }
+    ]
+  },
+  isPlayerTurn: false,
+  isFleeAvailable: true,
+  turnCount: 3,
+  settingsLabel: "设置"
+};
+
+export const replayCombatSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "combat",
+  viewModel: replayAttackCombatViewModel,
+  debugMessage: "Replay bridge showing combat scene - character attack phase."
+};
+
+export const combatSnapshot = replayCombatSnapshot;
 
 export const replayReadySnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -820,6 +1133,14 @@ export const startupSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Startup screen fixture - ready to boot into replay or live mode."
 };
 
+// Expedition planning flow snapshot
+export const expeditionPlanningSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "expedition-planning",
+  viewModel: replayExpeditionPlanningViewModel,
+  debugMessage: "Replay bridge showing expedition planning screen."
+};
+
 // Provisioning flow snapshot
 export const provisioningSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -834,6 +1155,30 @@ export const expeditionSnapshot: DdgcFrontendSnapshot = {
   flowState: "expedition",
   viewModel: replayExpeditionViewModel,
   debugMessage: "Replay bridge showing expedition launch screen."
+};
+
+// Dungeon interaction flow snapshot
+export const dungeonInteractionSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "dungeon-interaction",
+  viewModel: replayDungeonInteractionViewModel,
+  debugMessage: "Replay bridge showing dungeon interaction screen."
+};
+
+// Dungeon assist flow snapshot
+export const dungeonAssistSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "dungeon-assist",
+  viewModel: replayDungeonAssistViewModel,
+  debugMessage: "Replay bridge showing dungeon assist screen."
+};
+
+// Dungeon map flow snapshot
+export const dungeonMapSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "dungeon-map",
+  viewModel: replayDungeonMapViewModel,
+  debugMessage: "Replay bridge showing dungeon map screen."
 };
 
 // Result snapshots (success, failure, partial)
@@ -886,7 +1231,7 @@ export function validateSnapshotContract(snapshot: DdgcFrontendSnapshot): string
   }
 
   // FlowState must be a valid FlowState
-  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "result", "return"];
+  const validFlowStates: FlowState[] = ["boot", "load", "town", "expedition-planning", "provisioning", "expedition", "dungeon-assist", "dungeon-map", "combat", "dungeon-interaction", "result", "return"];
   if (!validFlowStates.includes(snapshot.flowState as FlowState)) {
     errors.push(
       `flowState "${String(snapshot.flowState)}" is not a valid FlowState. ` +
@@ -939,9 +1284,13 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     boot: ["boot-load"],
     load: ["boot-load"],
     town: ["town", "hero-detail", "building-detail"],
+    "expedition-planning": ["expedition-planning"],
     provisioning: ["provisioning"],
     expedition: ["expedition"],
-    combat: ["expedition"],
+    "dungeon-assist": ["dungeon-assist"],
+    combat: ["combat"],
+    "dungeon-map": ["dungeon-map"],
+    "dungeon-interaction": ["dungeon-interaction"],
     result: ["result"],
     return: ["return"],
   };
@@ -998,6 +1347,17 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!Array.isArray(vm.actions)) { e.push("BuildingDetailViewModel: actions is not an array"); } else if (vm.actions.length === 0) { e.push("BuildingDetailViewModel: actions array is empty"); }
       break;
     }
+    case "expedition-planning": {
+      if (!vm.title || typeof vm.title !== "string") e.push("ExpeditionPlanningViewModel: title is missing");
+      if (!vm.campaignName || typeof vm.campaignName !== "string") e.push("ExpeditionPlanningViewModel: campaignName is missing");
+      if (!vm.selectedPlaneId || typeof vm.selectedPlaneId !== "string") e.push("ExpeditionPlanningViewModel: selectedPlaneId is missing");
+      if (!Array.isArray(vm.planes)) { e.push("ExpeditionPlanningViewModel: planes is not an array"); } else if (vm.planes.length === 0) { e.push("ExpeditionPlanningViewModel: planes array is empty"); }
+      if (!Array.isArray(vm.partySlots)) e.push("ExpeditionPlanningViewModel: partySlots is not an array");
+      if (typeof vm.maxPartySize !== "number") e.push("ExpeditionPlanningViewModel: maxPartySize is not a number");
+      if (typeof vm.isReadyToProvision !== "boolean") e.push("ExpeditionPlanningViewModel: isReadyToProvision is not a boolean");
+      if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ExpeditionPlanningViewModel: provisionCost is missing");
+      break;
+    }
     case "provisioning": {
       if (!vm.title || typeof vm.title !== "string") e.push("ProvisioningViewModel: title is missing");
       if (!Array.isArray(vm.party)) { e.push("ProvisioningViewModel: party is not an array"); } else if (vm.party.length === 0) { e.push("ProvisioningViewModel: party array is empty"); }
@@ -1021,6 +1381,47 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ExpeditionSetupViewModel: provisionCost is missing");
       break;
     }
+    case "dungeon-interaction": {
+      if (!vm.title || typeof vm.title !== "string") e.push("DungeonInteractionViewModel: title is missing");
+      if (!vm.dungeonName || typeof vm.dungeonName !== "string") e.push("DungeonInteractionViewModel: dungeonName is missing");
+      if (!vm.roomType || typeof vm.roomType !== "string") e.push("DungeonInteractionViewModel: roomType is missing");
+      if (!vm.roomLabel || typeof vm.roomLabel !== "string") e.push("DungeonInteractionViewModel: roomLabel is missing");
+      if (!vm.roomDescription || typeof vm.roomDescription !== "string") e.push("DungeonInteractionViewModel: roomDescription is missing");
+      if (!vm.progress || typeof vm.progress !== "object") e.push("DungeonInteractionViewModel: progress is missing");
+      if (!Array.isArray(vm.party)) { e.push("DungeonInteractionViewModel: party is not an array"); } else if (vm.party.length === 0) { e.push("DungeonInteractionViewModel: party array is empty"); }
+      if (!Array.isArray(vm.interactions)) e.push("DungeonInteractionViewModel: interactions is not an array");
+      if (typeof vm.isProceedAvailable !== "boolean") e.push("DungeonInteractionViewModel: isProceedAvailable is not a boolean");
+      if (typeof vm.isRetreatAvailable !== "boolean") e.push("DungeonInteractionViewModel: isRetreatAvailable is not a boolean");
+      break;
+    }
+    case "dungeon-assist": {
+      if (!vm.title || typeof vm.title !== "string") e.push("DungeonAssistViewModel: title is missing");
+      if (!vm.dungeonName || typeof vm.dungeonName !== "string") e.push("DungeonAssistViewModel: dungeonName is missing");
+      if (typeof vm.roomNumber !== "number") e.push("DungeonAssistViewModel: roomNumber is not a number");
+      if (!Array.isArray(vm.party)) { e.push("DungeonAssistViewModel: party is not an array"); } else if (vm.party.length === 0) { e.push("DungeonAssistViewModel: party array is empty"); }
+      if (!vm.selectedHeroId || typeof vm.selectedHeroId !== "string") e.push("DungeonAssistViewModel: selectedHeroId is missing");
+      if (!Array.isArray(vm.assistActions)) e.push("DungeonAssistViewModel: assistActions is not an array");
+      if (typeof vm.canContinue !== "boolean") e.push("DungeonAssistViewModel: canContinue is not a boolean");
+      break;
+    }
+    case "dungeon-map": {
+      if (!vm.title || typeof vm.title !== "string") e.push("DungeonMapViewModel: title is missing");
+      if (!vm.expeditionName || typeof vm.expeditionName !== "string") e.push("DungeonMapViewModel: expeditionName is missing");
+      if (!vm.dungeonName || typeof vm.dungeonName !== "string") e.push("DungeonMapViewModel: dungeonName is missing");
+      if (!vm.currentRoomId || typeof vm.currentRoomId !== "string") e.push("DungeonMapViewModel: currentRoomId is missing");
+      if (!Array.isArray(vm.rooms)) { e.push("DungeonMapViewModel: rooms is not an array"); } else if (vm.rooms.length === 0) { e.push("DungeonMapViewModel: rooms array is empty"); }
+      if (!Array.isArray(vm.party)) { e.push("DungeonMapViewModel: party is not an array"); } else if (vm.party.length === 0) { e.push("DungeonMapViewModel: party array is empty"); }
+      if (typeof vm.torchLevel !== "number") e.push("DungeonMapViewModel: torchLevel is not a number");
+      if (typeof vm.maxTorchLevel !== "number") e.push("DungeonMapViewModel: maxTorchLevel is not a number");
+      if (typeof vm.exploredCount !== "number") e.push("DungeonMapViewModel: exploredCount is not a number");
+      if (typeof vm.totalRooms !== "number") e.push("DungeonMapViewModel: totalRooms is not a number");
+      if (typeof vm.completionPercent !== "number") e.push("DungeonMapViewModel: completionPercent is not a number");
+      if (typeof vm.isRetreatAvailable !== "boolean") e.push("DungeonMapViewModel: isRetreatAvailable is not a boolean");
+      if (typeof vm.isComplete !== "boolean") e.push("DungeonMapViewModel: isComplete is not a boolean");
+      if (typeof vm.minimapRows !== "number") e.push("DungeonMapViewModel: minimapRows is not a number");
+      if (typeof vm.minimapCols !== "number") e.push("DungeonMapViewModel: minimapCols is not a number");
+      break;
+    }
     case "result": {
       if (!vm.title || typeof vm.title !== "string") e.push("ExpeditionResultViewModel: title is missing");
       if (vm.outcome !== "success" && vm.outcome !== "failure" && vm.outcome !== "partial") e.push(`ExpeditionResultViewModel: outcome is "${String(vm.outcome)}", expected "success", "failure", or "partial"`);
@@ -1036,6 +1437,18 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!vm.summary || typeof vm.summary !== "string") e.push("ReturnViewModel: summary is missing");
       if (!Array.isArray(vm.returningHeroes)) { e.push("ReturnViewModel: returningHeroes is not an array"); } else if (vm.returningHeroes.length === 0) { e.push("ReturnViewModel: returningHeroes array is empty"); }
       if (typeof vm.isTownResumeAvailable !== "boolean") e.push("ReturnViewModel: isTownResumeAvailable is not a boolean");
+      break;
+    }
+    case "combat": {
+      if (!vm.title || typeof vm.title !== "string") e.push("CombatViewModel: title is missing");
+      if (typeof vm.round !== "number") e.push("CombatViewModel: round is not a number");
+      if (vm.turnPhase !== "player" && vm.turnPhase !== "enemy") e.push(`CombatViewModel: turnPhase is "${String(vm.turnPhase)}", expected "player" or "enemy"`);
+      if (!vm.activeHeroId || typeof vm.activeHeroId !== "string") e.push("CombatViewModel: activeHeroId is missing");
+      if (!Array.isArray(vm.party)) { e.push("CombatViewModel: party is not an array"); } else if (vm.party.length === 0) { e.push("CombatViewModel: party array is empty"); }
+      if (!Array.isArray(vm.enemies)) { e.push("CombatViewModel: enemies is not an array"); } else if (vm.enemies.length === 0) { e.push("CombatViewModel: enemies array is empty"); }
+      if (!Array.isArray(vm.combatLog)) e.push("CombatViewModel: combatLog is not an array");
+      if (typeof vm.isPlayerTurn !== "boolean") e.push("CombatViewModel: isPlayerTurn is not a boolean");
+      if (typeof vm.canFlee !== "boolean") e.push("CombatViewModel: canFlee is not a boolean");
       break;
     }
     case "fatal": {

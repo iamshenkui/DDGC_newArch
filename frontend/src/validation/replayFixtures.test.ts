@@ -6,6 +6,7 @@ import {
   replayBuildingDetailViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
+  replayCombatViewModel,
   replayResultViewModel,
   replayFailureResultViewModel,
   replayPartialResultViewModel,
@@ -23,6 +24,7 @@ import {
   startupSnapshot,
   provisioningSnapshot,
   expeditionSnapshot,
+  combatSnapshot,
   resultSnapshot,
   failureResultSnapshot,
   partialResultSnapshot,
@@ -294,6 +296,60 @@ describe("replay fixtures — hero and campaign state consistency", () => {
     });
   });
 
+  describe("combat fixture", () => {
+    it("has valid combat parameters", () => {
+      const vm = replayCombatViewModel;
+      expect(vm.title).toBeTruthy();
+      expect(vm.dungeonName).toBeTruthy();
+      expect(vm.roundLabel).toBeTruthy();
+      expect(vm.phase).toBe("character-hit");
+      expect(vm.party.length).toBeGreaterThan(0);
+      expect(vm.enemies.length).toBeGreaterThan(0);
+      expect(vm.hitLog).toBeTruthy();
+      expect(vm.activeHeroId).toBeTruthy();
+      expect(vm.activeHeroId).toBe(vm.hitTargetHeroId);
+      expect(vm.roomMap.rooms.length).toBeGreaterThan(0);
+      expect(typeof vm.turnCount).toBe("number");
+      expect(typeof vm.isFleeAvailable).toBe("boolean");
+      expect(vm.settingsLabel).toBeTruthy();
+    });
+
+    it("has a hit target with matching hero in party", () => {
+      const vm = replayCombatViewModel;
+      const hitHero = vm.party.find((h) => h.id === vm.hitTargetHeroId);
+      expect(hitHero).toBeDefined();
+      expect(hitHero!.isHit).toBe(true);
+      expect(hitHero!.isActive).toBe(true);
+      expect(vm.enemies.some((enemy) => enemy.isHit)).toBe(false);
+    });
+
+    it("has skills for each party member", () => {
+      for (const hero of replayCombatViewModel.party) {
+        expect(hero.skills.length).toBeGreaterThan(0);
+        for (const skill of hero.skills) {
+          expect(skill.name).toBeTruthy();
+          expect(typeof skill.isAvailable).toBe("boolean");
+        }
+      }
+    });
+
+    it("has connected room map", () => {
+      const vm = replayCombatViewModel;
+      expect(vm.roomMap.connections.length).toBeGreaterThan(0);
+      for (const conn of vm.roomMap.connections) {
+        const fromRoom = vm.roomMap.rooms.find((r) => r.id === conn.from);
+        const toRoom = vm.roomMap.rooms.find((r) => r.id === conn.to);
+        expect(fromRoom).toBeDefined();
+        expect(toRoom).toBeDefined();
+      }
+    });
+
+    it("has exactly one current room", () => {
+      const currentRooms = replayCombatViewModel.roomMap.rooms.filter((r) => r.isCurrent);
+      expect(currentRooms.length).toBe(1);
+    });
+  });
+
   describe("result fixtures", () => {
     it("success result has loot and positive resources", () => {
       expect(replayResultViewModel.outcome).toBe("success");
@@ -375,6 +431,7 @@ const allSnapshots: NamedSnapshot[] = [
   { name: "replayStagecoachBuildingSnapshot", snapshot: replayStagecoachBuildingSnapshot },
   { name: "provisioningSnapshot", snapshot: provisioningSnapshot },
   { name: "expeditionSnapshot", snapshot: expeditionSnapshot },
+  { name: "combatSnapshot", snapshot: combatSnapshot },
   { name: "resultSnapshot", snapshot: resultSnapshot },
   { name: "failureResultSnapshot", snapshot: failureResultSnapshot },
   { name: "partialResultSnapshot", snapshot: partialResultSnapshot },
@@ -467,6 +524,11 @@ describe("type discrimination", () => {
     expect(expeditionSnapshot.viewModel.kind).toBe("expedition");
   });
 
+  it("combat snapshot sets flowState and kind to combat", () => {
+    expect(combatSnapshot.flowState).toBe("combat");
+    expect(combatSnapshot.viewModel.kind).toBe("combat");
+  });
+
   it("return snapshot sets flowState and kind to return", () => {
     expect(returnSnapshot.flowState).toBe("return");
     expect(returnSnapshot.viewModel.kind).toBe("return");
@@ -510,6 +572,18 @@ describe("HP string format consistency across fixtures", () => {
   it("returning heroes have valid HP strings", () => {
     for (const rh of replayReturnViewModel.returningHeroes) {
       checkHpFormat(rh.hp, `return hero ${rh.heroId}`);
+    }
+  });
+
+  it("combat party heroes have valid HP strings", () => {
+    for (const ch of replayCombatViewModel.party) {
+      checkHpFormat(ch.hp, `combat hero ${ch.id}`);
+    }
+  });
+
+  it("combat enemies have valid HP strings", () => {
+    for (const ce of replayCombatViewModel.enemies) {
+      checkHpFormat(ce.hp, `combat enemy ${ce.id}`);
     }
   });
 
