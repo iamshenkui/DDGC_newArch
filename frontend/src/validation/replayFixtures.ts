@@ -701,7 +701,7 @@ export const replayReturnViewModel: ReturnViewModel = {
   isTownResumeAvailable: true
 };
 
-export const replayCombatViewModel = {
+export const replayAttackCombatViewModel = {
   kind: "combat" as const,
   title: "副本场景-人物攻击",
   round: 1,
@@ -798,10 +798,65 @@ export const replayCombatViewModel = {
   canFlee: true
 };
 
+export const replayCombatViewModel = {
+  ...replayAttackCombatViewModel,
+  title: "Dungeon Combat",
+  dungeonName: "The Depths Await",
+  roundLabel: "Round 3",
+  phase: "character-hit" as const,
+  round: 3,
+  selectedSkillId: undefined,
+  party: replayAttackCombatViewModel.party.map((hero) =>
+    hero.id === "hero-hunter-01"
+      ? {
+          ...hero,
+          hp: "28 / 42",
+          stress: "24",
+          isHit: true,
+          skills: hero.skills.map((skill) => ({ ...skill, isAvailable: false }))
+        }
+      : {
+          ...hero,
+          isHit: false,
+          skills: hero.skills.map((skill) => ({ ...skill, isAvailable: false }))
+        }
+  ),
+  enemies: replayAttackCombatViewModel.enemies.map((enemy) => ({ ...enemy, isHit: false })),
+  hitTargetHeroId: "hero-hunter-01",
+  hitDamage: "10",
+  hitLog: "Cultist Acolyte strikes Shen for 10 damage.",
+  combatLog: [
+    "Cultist Acolyte strikes Shen for 10 damage.",
+    "Acknowledge the hit before issuing the next command."
+  ],
+  roomMap: {
+    rooms: [
+      { id: "r1", x: 0, y: 2, kind: "combat" as const, isCurrent: true, isCleared: false },
+      { id: "r2", x: 1, y: 2, kind: "corridor" as const, isCurrent: false, isCleared: true },
+      { id: "r3", x: 2, y: 1, kind: "event" as const, isCurrent: false, isCleared: true },
+      { id: "r4", x: 2, y: 3, kind: "combat" as const, isCurrent: false, isCleared: false },
+      { id: "r5", x: 3, y: 2, kind: "treasure" as const, isCurrent: false, isCleared: false },
+      { id: "r6", x: 4, y: 2, kind: "boss" as const, isCurrent: false, isCleared: false }
+    ],
+    connections: [
+      { from: "r1", to: "r2" },
+      { from: "r2", to: "r3" },
+      { from: "r2", to: "r4" },
+      { from: "r3", to: "r5" },
+      { from: "r4", to: "r5" },
+      { from: "r5", to: "r6" }
+    ]
+  },
+  isPlayerTurn: false,
+  isFleeAvailable: true,
+  turnCount: 3,
+  settingsLabel: "设置"
+};
+
 export const replayCombatSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
   flowState: "combat",
-  viewModel: replayCombatViewModel,
+  viewModel: replayAttackCombatViewModel,
   debugMessage: "Replay bridge showing combat scene - character attack phase."
 };
 

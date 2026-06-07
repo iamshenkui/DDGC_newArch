@@ -481,6 +481,37 @@ const createLiveCombatViewModel = (): CombatViewModel => ({
   canFlee: true
 });
 
+const createLiveCharacterHitCombatViewModel = (combatVm: CombatViewModel): CombatViewModel => {
+  const hitHeroId = combatVm.activeHeroId;
+  const hitHero = combatVm.party.find((hero) => hero.id === hitHeroId);
+  const targetedEnemy = combatVm.enemies.find((enemy) => enemy.isTargeted);
+  const hitDamage = "10";
+  const hitLog = `${targetedEnemy?.name ?? "Enemy"} retaliates and strikes ${hitHero?.name ?? "hero"} for ${hitDamage} damage.`;
+
+  return {
+    ...combatVm,
+    phase: "character-hit",
+    turnPhase: "enemy",
+    isPlayerTurn: false,
+    selectedSkillId: undefined,
+    party: combatVm.party.map((hero) =>
+      hero.id === hitHeroId
+        ? { ...hero, isHit: true }
+        : { ...hero, isHit: false }
+    ),
+    enemies: combatVm.enemies.map((enemy) => ({ ...enemy, isHit: false })),
+    hitTargetHeroId: hitHeroId,
+    hitDamage,
+    hitLog,
+    combatLog: [
+      ...combatVm.combatLog,
+      `${hitHero?.name ?? "Hero"} attacks ${targetedEnemy?.name ?? "target"}.`,
+      hitLog,
+      "Acknowledge the hit before issuing the next command."
+    ]
+  };
+};
+
 const advanceLiveCombatTurn = (combatVm: CombatViewModel): CombatViewModel => {
   const livingParty = combatVm.party.filter((hero) => hero.isAlive);
   const activeIndex = livingParty.findIndex((hero) => hero.id === combatVm.activeHeroId);
@@ -804,10 +835,41 @@ export class LiveRuntimeBridge implements RuntimeBridge {
             break;
           }
         }
+        if (this.snapshot.viewModel.kind === "combat") {
+          this.snapshot = {
+            ...this.snapshot,
+            flowState: "combat",
+            viewModel: createLiveCharacterHitCombatViewModel(this.snapshot.viewModel),
+            debugMessage: "Live: combat resolved into character-hit phase."
+          };
+        }
+        break;
+      case "continue-from-combat":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: continue-from-combat rejected: not in character-hit acknowledgement."
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",
-          viewModel: createLiveResultViewModel()
+          viewModel: createLiveResultViewModel(),
+          debugMessage: "Live: character-hit acknowledged; transitioning to result."
+        };
+        break;
+      case "open-combat-settings":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: open-combat-settings rejected outside combat."
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          debugMessage: "Live: combat settings intent received."
         };
         break;
       case "end-turn": {

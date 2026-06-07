@@ -82,6 +82,10 @@ function activeCombatHero(snapshot: DdgcFrontendSnapshot) {
   return viewModel.party.find((hero) => hero.id === viewModel.activeHeroId);
 }
 
+function isCharacterHitAcknowledgement(snapshot: DdgcFrontendSnapshot): boolean {
+  return snapshot.viewModel.kind === "combat" && snapshot.viewModel.phase === "character-hit";
+}
+
 export function canTransition(
   snapshot: DdgcFrontendSnapshot,
   intent: DdgcFrontendIntent
@@ -120,6 +124,9 @@ export function canTransition(
       if (snapshot.viewModel.kind !== "combat") {
         return { allowed: false, reason: "viewModel is not a combat view model" };
       }
+      if (isCharacterHitAcknowledgement(snapshot)) {
+        return { allowed: false, reason: "select-skill is not valid during character-hit acknowledgement" };
+      }
       if (!snapshot.viewModel.isPlayerTurn) {
         return { allowed: false, reason: "not player turn" };
       }
@@ -145,6 +152,9 @@ export function canTransition(
       if (snapshot.viewModel.kind !== "combat") {
         return { allowed: false, reason: "viewModel is not a combat view model" };
       }
+      if (isCharacterHitAcknowledgement(snapshot)) {
+        return { allowed: false, reason: "select-target is not valid during character-hit acknowledgement" };
+      }
       if (!snapshot.viewModel.isPlayerTurn) {
         return { allowed: false, reason: "not player turn" };
       }
@@ -165,6 +175,9 @@ export function canTransition(
       }
       if (snapshot.viewModel.kind !== "combat") {
         return { allowed: false, reason: "viewModel is not a combat view model" };
+      }
+      if (isCharacterHitAcknowledgement(snapshot)) {
+        return { allowed: false, reason: "confirm-attack is not valid during character-hit acknowledgement" };
       }
       if (!snapshot.viewModel.isPlayerTurn) {
         return { allowed: false, reason: "not player turn" };
@@ -192,6 +205,18 @@ export function canTransition(
       }
       return { allowed: true };
 
+    case "continue-from-combat":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "continue-from-combat is only valid in combat" };
+      }
+      if (snapshot.viewModel.kind !== "combat") {
+        return { allowed: false, reason: "viewModel is not a combat view model" };
+      }
+      if (!isCharacterHitAcknowledgement(snapshot)) {
+        return { allowed: false, reason: "continue-from-combat is only valid during character-hit acknowledgement" };
+      }
+      return { allowed: true };
+
     case "flee-combat":
       if (screen !== "combat") {
         return { allowed: false, reason: "flee-combat is only valid in combat" };
@@ -202,6 +227,9 @@ export function canTransition(
       if (!snapshot.viewModel.canFlee) {
         return { allowed: false, reason: "cannot flee this combat" };
       }
+      if (isCharacterHitAcknowledgement(snapshot)) {
+        return { allowed: false, reason: "flee-combat is not valid during character-hit acknowledgement" };
+      }
       return { allowed: true };
 
     case "end-turn":
@@ -211,14 +239,29 @@ export function canTransition(
       if (snapshot.viewModel.kind !== "combat") {
         return { allowed: false, reason: "viewModel is not a combat view model" };
       }
+      if (isCharacterHitAcknowledgement(snapshot)) {
+        return { allowed: false, reason: "end-turn is not valid during character-hit acknowledgement" };
+      }
       if (!snapshot.viewModel.isPlayerTurn) {
         return { allowed: false, reason: "not player turn" };
+      }
+      return { allowed: true };
+
+    case "open-combat-settings":
+      if (screen !== "combat") {
+        return { allowed: false, reason: "open-combat-settings is only valid in combat" };
+      }
+      if (isCharacterHitAcknowledgement(snapshot)) {
+        return { allowed: false, reason: "open-combat-settings is not valid during character-hit acknowledgement" };
       }
       return { allowed: true };
 
     case "return-to-town":
       if (screen === "town" || screen === "startup" || screen === "loading") {
         return { allowed: false, reason: "already in town or transitioning" };
+      }
+      if (isCharacterHitAcknowledgement(snapshot)) {
+        return { allowed: false, reason: "return-to-town is not valid during character-hit acknowledgement" };
       }
       return { allowed: true };
 

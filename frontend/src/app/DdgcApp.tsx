@@ -227,6 +227,12 @@ export function DdgcApp() {
             onEndTurn={() => {
               void dispatchIntent(bridge, { type: "end-turn" });
             }}
+            onContinueCombat={() => {
+              void dispatchIntent(bridge, { type: "continue-from-combat" });
+            }}
+            onOpenSettings={() => {
+              void dispatchIntent(bridge, { type: "open-combat-settings" });
+            }}
           />
         </Match>
         <Match

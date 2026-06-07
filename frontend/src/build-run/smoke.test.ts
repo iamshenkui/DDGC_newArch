@@ -135,7 +135,14 @@ describe("build-run smoke: flow state transitions", () => {
     const combatVm = combatSnap.viewModel as CombatViewModel;
     expect(combatVm.enemies.length).toBeGreaterThan(0);
 
-    const resultSnap = await bridge.dispatchIntent({ type: "confirm-attack" });
+    const hitSnap = await bridge.dispatchIntent({ type: "confirm-attack" });
+    expect(hitSnap.flowState).toBe("combat");
+    expect(hitSnap.viewModel.kind).toBe("combat");
+    const hitVm = hitSnap.viewModel as CombatViewModel;
+    expect(hitVm.phase).toBe("character-hit");
+    expect(hitVm.isPlayerTurn).toBe(false);
+
+    const resultSnap = await bridge.dispatchIntent({ type: "continue-from-combat" });
     expect(resultSnap.flowState).toBe("result");
     expect(resultSnap.viewModel.kind).toBe("result");
     const resultVm = resultSnap.viewModel as ExpeditionResultViewModel;

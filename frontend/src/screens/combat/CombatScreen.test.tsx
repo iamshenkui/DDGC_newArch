@@ -3,7 +3,9 @@
 import { render } from "solid-js/web";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { replayCombatViewModel } from "../../validation/replayFixtures";
+import { ReplayRuntimeBridge } from "../../bridge/ReplayRuntimeBridge";
+import type { CombatViewModel } from "../../bridge/contractTypes";
+import { replayAttackCombatViewModel, replayCombatViewModel } from "../../validation/replayFixtures";
 import { CombatScreen } from "./CombatScreen";
 
 describe("CombatScreen skill interactions", () => {
@@ -23,7 +25,7 @@ describe("CombatScreen skill interactions", () => {
     dispose = render(
       () => (
         <CombatScreen
-          viewModel={replayCombatViewModel}
+          viewModel={replayAttackCombatViewModel}
           onSelectSkill={onSelectSkill}
           onSelectTarget={vi.fn()}
           onConfirmAttack={vi.fn()}
@@ -49,5 +51,109 @@ describe("CombatScreen skill interactions", () => {
 
     rapidShotButton?.click();
     expect(onSelectSkill).toHaveBeenCalledWith("skill-2");
+  });
+
+  it("routes character-hit acknowledgement through continue combat", () => {
+    const onContinueCombat = vi.fn();
+    const onEndTurn = vi.fn();
+    const onSelectSkill = vi.fn();
+    const onSelectTarget = vi.fn();
+    const onConfirmAttack = vi.fn();
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    dispose = render(
+      () => (
+        <CombatScreen
+          viewModel={replayCombatViewModel}
+          onSelectSkill={onSelectSkill}
+          onSelectTarget={onSelectTarget}
+          onConfirmAttack={onConfirmAttack}
+          onFleeCombat={vi.fn()}
+          onEndTurn={onEndTurn}
+          onContinueCombat={onContinueCombat}
+        />
+      ),
+      root
+    );
+
+    const acknowledgeButton = root.querySelector<HTMLButtonElement>('[data-testid="combat-continue-btn"]');
+    expect(acknowledgeButton?.textContent).toContain("Acknowledge");
+
+    acknowledgeButton?.click();
+    expect(onContinueCombat).toHaveBeenCalledOnce();
+
+    const endTurnButton = root.querySelector<HTMLButtonElement>(".combat-end-turn-btn");
+    expect(endTurnButton?.disabled).toBe(true);
+    endTurnButton?.click();
+    expect(onEndTurn).not.toHaveBeenCalled();
+
+    const fleeButton = root.querySelector<HTMLButtonElement>(".combat-flee-btn");
+    expect(fleeButton?.disabled).toBe(true);
+
+    const skillButton = root.querySelector<HTMLButtonElement>(".combat-skill-slot");
+    expect(skillButton?.disabled).toBe(true);
+    skillButton?.click();
+    expect(onSelectSkill).not.toHaveBeenCalled();
+
+    const targetButton = root.querySelector<HTMLButtonElement>(".combat-target-cell");
+    expect(targetButton?.disabled).toBe(true);
+    targetButton?.click();
+    expect(onSelectTarget).not.toHaveBeenCalled();
+
+    const arenaEnemy = root.querySelector<HTMLElement>(".combat-enemy-stand");
+    expect(arenaEnemy?.getAttribute("aria-disabled")).toBe("true");
+    arenaEnemy?.click();
+    arenaEnemy?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+    expect(onSelectTarget).not.toHaveBeenCalled();
+    expect(onConfirmAttack).not.toHaveBeenCalled();
+  });
+
+  it("reaches character-hit through the replay bridge and renders the hit UI", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    await bridge.dispatchIntent({ type: "enter-room", roomId: "room-combat-1" });
+
+    const hitSnapshot = await bridge.dispatchIntent({ type: "confirm-attack" });
+    expect(hitSnapshot.viewModel.kind).toBe("combat");
+    const hitVm = hitSnapshot.viewModel as CombatViewModel;
+    expect(hitVm.phase).toBe("character-hit");
+
+    const onContinueCombat = vi.fn();
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    dispose = render(
+      () => (
+        <CombatScreen
+          viewModel={hitVm}
+          onSelectSkill={vi.fn()}
+          onSelectTarget={vi.fn()}
+          onConfirmAttack={vi.fn()}
+          onFleeCombat={vi.fn()}
+          onEndTurn={vi.fn()}
+          onContinueCombat={onContinueCombat}
+        />
+      ),
+      root
+    );
+
+    const hudPill = root.querySelector(".pill-danger");
+    expect(hudPill?.textContent).toContain("Character Hit");
+
+    const damageFloater = root.querySelector('[data-testid="combat-hit-damage"]');
+    expect(damageFloater).not.toBeNull();
+    expect(damageFloater?.textContent).toContain(hitVm.hitDamage ?? "");
+
+    const acknowledgeBtn = root.querySelector<HTMLButtonElement>('[data-testid="combat-continue-btn"]');
+    expect(acknowledgeBtn?.textContent).toContain("Acknowledge");
+
+    acknowledgeBtn?.click();
+    expect(onContinueCombat).toHaveBeenCalledOnce();
   });
 });

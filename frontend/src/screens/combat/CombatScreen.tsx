@@ -10,6 +10,8 @@ interface CombatScreenProps {
   onConfirmAttack: () => void;
   onFleeCombat: () => void;
   onEndTurn: () => void;
+  onContinueCombat?: () => void;
+  onOpenSettings?: () => void;
 }
 
 function parseHp(hp: string): { current: number; max: number } {
@@ -63,39 +65,55 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
     props.viewModel.party.find((h) => h.id === props.viewModel.activeHeroId) ??
     props.viewModel.party[0];
 
+  const hitHero = () =>
+    props.viewModel.party.find((h) => h.id === props.viewModel.hitTargetHeroId);
+
+  const displayHero = () => hitHero() ?? activeHero();
+
+  const isCharacterHitPhase = () => props.viewModel.phase === "character-hit";
+
   const hoveredSkill = () =>
-    activeHero()?.skills.find((s) => s.id === hoveredSkillId());
+    displayHero()?.skills.find((s) => s.id === hoveredSkillId());
 
   const portraitUrl = () =>
     resolveHeroPortrait({
-      heroId: activeHero()?.id ?? "",
-      classLabel: activeHero()?.classLabel ?? ""
+      heroId: displayHero()?.id ?? "",
+      classLabel: displayHero()?.classLabel ?? ""
     });
 
   return (
     <div
-      class="combat-viewport"
+      class={`combat-viewport${isCharacterHitPhase() ? " combat-viewport--character-hit" : ""}`}
       data-source-scene="UI_Combat/CombatScene"
       data-source-prefab="Assets/Prefabs/UI/CombatWindow.prefab"
     >
       {/* ── Top HUD ─────────────────────────────────────── */}
       <header class="combat-hud">
         <span class="combat-hud-left">
-          <span class="eyebrow">Combat — Round {props.viewModel.round}</span>
+          <span class="eyebrow">
+            {props.viewModel.dungeonName ?? "Combat"} — {props.viewModel.roundLabel ?? `Round ${props.viewModel.round}`}
+          </span>
           <h1 class="combat-title">{props.viewModel.title}</h1>
         </span>
         <span class="combat-hud-center">
-          <span class="hud-pill hud-pill-accent">
-            {props.viewModel.turnPhase === "player" ? "Player Turn" : "Enemy Turn"}
-          </span>
+          <Show
+            when={isCharacterHitPhase()}
+            fallback={
+              <span class="hud-pill hud-pill-accent">
+                {props.viewModel.turnPhase === "player" ? "Player Turn" : "Enemy Turn"}
+              </span>
+            }
+          >
+            <span class="hud-pill hud-pill-accent pill-danger">Character Hit</span>
+          </Show>
           <span class="hud-pill">
-            Active: {activeHero()?.name}
+            Active: {displayHero()?.name}
           </span>
         </span>
         <span class="combat-hud-right">
           <button
             class="combat-settings-btn"
-            onClick={() => { /* settings modal handled by runtime */ }}
+            onClick={() => props.onOpenSettings?.()}
             aria-label="设置"
             title="设置"
           >
@@ -122,8 +140,9 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
               });
               return (
                 <div
-                  class={`combat-hero-stand${isActive ? " combat-hero-stand--active" : ""}${!hero.isAlive ? " combat-hero-stand--dead" : ""}`}
+                  class={`combat-hero-stand${isActive ? " combat-hero-stand--active" : ""}${hero.isHit ? " combat-hero-stand--hit" : ""}${!hero.isAlive ? " combat-hero-stand--dead" : ""}`}
                   data-hero-id={hero.id}
+                  data-testid={`combat-hero-${hero.id}`}
                 >
                   <div class="combat-hero-portrait-wrap">
                     <div
@@ -185,15 +204,18 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
           <For each={props.viewModel.enemies}>
             {(enemy) => {
               const hpPct = healthPercent(enemy.hp);
+              const isDisabled = isCharacterHitPhase() || !enemy.isAlive;
               return (
                 <div
-                  class={`combat-enemy-stand${enemy.isTargeted ? " combat-enemy-stand--targeted" : ""}${!enemy.isAlive ? " combat-enemy-stand--dead" : ""}`}
+                  class={`combat-enemy-stand${enemy.isTargeted ? " combat-enemy-stand--targeted" : ""}${enemy.isHit ? " combat-enemy-stand--hit" : ""}${!enemy.isAlive ? " combat-enemy-stand--dead" : ""}`}
                   data-enemy-id={enemy.id}
-                  onClick={() => props.onSelectTarget(enemy.id)}
+                  data-testid={`combat-enemy-${enemy.id}`}
+                  onClick={() => !isDisabled && props.onSelectTarget(enemy.id)}
                   role="button"
-                  tabindex={0}
+                  tabindex={isDisabled ? -1 : 0}
+                  aria-disabled={isDisabled}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
+                    if (!isDisabled && (e.key === "Enter" || e.key === " ")) {
                       props.onSelectTarget(enemy.id);
                     }
                   }}
@@ -243,6 +265,12 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
             )}
           </For>
         </div>
+
+        <Show when={isCharacterHitPhase() && props.viewModel.hitDamage}>
+          <div class="combat-hit-floater" data-testid="combat-hit-damage">
+            <span class="combat-hit-damage-value">-{props.viewModel.hitDamage}</span>
+          </div>
+        </Show>
       </div>
 
       {/* ── Bottom Panels ────────────────────────────────── */}
@@ -251,7 +279,7 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
         <section class="combat-char-panel">
           <header class="combat-char-header">
             <span class="combat-char-frame-rule" aria-hidden="true" />
-            <h2 class="combat-char-title">{activeHero()?.name} — {activeHero()?.classLabel}</h2>
+            <h2 class="combat-char-title">{displayHero()?.name} — {displayHero()?.classLabel}</h2>
             <span class="combat-char-frame-rule" aria-hidden="true" />
           </header>
 
@@ -269,18 +297,18 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
                   />
                 ) : (
                   <span class="combat-char-portrait-letter">
-                    {activeHero()?.classLabel[0]}
+                    {displayHero()?.classLabel[0]}
                   </span>
                 )}
               </div>
               <div class="combat-char-stats">
                 <div class="combat-stat-row">
                   <span class="combat-stat-label">HP</span>
-                  <span class="combat-stat-value">{activeHero()?.hp}</span>
+                  <span class="combat-stat-value">{displayHero()?.hp}</span>
                 </div>
                 <div class="combat-stat-row">
                   <span class="combat-stat-label">ST</span>
-                  <span class="combat-stat-value">{activeHero()?.stress} / {activeHero()?.maxStress}</span>
+                  <span class="combat-stat-value">{displayHero()?.stress} / {displayHero()?.maxStress}</span>
                 </div>
               </div>
             </div>
@@ -288,17 +316,18 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
             <div class="combat-char-skills-col">
               <div class="combat-skills-title">Skills</div>
               <div class="combat-skill-slots">
-                <For each={activeHero()?.skills}>
+                <For each={displayHero()?.skills}>
                   {(skill) => {
                     const isSelected = skill.id === props.viewModel.selectedSkillId;
                     const isOnCooldown = skill.cooldownRemaining > 0;
+                    const isDisabled = isCharacterHitPhase() || isOnCooldown;
                     return (
                       <button
                         class={`combat-skill-slot${isSelected ? " combat-skill-slot--selected" : ""}${isOnCooldown ? " combat-skill-slot--cooldown" : ""}`}
-                        onClick={() => !isOnCooldown && props.onSelectSkill(skill.id)}
+                        onClick={() => !isDisabled && props.onSelectSkill(skill.id)}
                         onMouseEnter={() => setHoveredSkillId(skill.id)}
                         onMouseLeave={() => setHoveredSkillId(null)}
-                        disabled={isOnCooldown}
+                        disabled={isDisabled}
                         title={`${skill.name}${isOnCooldown ? ` (CD: ${skill.cooldownRemaining})` : ""}`}
                       >
                         <span class="combat-skill-icon">{skill.name[0]}</span>
@@ -339,11 +368,12 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
               <For each={props.viewModel.enemies}>
                 {(enemy) => {
                   const hpPct = healthPercent(enemy.hp);
+                  const isDisabled = isCharacterHitPhase() || !enemy.isAlive;
                   return (
                     <button
                       class={`combat-target-cell${enemy.isTargeted ? " combat-target-cell--selected" : ""}${!enemy.isAlive ? " combat-target-cell--dead" : ""}`}
-                      onClick={() => enemy.isAlive && props.onSelectTarget(enemy.id)}
-                      disabled={!enemy.isAlive}
+                      onClick={() => !isDisabled && props.onSelectTarget(enemy.id)}
+                      disabled={isDisabled}
                     >
                       <div class="combat-target-cell-sprite">
                         <span class="combat-target-cell-initial">{enemy.name[0]}</span>
@@ -368,26 +398,46 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
             </div>
 
             <div class="combat-action-row">
-              <button
-                class="action-primary combat-attack-btn"
-                onClick={props.onConfirmAttack}
-                disabled={!props.viewModel.isPlayerTurn || !props.viewModel.selectedSkillId}
+              <Show
+                when={isCharacterHitPhase()}
+                fallback={
+                  <button
+                    class="action-primary combat-attack-btn"
+                    onClick={props.onConfirmAttack}
+                    disabled={!props.viewModel.isPlayerTurn || !props.viewModel.selectedSkillId}
+                  >
+                    Confirm Attack
+                  </button>
+                }
               >
-                Confirm Attack
-              </button>
+                <button
+                  class="action-primary combat-attack-btn"
+                  onClick={() => props.onContinueCombat?.()}
+                  data-testid="combat-continue-btn"
+                >
+                  Acknowledge
+                </button>
+              </Show>
               <button
                 class="action-secondary combat-end-turn-btn"
                 onClick={props.onEndTurn}
-                disabled={!props.viewModel.isPlayerTurn}
+                disabled={isCharacterHitPhase() || !props.viewModel.isPlayerTurn}
               >
                 End Turn
               </button>
             </div>
 
+            <Show when={props.viewModel.hitLog}>
+              <div class="combat-hit-log" data-testid="combat-log">
+                {props.viewModel.hitLog}
+              </div>
+            </Show>
+
             <Show when={props.viewModel.canFlee}>
               <button
                 class="combat-flee-btn"
                 onClick={props.onFleeCombat}
+                disabled={isCharacterHitPhase()}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4" />

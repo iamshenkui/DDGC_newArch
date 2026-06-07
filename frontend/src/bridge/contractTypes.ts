@@ -344,6 +344,8 @@ export interface FatalErrorViewModel {
   reason: string;
 }
 
+export type CombatPhase = "player-turn" | "enemy-turn" | "character-hit" | "resolution";
+
 export interface CombatSkill {
   id: string;
   name: string;
@@ -366,6 +368,7 @@ export interface CombatHero {
   position: number;
   isActive: boolean;
   isAlive: boolean;
+  isHit?: boolean;
   skills: ReadonlyArray<CombatSkill>;
   portrait?: string;
 }
@@ -378,12 +381,16 @@ export interface CombatEnemy {
   position: number;
   isAlive: boolean;
   isTargeted: boolean;
+  isHit?: boolean;
   size: "small" | "medium" | "large";
 }
 
 export interface CombatViewModel {
   kind: "combat";
   title: string;
+  dungeonName?: string;
+  roundLabel?: string;
+  phase?: CombatPhase;
   round: number;
   turnPhase: "player" | "enemy";
   activeHeroId: string;
@@ -391,8 +398,14 @@ export interface CombatViewModel {
   enemies: ReadonlyArray<CombatEnemy>;
   selectedSkillId?: string;
   combatLog: ReadonlyArray<string>;
+  hitTargetHeroId?: string;
+  hitDamage?: string;
+  hitLog?: string;
   isPlayerTurn: boolean;
   canFlee: boolean;
+  isFleeAvailable?: boolean;
+  turnCount?: number;
+  settingsLabel?: string;
 }
 
 export type DdgcViewModel =
@@ -436,6 +449,8 @@ export type DdgcFrontendIntent =
   | { type: "return-to-town" }
   | { type: "continue-from-result" }
   | { type: "resume-from-return" }
+  | { type: "continue-from-combat" }
+  | { type: "open-combat-settings" }
   | { type: "select-skill"; skillId: string }
   | { type: "select-target"; enemyId: string }
   | { type: "confirm-attack" }

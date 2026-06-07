@@ -22,6 +22,7 @@ import {
   dungeonAssistSnapshot,
   dungeonMapSnapshot,
   combatSnapshot,
+  replayCombatViewModel,
   resultSnapshot,
   failureResultSnapshot,
   partialResultSnapshot,
@@ -664,6 +665,48 @@ describe("canTransition - result and return meta-loop continuation", () => {
       const deadSelectedTarget = canTransition(deadSelectedTargetSnapshot, { type: "confirm-attack" });
       expect(deadSelectedTarget.allowed).toBe(false);
       expect(deadSelectedTarget.reason).toContain("defeated");
+    });
+
+    it("rejects combat-ending intents during character-hit acknowledgement", () => {
+      const characterHitSnapshot: DdgcFrontendSnapshot = {
+        ...combatSnapshot,
+        viewModel: replayCombatViewModel
+      };
+
+      expect(canTransition(characterHitSnapshot, { type: "continue-from-combat" }).allowed).toBe(true);
+
+      const selectSkill = canTransition(characterHitSnapshot, { type: "select-skill", skillId: "skill-1" });
+      expect(selectSkill.allowed).toBe(false);
+      expect(selectSkill.reason).toContain("character-hit acknowledgement");
+
+      const selectTarget = canTransition(characterHitSnapshot, { type: "select-target", enemyId: "enemy-moth-01" });
+      expect(selectTarget.allowed).toBe(false);
+      expect(selectTarget.reason).toContain("character-hit acknowledgement");
+
+      const confirmAttack = canTransition(characterHitSnapshot, { type: "confirm-attack" });
+      expect(confirmAttack.allowed).toBe(false);
+      expect(confirmAttack.reason).toContain("character-hit acknowledgement");
+
+      const flee = canTransition(characterHitSnapshot, { type: "flee-combat" });
+      expect(flee.allowed).toBe(false);
+      expect(flee.reason).toContain("character-hit acknowledgement");
+
+      const endTurn = canTransition(characterHitSnapshot, { type: "end-turn" });
+      expect(endTurn.allowed).toBe(false);
+      expect(endTurn.reason).toContain("character-hit acknowledgement");
+
+      const openSettings = canTransition(characterHitSnapshot, { type: "open-combat-settings" });
+      expect(openSettings.allowed).toBe(false);
+      expect(openSettings.reason).toContain("character-hit acknowledgement");
+
+      const returnToTown = canTransition(characterHitSnapshot, { type: "return-to-town" });
+      expect(returnToTown.allowed).toBe(false);
+      expect(returnToTown.reason).toContain("character-hit acknowledgement");
+    });
+
+    it("rejects continue-from-combat outside character-hit acknowledgement", () => {
+      expect(canTransition(combatSnapshot, { type: "continue-from-combat" }).allowed).toBe(false);
+      expect(canTransition(combatSnapshot, { type: "continue-from-combat" }).reason).toContain("character-hit acknowledgement");
     });
   });
 

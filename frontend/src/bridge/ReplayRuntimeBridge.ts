@@ -7,7 +7,7 @@ import {
   replayExpeditionViewModel,
   replayDungeonAssistViewModel,
   replayDungeonMapViewModel,
-  replayCombatViewModel,
+  replayAttackCombatViewModel,
   replayResultViewModel,
   replayReturnViewModel
 } from "../validation/replayFixtures";
@@ -65,6 +65,37 @@ function createReplayFleeResultViewModel(): ExpeditionResultViewModel {
       supplies: -20,
       experience: 20
     }
+  };
+}
+
+function createReplayCharacterHitCombatViewModel(combatVm: CombatViewModel): CombatViewModel {
+  const hitHeroId = combatVm.activeHeroId;
+  const hitHero = combatVm.party.find((hero) => hero.id === hitHeroId);
+  const targetedEnemy = combatVm.enemies.find((enemy) => enemy.isTargeted);
+  const hitDamage = "10";
+  const hitLog = `${targetedEnemy?.name ?? "Enemy"} retaliates and strikes ${hitHero?.name ?? "hero"} for ${hitDamage} damage.`;
+
+  return {
+    ...combatVm,
+    phase: "character-hit",
+    turnPhase: "enemy",
+    isPlayerTurn: false,
+    selectedSkillId: undefined,
+    party: combatVm.party.map((hero) =>
+      hero.id === hitHeroId
+        ? { ...hero, isHit: true }
+        : { ...hero, isHit: false }
+    ),
+    enemies: combatVm.enemies.map((enemy) => ({ ...enemy, isHit: false })),
+    hitTargetHeroId: hitHeroId,
+    hitDamage,
+    hitLog,
+    combatLog: [
+      ...combatVm.combatLog,
+      `${hitHero?.name ?? "Hero"} attacks ${targetedEnemy?.name ?? "target"}.`,
+      hitLog,
+      "Acknowledge the hit before issuing the next command."
+    ]
   };
 }
 
@@ -277,7 +308,7 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           this.snapshot = {
             ...this.snapshot,
             flowState: "combat",
-            viewModel: replayCombatViewModel as CombatViewModel,
+            viewModel: replayAttackCombatViewModel as CombatViewModel,
             debugMessage: `Replay: entered combat room "${targetRoom.label}".`
           };
           break;
@@ -355,10 +386,41 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
             break;
           }
         }
+        if (this.snapshot.viewModel.kind === "combat") {
+          this.snapshot = {
+            ...this.snapshot,
+            flowState: "combat",
+            viewModel: createReplayCharacterHitCombatViewModel(this.snapshot.viewModel),
+            debugMessage: "Replay: combat resolved into character-hit phase."
+          };
+        }
+        break;
+      case "continue-from-combat":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: continue-from-combat rejected: not in character-hit acknowledgement."
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",
-          viewModel: replayResultViewModel as ExpeditionResultViewModel
+          viewModel: replayResultViewModel as ExpeditionResultViewModel,
+          debugMessage: "Replay: character-hit acknowledged; transitioning to result."
+        };
+        break;
+      case "open-combat-settings":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: open-combat-settings rejected outside combat."
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          debugMessage: "Replay: combat settings intent received."
         };
         break;
       case "end-turn": {
