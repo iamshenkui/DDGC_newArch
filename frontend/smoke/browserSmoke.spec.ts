@@ -346,8 +346,8 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page);
 
     await expect(
-      page.getByText("远征准备"),
-      "Provisioning eyebrow (远征准备) must be visible"
+      page.getByText("苍灯远征"),
+      "Provisioning eyebrow (campaign name) must be visible"
     ).toBeVisible();
     await expect(
       page.getByText("战前补给"),

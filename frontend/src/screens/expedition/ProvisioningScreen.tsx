@@ -105,8 +105,8 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
       {/* ── Top HUD ─────────────────────────────────────── */}
       <header class="expedition-hud">
         <span class="expedition-hud-left">
-          <span class="eyebrow">远征准备</span>
-          <h1 class="expedition-title">战前补给</h1>
+          <span class="eyebrow">{props.viewModel.campaignName}</span>
+          <h1 class="expedition-title">{props.viewModel.title}</h1>
         </span>
         <span class="expedition-hud-center">
           <span class="hud-pill hud-pill--with-icon">
@@ -294,7 +294,7 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
               {/* Supply grid title */}
               <div class="provisioning-supply-header">
                 <span class="provisioning-supply-title">补给物资</span>
-                <span class="provisioning-supply-subtitle">做好出发前的准备，合理分配补给</span>
+                <span class="provisioning-supply-subtitle">{props.viewModel.expeditionSummary}</span>
               </div>
 
               {/* Supply item grid — wired from ProvisioningViewModel.supplies */}

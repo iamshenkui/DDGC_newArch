@@ -59,8 +59,8 @@ test.describe("provisioning screen: 战前补给 fidelity", () => {
     ).toBeVisible();
 
     await expect(
-      page.getByText("远征准备"),
-      "Eyebrow 远征准备 must be visible"
+      page.getByText("苍灯远征"),
+      "Eyebrow (campaign name) must be visible"
     ).toBeVisible();
 
     await expect(
