@@ -467,6 +467,13 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "enter-dungeon-assist":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: enter-dungeon-assist rejected outside expedition."
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "dungeon-assist",

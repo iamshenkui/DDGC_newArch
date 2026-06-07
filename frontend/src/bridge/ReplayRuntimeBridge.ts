@@ -125,6 +125,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "enter-dungeon-assist":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: enter-dungeon-assist rejected outside expedition."
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "dungeon-assist",

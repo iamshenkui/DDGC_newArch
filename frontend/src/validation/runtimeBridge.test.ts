@@ -215,6 +215,17 @@ describe("provisioning and expedition launch flow", () => {
     expect(assistVm.canContinue).toBe(false);
   });
 
+  it("replay rejects enter-dungeon-assist outside expedition", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
+
+    expect(snapshot.flowState).toBe("town");
+    expect(snapshot.viewModel.kind).toBe("town");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
   it("replay continue-from-dungeon transitions to result state", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
@@ -327,6 +338,17 @@ describe("provisioning and expedition launch flow", () => {
     expect(snapshot.viewModel.kind).toBe("dungeon-assist");
     const assistVm = snapshot.viewModel as DungeonAssistViewModel;
     expect(assistVm.party.length).toBeGreaterThan(0);
+  });
+
+  it("live rejects enter-dungeon-assist outside expedition", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
+
+    expect(snapshot.flowState).toBe("town");
+    expect(snapshot.viewModel.kind).toBe("town");
+    expect(snapshot.debugMessage).toContain("rejected");
   });
 
   it("live rejects continue-from-dungeon before assist action is used", async () => {
