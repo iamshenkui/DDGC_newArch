@@ -54,6 +54,9 @@ describe("CombatScreen skill interactions", () => {
   it("routes character-hit acknowledgement through continue combat", () => {
     const onContinueCombat = vi.fn();
     const onEndTurn = vi.fn();
+    const onSelectSkill = vi.fn();
+    const onSelectTarget = vi.fn();
+    const onConfirmAttack = vi.fn();
     const root = document.createElement("div");
     document.body.appendChild(root);
 
@@ -61,9 +64,9 @@ describe("CombatScreen skill interactions", () => {
       () => (
         <CombatScreen
           viewModel={replayCombatViewModel}
-          onSelectSkill={vi.fn()}
-          onSelectTarget={vi.fn()}
-          onConfirmAttack={vi.fn()}
+          onSelectSkill={onSelectSkill}
+          onSelectTarget={onSelectTarget}
+          onConfirmAttack={onConfirmAttack}
           onFleeCombat={vi.fn()}
           onEndTurn={onEndTurn}
           onContinueCombat={onContinueCombat}
@@ -85,5 +88,22 @@ describe("CombatScreen skill interactions", () => {
 
     const fleeButton = root.querySelector<HTMLButtonElement>(".combat-flee-btn");
     expect(fleeButton?.disabled).toBe(true);
+
+    const skillButton = root.querySelector<HTMLButtonElement>(".combat-skill-slot");
+    expect(skillButton?.disabled).toBe(true);
+    skillButton?.click();
+    expect(onSelectSkill).not.toHaveBeenCalled();
+
+    const targetButton = root.querySelector<HTMLButtonElement>(".combat-target-cell");
+    expect(targetButton?.disabled).toBe(true);
+    targetButton?.click();
+    expect(onSelectTarget).not.toHaveBeenCalled();
+
+    const arenaEnemy = root.querySelector<HTMLElement>(".combat-enemy-stand");
+    expect(arenaEnemy?.getAttribute("aria-disabled")).toBe("true");
+    arenaEnemy?.click();
+    arenaEnemy?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+    expect(onSelectTarget).not.toHaveBeenCalled();
+    expect(onConfirmAttack).not.toHaveBeenCalled();
   });
 });

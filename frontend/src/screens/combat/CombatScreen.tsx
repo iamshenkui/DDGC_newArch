@@ -83,7 +83,7 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
 
   return (
     <div
-      class="combat-viewport"
+      class={`combat-viewport${isCharacterHitPhase() ? " combat-viewport--character-hit" : ""}`}
       data-source-scene="UI_Combat/CombatScene"
       data-source-prefab="Assets/Prefabs/UI/CombatWindow.prefab"
     >
@@ -204,16 +204,18 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
           <For each={props.viewModel.enemies}>
             {(enemy) => {
               const hpPct = healthPercent(enemy.hp);
+              const isDisabled = isCharacterHitPhase() || !enemy.isAlive;
               return (
                 <div
                   class={`combat-enemy-stand${enemy.isTargeted ? " combat-enemy-stand--targeted" : ""}${enemy.isHit ? " combat-enemy-stand--hit" : ""}${!enemy.isAlive ? " combat-enemy-stand--dead" : ""}`}
                   data-enemy-id={enemy.id}
                   data-testid={`combat-enemy-${enemy.id}`}
-                  onClick={() => props.onSelectTarget(enemy.id)}
+                  onClick={() => !isDisabled && props.onSelectTarget(enemy.id)}
                   role="button"
-                  tabindex={0}
+                  tabindex={isDisabled ? -1 : 0}
+                  aria-disabled={isDisabled}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
+                    if (!isDisabled && (e.key === "Enter" || e.key === " ")) {
                       props.onSelectTarget(enemy.id);
                     }
                   }}
@@ -366,11 +368,12 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
               <For each={props.viewModel.enemies}>
                 {(enemy) => {
                   const hpPct = healthPercent(enemy.hp);
+                  const isDisabled = isCharacterHitPhase() || !enemy.isAlive;
                   return (
                     <button
                       class={`combat-target-cell${enemy.isTargeted ? " combat-target-cell--selected" : ""}${!enemy.isAlive ? " combat-target-cell--dead" : ""}`}
-                      onClick={() => enemy.isAlive && props.onSelectTarget(enemy.id)}
-                      disabled={!enemy.isAlive}
+                      onClick={() => !isDisabled && props.onSelectTarget(enemy.id)}
+                      disabled={isDisabled}
                     >
                       <div class="combat-target-cell-sprite">
                         <span class="combat-target-cell-initial">{enemy.name[0]}</span>
