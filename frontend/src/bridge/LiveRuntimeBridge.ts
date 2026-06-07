@@ -335,6 +335,18 @@ const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
   isContinueAvailable: true
 });
 
+const createLiveFleeResultViewModel = (): ExpeditionResultViewModel => ({
+  ...createLiveResultViewModel(),
+  outcome: "failure",
+  summary: "The expedition party fled combat before completing the objective. Return to town and recover before trying again.",
+  lootAcquired: [],
+  resourcesGained: {
+    gold: 0,
+    supplies: -25,
+    experience: 15
+  }
+});
+
 const createLiveCombatViewModel = (): CombatViewModel => ({
   kind: "combat",
   title: "副本场景-人物攻击",
@@ -412,6 +424,34 @@ const createLiveCombatViewModel = (): CombatViewModel => ({
   isPlayerTurn: true,
   canFlee: true
 });
+
+const advanceLiveCombatTurn = (combatVm: CombatViewModel): CombatViewModel => {
+  const livingParty = combatVm.party.filter((hero) => hero.isAlive);
+  const activeIndex = livingParty.findIndex((hero) => hero.id === combatVm.activeHeroId);
+  const nextHero = livingParty[activeIndex + 1] ?? livingParty[0];
+  const startsNewRound = activeIndex < 0 || activeIndex === livingParty.length - 1;
+  const selectedSkillId =
+    nextHero?.skills.find((skill) => skill.cooldownRemaining === 0)?.id ??
+    nextHero?.skills[0]?.id;
+
+  return {
+    ...combatVm,
+    round: startsNewRound ? combatVm.round + 1 : combatVm.round,
+    activeHeroId: nextHero?.id ?? combatVm.activeHeroId,
+    selectedSkillId,
+    party: combatVm.party.map((hero) => ({
+      ...hero,
+      isActive: hero.id === nextHero?.id
+    })),
+    combatLog: [
+      ...combatVm.combatLog,
+      `${combatVm.party.find((hero) => hero.id === combatVm.activeHeroId)?.name ?? "Active hero"} ends their turn.`,
+      startsNewRound
+        ? `Round ${combatVm.round + 1} begins.`
+        : `${nextHero?.name ?? "Next hero"} is ready.`
+    ]
+  };
+};
 
 const createLiveReturnViewModel = (): ReturnViewModel => ({
   kind: "return",
@@ -549,12 +589,27 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "confirm-attack":
-      case "end-turn":
-      case "flee-combat":
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",
           viewModel: createLiveResultViewModel()
+        };
+        break;
+      case "end-turn": {
+        const combatVm = this.snapshot.viewModel as CombatViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "combat",
+          viewModel: advanceLiveCombatTurn(combatVm),
+          debugMessage: "Live: combat end-turn intent advanced the active hero."
+        };
+        break;
+      }
+      case "flee-combat":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "result",
+          viewModel: createLiveFleeResultViewModel()
         };
         break;
       case "return-to-town":

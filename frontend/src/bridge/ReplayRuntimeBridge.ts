@@ -22,6 +22,48 @@ import type {
   CombatViewModel
 } from "./contractTypes";
 
+function advanceReplayCombatTurn(combatVm: CombatViewModel): CombatViewModel {
+  const livingParty = combatVm.party.filter((hero) => hero.isAlive);
+  const activeIndex = livingParty.findIndex((hero) => hero.id === combatVm.activeHeroId);
+  const nextHero = livingParty[activeIndex + 1] ?? livingParty[0];
+  const startsNewRound = activeIndex < 0 || activeIndex === livingParty.length - 1;
+  const selectedSkillId =
+    nextHero?.skills.find((skill) => skill.cooldownRemaining === 0)?.id ??
+    nextHero?.skills[0]?.id;
+
+  return {
+    ...combatVm,
+    round: startsNewRound ? combatVm.round + 1 : combatVm.round,
+    activeHeroId: nextHero?.id ?? combatVm.activeHeroId,
+    selectedSkillId,
+    party: combatVm.party.map((hero) => ({
+      ...hero,
+      isActive: hero.id === nextHero?.id
+    })),
+    combatLog: [
+      ...combatVm.combatLog,
+      `${combatVm.party.find((hero) => hero.id === combatVm.activeHeroId)?.name ?? "Active hero"} ends their turn.`,
+      startsNewRound
+        ? `Round ${combatVm.round + 1} begins.`
+        : `${nextHero?.name ?? "Next hero"} is ready.`
+    ]
+  };
+}
+
+function createReplayFleeResultViewModel(): ExpeditionResultViewModel {
+  return {
+    ...replayResultViewModel,
+    outcome: "failure",
+    summary: "The party fled combat before securing the objective. Regroup in town and prepare for another attempt.",
+    lootAcquired: [],
+    resourcesGained: {
+      gold: 0,
+      supplies: -20,
+      experience: 20
+    }
+  };
+}
+
 export class ReplayRuntimeBridge implements RuntimeBridge {
   readonly id = "ddgc-replay-bridge";
   readonly mode: RuntimeMode = "replay";
@@ -150,18 +192,27 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "confirm-attack":
-      case "end-turn":
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",
           viewModel: replayResultViewModel as ExpeditionResultViewModel
         };
         break;
+      case "end-turn": {
+        const combatVm = this.snapshot.viewModel as CombatViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "combat",
+          viewModel: advanceReplayCombatTurn(combatVm),
+          debugMessage: "Replay: combat end-turn intent advanced the active hero."
+        };
+        break;
+      }
       case "flee-combat":
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",
-          viewModel: replayResultViewModel as ExpeditionResultViewModel
+          viewModel: createReplayFleeResultViewModel()
         };
         break;
       case "return-to-town":

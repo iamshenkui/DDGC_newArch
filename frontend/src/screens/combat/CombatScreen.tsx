@@ -63,8 +63,8 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
     props.viewModel.party.find((h) => h.id === props.viewModel.activeHeroId) ??
     props.viewModel.party[0];
 
-  const selectedSkill = () =>
-    activeHero()?.skills.find((s) => s.id === props.viewModel.selectedSkillId);
+  const hoveredSkill = () =>
+    activeHero()?.skills.find((s) => s.id === hoveredSkillId());
 
   const portraitUrl = () =>
     resolveHeroPortrait({
@@ -313,12 +313,12 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
 
               <Show when={hoveredSkillId()}>
                 <div class="combat-skill-tooltip">
-                  <div class="combat-skill-tooltip-name">{selectedSkill()?.name}</div>
-                  <div class="combat-skill-tooltip-desc">{selectedSkill()?.description}</div>
+                  <div class="combat-skill-tooltip-name">{hoveredSkill()?.name}</div>
+                  <div class="combat-skill-tooltip-desc">{hoveredSkill()?.description}</div>
                   <div class="combat-skill-tooltip-stats">
-                    <span class="combat-skill-tooltip-stat">Target: {selectedSkill()?.target}</span>
-                    <span class="combat-skill-tooltip-stat">Hit: {selectedSkill()?.hitRating}</span>
-                    <span class="combat-skill-tooltip-stat">Crit: {selectedSkill()?.critRating}</span>
+                    <span class="combat-skill-tooltip-stat">Target: {hoveredSkill()?.target}</span>
+                    <span class="combat-skill-tooltip-stat">Hit: {hoveredSkill()?.hitRating}</span>
+                    <span class="combat-skill-tooltip-stat">Crit: {hoveredSkill()?.critRating}</span>
                   </div>
                 </div>
               </Show>
@@ -371,13 +371,14 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
               <button
                 class="action-primary combat-attack-btn"
                 onClick={props.onConfirmAttack}
-                disabled={!props.viewModel.selectedSkillId}
+                disabled={!props.viewModel.isPlayerTurn || !props.viewModel.selectedSkillId}
               >
                 Confirm Attack
               </button>
               <button
                 class="action-secondary combat-end-turn-btn"
                 onClick={props.onEndTurn}
+                disabled={!props.viewModel.isPlayerTurn}
               >
                 End Turn
               </button>

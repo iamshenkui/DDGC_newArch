@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, ExpeditionResultViewModel, ReturnViewModel } from "../bridge/contractTypes";
+import type { BuildingDetailViewModel, CombatViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, ExpeditionResultViewModel, ReturnViewModel } from "../bridge/contractTypes";
 import { LiveRuntimeBridge } from "../bridge/LiveRuntimeBridge";
 import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 
@@ -228,6 +228,39 @@ describe("provisioning and expedition launch flow", () => {
     expect(["success", "failure", "partial"]).toContain(resultVm.outcome);
   });
 
+  it("replay end-turn stays in combat and advances the active hero", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    const combatSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
+    const combatVm = combatSnapshot.viewModel as CombatViewModel;
+
+    const snapshot = await bridge.dispatchIntent({ type: "end-turn" });
+
+    expect(snapshot.flowState).toBe("combat");
+    expect(snapshot.viewModel.kind).toBe("combat");
+    const updatedCombatVm = snapshot.viewModel as CombatViewModel;
+    expect(updatedCombatVm.activeHeroId).not.toBe(combatVm.activeHeroId);
+    expect(updatedCombatVm.combatLog.at(-2)).toContain("ends their turn");
+  });
+
+  it("replay flee-combat transitions to a failure result", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "flee-combat" });
+
+    expect(snapshot.flowState).toBe("result");
+    expect(snapshot.viewModel.kind).toBe("result");
+    const resultVm = snapshot.viewModel as ExpeditionResultViewModel;
+    expect(resultVm.outcome).toBe("failure");
+    expect(resultVm.summary).toContain("fled combat");
+  });
+
   it("replay return-to-town from provisioning returns to town", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
@@ -287,6 +320,39 @@ describe("provisioning and expedition launch flow", () => {
     expect(snapshot.viewModel.kind).toBe("result");
     const resultVm = snapshot.viewModel as ExpeditionResultViewModel;
     expect(resultVm.outcome).toBe("success");
+  });
+
+  it("live end-turn stays in combat and advances the active hero", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    const combatSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
+    const combatVm = combatSnapshot.viewModel as CombatViewModel;
+
+    const snapshot = await bridge.dispatchIntent({ type: "end-turn" });
+
+    expect(snapshot.flowState).toBe("combat");
+    expect(snapshot.viewModel.kind).toBe("combat");
+    const updatedCombatVm = snapshot.viewModel as CombatViewModel;
+    expect(updatedCombatVm.activeHeroId).not.toBe(combatVm.activeHeroId);
+    expect(updatedCombatVm.combatLog.at(-2)).toContain("ends their turn");
+  });
+
+  it("live flee-combat transitions to a failure result", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "flee-combat" });
+
+    expect(snapshot.flowState).toBe("result");
+    expect(snapshot.viewModel.kind).toBe("result");
+    const resultVm = snapshot.viewModel as ExpeditionResultViewModel;
+    expect(resultVm.outcome).toBe("failure");
+    expect(resultVm.summary).toContain("fled combat");
   });
 
   it("town -> provision -> launch path is reproducible in replay", async () => {
