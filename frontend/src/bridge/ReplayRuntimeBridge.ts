@@ -133,11 +133,16 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       case "enter-room": {
         const dungeonVm = this.snapshot.viewModel as DungeonMapViewModel;
-        const updatedRooms = dungeonVm.rooms.map((room) =>
-          room.roomId === intent.roomId
-            ? { ...room, cleared: true, isCurrent: true }
-            : { ...room, isCurrent: false }
-        );
+        const previousCurrentRoomId = dungeonVm.currentRoom?.roomId;
+        const updatedRooms = dungeonVm.rooms.map((room) => {
+          if (room.roomId === intent.roomId) {
+            return { ...room, cleared: true, isCurrent: true };
+          }
+          if (room.roomId === previousCurrentRoomId) {
+            return { ...room, cleared: true, isCurrent: false };
+          }
+          return { ...room, isCurrent: false };
+        });
         const clearedCount = updatedRooms.filter((r) => r.cleared).length;
         const isComplete = clearedCount >= dungeonVm.totalRooms;
         this.snapshot = {

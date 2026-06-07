@@ -155,15 +155,27 @@ export function canTransition(
         if (targetRoom.isCurrent) {
           return { allowed: false, reason: `room "${intent.roomId}" is the current room` };
         }
+        if (targetRoom.kind === "unknown") {
+          return { allowed: false, reason: `room "${intent.roomId}" is hidden and cannot be entered` };
+        }
         if (dungeonVm.isComplete) {
           return { allowed: false, reason: "dungeon is already complete" };
         }
         if (dungeonVm.partyFled) {
           return { allowed: false, reason: "party has fled the dungeon" };
         }
+        if (!dungeonVm.currentRoom) {
+          return { allowed: false, reason: "no current room is set in the dungeon map" };
+        }
+        if (dungeonVm.totalRooms <= 0) {
+          return { allowed: false, reason: "dungeon map has invalid totalRooms" };
+        }
+        if (dungeonVm.totalRooms !== dungeonVm.rooms.length) {
+          return { allowed: false, reason: "dungeon map totalRooms does not match actual room count" };
+        }
         const currentRoomIndex = dungeonVm.rooms.findIndex((r) => r.roomId === dungeonVm.currentRoom?.roomId);
         const targetRoomIndex = dungeonVm.rooms.findIndex((r) => r.roomId === intent.roomId);
-        if (currentRoomIndex >= 0 && targetRoomIndex >= 0 && Math.abs(currentRoomIndex - targetRoomIndex) !== 1) {
+        if (currentRoomIndex < 0 || targetRoomIndex < 0 || Math.abs(currentRoomIndex - targetRoomIndex) !== 1) {
           return { allowed: false, reason: `room "${intent.roomId}" is not adjacent to the current room` };
         }
       }

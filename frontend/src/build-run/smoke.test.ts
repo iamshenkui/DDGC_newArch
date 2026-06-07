@@ -136,14 +136,12 @@ describe("build-run smoke: flow state transitions", () => {
 
     // room-5 is now adjacent to room-4 and can be entered
     const room5Snap = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-5" });
-    expect(room5Snap.flowState).toBe("dungeon");
-    const room5Vm = room5Snap.viewModel as DungeonMapViewModel;
-    expect(room5Vm.rooms.find((r) => r.roomId === "room-5")?.cleared).toBe(true);
-    expect(room5Vm.currentRoom?.roomId).toBe("room-5");
+    expect(room5Snap.flowState).toBe("result");
+    expect(room5Snap.viewModel.kind).toBe("result");
 
-    // Non-adjacent room entry is rejected
+    // Dungeon completes after all rooms cleared; entering room from result is rejected
     const rejectedSnap = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-1" });
-    expect(rejectedSnap.debugMessage).toContain("already been cleared");
+    expect(rejectedSnap.debugMessage).toContain("only valid on dungeon-map screen");
   });
 
   it("live: town → provisioning → expedition → dungeon with adjacency enforcement", async () => {
@@ -241,9 +239,11 @@ describe("build-run smoke: meta-loop continuation", () => {
     expect(room4Snap.flowState).toBe("dungeon");
 
     const room5Snap = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-5" });
-    expect(room5Snap.flowState).toBe("dungeon");
+    // Dungeon completes after all rooms are cleared
+    expect(room5Snap.flowState).toBe("result");
+    expect(room5Snap.viewModel.kind).toBe("result");
 
-    // Return to town from dungeon
+    // Return to town from result
     const townSnap = await bridge.dispatchIntent({ type: "return-to-town" });
     expect(townSnap.flowState).toBe("town");
     expect(townSnap.viewModel.kind).toBe("town");

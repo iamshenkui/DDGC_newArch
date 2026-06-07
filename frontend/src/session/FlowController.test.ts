@@ -463,6 +463,82 @@ describe("canTransition - result and return meta-loop continuation", () => {
       expect(validation.reason).toContain("already been cleared");
     });
 
+    it("rejects enter-room for hidden room with kind 'unknown'", () => {
+      const dungeonVm = dungeonMapSnapshot.viewModel as DungeonMapViewModel;
+      const hiddenRoomSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonMapSnapshot,
+        viewModel: {
+          ...dungeonVm,
+          rooms: [
+            { roomId: "room-1", kind: "combat", cleared: false, isCurrent: true },
+            { roomId: "room-2", kind: "unknown", cleared: false, isCurrent: false },
+          ],
+          totalRooms: 2,
+          currentRoom: { roomId: "room-1", kind: "combat", cleared: false, isCurrent: true }
+        }
+      };
+      const validation = canTransition(hiddenRoomSnapshot, { type: "enter-room", roomId: "room-2" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("hidden");
+    });
+
+    it("rejects enter-room when currentRoom is undefined", () => {
+      const dungeonVm = dungeonMapSnapshot.viewModel as DungeonMapViewModel;
+      const noCurrentRoomSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonMapSnapshot,
+        viewModel: {
+          ...dungeonVm,
+          rooms: [
+            { roomId: "room-1", kind: "combat", cleared: false, isCurrent: false },
+            { roomId: "room-2", kind: "corridor", cleared: false, isCurrent: false },
+          ],
+          totalRooms: 2,
+          currentRoom: undefined
+        }
+      };
+      const validation = canTransition(noCurrentRoomSnapshot, { type: "enter-room", roomId: "room-2" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("no current room");
+    });
+
+    it("rejects enter-room when totalRooms does not match rooms.length", () => {
+      const dungeonVm = dungeonMapSnapshot.viewModel as DungeonMapViewModel;
+      const mismatchedTotalSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonMapSnapshot,
+        viewModel: {
+          ...dungeonVm,
+          rooms: [
+            { roomId: "room-1", kind: "combat", cleared: false, isCurrent: true },
+            { roomId: "room-2", kind: "corridor", cleared: false, isCurrent: false },
+          ],
+          totalRooms: 5,
+          currentRoom: { roomId: "room-1", kind: "combat", cleared: false, isCurrent: true }
+        }
+      };
+      const validation = canTransition(mismatchedTotalSnapshot, { type: "enter-room", roomId: "room-2" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("totalRooms does not match");
+    });
+
+    it("rejects enter-room when totalRooms is zero or negative", () => {
+      const dungeonVm = dungeonMapSnapshot.viewModel as DungeonMapViewModel;
+      const zeroTotalSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonMapSnapshot,
+        viewModel: {
+          ...dungeonVm,
+          rooms: [
+            { roomId: "room-1", kind: "combat", cleared: false, isCurrent: true },
+            { roomId: "room-2", kind: "corridor", cleared: false, isCurrent: false },
+          ],
+          totalRooms: 0,
+          currentRoom: { roomId: "room-1", kind: "combat", cleared: false, isCurrent: true }
+        }
+      };
+      const validation = canTransition(zeroTotalSnapshot, { type: "enter-room", roomId: "room-2" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("invalid totalRooms");
+    });
+
     it("allows enter-room when target is adjacent to the current room (forward)", () => {
       const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "room-4" });
       expect(validation.allowed).toBe(true);

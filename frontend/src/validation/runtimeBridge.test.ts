@@ -471,29 +471,26 @@ describe("bridge-level dungeon transition validation", () => {
     let snapshot = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-2" });
     expect(snapshot.flowState).toBe("dungeon");
     let dungeonVm = snapshot.viewModel as DungeonMapViewModel;
-    expect(dungeonVm.roomsCleared).toBe(1);
+    expect(dungeonVm.roomsCleared).toBe(2);
     expect(dungeonVm.isComplete).toBe(false);
     expect(dungeonVm.currentRoom?.roomId).toBe("room-2");
 
     snapshot = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-3" });
     dungeonVm = snapshot.viewModel as DungeonMapViewModel;
-    expect(dungeonVm.roomsCleared).toBe(2);
+    expect(dungeonVm.roomsCleared).toBe(3);
     expect(dungeonVm.isComplete).toBe(false);
     expect(dungeonVm.currentRoom?.roomId).toBe("room-3");
 
     snapshot = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-4" });
     dungeonVm = snapshot.viewModel as DungeonMapViewModel;
-    expect(dungeonVm.roomsCleared).toBe(3);
+    expect(dungeonVm.roomsCleared).toBe(4);
     expect(dungeonVm.isComplete).toBe(false);
     expect(dungeonVm.currentRoom?.roomId).toBe("room-4");
 
     snapshot = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-5" });
-    dungeonVm = snapshot.viewModel as DungeonMapViewModel;
-    expect(dungeonVm.roomsCleared).toBe(4);
-    // Room-1 started as current but was never entered via dispatchIntent,
-    // so it remains uncleared and the dungeon does not auto-complete.
-    expect(dungeonVm.isComplete).toBe(false);
-    expect(dungeonVm.currentRoom?.roomId).toBe("room-5");
+    // All rooms cleared; dungeon auto-completes and transitions to result
+    expect(snapshot.flowState).toBe("result");
+    expect(snapshot.viewModel.kind).toBe("result");
   });
 
   it("bridge does not complete dungeon when skipping rooms", async () => {
