@@ -124,6 +124,9 @@ export function canTransition(
       if (snapshot.viewModel.kind !== "combat") {
         return { allowed: false, reason: "viewModel is not a combat view model" };
       }
+      if (isCharacterHitAcknowledgement(snapshot)) {
+        return { allowed: false, reason: "select-skill is not valid during character-hit acknowledgement" };
+      }
       if (!snapshot.viewModel.isPlayerTurn) {
         return { allowed: false, reason: "not player turn" };
       }

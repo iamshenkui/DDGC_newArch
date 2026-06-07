@@ -675,6 +675,10 @@ describe("canTransition - result and return meta-loop continuation", () => {
 
       expect(canTransition(characterHitSnapshot, { type: "continue-from-combat" }).allowed).toBe(true);
 
+      const selectSkill = canTransition(characterHitSnapshot, { type: "select-skill", skillId: "skill-1" });
+      expect(selectSkill.allowed).toBe(false);
+      expect(selectSkill.reason).toContain("character-hit acknowledgement");
+
       const confirmAttack = canTransition(characterHitSnapshot, { type: "confirm-attack" });
       expect(confirmAttack.allowed).toBe(false);
       expect(confirmAttack.reason).toContain("character-hit acknowledgement");
