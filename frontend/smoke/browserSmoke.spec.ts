@@ -476,8 +476,15 @@ test.describe("browser smoke: fidelity gates", () => {
       "Combat screen must use .combat-viewport landscape layout"
     ).toBeVisible();
 
-    // 5e. Combat -> Result
+    // 5e. Combat -> Character Hit -> Result
     await page.getByRole("button", { name: "Confirm Attack" }).click();
+    await settle(page);
+
+    await expect(
+      page.getByRole("button", { name: "Acknowledge" }),
+      "Acknowledge button must be visible after confirm attack"
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Acknowledge" }).click();
     await settle(page);
 
     await expect(
@@ -705,8 +712,15 @@ test.describe("browser smoke: fidelity gates", () => {
       "Live combat enemies must render"
     ).toHaveCount(2);
 
-    // Confirm attack from live combat to result
+    // Confirm attack from live combat to character hit to result
     await page.getByRole("button", { name: "Confirm Attack" }).click();
+    await settle(page);
+
+    await expect(
+      page.getByRole("button", { name: "Acknowledge" }),
+      "Live acknowledge button must be visible after confirm attack"
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Acknowledge" }).click();
     await settle(page);
 
     await expect(
@@ -811,6 +825,13 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Confirm Attack" }).click();
+    await settle(page);
+
+    await expect(
+      page.getByRole("button", { name: "Acknowledge" }),
+      "Acknowledge button must be visible after confirm attack"
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Acknowledge" }).click();
     await settle(page);
 
     // Verify success result
