@@ -7,6 +7,7 @@ import type {
   ReturnViewModel,
   DungeonMapViewModel,
   CombatViewModel,
+  DungeonInteractionViewModel,
 } from "../bridge/contractTypes";
 import {
   fatalSnapshot,
