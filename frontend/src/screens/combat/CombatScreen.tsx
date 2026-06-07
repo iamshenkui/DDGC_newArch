@@ -1,19 +1,17 @@
-import { For, Show, type Component } from "solid-js";
+import { For, Show, type Component, createSignal } from "solid-js";
 
-import type {
-  CombatViewModel,
-  CombatHeroState,
-  CombatEnemyState,
-  MapRoomNode,
-} from "../../bridge/contractTypes";
+import type { CombatViewModel } from "../../bridge/contractTypes";
 import { resolveHeroPortrait } from "../../assets/originalAssetPaths";
 
 interface CombatScreenProps {
   viewModel: CombatViewModel;
-  onUseSkill: (skillId: string) => void;
-  onContinueCombat: () => void;
+  onSelectSkill: (skillId: string) => void;
+  onSelectTarget: (enemyId: string) => void;
+  onConfirmAttack: () => void;
   onFleeCombat: () => void;
-  onOpenSettings: () => void;
+  onEndTurn: () => void;
+  onContinueCombat?: () => void;
+  onOpenSettings?: () => void;
 }
 
 function parseHp(hp: string): { current: number; max: number } {
@@ -50,162 +48,222 @@ function stressBarColor(stress: string): string {
   return "#ea7767";
 }
 
-function getRoomNodeClass(room: MapRoomNode): string {
-  const base = "combat-map-node";
-  if (room.isCurrent) return `${base} combat-map-node--current`;
-  if (room.isCleared) return `${base} combat-map-node--cleared`;
-  return `${base} combat-map-node--${room.kind}`;
-}
-
 /**
- * Combat screen — dungeon encounter with character hit focus.
+ * Combat screen — dungeon scene character attack phase.
  *
- * Layout mirrors the reference image:
- *   - Top HUD: dungeon name, round label, settings button
- *   - Battle stage: heroes on left, enemies on right
- *   - Bottom-left: hit character status panel (portrait, stats, skills)
- *   - Bottom-right: dungeon minimap with room connections
+ * Mirrors the reference image layout:
+ *   - Top: combat arena with party on left, enemies on right
+ *   - Bottom-left: active character detail panel (portrait, stats, skills)
+ *   - Bottom-right: target/action selection panel
  *
- * Source scene: 副本场景-人物受击 (Dungeon Scene - Character Hit)
+ * Reference: 副本场景-人物攻击.png
  */
 export const CombatScreen: Component<CombatScreenProps> = (props) => {
+  const [hoveredSkillId, setHoveredSkillId] = createSignal<string | null>(null);
+
+  const activeHero = () =>
+    props.viewModel.party.find((h) => h.id === props.viewModel.activeHeroId) ??
+    props.viewModel.party[0];
+
   const hitHero = () =>
     props.viewModel.party.find((h) => h.id === props.viewModel.hitTargetHeroId);
 
-  const activeHero = () =>
-    props.viewModel.party.find((h) => h.id === props.viewModel.activeHeroId);
-
-  const displayHero = () => hitHero() ?? activeHero() ?? props.viewModel.party[0];
+  const displayHero = () => hitHero() ?? activeHero();
 
   const isCharacterHitPhase = () => props.viewModel.phase === "character-hit";
-  const canUseSkills = () => !isCharacterHitPhase();
+
+  const hoveredSkill = () =>
+    displayHero()?.skills.find((s) => s.id === hoveredSkillId());
+
+  const portraitUrl = () =>
+    resolveHeroPortrait({
+      heroId: displayHero()?.id ?? "",
+      classLabel: displayHero()?.classLabel ?? ""
+    });
 
   return (
     <div
       class="combat-viewport"
-      data-source-scene="UI_Combat/CombatWindow"
+      data-source-scene="UI_Combat/CombatScene"
       data-source-prefab="Assets/Prefabs/UI/CombatWindow.prefab"
-      data-testid="combat-screen"
     >
       {/* ── Top HUD ─────────────────────────────────────── */}
       <header class="combat-hud">
         <span class="combat-hud-left">
-          <span class="eyebrow">{props.viewModel.dungeonName}</span>
+          <span class="eyebrow">
+            {props.viewModel.dungeonName ?? "Combat"} — {props.viewModel.roundLabel ?? `Round ${props.viewModel.round}`}
+          </span>
           <h1 class="combat-title">{props.viewModel.title}</h1>
         </span>
         <span class="combat-hud-center">
-          <span class="hud-pill hud-pill-accent">{props.viewModel.roundLabel}</span>
-          <span class="hud-pill">Turn {props.viewModel.turnCount}</span>
-          <Show when={isCharacterHitPhase()}>
-            <span class="hud-pill pill-danger">Character Hit</span>
+          <Show
+            when={isCharacterHitPhase()}
+            fallback={
+              <span class="hud-pill hud-pill-accent">
+                {props.viewModel.turnPhase === "player" ? "Player Turn" : "Enemy Turn"}
+              </span>
+            }
+          >
+            <span class="hud-pill hud-pill-accent pill-danger">Character Hit</span>
           </Show>
+          <span class="hud-pill">
+            Active: {displayHero()?.name}
+          </span>
         </span>
         <span class="combat-hud-right">
           <button
             class="combat-settings-btn"
-            onClick={props.onOpenSettings}
-            aria-label={props.viewModel.settingsLabel}
-            data-testid="combat-settings-btn"
+            onClick={() => props.onOpenSettings?.()}
+            aria-label="设置"
+            title="设置"
           >
-            {props.viewModel.settingsLabel}
+            设置
           </button>
         </span>
       </header>
 
-      {/* ── Battle Stage ─────────────────────────────────── */}
-      <div class="combat-stage">
-        <div class="combat-stage-bg" />
-        <div class="combat-stage-fx" />
+      {/* ── Combat Arena ─────────────────────────────────── */}
+      <div class="combat-arena">
+        <div class="combat-arena-bg" />
+        <div class="combat-arena-fx" />
 
-        <div class="combat-formation">
-          {/* Heroes on the left */}
-          <div class="combat-formation-side combat-formation-side--heroes">
-            <For each={props.viewModel.party}>
-              {(hero) => {
-                const portraitUrl = resolveHeroPortrait({
-                  heroId: hero.id,
-                  classLabel: hero.classLabel,
-                });
-                return (
-                  <div
-                    class={`combat-actor combat-actor--hero${
-                      hero.isHit ? " combat-actor--hit" : ""
-                    }${hero.isActive ? " combat-actor--active" : ""}`}
-                    data-actor-id={hero.id}
-                    data-testid={`combat-hero-${hero.id}`}
-                  >
-                    <div class="combat-actor-portrait">
-                      {portraitUrl ? (
+        {/* Party formation on the left */}
+        <div class="combat-party-line">
+          <For each={props.viewModel.party}>
+            {(hero) => {
+              const isActive = hero.id === props.viewModel.activeHeroId;
+              const hpPct = healthPercent(hero.hp);
+              const stPct = stressPercent(hero.stress, hero.maxStress);
+              const heroPortrait = resolveHeroPortrait({
+                heroId: hero.id,
+                classLabel: hero.classLabel
+              });
+              return (
+                <div
+                  class={`combat-hero-stand${isActive ? " combat-hero-stand--active" : ""}${hero.isHit ? " combat-hero-stand--hit" : ""}${!hero.isAlive ? " combat-hero-stand--dead" : ""}`}
+                  data-hero-id={hero.id}
+                  data-testid={`combat-hero-${hero.id}`}
+                >
+                  <div class="combat-hero-portrait-wrap">
+                    <div
+                      class={`combat-hero-portrait${heroPortrait ? " combat-hero-portrait--image" : " combat-hero-portrait--fallback"}`}
+                    >
+                      {heroPortrait ? (
                         <img
-                          class="combat-actor-portrait-image"
-                          src={portraitUrl}
+                          class="combat-hero-portrait-image"
+                          src={heroPortrait}
                           alt=""
                           aria-hidden="true"
                         />
                       ) : (
-                        <span class="combat-actor-initial">{hero.name[0]}</span>
+                        <span class="combat-hero-portrait-letter">
+                          {hero.classLabel[0]}
+                        </span>
                       )}
                     </div>
-                    <div class="combat-actor-name">{hero.name}</div>
-                    <div class="combat-actor-bars">
-                      <div class="combat-actor-bar">
-                        <div
-                          class="combat-actor-bar-fill"
-                          style={{
-                            width: `${healthPercent(hero.hp)}%`,
-                            background: healthBarColor(hero.hp),
-                          }}
-                        />
+                    <Show when={isActive}>
+                      <div class="combat-hero-active-ring" aria-hidden="true" />
+                    </Show>
+                  </div>
+                  <div class="combat-hero-info">
+                    <div class="combat-hero-name">{hero.name}</div>
+                    <div class="combat-hero-class">{hero.classLabel}</div>
+                    <div class="combat-hero-bars">
+                      <div class="combat-bar-row">
+                        <div class="combat-bar-track">
+                          <div
+                            class="combat-bar-fill"
+                            style={{
+                              width: `${hpPct}%`,
+                              background: healthBarColor(hero.hp)
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div class="combat-bar-row">
+                        <div class="combat-bar-track combat-bar-track--stress">
+                          <div
+                            class="combat-bar-fill"
+                            style={{
+                              width: `${stPct}%`,
+                              background: stressBarColor(hero.stress)
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                );
-              }}
-            </For>
-          </div>
+                </div>
+              );
+            }}
+          </For>
+        </div>
 
-          {/* VS indicator */}
-          <div class="combat-vs-divider" aria-hidden="true">
-            <span class="combat-vs-text">VS</span>
-          </div>
-
-          {/* Enemies on the right */}
-          <div class="combat-formation-side combat-formation-side--enemies">
-            <For each={props.viewModel.enemies}>
-              {(enemy) => (
+        {/* Enemy formation on the right */}
+        <div class="combat-enemy-line">
+          <For each={props.viewModel.enemies}>
+            {(enemy) => {
+              const hpPct = healthPercent(enemy.hp);
+              return (
                 <div
-                  class={`combat-actor combat-actor--enemy${
-                    enemy.isHit ? " combat-actor--hit" : ""
-                  }`}
-                  data-actor-id={enemy.id}
+                  class={`combat-enemy-stand${enemy.isTargeted ? " combat-enemy-stand--targeted" : ""}${enemy.isHit ? " combat-enemy-stand--hit" : ""}${!enemy.isAlive ? " combat-enemy-stand--dead" : ""}`}
+                  data-enemy-id={enemy.id}
                   data-testid={`combat-enemy-${enemy.id}`}
+                  onClick={() => props.onSelectTarget(enemy.id)}
+                  role="button"
+                  tabindex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      props.onSelectTarget(enemy.id);
+                    }
+                  }}
                 >
-                  <div class="combat-actor-portrait combat-actor-portrait--enemy">
-                    <span class="combat-actor-initial combat-actor-initial--enemy">
-                      {enemy.name[0]}
-                    </span>
+                  <div class="combat-enemy-body">
+                    <div class={`combat-enemy-sprite combat-enemy-sprite--${enemy.size}`}>
+                      <span class="combat-enemy-initial">{enemy.name[0]}</span>
+                    </div>
+                    <Show when={enemy.isTargeted}>
+                      <div class="combat-enemy-target-marker" aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ea7767" stroke-width="2">
+                          <circle cx="12" cy="12" r="8" />
+                          <line x1="12" y1="2" x2="12" y2="6" />
+                          <line x1="12" y1="18" x2="12" y2="22" />
+                          <line x1="2" y1="12" x2="6" y2="12" />
+                          <line x1="18" y1="12" x2="22" y2="12" />
+                        </svg>
+                      </div>
+                    </Show>
                   </div>
-                  <div class="combat-actor-name combat-actor-name--enemy">
-                    {enemy.name}
-                  </div>
-                  <div class="combat-actor-bars">
-                    <div class="combat-actor-bar">
-                      <div
-                        class="combat-actor-bar-fill"
-                        style={{
-                          width: `${healthPercent(enemy.hp)}%`,
-                          background: healthBarColor(enemy.hp),
-                        }}
-                      />
+                  <div class="combat-enemy-info">
+                    <div class="combat-enemy-name">{enemy.name}</div>
+                    <div class="combat-enemy-hp-bar">
+                      <div class="combat-bar-track combat-bar-track--enemy">
+                        <div
+                          class="combat-bar-fill"
+                          style={{
+                            width: `${hpPct}%`,
+                            background: healthBarColor(enemy.hp)
+                          }}
+                        />
+                      </div>
+                      <span class="combat-enemy-hp-text">{enemy.hp}</span>
                     </div>
                   </div>
                 </div>
-              )}
-            </For>
-          </div>
+              );
+            }}
+          </For>
         </div>
 
-        {/* Hit damage floater */}
+        {/* Combat log overlay */}
+        <div class="combat-log-overlay">
+          <For each={props.viewModel.combatLog}>
+            {(entry) => (
+              <div class="combat-log-entry">{entry}</div>
+            )}
+          </For>
+        </div>
+
         <Show when={isCharacterHitPhase() && props.viewModel.hitDamage}>
           <div class="combat-hit-floater" data-testid="combat-hit-damage">
             <span class="combat-hit-damage-value">-{props.viewModel.hitDamage}</span>
@@ -215,198 +273,179 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
 
       {/* ── Bottom Panels ────────────────────────────────── */}
       <div class="combat-bottom-panels">
-        {/* Left: Character status panel */}
-        <div class="combat-status-panel" data-testid="combat-status-panel">
-          <div class="combat-status-header">
-            <span class="combat-status-eyebrow">Status</span>
-            <Show when={isCharacterHitPhase()}>
-              <span class="combat-status-tag combat-status-tag--hit">Hit</span>
-            </Show>
-          </div>
+        {/* Left: Active character detail */}
+        <section class="combat-char-panel">
+          <header class="combat-char-header">
+            <span class="combat-char-frame-rule" aria-hidden="true" />
+            <h2 class="combat-char-title">{displayHero()?.name} — {displayHero()?.classLabel}</h2>
+            <span class="combat-char-frame-rule" aria-hidden="true" />
+          </header>
 
-          <div class="combat-status-body">
-            <div class="combat-status-portrait-wrap">
-              <div class="combat-status-portrait">
-                {(() => {
-                  const hero = displayHero();
-                  if (!hero) return null;
-                  const url = resolveHeroPortrait({
-                    heroId: hero.id,
-                    classLabel: hero.classLabel,
-                  });
-                  return url ? (
-                    <img
-                      class="combat-status-portrait-image"
-                      src={url}
-                      alt=""
-                      aria-hidden="true"
-                    />
-                  ) : (
-                    <span class="combat-status-portrait-letter">
-                      {hero.name[0]}
-                    </span>
-                  );
-                })()}
+          <div class="combat-char-body">
+            <div class="combat-char-portrait-col">
+              <div
+                class={`combat-char-portrait${portraitUrl() ? " combat-char-portrait--image" : " combat-char-portrait--fallback"}`}
+              >
+                {portraitUrl() ? (
+                  <img
+                    class="combat-char-portrait-image"
+                    src={portraitUrl()}
+                    alt=""
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <span class="combat-char-portrait-letter">
+                    {displayHero()?.classLabel[0]}
+                  </span>
+                )}
               </div>
-              <div class="combat-status-hero-info">
-                <div class="combat-status-hero-name">{displayHero()?.name}</div>
-                <div class="combat-status-hero-class">
-                  {displayHero()?.classLabel}
+              <div class="combat-char-stats">
+                <div class="combat-stat-row">
+                  <span class="combat-stat-label">HP</span>
+                  <span class="combat-stat-value">{displayHero()?.hp}</span>
+                </div>
+                <div class="combat-stat-row">
+                  <span class="combat-stat-label">ST</span>
+                  <span class="combat-stat-value">{displayHero()?.stress} / {displayHero()?.maxStress}</span>
                 </div>
               </div>
             </div>
 
-            <div class="combat-status-stats">
-              <Show when={displayHero()}>
-                {(hero) => (
-                  <>
-                    <div class="combat-stat-row">
-                      <span class="combat-stat-label">HP</span>
-                      <div class="combat-stat-bar">
-                        <div
-                          class="combat-stat-bar-fill"
-                          style={{
-                            width: `${healthPercent(hero().hp)}%`,
-                            background: healthBarColor(hero().hp),
-                          }}
-                        />
-                      </div>
-                      <span class="combat-stat-value">{hero().hp}</span>
-                    </div>
-                    <div class="combat-stat-row">
-                      <span class="combat-stat-label">ST</span>
-                      <div class="combat-stat-bar">
-                        <div
-                          class="combat-stat-bar-fill"
-                          style={{
-                            width: `${stressPercent(hero().stress, hero().maxStress)}%`,
-                            background: stressBarColor(hero().stress),
-                          }}
-                        />
-                      </div>
-                      <span class="combat-stat-value">{hero().stress}</span>
-                    </div>
-                  </>
-                )}
+            <div class="combat-char-skills-col">
+              <div class="combat-skills-title">Skills</div>
+              <div class="combat-skill-slots">
+                <For each={displayHero()?.skills}>
+                  {(skill) => {
+                    const isSelected = skill.id === props.viewModel.selectedSkillId;
+                    const isOnCooldown = skill.cooldownRemaining > 0;
+                    const isDisabled = isCharacterHitPhase() || isOnCooldown;
+                    return (
+                      <button
+                        class={`combat-skill-slot${isSelected ? " combat-skill-slot--selected" : ""}${isOnCooldown ? " combat-skill-slot--cooldown" : ""}`}
+                        onClick={() => !isDisabled && props.onSelectSkill(skill.id)}
+                        onMouseEnter={() => setHoveredSkillId(skill.id)}
+                        onMouseLeave={() => setHoveredSkillId(null)}
+                        disabled={isDisabled}
+                        title={`${skill.name}${isOnCooldown ? ` (CD: ${skill.cooldownRemaining})` : ""}`}
+                      >
+                        <span class="combat-skill-icon">{skill.name[0]}</span>
+                        <Show when={isOnCooldown}>
+                          <span class="combat-skill-cd-badge">{skill.cooldownRemaining}</span>
+                        </Show>
+                      </button>
+                    );
+                  }}
+                </For>
+              </div>
+
+              <Show when={hoveredSkillId()}>
+                <div class="combat-skill-tooltip">
+                  <div class="combat-skill-tooltip-name">{hoveredSkill()?.name}</div>
+                  <div class="combat-skill-tooltip-desc">{hoveredSkill()?.description}</div>
+                  <div class="combat-skill-tooltip-stats">
+                    <span class="combat-skill-tooltip-stat">Target: {hoveredSkill()?.target}</span>
+                    <span class="combat-skill-tooltip-stat">Hit: {hoveredSkill()?.hitRating}</span>
+                    <span class="combat-skill-tooltip-stat">Crit: {hoveredSkill()?.critRating}</span>
+                  </div>
+                </div>
               </Show>
             </div>
-
-            {/* Skill slots */}
-            <Show when={displayHero()}>
-              {(hero) => (
-                <div class="combat-skill-slots">
-                  <For each={hero().skills}>
-                    {(skill, index) => (
-                      <button
-                        class={`combat-skill-slot${
-                          canUseSkills() && skill.isAvailable
-                            ? " combat-skill-slot--available"
-                            : " combat-skill-slot--cooldown"
-                        }`}
-                        onClick={() => {
-                          if (canUseSkills() && skill.isAvailable) {
-                            props.onUseSkill(`${hero().id}-skill-${index()}`);
-                          }
-                        }}
-                        disabled={!canUseSkills() || !skill.isAvailable}
-                        data-testid={`combat-skill-${index()}`}
-                        title={skill.name}
-                      >
-                        <span class="combat-skill-slot-name">{skill.name}</span>
-                      </button>
-                    )}
-                  </For>
-                </div>
-              )}
-            </Show>
           </div>
-        </div>
+        </section>
 
-        {/* Right: Dungeon minimap */}
-        <div class="combat-map-panel" data-testid="combat-map-panel">
-          <div class="combat-map-header">
-            <span class="combat-map-eyebrow">Dungeon Map</span>
-          </div>
-          <div class="combat-map-canvas">
-            <div class="combat-map-grid">
-              <For each={props.viewModel.roomMap.rooms}>
-                {(room) => (
-                  <div
-                    class={getRoomNodeClass(room)}
-                    style={{
-                      left: `${room.x * 28 + 8}px`,
-                      top: `${room.y * 28 + 8}px`,
-                    }}
-                    data-room-id={room.id}
-                    data-room-kind={room.kind}
-                    data-testid={`combat-map-room-${room.id}`}
-                    title={room.kind}
-                  />
-                )}
-              </For>
-              <For each={props.viewModel.roomMap.connections}>
-                {(conn) => {
-                  const fromRoom = props.viewModel.roomMap.rooms.find(
-                    (r) => r.id === conn.from
-                  );
-                  const toRoom = props.viewModel.roomMap.rooms.find(
-                    (r) => r.id === conn.to
-                  );
-                  if (!fromRoom || !toRoom) return null;
-                  const x1 = fromRoom.x * 28 + 8 + 8;
-                  const y1 = fromRoom.y * 28 + 8 + 8;
-                  const x2 = toRoom.x * 28 + 8 + 8;
-                  const y2 = toRoom.y * 28 + 8 + 8;
-                  const length = Math.sqrt(
-                    (x2 - x1) ** 2 + (y2 - y1) ** 2
-                  );
-                  const angle =
-                    (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI;
+        {/* Right: Target / action panel */}
+        <section class="combat-target-panel">
+          <header class="combat-target-header">
+            <span class="combat-target-frame-rule" aria-hidden="true" />
+            <h2 class="combat-target-title">Target Selection</h2>
+            <span class="combat-target-frame-rule" aria-hidden="true" />
+          </header>
+
+          <div class="combat-target-body">
+            <div class="combat-target-grid">
+              <For each={props.viewModel.enemies}>
+                {(enemy) => {
+                  const hpPct = healthPercent(enemy.hp);
                   return (
-                    <div
-                      class="combat-map-connection"
-                      style={{
-                        left: `${x1}px`,
-                        top: `${y1}px`,
-                        width: `${length}px`,
-                        transform: `rotate(${angle}deg)`,
-                      }}
-                      data-testid={`combat-map-conn-${conn.from}-${conn.to}`}
-                    />
+                    <button
+                      class={`combat-target-cell${enemy.isTargeted ? " combat-target-cell--selected" : ""}${!enemy.isAlive ? " combat-target-cell--dead" : ""}`}
+                      onClick={() => enemy.isAlive && props.onSelectTarget(enemy.id)}
+                      disabled={!enemy.isAlive}
+                    >
+                      <div class="combat-target-cell-sprite">
+                        <span class="combat-target-cell-initial">{enemy.name[0]}</span>
+                      </div>
+                      <div class="combat-target-cell-name">{enemy.name}</div>
+                      <div class="combat-target-cell-hp">
+                        <div class="combat-target-cell-hp-bar">
+                          <div
+                            class="combat-target-cell-hp-fill"
+                            style={{
+                              width: `${hpPct}%`,
+                              background: healthBarColor(enemy.hp)
+                            }}
+                          />
+                        </div>
+                        <span class="combat-target-cell-hp-text">{enemy.hp}</span>
+                      </div>
+                    </button>
                   );
                 }}
               </For>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* ── Bottom Controls ───────────────────────────────── */}
-      <footer class="combat-controls">
-        <div class="combat-controls-left">
-          <span class="combat-log" data-testid="combat-log">
-            {props.viewModel.hitLog}
-          </span>
-        </div>
-        <div class="combat-controls-right">
-          <Show when={props.viewModel.isFleeAvailable}>
-            <button
-              class="action-secondary"
-              onClick={props.onFleeCombat}
-              data-testid="combat-flee-btn"
-            >
-              Flee
-            </button>
-          </Show>
-          <button
-            class="action-primary launch-primary"
-            onClick={props.onContinueCombat}
-            data-testid="combat-continue-btn"
-          >
-            {isCharacterHitPhase() ? "Acknowledge" : "Next Turn"}
-          </button>
-        </div>
-      </footer>
+            <div class="combat-action-row">
+              <Show
+                when={isCharacterHitPhase()}
+                fallback={
+                  <button
+                    class="action-primary combat-attack-btn"
+                    onClick={props.onConfirmAttack}
+                    disabled={!props.viewModel.isPlayerTurn || !props.viewModel.selectedSkillId}
+                  >
+                    Confirm Attack
+                  </button>
+                }
+              >
+                <button
+                  class="action-primary combat-attack-btn"
+                  onClick={() => props.onContinueCombat?.()}
+                  data-testid="combat-continue-btn"
+                >
+                  Acknowledge
+                </button>
+              </Show>
+              <button
+                class="action-secondary combat-end-turn-btn"
+                onClick={props.onEndTurn}
+                disabled={isCharacterHitPhase() || !props.viewModel.isPlayerTurn}
+              >
+                End Turn
+              </button>
+            </div>
+
+            <Show when={props.viewModel.hitLog}>
+              <div class="combat-hit-log" data-testid="combat-log">
+                {props.viewModel.hitLog}
+              </div>
+            </Show>
+
+            <Show when={props.viewModel.canFlee}>
+              <button
+                class="combat-flee-btn"
+                onClick={props.onFleeCombat}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4" />
+                  <polyline points="10 17 15 12 10 7" />
+                  <line x1="15" y1="12" x2="3" y2="12" />
+                </svg>
+                Flee
+              </button>
+            </Show>
+          </div>
+        </section>
+      </div>
     </div>
   );
 };
