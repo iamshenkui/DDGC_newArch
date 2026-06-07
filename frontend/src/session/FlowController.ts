@@ -73,6 +73,15 @@ export interface TransitionValidation {
   reason?: string;
 }
 
+function activeCombatHero(snapshot: DdgcFrontendSnapshot) {
+  const viewModel = snapshot.viewModel;
+  if (viewModel.kind !== "combat") {
+    return undefined;
+  }
+
+  return viewModel.party.find((hero) => hero.id === viewModel.activeHeroId);
+}
+
 export function canTransition(
   snapshot: DdgcFrontendSnapshot,
   intent: DdgcFrontendIntent
@@ -114,6 +123,19 @@ export function canTransition(
       if (!snapshot.viewModel.isPlayerTurn) {
         return { allowed: false, reason: "not player turn" };
       }
+      {
+        const activeHero = activeCombatHero(snapshot);
+        if (!activeHero || !activeHero.isAlive) {
+          return { allowed: false, reason: "active combat hero is missing or defeated" };
+        }
+        const skill = activeHero.skills.find((item) => item.id === intent.skillId);
+        if (!skill) {
+          return { allowed: false, reason: `combat skill ${intent.skillId} does not exist for active hero` };
+        }
+        if (skill.cooldownRemaining > 0) {
+          return { allowed: false, reason: `combat skill ${intent.skillId} is on cooldown` };
+        }
+      }
       return { allowed: true };
 
     case "select-target":
@@ -126,6 +148,15 @@ export function canTransition(
       if (!snapshot.viewModel.isPlayerTurn) {
         return { allowed: false, reason: "not player turn" };
       }
+      {
+        const target = snapshot.viewModel.enemies.find((enemy) => enemy.id === intent.enemyId);
+        if (!target) {
+          return { allowed: false, reason: `combat target ${intent.enemyId} does not exist` };
+        }
+        if (!target.isAlive) {
+          return { allowed: false, reason: `combat target ${intent.enemyId} is defeated` };
+        }
+      }
       return { allowed: true };
 
     case "confirm-attack":
@@ -137,6 +168,27 @@ export function canTransition(
       }
       if (!snapshot.viewModel.isPlayerTurn) {
         return { allowed: false, reason: "not player turn" };
+      }
+      {
+        const combatVm = snapshot.viewModel;
+        const activeHero = activeCombatHero(snapshot);
+        if (!activeHero || !activeHero.isAlive) {
+          return { allowed: false, reason: "active combat hero is missing or defeated" };
+        }
+        const selectedSkill = activeHero.skills.find((skill) => skill.id === combatVm.selectedSkillId);
+        if (!selectedSkill) {
+          return { allowed: false, reason: "selected combat skill does not exist for active hero" };
+        }
+        if (selectedSkill.cooldownRemaining > 0) {
+          return { allowed: false, reason: `selected combat skill ${selectedSkill.id} is on cooldown` };
+        }
+        const selectedTarget = combatVm.enemies.find((enemy) => enemy.isTargeted);
+        if (!selectedTarget) {
+          return { allowed: false, reason: "no live combat target is selected" };
+        }
+        if (!selectedTarget.isAlive) {
+          return { allowed: false, reason: `selected combat target ${selectedTarget.id} is defeated` };
+        }
       }
       return { allowed: true };
 

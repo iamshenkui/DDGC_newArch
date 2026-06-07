@@ -753,10 +753,11 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "select-skill": {
-        if (!canTransition(this.snapshot, intent).allowed) {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
           this.snapshot = {
             ...this.snapshot,
-            debugMessage: `Live: combat skill ${intent.skillId} rejected.`
+            debugMessage: `Live: combat skill ${intent.skillId} rejected: ${validation.reason ?? "invalid transition"}.`
           };
           break;
         }
@@ -771,10 +772,11 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "select-target": {
-        if (!canTransition(this.snapshot, intent).allowed) {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
           this.snapshot = {
             ...this.snapshot,
-            debugMessage: `Live: combat target ${intent.enemyId} rejected.`
+            debugMessage: `Live: combat target ${intent.enemyId} rejected: ${validation.reason ?? "invalid transition"}.`
           };
           break;
         }
@@ -792,12 +794,15 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "confirm-attack":
-        if (!canTransition(this.snapshot, intent).allowed) {
-          this.snapshot = {
-            ...this.snapshot,
-            debugMessage: "Live: confirm-attack rejected outside combat."
-          };
-          break;
+        {
+          const validation = canTransition(this.snapshot, intent);
+          if (!validation.allowed) {
+            this.snapshot = {
+              ...this.snapshot,
+              debugMessage: `Live: confirm-attack rejected: ${validation.reason ?? "invalid transition"}.`
+            };
+            break;
+          }
         }
         this.snapshot = {
           ...this.snapshot,
@@ -806,10 +811,11 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "end-turn": {
-        if (!canTransition(this.snapshot, intent).allowed) {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
           this.snapshot = {
             ...this.snapshot,
-            debugMessage: "Live: end-turn rejected outside combat."
+            debugMessage: `Live: end-turn rejected: ${validation.reason ?? "invalid transition"}.`
           };
           break;
         }

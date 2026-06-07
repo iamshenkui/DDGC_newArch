@@ -6,6 +6,7 @@ import type {
   ExpeditionResultViewModel,
   ReturnViewModel,
   DungeonMapViewModel,
+  CombatViewModel,
 } from "../bridge/contractTypes";
 import {
   fatalSnapshot,
@@ -594,6 +595,75 @@ describe("canTransition - result and return meta-loop continuation", () => {
       const validation = canTransition(resultSnapshot, { type: "complete-dungeon" });
       expect(validation.allowed).toBe(false);
       expect(validation.reason).toContain("only valid on dungeon-map screen");
+    });
+  });
+
+  describe("combat transitions", () => {
+    it("allows valid player combat selection and attack intents", () => {
+      expect(canTransition(combatSnapshot, { type: "select-skill", skillId: "skill-1" }).allowed).toBe(true);
+      expect(canTransition(combatSnapshot, { type: "select-target", enemyId: "enemy-moth-01" }).allowed).toBe(true);
+      expect(canTransition(combatSnapshot, { type: "confirm-attack" }).allowed).toBe(true);
+    });
+
+    it("rejects missing and cooldown skills for the active hero", () => {
+      const missingSkill = canTransition(combatSnapshot, { type: "select-skill", skillId: "missing-skill" });
+      expect(missingSkill.allowed).toBe(false);
+      expect(missingSkill.reason).toContain("does not exist");
+
+      const cooldownSkill = canTransition(combatSnapshot, { type: "select-skill", skillId: "skill-3" });
+      expect(cooldownSkill.allowed).toBe(false);
+      expect(cooldownSkill.reason).toContain("cooldown");
+    });
+
+    it("rejects missing and defeated combat targets", () => {
+      const missingTarget = canTransition(combatSnapshot, { type: "select-target", enemyId: "missing-enemy" });
+      expect(missingTarget.allowed).toBe(false);
+      expect(missingTarget.reason).toContain("does not exist");
+
+      const combatVm = combatSnapshot.viewModel as CombatViewModel;
+      const deadTargetSnapshot: DdgcFrontendSnapshot = {
+        ...combatSnapshot,
+        viewModel: {
+          ...combatVm,
+          enemies: combatVm.enemies.map((enemy) =>
+            enemy.id === "enemy-larva-01"
+              ? { ...enemy, isAlive: false }
+              : enemy
+          )
+        }
+      };
+      const deadTarget = canTransition(deadTargetSnapshot, { type: "select-target", enemyId: "enemy-larva-01" });
+      expect(deadTarget.allowed).toBe(false);
+      expect(deadTarget.reason).toContain("defeated");
+    });
+
+    it("rejects confirm-attack with no live selected target", () => {
+      const combatVm = combatSnapshot.viewModel as CombatViewModel;
+      const noTargetSnapshot: DdgcFrontendSnapshot = {
+        ...combatSnapshot,
+        viewModel: {
+          ...combatVm,
+          enemies: combatVm.enemies.map((enemy) => ({ ...enemy, isTargeted: false }))
+        }
+      };
+      const noTarget = canTransition(noTargetSnapshot, { type: "confirm-attack" });
+      expect(noTarget.allowed).toBe(false);
+      expect(noTarget.reason).toContain("no live combat target");
+
+      const deadSelectedTargetSnapshot: DdgcFrontendSnapshot = {
+        ...combatSnapshot,
+        viewModel: {
+          ...combatVm,
+          enemies: combatVm.enemies.map((enemy) =>
+            enemy.isTargeted
+              ? { ...enemy, isAlive: false }
+              : enemy
+          )
+        }
+      };
+      const deadSelectedTarget = canTransition(deadSelectedTargetSnapshot, { type: "confirm-attack" });
+      expect(deadSelectedTarget.allowed).toBe(false);
+      expect(deadSelectedTarget.reason).toContain("defeated");
     });
   });
 

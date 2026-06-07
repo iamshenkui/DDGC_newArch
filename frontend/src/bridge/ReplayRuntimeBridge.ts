@@ -304,10 +304,11 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "select-skill": {
-        if (!canTransition(this.snapshot, intent).allowed) {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
           this.snapshot = {
             ...this.snapshot,
-            debugMessage: `Replay: combat skill ${intent.skillId} rejected.`
+            debugMessage: `Replay: combat skill ${intent.skillId} rejected: ${validation.reason ?? "invalid transition"}.`
           };
           break;
         }
@@ -322,10 +323,11 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "select-target": {
-        if (!canTransition(this.snapshot, intent).allowed) {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
           this.snapshot = {
             ...this.snapshot,
-            debugMessage: `Replay: combat target ${intent.enemyId} rejected.`
+            debugMessage: `Replay: combat target ${intent.enemyId} rejected: ${validation.reason ?? "invalid transition"}.`
           };
           break;
         }
@@ -343,12 +345,15 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "confirm-attack":
-        if (!canTransition(this.snapshot, intent).allowed) {
-          this.snapshot = {
-            ...this.snapshot,
-            debugMessage: "Replay: confirm-attack rejected outside combat."
-          };
-          break;
+        {
+          const validation = canTransition(this.snapshot, intent);
+          if (!validation.allowed) {
+            this.snapshot = {
+              ...this.snapshot,
+              debugMessage: `Replay: confirm-attack rejected: ${validation.reason ?? "invalid transition"}.`
+            };
+            break;
+          }
         }
         this.snapshot = {
           ...this.snapshot,

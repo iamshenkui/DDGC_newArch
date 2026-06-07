@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, DungeonAssistViewModel, DungeonMapViewModel, CombatViewModel, ExpeditionResultViewModel, ReturnViewModel } from "../bridge/contractTypes";
+import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, DungeonAssistViewModel, DungeonMapViewModel, CombatViewModel, ExpeditionResultViewModel, ReturnViewModel, DdgcFrontendSnapshot } from "../bridge/contractTypes";
 import { LiveRuntimeBridge } from "../bridge/LiveRuntimeBridge";
 import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 
@@ -618,6 +618,70 @@ describe("provisioning and expedition launch flow", () => {
     expect(attackSnapshot.flowState).toBe("town");
     expect(attackSnapshot.viewModel.kind).toBe("town");
     expect(attackSnapshot.debugMessage).toContain("rejected");
+  });
+
+  it("replay rejects invalid combat skill and target IDs without mutating combat state", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    const combatSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const missingSkillSnapshot = await bridge.dispatchIntent({ type: "select-skill", skillId: "missing-skill" });
+    expect(missingSkillSnapshot.flowState).toBe("combat");
+    expect(missingSkillSnapshot.viewModel.kind).toBe("combat");
+    expect((missingSkillSnapshot.viewModel as CombatViewModel).selectedSkillId).toBe(
+      (combatSnapshot.viewModel as CombatViewModel).selectedSkillId
+    );
+    expect(missingSkillSnapshot.debugMessage).toContain("does not exist");
+
+    const cooldownSkillSnapshot = await bridge.dispatchIntent({ type: "select-skill", skillId: "skill-3" });
+    expect(cooldownSkillSnapshot.flowState).toBe("combat");
+    expect((cooldownSkillSnapshot.viewModel as CombatViewModel).selectedSkillId).not.toBe("skill-3");
+    expect(cooldownSkillSnapshot.debugMessage).toContain("cooldown");
+
+    const missingTargetSnapshot = await bridge.dispatchIntent({ type: "select-target", enemyId: "missing-enemy" });
+    expect(missingTargetSnapshot.flowState).toBe("combat");
+    expect((missingTargetSnapshot.viewModel as CombatViewModel).enemies.some((enemy) => enemy.id === "missing-enemy" && enemy.isTargeted)).toBe(false);
+    expect(missingTargetSnapshot.debugMessage).toContain("does not exist");
+  });
+
+  it("live rejects defeated targets and targetless confirm-attack without leaving combat", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    const combatSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
+    const combatVm = combatSnapshot.viewModel as CombatViewModel;
+
+    (bridge as unknown as { snapshot: DdgcFrontendSnapshot }).snapshot = {
+      ...combatSnapshot,
+      viewModel: {
+        ...combatVm,
+        enemies: combatVm.enemies.map((enemy) =>
+          enemy.id === "enemy-larva-01"
+            ? { ...enemy, isAlive: false }
+            : enemy
+        )
+      }
+    };
+    const deadTargetSnapshot = await bridge.dispatchIntent({ type: "select-target", enemyId: "enemy-larva-01" });
+    expect(deadTargetSnapshot.flowState).toBe("combat");
+    expect(deadTargetSnapshot.viewModel.kind).toBe("combat");
+    expect((deadTargetSnapshot.viewModel as CombatViewModel).enemies.find((enemy) => enemy.id === "enemy-larva-01")?.isTargeted).toBe(false);
+    expect(deadTargetSnapshot.debugMessage).toContain("defeated");
+
+    (bridge as unknown as { snapshot: DdgcFrontendSnapshot }).snapshot = {
+      ...combatSnapshot,
+      viewModel: {
+        ...combatVm,
+        enemies: combatVm.enemies.map((enemy) => ({ ...enemy, isTargeted: false }))
+      }
+    };
+    const noTargetSnapshot = await bridge.dispatchIntent({ type: "confirm-attack" });
+    expect(noTargetSnapshot.flowState).toBe("combat");
+    expect(noTargetSnapshot.viewModel.kind).toBe("combat");
+    expect(noTargetSnapshot.debugMessage).toContain("no live combat target");
   });
 });
 
