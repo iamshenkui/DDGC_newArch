@@ -169,6 +169,29 @@ describe("build-run smoke: flow state transitions", () => {
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
     await bridge.dispatchIntent({ type: "launch-expedition" });
 
+    // Navigate through enough rooms to reach 80% completion
+    const navigationPath = [
+      "room-empty-1",
+      "room-treasure-1",
+      "room-rest-1",
+      "room-treasure-1",
+      "room-empty-1",
+      "room-entrance",
+      "room-combat-1",
+      "room-curio-1",
+      "room-shrine-1",
+      "room-combat-2",
+    ];
+
+    for (const roomId of navigationPath) {
+      await bridge.dispatchIntent({ type: "enter-room", roomId });
+    }
+
+    const beforeComplete = bridge.currentSnapshot();
+    expect(beforeComplete.viewModel.kind).toBe("dungeon-map");
+    const beforeMapVm = beforeComplete.viewModel as DungeonMapViewModel;
+    expect(beforeMapVm.isComplete).toBe(true);
+
     const resultSnap = await bridge.dispatchIntent({ type: "complete-dungeon" });
     expect(resultSnap.flowState).toBe("result");
     expect(resultSnap.viewModel.kind).toBe("result");
@@ -234,6 +257,24 @@ describe("build-run smoke: meta-loop continuation", () => {
     const mapSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
     expect(mapSnap.flowState).toBe("dungeon-map");
     expect(mapSnap.viewModel.kind).toBe("dungeon-map");
+
+    // Navigate through enough rooms to reach 80% completion
+    const navigationPath = [
+      "room-empty-1",
+      "room-treasure-1",
+      "room-rest-1",
+      "room-treasure-1",
+      "room-empty-1",
+      "room-entrance",
+      "room-combat-1",
+      "room-curio-1",
+      "room-shrine-1",
+      "room-combat-2",
+    ];
+
+    for (const roomId of navigationPath) {
+      await bridge.dispatchIntent({ type: "enter-room", roomId });
+    }
 
     const resultSnap = await bridge.dispatchIntent({ type: "complete-dungeon" });
     expect(resultSnap.flowState).toBe("result");

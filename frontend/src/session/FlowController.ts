@@ -152,6 +152,9 @@ export function canTransition(
         if (currentRoom && intent.roomId !== currentRoom.id && !currentRoom.connections.includes(intent.roomId)) {
           return { allowed: false, reason: `room "${intent.roomId}" is not connected to the current room` };
         }
+        if (targetRoom && !targetRoom.isRevealed) {
+          return { allowed: false, reason: `room "${intent.roomId}" is not revealed` };
+        }
       }
       return { allowed: true };
 
