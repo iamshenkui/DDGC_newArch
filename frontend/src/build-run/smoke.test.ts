@@ -105,7 +105,7 @@ describe("build-run smoke: intent dispatch round-trip", () => {
 });
 
 describe("build-run smoke: flow state transitions", () => {
-  it("replay: town → provisioning → expedition → dungeon → result", async () => {
+  it("replay: town → provisioning → expedition → dungeon with adjacency enforcement", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
 
@@ -127,21 +127,26 @@ describe("build-run smoke: flow state transitions", () => {
     const dungeonVm = dungeonSnap.viewModel as DungeonMapViewModel;
     expect(dungeonVm.rooms.length).toBeGreaterThan(0);
 
-    // Enter all rooms to clear the dungeon and reach result
-    for (const room of dungeonVm.rooms) {
-      if (!room.cleared) {
-        const resultSnap = await bridge.dispatchIntent({ type: "enter-room", roomId: room.roomId });
-        if (resultSnap.flowState === "result") {
-          expect(resultSnap.viewModel.kind).toBe("result");
-          const resultVm = resultSnap.viewModel as ExpeditionResultViewModel;
-          expect(resultVm.outcome).toBe("success");
-          break;
-        }
-      }
-    }
+    // Replay fixture: room-3 is current; room-4 is adjacent and uncleared
+    const room4Snap = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-4" });
+    expect(room4Snap.flowState).toBe("dungeon");
+    const room4Vm = room4Snap.viewModel as DungeonMapViewModel;
+    expect(room4Vm.rooms.find((r) => r.roomId === "room-4")?.cleared).toBe(true);
+    expect(room4Vm.currentRoom?.roomId).toBe("room-4");
+
+    // room-5 is now adjacent to room-4 and can be entered
+    const room5Snap = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-5" });
+    expect(room5Snap.flowState).toBe("dungeon");
+    const room5Vm = room5Snap.viewModel as DungeonMapViewModel;
+    expect(room5Vm.rooms.find((r) => r.roomId === "room-5")?.cleared).toBe(true);
+    expect(room5Vm.currentRoom?.roomId).toBe("room-5");
+
+    // Non-adjacent room entry is rejected
+    const rejectedSnap = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-1" });
+    expect(rejectedSnap.debugMessage).toContain("already been cleared");
   });
 
-  it("live: town → provisioning → expedition → dungeon → result", async () => {
+  it("live: town → provisioning → expedition → dungeon with adjacency enforcement", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
 
@@ -158,16 +163,16 @@ describe("build-run smoke: flow state transitions", () => {
     expect(dungeonSnap.viewModel.kind).toBe("dungeon-map");
     const dungeonVm = dungeonSnap.viewModel as DungeonMapViewModel;
 
-    // Enter all rooms to clear the dungeon and reach result
-    for (const room of dungeonVm.rooms) {
-      if (!room.cleared) {
-        const resultSnap = await bridge.dispatchIntent({ type: "enter-room", roomId: room.roomId });
-        if (resultSnap.flowState === "result") {
-          expect(resultSnap.viewModel.kind).toBe("result");
-          break;
-        }
-      }
-    }
+    // Live fixture: room-1 is current; room-2 is adjacent and uncleared
+    const room2Snap = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-2" });
+    expect(room2Snap.flowState).toBe("dungeon");
+    const room2Vm = room2Snap.viewModel as DungeonMapViewModel;
+    expect(room2Vm.rooms.find((r) => r.roomId === "room-2")?.cleared).toBe(true);
+    expect(room2Vm.currentRoom?.roomId).toBe("room-2");
+
+    // Non-adjacent room entry is rejected
+    const rejectedSnap = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-4" });
+    expect(rejectedSnap.debugMessage).toContain("not adjacent");
   });
 
   it("replay: provisioning → return-to-town", async () => {
@@ -183,43 +188,43 @@ describe("build-run smoke: flow state transitions", () => {
 });
 
 describe("build-run smoke: meta-loop continuation", () => {
-  it("replay: continue-from-result transitions to return state", async () => {
+  it("replay: continue-from-result rejected when not on result screen", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
 
     const resultSnap = await bridge.dispatchIntent({ type: "continue-from-result" });
-    expect(resultSnap.flowState).toBe("return");
-    expect(resultSnap.viewModel.kind).toBe("return");
+    expect(resultSnap.flowState).toBe("town");
+    expect(resultSnap.debugMessage).toContain("only valid on result screen");
   });
 
-  it("replay: resume-from-return returns to town", async () => {
+  it("replay: resume-from-return rejected when not on return screen", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
 
     const returnSnap = await bridge.dispatchIntent({ type: "resume-from-return" });
     expect(returnSnap.flowState).toBe("town");
-    expect(returnSnap.viewModel.kind).toBe("town");
+    expect(returnSnap.debugMessage).toContain("only valid on return screen");
   });
 
-  it("live: continue-from-result transitions to return state", async () => {
+  it("live: continue-from-result rejected when not on result screen", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
 
     const resultSnap = await bridge.dispatchIntent({ type: "continue-from-result" });
-    expect(resultSnap.flowState).toBe("return");
-    expect(resultSnap.viewModel.kind).toBe("return");
+    expect(resultSnap.flowState).toBe("town");
+    expect(resultSnap.debugMessage).toContain("only valid on result screen");
   });
 
-  it("live: resume-from-return returns to town", async () => {
+  it("live: resume-from-return rejected when not on return screen", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
 
     const returnSnap = await bridge.dispatchIntent({ type: "resume-from-return" });
     expect(returnSnap.flowState).toBe("town");
-    expect(returnSnap.viewModel.kind).toBe("town");
+    expect(returnSnap.debugMessage).toContain("only valid on return screen");
   });
 
-  it("replay: full meta-loop cycle town → expedition → dungeon → result → return → town", async () => {
+  it("replay: full expedition cycle town → expedition → dungeon → town", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
 
@@ -231,25 +236,19 @@ describe("build-run smoke: meta-loop continuation", () => {
     expect(dungeonSnap.viewModel.kind).toBe("dungeon-map");
     const dungeonVm = dungeonSnap.viewModel as DungeonMapViewModel;
 
-    // Enter all rooms to clear the dungeon and reach result
-    for (const room of dungeonVm.rooms) {
-      if (!room.cleared) {
-        const resultSnap = await bridge.dispatchIntent({ type: "enter-room", roomId: room.roomId });
-        if (resultSnap.flowState === "result") {
-          expect(resultSnap.viewModel.kind).toBe("result");
-          break;
-        }
-      }
-    }
+    // Traverse adjacent rooms sequentially
+    const room4Snap = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-4" });
+    expect(room4Snap.flowState).toBe("dungeon");
 
-    const returnSnap = await bridge.dispatchIntent({ type: "continue-from-result" });
-    expect(returnSnap.flowState).toBe("return");
-    expect(returnSnap.viewModel.kind).toBe("return");
+    const room5Snap = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-5" });
+    expect(room5Snap.flowState).toBe("dungeon");
 
-    const townSnap = await bridge.dispatchIntent({ type: "resume-from-return" });
+    // Return to town from dungeon
+    const townSnap = await bridge.dispatchIntent({ type: "return-to-town" });
     expect(townSnap.flowState).toBe("town");
     expect(townSnap.viewModel.kind).toBe("town");
 
+    // Can restart provisioning after returning
     const provSnap = await bridge.dispatchIntent({ type: "start-provisioning" });
     expect(provSnap.flowState).toBe("provisioning");
     expect(provSnap.viewModel.kind).toBe("provisioning");

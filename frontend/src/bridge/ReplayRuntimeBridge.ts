@@ -20,6 +20,7 @@ import type {
   ExpeditionResultViewModel,
   ReturnViewModel
 } from "./contractTypes";
+import { canTransition } from "../session/FlowController";
 
 export class ReplayRuntimeBridge implements RuntimeBridge {
   readonly id = "ddgc-replay-bridge";
@@ -38,6 +39,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
   }
 
   async dispatchIntent(intent: DdgcFrontendIntent): Promise<DdgcFrontendSnapshot> {
+    const validation = canTransition(this.snapshot, intent);
+    if (!validation.allowed) {
+      this.snapshot = { ...this.snapshot, debugMessage: validation.reason };
+      this.emit(this.snapshot);
+      return this.snapshot;
+    }
+
     switch (intent.type) {
       case "open-hero": {
         const townVm = this.snapshot.viewModel as TownViewModel;

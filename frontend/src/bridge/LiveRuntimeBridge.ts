@@ -15,6 +15,7 @@ import type {
   ReturnViewModel,
 } from "./contractTypes";
 import { createTownBuildingSummary } from "../town/buildingCatalog";
+import { canTransition } from "../session/FlowController";
 
 const createLiveTownViewModel = (): TownViewModel => ({
   kind: "town",
@@ -402,6 +403,13 @@ export class LiveRuntimeBridge implements RuntimeBridge {
   }
 
   async dispatchIntent(intent: DdgcFrontendIntent): Promise<DdgcFrontendSnapshot> {
+    const validation = canTransition(this.snapshot, intent);
+    if (!validation.allowed) {
+      this.snapshot = { ...this.snapshot, debugMessage: validation.reason };
+      this.emit(this.snapshot);
+      return this.snapshot;
+    }
+
     switch (intent.type) {
       case "boot":
         this.snapshot = createLiveTownSnapshot();

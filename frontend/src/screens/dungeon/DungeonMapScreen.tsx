@@ -127,7 +127,10 @@ export const DungeonMapScreen: Component<DungeonMapScreenProps> = (props) => {
           <div class="dungeon-map-room-grid">
             <For each={props.viewModel.rooms}>
               {(room) => {
-                const isEnterable = !room.cleared && !props.viewModel.isComplete && !props.viewModel.partyFled;
+                const currentRoomIndex = props.viewModel.rooms.findIndex((r) => r.isCurrent);
+                const targetRoomIndex = props.viewModel.rooms.findIndex((r) => r.roomId === room.roomId);
+                const isAdjacent = currentRoomIndex < 0 || Math.abs(currentRoomIndex - targetRoomIndex) === 1;
+                const isEnterable = !room.cleared && !room.isCurrent && !props.viewModel.isComplete && !props.viewModel.partyFled && isAdjacent;
                 return (
                   <button
                     class={`room-node ${roomKindClass(room.kind)} ${room.isCurrent ? "room-node--current" : ""} ${room.cleared ? "room-node--cleared" : ""}`}
@@ -246,7 +249,10 @@ export const DungeonMapScreen: Component<DungeonMapScreenProps> = (props) => {
           <button
             class="action-primary launch-primary"
             onClick={() => {
-              const nextRoom = props.viewModel.rooms.find((r) => !r.cleared && !r.isCurrent);
+              const currentIdx = props.viewModel.rooms.findIndex((r) => r.isCurrent);
+              const nextRoom = props.viewModel.rooms.find(
+                (r, idx) => idx === currentIdx + 1 && !r.cleared && !r.isCurrent
+              );
               if (nextRoom) {
                 props.onEnterRoom(nextRoom.roomId);
               }

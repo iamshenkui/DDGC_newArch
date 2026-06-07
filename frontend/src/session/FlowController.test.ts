@@ -445,6 +445,49 @@ describe("canTransition - result and return meta-loop continuation", () => {
       expect(validation.reason).toContain("already complete");
     });
 
+    it("rejects enter-room when target is the current room", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "room-3" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("current room");
+    });
+
+    it("rejects enter-room when target is not adjacent to the current room", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "room-5" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not adjacent");
+    });
+
+    it("rejects enter-room when target is behind the current room (non-adjacent backward)", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "room-1" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("already been cleared");
+    });
+
+    it("allows enter-room when target is adjacent to the current room (forward)", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "enter-room", roomId: "room-4" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("allows enter-room when target is adjacent to the current room (backward and uncleared)", () => {
+      const dungeonVm = dungeonMapSnapshot.viewModel as DungeonMapViewModel;
+      const backwardAdjacentSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonMapSnapshot,
+        viewModel: {
+          ...dungeonVm,
+          rooms: [
+            { roomId: "room-1", kind: "combat", cleared: false, isCurrent: false },
+            { roomId: "room-2", kind: "corridor", cleared: false, isCurrent: true },
+            { roomId: "room-3", kind: "event", cleared: false, isCurrent: false },
+          ],
+          totalRooms: 3,
+          roomsCleared: 0,
+          currentRoom: { roomId: "room-2", kind: "corridor", cleared: false, isCurrent: true }
+        }
+      };
+      const validation = canTransition(backwardAdjacentSnapshot, { type: "enter-room", roomId: "room-1" });
+      expect(validation.allowed).toBe(true);
+    });
+
     it("allows flee-dungeon on dungeon-map screen", () => {
       const validation = canTransition(dungeonMapSnapshot, { type: "flee-dungeon" });
       expect(validation.allowed).toBe(true);

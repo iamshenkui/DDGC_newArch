@@ -152,11 +152,19 @@ export function canTransition(
         if (targetRoom.cleared) {
           return { allowed: false, reason: `room "${intent.roomId}" has already been cleared` };
         }
+        if (targetRoom.isCurrent) {
+          return { allowed: false, reason: `room "${intent.roomId}" is the current room` };
+        }
         if (dungeonVm.isComplete) {
           return { allowed: false, reason: "dungeon is already complete" };
         }
         if (dungeonVm.partyFled) {
           return { allowed: false, reason: "party has fled the dungeon" };
+        }
+        const currentRoomIndex = dungeonVm.rooms.findIndex((r) => r.roomId === dungeonVm.currentRoom?.roomId);
+        const targetRoomIndex = dungeonVm.rooms.findIndex((r) => r.roomId === intent.roomId);
+        if (currentRoomIndex >= 0 && targetRoomIndex >= 0 && Math.abs(currentRoomIndex - targetRoomIndex) !== 1) {
+          return { allowed: false, reason: `room "${intent.roomId}" is not adjacent to the current room` };
         }
       }
       return { allowed: true };
