@@ -379,13 +379,22 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
                       classLabel: hero.classLabel
                     });
                     return (
-                      <button
+                      <div
                         class={`provisioning-party-hero${focusedHero()?.id === hero.id ? " provisioning-party-hero--focused" : ""}`}
                         onClick={() => {
                           setFocusedHeroId(hero.id);
                         }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setFocusedHeroId(hero.id);
+                          }
+                        }}
                         title={`${hero.name} — 点击切换焦点`}
                         data-testid={`party-hero-${hero.id}`}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`${hero.name} — 点击切换焦点`}
                       >
                         <div
                           class={`provisioning-party-hero-portrait${portraitUrl ? " provisioning-party-hero-portrait--image" : ""}`}
@@ -405,7 +414,8 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
                         </div>
                         <span class="provisioning-party-hero-name">{hero.name}</span>
                         {/* Explicit remove control — separates focus from removal */}
-                        <span
+                        <button
+                          type="button"
                           class="provisioning-party-hero-remove"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -414,11 +424,10 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
                           title={`移除 ${hero.name}`}
                           data-testid={`party-hero-remove-${hero.id}`}
                           aria-label={`移除 ${hero.name}`}
-                          role="button"
                         >
                           ×
-                        </span>
-                      </button>
+                        </button>
+                      </div>
                     );
                   }}
                 </For>

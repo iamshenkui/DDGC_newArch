@@ -3873,6 +3873,7 @@ button {
   transition: background 0.12s ease, transform 0.1s ease;
   margin-left: 2px;
   flex: 0 0 auto;
+  padding: 0;
 }
 
 .provisioning-party-hero-remove:hover {
