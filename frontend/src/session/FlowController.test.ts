@@ -463,10 +463,11 @@ describe("canTransition - result and return meta-loop continuation", () => {
     });
 
     it("rejects retreat-from-dungeon when retreat is not available", () => {
+      const mapVm = dungeonMapSnapshot.viewModel as DungeonMapViewModel;
       const noRetreatSnapshot: DdgcFrontendSnapshot = {
         ...dungeonMapSnapshot,
         viewModel: {
-          ...dungeonMapSnapshot.viewModel,
+          ...mapVm,
           isRetreatAvailable: false
         }
       };
@@ -482,10 +483,11 @@ describe("canTransition - result and return meta-loop continuation", () => {
     });
 
     it("allows complete-dungeon when dungeon is complete", () => {
+      const mapVm = dungeonMapSnapshot.viewModel as DungeonMapViewModel;
       const completeSnapshot: DdgcFrontendSnapshot = {
         ...dungeonMapSnapshot,
         viewModel: {
-          ...dungeonMapSnapshot.viewModel,
+          ...mapVm,
           isComplete: true
         }
       };
