@@ -383,9 +383,8 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
                         class={`provisioning-party-hero${focusedHero()?.id === hero.id ? " provisioning-party-hero--focused" : ""}`}
                         onClick={() => {
                           setFocusedHeroId(hero.id);
-                          props.onToggleHeroSelection(hero.id);
                         }}
-                        title={`${hero.name} — 点击移除`}
+                        title={`${hero.name} — 点击切换焦点`}
                         data-testid={`party-hero-${hero.id}`}
                       >
                         <div
@@ -405,6 +404,20 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
                           )}
                         </div>
                         <span class="provisioning-party-hero-name">{hero.name}</span>
+                        {/* Explicit remove control — separates focus from removal */}
+                        <span
+                          class="provisioning-party-hero-remove"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            props.onToggleHeroSelection(hero.id);
+                          }}
+                          title={`移除 ${hero.name}`}
+                          data-testid={`party-hero-remove-${hero.id}`}
+                          aria-label={`移除 ${hero.name}`}
+                          role="button"
+                        >
+                          ×
+                        </span>
                       </button>
                     );
                   }}

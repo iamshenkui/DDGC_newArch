@@ -3856,6 +3856,30 @@ button {
   color: var(--panel-text);
 }
 
+.provisioning-party-hero-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(234, 119, 103, 0.15);
+  border: 1px solid rgba(234, 119, 103, 0.3);
+  color: #ea7767;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.1s ease;
+  margin-left: 2px;
+  flex: 0 0 auto;
+}
+
+.provisioning-party-hero-remove:hover {
+  background: rgba(234, 119, 103, 0.3);
+  transform: scale(1.15);
+}
+
 /* ── Responsive: provisioning layout ────────────────────── */
 @media (max-width: 920px) {
   .provisioning-layout {

@@ -225,8 +225,8 @@ test.describe("provisioning screen: 战前补给 fidelity", () => {
       "Hei Zhen must appear in party strip after selection"
     ).toBeVisible();
 
-    // Click party hero to remove
-    await page.locator('[data-testid="party-hero-hero-black-01"]').click();
+    // Click explicit remove control to remove from party
+    await page.locator('[data-testid="party-hero-remove-hero-black-01"]').click();
     await settle(page, 300);
 
     // Should be back in roster
