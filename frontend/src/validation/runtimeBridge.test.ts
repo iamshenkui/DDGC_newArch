@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, DungeonAssistViewModel, DungeonMapViewModel, ExpeditionResultViewModel, ReturnViewModel } from "../bridge/contractTypes";
+import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, DungeonAssistViewModel, DungeonMapViewModel, CombatViewModel, ExpeditionResultViewModel, ReturnViewModel } from "../bridge/contractTypes";
 import { LiveRuntimeBridge } from "../bridge/LiveRuntimeBridge";
 import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 
@@ -200,7 +200,7 @@ describe("provisioning and expedition launch flow", () => {
     expect(expVm.isLaunchable).toBe(true);
   });
 
-  it("replay launch-expedition transitions to dungeon-assist state", async () => {
+  it("replay launch-expedition transitions to combat state", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
@@ -208,11 +208,11 @@ describe("provisioning and expedition launch flow", () => {
 
     const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
 
-    expect(snapshot.flowState).toBe("dungeon-assist");
-    expect(snapshot.viewModel.kind).toBe("dungeon-assist");
-    const assistVm = snapshot.viewModel as DungeonAssistViewModel;
-    expect(assistVm.party.length).toBeGreaterThan(0);
-    expect(assistVm.canContinue).toBe(false);
+    expect(snapshot.flowState).toBe("combat");
+    expect(snapshot.viewModel.kind).toBe("combat");
+    const combatVm = snapshot.viewModel as CombatViewModel;
+    expect(combatVm.party.length).toBeGreaterThan(0);
+    expect(combatVm.enemies.length).toBeGreaterThan(0);
   });
 
   it("replay rejects launch-expedition outside expedition", async () => {
@@ -262,7 +262,7 @@ describe("provisioning and expedition launch flow", () => {
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
     await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
 
     const snapshot = await bridge.dispatchIntent({ type: "continue-from-dungeon" });
@@ -279,7 +279,7 @@ describe("provisioning and expedition launch flow", () => {
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
 
     const snapshot = await bridge.dispatchIntent({ type: "continue-from-dungeon" });
 
@@ -293,7 +293,7 @@ describe("provisioning and expedition launch flow", () => {
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
 
     const lockedSnapshot = await bridge.dispatchIntent({ type: "use-assist-action", actionId: "apply-buff" });
     expect(lockedSnapshot.flowState).toBe("dungeon-assist");
@@ -313,7 +313,7 @@ describe("provisioning and expedition launch flow", () => {
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
 
     const snapshot = await bridge.dispatchIntent({ type: "select-assist-hero", heroId: "unknown-hero" });
 
@@ -357,7 +357,7 @@ describe("provisioning and expedition launch flow", () => {
     expect(snapshot.viewModel.kind).toBe("expedition");
   });
 
-  it("live launch-expedition transitions to dungeon-assist state", async () => {
+  it("live launch-expedition transitions to combat state", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
@@ -365,10 +365,11 @@ describe("provisioning and expedition launch flow", () => {
 
     const snapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
 
-    expect(snapshot.flowState).toBe("dungeon-assist");
-    expect(snapshot.viewModel.kind).toBe("dungeon-assist");
-    const assistVm = snapshot.viewModel as DungeonAssistViewModel;
-    expect(assistVm.party.length).toBeGreaterThan(0);
+    expect(snapshot.flowState).toBe("combat");
+    expect(snapshot.viewModel.kind).toBe("combat");
+    const combatVm = snapshot.viewModel as CombatViewModel;
+    expect(combatVm.party.length).toBeGreaterThan(0);
+    expect(combatVm.enemies.length).toBeGreaterThan(0);
   });
 
   it("live rejects launch-expedition outside expedition", async () => {
@@ -418,7 +419,7 @@ describe("provisioning and expedition launch flow", () => {
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
 
     const snapshot = await bridge.dispatchIntent({ type: "continue-from-dungeon" });
 
@@ -432,7 +433,7 @@ describe("provisioning and expedition launch flow", () => {
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
 
     const lockedSnapshot = await bridge.dispatchIntent({ type: "use-assist-action", actionId: "apply-buff" });
     expect(lockedSnapshot.flowState).toBe("dungeon-assist");
@@ -452,7 +453,7 @@ describe("provisioning and expedition launch flow", () => {
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
 
     const snapshot = await bridge.dispatchIntent({ type: "select-assist-hero", heroId: "unknown-hero" });
 
@@ -467,7 +468,7 @@ describe("provisioning and expedition launch flow", () => {
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
     await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
     await bridge.dispatchIntent({ type: "continue-from-dungeon" });
 
@@ -479,12 +480,46 @@ describe("provisioning and expedition launch flow", () => {
     expect(mapVm.exploredCount).toBeGreaterThan(1);
   });
 
+  it("replay enter-room transitions combat rooms to combat state", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-combat-1" });
+
+    expect(snapshot.flowState).toBe("combat");
+    expect(snapshot.viewModel.kind).toBe("combat");
+    const combatVm = snapshot.viewModel as CombatViewModel;
+    expect(combatVm.enemies.length).toBeGreaterThan(0);
+  });
+
+  it("live enter-room transitions combat rooms to combat state", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-combat-1" });
+
+    expect(snapshot.flowState).toBe("combat");
+    expect(snapshot.viewModel.kind).toBe("combat");
+    const combatVm = snapshot.viewModel as CombatViewModel;
+    expect(combatVm.enemies.length).toBeGreaterThan(0);
+  });
+
   it("replay retreat-from-dungeon transitions to result with partial outcome", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
     await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
     await bridge.dispatchIntent({ type: "continue-from-dungeon" });
 
@@ -501,7 +536,7 @@ describe("provisioning and expedition launch flow", () => {
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
     await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
     await bridge.dispatchIntent({ type: "continue-from-dungeon" });
 
@@ -530,8 +565,8 @@ describe("provisioning and expedition launch flow", () => {
     expect(expSnapshot.viewModel.kind).toBe("expedition");
 
     const launchSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
-    expect(launchSnapshot.flowState).toBe("dungeon-assist");
-    expect(launchSnapshot.viewModel.kind).toBe("dungeon-assist");
+    expect(launchSnapshot.flowState).toBe("combat");
+    expect(launchSnapshot.viewModel.kind).toBe("combat");
   });
 
   it("town -> provision -> launch path is reproducible in live", async () => {
@@ -551,8 +586,38 @@ describe("provisioning and expedition launch flow", () => {
     expect(expSnapshot.viewModel.kind).toBe("expedition");
 
     const launchSnapshot = await bridge.dispatchIntent({ type: "launch-expedition" });
-    expect(launchSnapshot.flowState).toBe("dungeon-assist");
-    expect(launchSnapshot.viewModel.kind).toBe("dungeon-assist");
+    expect(launchSnapshot.flowState).toBe("combat");
+    expect(launchSnapshot.viewModel.kind).toBe("combat");
+  });
+
+  it("replay guards combat intents outside combat", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    const targetSnapshot = await bridge.dispatchIntent({ type: "select-target", enemyId: "enemy-moth-01" });
+    expect(targetSnapshot.flowState).toBe("town");
+    expect(targetSnapshot.viewModel.kind).toBe("town");
+    expect(targetSnapshot.debugMessage).toContain("rejected");
+
+    const attackSnapshot = await bridge.dispatchIntent({ type: "confirm-attack" });
+    expect(attackSnapshot.flowState).toBe("town");
+    expect(attackSnapshot.viewModel.kind).toBe("town");
+    expect(attackSnapshot.debugMessage).toContain("rejected");
+  });
+
+  it("live guards combat intents outside combat", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    const targetSnapshot = await bridge.dispatchIntent({ type: "select-target", enemyId: "enemy-moth-01" });
+    expect(targetSnapshot.flowState).toBe("town");
+    expect(targetSnapshot.viewModel.kind).toBe("town");
+    expect(targetSnapshot.debugMessage).toContain("rejected");
+
+    const attackSnapshot = await bridge.dispatchIntent({ type: "confirm-attack" });
+    expect(attackSnapshot.flowState).toBe("town");
+    expect(attackSnapshot.viewModel.kind).toBe("town");
+    expect(attackSnapshot.debugMessage).toContain("rejected");
   });
 });
 
@@ -562,7 +627,7 @@ describe("result and return meta-loop continuation", () => {
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
     await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
     await bridge.dispatchIntent({ type: "continue-from-dungeon" });
     await bridge.dispatchIntent({ type: "retreat-from-dungeon" });
@@ -579,7 +644,7 @@ describe("result and return meta-loop continuation", () => {
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
     await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
     await bridge.dispatchIntent({ type: "continue-from-dungeon" });
     await bridge.dispatchIntent({ type: "retreat-from-dungeon" });
@@ -595,7 +660,7 @@ describe("result and return meta-loop continuation", () => {
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
     await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
     await bridge.dispatchIntent({ type: "continue-from-dungeon" });
     await bridge.dispatchIntent({ type: "retreat-from-dungeon" });
@@ -612,7 +677,7 @@ describe("result and return meta-loop continuation", () => {
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
     await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
     await bridge.dispatchIntent({ type: "continue-from-dungeon" });
     await bridge.dispatchIntent({ type: "retreat-from-dungeon" });
@@ -630,7 +695,7 @@ describe("result and return meta-loop continuation", () => {
     // Go through expedition flow
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
     await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
 
     // Continue from dungeon-assist -> dungeon-map -> result
@@ -665,7 +730,7 @@ describe("result and return meta-loop continuation", () => {
     // Go through expedition flow
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
     await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
 
     // Continue from dungeon-assist -> dungeon-map -> result -> return -> town

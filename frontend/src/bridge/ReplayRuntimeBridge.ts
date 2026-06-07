@@ -7,6 +7,7 @@ import {
   replayExpeditionViewModel,
   replayDungeonAssistViewModel,
   replayDungeonMapViewModel,
+  replayCombatViewModel,
   replayResultViewModel,
   replayReturnViewModel
 } from "../validation/replayFixtures";
@@ -172,8 +173,8 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         }
         this.snapshot = {
           ...this.snapshot,
-          flowState: "dungeon-assist",
-          viewModel: replayDungeonAssistViewModel as DungeonAssistViewModel
+          flowState: "combat",
+          viewModel: replayCombatViewModel as CombatViewModel
         };
         break;
       case "enter-dungeon-assist":
@@ -272,6 +273,15 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           };
           break;
         }
+        if (targetRoom.type === "combat") {
+          this.snapshot = {
+            ...this.snapshot,
+            flowState: "combat",
+            viewModel: replayCombatViewModel as CombatViewModel,
+            debugMessage: `Replay: entered combat room "${targetRoom.label}".`
+          };
+          break;
+        }
         const updatedRooms = mapVm.rooms.map((room) =>
           room.id === intent.roomId
             ? { ...room, isVisited: true, isCurrent: true }
@@ -294,6 +304,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "select-skill": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Replay: combat skill ${intent.skillId} rejected.`
+          };
+          break;
+        }
         const combatVm = this.snapshot.viewModel as CombatViewModel;
         this.snapshot = {
           ...this.snapshot,
@@ -305,6 +322,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "select-target": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Replay: combat target ${intent.enemyId} rejected.`
+          };
+          break;
+        }
         const combatVm = this.snapshot.viewModel as CombatViewModel;
         this.snapshot = {
           ...this.snapshot,
@@ -319,6 +343,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "confirm-attack":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: confirm-attack rejected outside combat."
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",
@@ -326,6 +357,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "end-turn": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: end-turn rejected outside combat."
+          };
+          break;
+        }
         const combatVm = this.snapshot.viewModel as CombatViewModel;
         this.snapshot = {
           ...this.snapshot,
@@ -336,6 +374,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "flee-combat":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: flee-combat rejected outside combat."
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",

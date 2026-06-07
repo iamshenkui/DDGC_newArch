@@ -622,8 +622,8 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         }
         this.snapshot = {
           ...this.snapshot,
-          flowState: "dungeon-assist",
-          viewModel: createLiveDungeonAssistViewModel()
+          flowState: "combat",
+          viewModel: createLiveCombatViewModel()
         };
         break;
       case "enter-dungeon-assist":
@@ -722,6 +722,15 @@ export class LiveRuntimeBridge implements RuntimeBridge {
           };
           break;
         }
+        if (targetRoom.type === "combat") {
+          this.snapshot = {
+            ...this.snapshot,
+            flowState: "combat",
+            viewModel: createLiveCombatViewModel(),
+            debugMessage: `Live: entered combat room "${targetRoom.label}".`
+          };
+          break;
+        }
         const updatedRooms = mapVm.rooms.map((room) =>
           room.id === intent.roomId
             ? { ...room, isVisited: true, isCurrent: true }
@@ -744,6 +753,13 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "select-skill": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: combat skill ${intent.skillId} rejected.`
+          };
+          break;
+        }
         const combatVm = this.snapshot.viewModel as CombatViewModel;
         this.snapshot = {
           ...this.snapshot,
@@ -755,6 +771,13 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "select-target": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: combat target ${intent.enemyId} rejected.`
+          };
+          break;
+        }
         const combatVm = this.snapshot.viewModel as CombatViewModel;
         this.snapshot = {
           ...this.snapshot,
@@ -769,6 +792,13 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "confirm-attack":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: confirm-attack rejected outside combat."
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",
@@ -776,6 +806,13 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "end-turn": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: end-turn rejected outside combat."
+          };
+          break;
+        }
         const combatVm = this.snapshot.viewModel as CombatViewModel;
         this.snapshot = {
           ...this.snapshot,
@@ -786,6 +823,13 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         break;
       }
       case "flee-combat":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: flee-combat rejected outside combat."
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "result",
