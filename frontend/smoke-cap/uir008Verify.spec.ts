@@ -25,6 +25,9 @@ test("UIR-008: end-to-end provisioning + launch flow without errors", async ({ p
   await page.locator(".estate-embark-button").click();
   await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
 
+  await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
+  await page.waitForSelector('[data-testid="provisioning-screen"]', { timeout: 5_000 });
+
   // Verify provisioning surface basics
   await expect(page.locator('[data-testid="provisioning-left-panel"]')).toBeVisible();
   await expect(page.locator('[data-testid="provisioning-right-panel"]')).toBeVisible();

@@ -434,8 +434,8 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page);
 
     await expect(
-      page.getByText("Provisioning"),
-      "Provisioning eyebrow must be visible"
+      page.getByText("苍灯远征"),
+      "Provisioning eyebrow (campaign name) must be visible"
     ).toBeVisible();
     await expect(
       page.getByText("战前补给"),
@@ -889,7 +889,7 @@ test.describe("browser smoke: fidelity gates", () => {
     await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
     await settle(page);
 
-    await page.getByRole("button", { name: "Confirm & Launch Expedition" }).click();
+    await page.locator('[data-testid="footer-btn-launch"]').click();
     await settle(page);
 
     await enterCombatRoomFromExpedition(page, "Replay combat flow");

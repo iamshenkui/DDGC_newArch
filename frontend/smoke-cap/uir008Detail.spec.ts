@@ -15,6 +15,10 @@ test("UIR-008: detailed capture for visual review", async ({ page }) => {
   await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
   await page.waitForTimeout(800);
 
+  await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
+  await page.waitForSelector('[data-testid="provisioning-screen"]', { timeout: 5_000 });
+  await page.waitForTimeout(800);
+
   // Provisioning capture
   await page.screenshot({
     path: "test-results/uir008-detail-provisioning.png",

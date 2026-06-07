@@ -15,6 +15,10 @@ test("UIR-008: capture provisioning and expedition launch screens", async ({ pag
   await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
   await page.waitForTimeout(400);
 
+  await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
+  await page.waitForSelector('[data-testid="provisioning-screen"]', { timeout: 5_000 });
+  await page.waitForTimeout(400);
+
   await page.screenshot({
     path: "test-results/uir008-provisioning.png",
     fullPage: false
