@@ -266,6 +266,21 @@ describe("provisioning and expedition launch flow", () => {
     expect(unknownSnapshot.debugMessage).toContain("rejected");
   });
 
+  it("replay rejects unknown assist heroes", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "select-assist-hero", heroId: "unknown-hero" });
+
+    expect(snapshot.flowState).toBe("dungeon-assist");
+    expect(snapshot.viewModel.kind).toBe("dungeon-assist");
+    expect((snapshot.viewModel as DungeonAssistViewModel).selectedHeroId).not.toBe("unknown-hero");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
   it("replay return-to-town from provisioning returns to town", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
@@ -346,6 +361,21 @@ describe("provisioning and expedition launch flow", () => {
     expect(unknownSnapshot.viewModel.kind).toBe("dungeon-assist");
     expect((unknownSnapshot.viewModel as DungeonAssistViewModel).canContinue).toBe(false);
     expect(unknownSnapshot.debugMessage).toContain("rejected");
+  });
+
+  it("live rejects unknown assist heroes", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "select-assist-hero", heroId: "unknown-hero" });
+
+    expect(snapshot.flowState).toBe("dungeon-assist");
+    expect(snapshot.viewModel.kind).toBe("dungeon-assist");
+    expect((snapshot.viewModel as DungeonAssistViewModel).selectedHeroId).not.toBe("unknown-hero");
+    expect(snapshot.debugMessage).toContain("rejected");
   });
 
   it("town -> provision -> launch path is reproducible in replay", async () => {

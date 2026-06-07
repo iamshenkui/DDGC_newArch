@@ -344,6 +344,12 @@ describe("canTransition - result and return meta-loop continuation", () => {
       expect(validation.allowed).toBe(true);
     });
 
+    it("rejects select-assist-hero for unknown heroes", () => {
+      const validation = canTransition(dungeonAssistSnapshot, { type: "select-assist-hero", heroId: "unknown-hero" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("does not exist");
+    });
+
     it("rejects use-assist-action for locked assist actions", () => {
       const validation = canTransition(dungeonAssistSnapshot, { type: "use-assist-action", actionId: "apply-buff" });
       expect(validation.allowed).toBe(false);

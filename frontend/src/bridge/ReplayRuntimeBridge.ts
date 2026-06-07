@@ -132,6 +132,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "select-assist-hero": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Replay: assist hero ${intent.heroId} rejected.`
+          };
+          break;
+        }
         const assistVm = this.snapshot.viewModel as DungeonAssistViewModel;
         const updatedParty = assistVm.party.map((hero) =>
           hero.id === intent.heroId

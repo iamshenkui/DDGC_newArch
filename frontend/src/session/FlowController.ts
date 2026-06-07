@@ -142,6 +142,12 @@ export function canTransition(
       if (screen !== "dungeon-assist") {
         return { allowed: false, reason: "select-assist-hero is only valid in dungeon-assist" };
       }
+      if (snapshot.viewModel.kind !== "dungeon-assist") {
+        return { allowed: false, reason: "viewModel is not a dungeon-assist view model" };
+      }
+      if (!snapshot.viewModel.party.some((hero) => hero.id === intent.heroId)) {
+        return { allowed: false, reason: `assist hero ${intent.heroId} does not exist` };
+      }
       return { allowed: true };
 
     case "use-assist-action":
