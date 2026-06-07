@@ -2,7 +2,9 @@ import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
   DdgcFrontendSnapshot,
+  DungeonAssistViewModel,
   ExpeditionSetupViewModel,
+  DungeonMapViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
   FatalErrorViewModel,
@@ -516,6 +518,60 @@ export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
   isLaunchable: true
 };
 
+export const replayDungeonAssistViewModel: DungeonAssistViewModel = {
+  kind: "dungeon-assist",
+  title: "Dungeon Assist",
+  dungeonName: "QingLong Depths",
+  roomNumber: 1,
+  party: [
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", stress: "17", maxStress: "200", level: 2, isSelected: true },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "8", maxStress: "200", level: 2, isSelected: false },
+    { id: "hero-black-01", name: "Hei Zhen", classLabel: "Black", hp: "34 / 40", maxHp: "40", stress: "24", maxStress: "200", level: 1, isSelected: false }
+  ],
+  selectedHeroId: "hero-hunter-01",
+  assistActions: [
+    { id: "heal-wound", label: "Heal", description: "Restore health to selected hero", iconType: "heal", isAvailable: true },
+    { id: "reduce-stress", label: "Calm", description: "Reduce stress of selected hero", iconType: "calm", isAvailable: true },
+    { id: "apply-buff", label: "Buff", description: "Apply a combat buff", iconType: "buff", isAvailable: false },
+    { id: "remove-debuff", label: "Cleanse", description: "Remove negative status", iconType: "cleanse", isAvailable: false },
+    { id: "guard-ally", label: "Guard", description: "Guard an ally", iconType: "guard", isAvailable: false }
+  ],
+  canContinue: false
+};
+
+export const replayDungeonMapViewModel: DungeonMapViewModel = {
+  kind: "dungeon-map",
+  title: "Dungeon Map",
+  expeditionName: "The Depths Await",
+  dungeonName: "Azure Lantern Depths",
+  currentRoomId: "room-entrance",
+  rooms: [
+    { id: "room-entrance", x: 2, y: 4, type: "entrance", label: "Entrance", isRevealed: true, isVisited: true, isCurrent: true, connections: ["room-empty-1", "room-combat-1"] },
+    { id: "room-empty-1", x: 2, y: 3, type: "empty", label: "Hallway", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-entrance", "room-treasure-1"] },
+    { id: "room-combat-1", x: 3, y: 4, type: "combat", label: "Ambush", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-entrance", "room-curio-1"], difficulty: "Easy" },
+    { id: "room-treasure-1", x: 2, y: 2, type: "treasure", label: "Cache", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-empty-1", "room-rest-1"], lootPreview: "Gold + Relic" },
+    { id: "room-curio-1", x: 4, y: 4, type: "curio", label: "Strange Idol", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-combat-1", "room-shrine-1"] },
+    { id: "room-rest-1", x: 2, y: 1, type: "rest", label: "Safe Room", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-treasure-1", "room-boss-1"] },
+    { id: "room-shrine-1", x: 5, y: 4, type: "shrine", label: "Healing Shrine", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-curio-1", "room-combat-2"] },
+    { id: "room-combat-2", x: 5, y: 3, type: "combat", label: "Elite Guard", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-shrine-1", "room-exit"], difficulty: "Hard" },
+    { id: "room-boss-1", x: 2, y: 0, type: "boss", label: "Depths Guardian", isRevealed: false, isVisited: false, isCurrent: false, connections: ["room-rest-1"], difficulty: "Boss" },
+    { id: "room-exit", x: 5, y: 2, type: "exit", label: "Exit", isRevealed: true, isVisited: false, isCurrent: false, connections: ["room-combat-2"] }
+  ],
+  party: [
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", stress: "17", maxStress: "200", isWounded: true, isAfflicted: false },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "8", maxStress: "200", isWounded: false, isAfflicted: false }
+  ],
+  torchLevel: 75,
+  maxTorchLevel: 100,
+  exploredCount: 1,
+  totalRooms: 10,
+  completionPercent: 10,
+  isRetreatAvailable: true,
+  isComplete: false,
+  minimapRows: 5,
+  minimapCols: 6
+};
+
 export const replayResultViewModel: ExpeditionResultViewModel = {
   kind: "result",
   title: "Expedition Complete",
@@ -933,6 +989,22 @@ export const expeditionSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing expedition launch screen."
 };
 
+// Dungeon assist flow snapshot
+export const dungeonAssistSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "dungeon-assist",
+  viewModel: replayDungeonAssistViewModel,
+  debugMessage: "Replay bridge showing dungeon assist screen."
+};
+
+// Dungeon map flow snapshot
+export const dungeonMapSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "dungeon-map",
+  viewModel: replayDungeonMapViewModel,
+  debugMessage: "Replay bridge showing dungeon map screen."
+};
+
 // Result snapshots (success, failure, partial)
 export const resultSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -983,7 +1055,7 @@ export function validateSnapshotContract(snapshot: DdgcFrontendSnapshot): string
   }
 
   // FlowState must be a valid FlowState
-  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "combat", "result", "return"];
+  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "dungeon-assist", "combat", "dungeon-map", "result", "return"];
   if (!validFlowStates.includes(snapshot.flowState as FlowState)) {
     errors.push(
       `flowState "${String(snapshot.flowState)}" is not a valid FlowState. ` +
@@ -1038,7 +1110,9 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     town: ["town", "hero-detail", "building-detail"],
     provisioning: ["provisioning"],
     expedition: ["expedition"],
+    "dungeon-assist": ["dungeon-assist"],
     combat: ["combat"],
+    "dungeon-map": ["dungeon-map"],
     result: ["result"],
     return: ["return"],
   };
@@ -1116,6 +1190,34 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (typeof vm.isLaunchable !== "boolean") e.push("ExpeditionSetupViewModel: isLaunchable is not a boolean");
       if (!vm.supplyLevel || typeof vm.supplyLevel !== "string") e.push("ExpeditionSetupViewModel: supplyLevel is missing");
       if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ExpeditionSetupViewModel: provisionCost is missing");
+      break;
+    }
+    case "dungeon-assist": {
+      if (!vm.title || typeof vm.title !== "string") e.push("DungeonAssistViewModel: title is missing");
+      if (!vm.dungeonName || typeof vm.dungeonName !== "string") e.push("DungeonAssistViewModel: dungeonName is missing");
+      if (typeof vm.roomNumber !== "number") e.push("DungeonAssistViewModel: roomNumber is not a number");
+      if (!Array.isArray(vm.party)) { e.push("DungeonAssistViewModel: party is not an array"); } else if (vm.party.length === 0) { e.push("DungeonAssistViewModel: party array is empty"); }
+      if (!vm.selectedHeroId || typeof vm.selectedHeroId !== "string") e.push("DungeonAssistViewModel: selectedHeroId is missing");
+      if (!Array.isArray(vm.assistActions)) e.push("DungeonAssistViewModel: assistActions is not an array");
+      if (typeof vm.canContinue !== "boolean") e.push("DungeonAssistViewModel: canContinue is not a boolean");
+      break;
+    }
+    case "dungeon-map": {
+      if (!vm.title || typeof vm.title !== "string") e.push("DungeonMapViewModel: title is missing");
+      if (!vm.expeditionName || typeof vm.expeditionName !== "string") e.push("DungeonMapViewModel: expeditionName is missing");
+      if (!vm.dungeonName || typeof vm.dungeonName !== "string") e.push("DungeonMapViewModel: dungeonName is missing");
+      if (!vm.currentRoomId || typeof vm.currentRoomId !== "string") e.push("DungeonMapViewModel: currentRoomId is missing");
+      if (!Array.isArray(vm.rooms)) { e.push("DungeonMapViewModel: rooms is not an array"); } else if (vm.rooms.length === 0) { e.push("DungeonMapViewModel: rooms array is empty"); }
+      if (!Array.isArray(vm.party)) { e.push("DungeonMapViewModel: party is not an array"); } else if (vm.party.length === 0) { e.push("DungeonMapViewModel: party array is empty"); }
+      if (typeof vm.torchLevel !== "number") e.push("DungeonMapViewModel: torchLevel is not a number");
+      if (typeof vm.maxTorchLevel !== "number") e.push("DungeonMapViewModel: maxTorchLevel is not a number");
+      if (typeof vm.exploredCount !== "number") e.push("DungeonMapViewModel: exploredCount is not a number");
+      if (typeof vm.totalRooms !== "number") e.push("DungeonMapViewModel: totalRooms is not a number");
+      if (typeof vm.completionPercent !== "number") e.push("DungeonMapViewModel: completionPercent is not a number");
+      if (typeof vm.isRetreatAvailable !== "boolean") e.push("DungeonMapViewModel: isRetreatAvailable is not a boolean");
+      if (typeof vm.isComplete !== "boolean") e.push("DungeonMapViewModel: isComplete is not a boolean");
+      if (typeof vm.minimapRows !== "number") e.push("DungeonMapViewModel: minimapRows is not a number");
+      if (typeof vm.minimapCols !== "number") e.push("DungeonMapViewModel: minimapCols is not a number");
       break;
     }
     case "result": {

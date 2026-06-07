@@ -7,7 +7,7 @@
  * These tests validate:
  * 1. Deterministic boot into town shell (replay and live modes)
  * 2. Intent dispatch round-trip (open → return-to-town)
- * 3. Flow state transitions (town → provisioning → expedition → combat)
+ * 3. Flow state transitions (town → provisioning → expedition → dungeon-assist → dungeon-map → result)
  * 4. Meta-loop continuation (result → town, return → town)
  */
 
@@ -19,9 +19,9 @@ import type {
   BuildingDetailViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  DungeonMapViewModel,
   ExpeditionResultViewModel,
-  ReturnViewModel,
-  CombatViewModel
+  ReturnViewModel
 } from "../bridge/contractTypes";
 import { LiveRuntimeBridge } from "../bridge/LiveRuntimeBridge";
 import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
@@ -105,7 +105,7 @@ describe("build-run smoke: intent dispatch round-trip", () => {
 });
 
 describe("build-run smoke: flow state transitions", () => {
-  it("replay: town → provisioning → expedition → combat → result", async () => {
+  it("replay: town → provisioning → expedition → dungeon-assist → dungeon-map → result", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
 
@@ -121,22 +121,25 @@ describe("build-run smoke: flow state transitions", () => {
     const expVm = expSnap.viewModel as ExpeditionSetupViewModel;
     expect(expVm.isLaunchable).toBe(true);
 
-    const combatSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
-    expect(combatSnap.flowState).toBe("combat");
-    expect(combatSnap.viewModel.kind).toBe("combat");
-    const combatVm = combatSnap.viewModel as CombatViewModel;
-    expect(combatVm.isPlayerTurn).toBe(true);
-    expect(combatVm.party.length).toBeGreaterThan(0);
-    expect(combatVm.enemies.length).toBeGreaterThan(0);
+    const assistSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    expect(assistSnap.flowState).toBe("dungeon-assist");
+    expect(assistSnap.viewModel.kind).toBe("dungeon-assist");
 
-    const resultSnap = await bridge.dispatchIntent({ type: "confirm-attack" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    const mapSnap = await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    expect(mapSnap.flowState).toBe("dungeon-map");
+    expect(mapSnap.viewModel.kind).toBe("dungeon-map");
+    const mapVm = mapSnap.viewModel as DungeonMapViewModel;
+    expect(mapVm.rooms.length).toBeGreaterThan(0);
+
+    const resultSnap = await bridge.dispatchIntent({ type: "retreat-from-dungeon" });
     expect(resultSnap.flowState).toBe("result");
     expect(resultSnap.viewModel.kind).toBe("result");
     const resultVm = resultSnap.viewModel as ExpeditionResultViewModel;
-    expect(resultVm.outcome).toBe("success");
+    expect(resultVm.outcome).toBe("partial");
   });
 
-  it("live: town → provisioning → expedition → combat → result", async () => {
+  it("live: town → provisioning → expedition → dungeon-assist", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
 
@@ -148,13 +151,26 @@ describe("build-run smoke: flow state transitions", () => {
     expect(expSnap.flowState).toBe("expedition");
     expect(expSnap.viewModel.kind).toBe("expedition");
 
-    const combatSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
-    expect(combatSnap.flowState).toBe("combat");
-    expect(combatSnap.viewModel.kind).toBe("combat");
+    const assistSnap = await bridge.dispatchIntent({ type: "launch-expedition" });
+    expect(assistSnap.flowState).toBe("dungeon-assist");
+    expect(assistSnap.viewModel.kind).toBe("dungeon-assist");
+  });
 
-    const resultSnap = await bridge.dispatchIntent({ type: "confirm-attack" });
-    expect(resultSnap.flowState).toBe("result");
-    expect(resultSnap.viewModel.kind).toBe("result");
+  it("replay: dungeon-map → enter-room updates exploration", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+
+    const mapSnap = await bridge.dispatchIntent({ type: "enter-room", roomId: "room-empty-1" });
+    expect(mapSnap.flowState).toBe("dungeon-map");
+    expect(mapSnap.viewModel.kind).toBe("dungeon-map");
+    const mapVm = mapSnap.viewModel as DungeonMapViewModel;
+    expect(mapVm.currentRoomId).toBe("room-empty-1");
+    expect(mapVm.exploredCount).toBeGreaterThan(1);
   });
 
   it("replay: provisioning → return-to-town", async () => {
@@ -173,6 +189,12 @@ describe("build-run smoke: meta-loop continuation", () => {
   it("replay: continue-from-result transitions to return state", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    await bridge.dispatchIntent({ type: "retreat-from-dungeon" });
 
     const resultSnap = await bridge.dispatchIntent({ type: "continue-from-result" });
     expect(resultSnap.flowState).toBe("return");
@@ -182,6 +204,13 @@ describe("build-run smoke: meta-loop continuation", () => {
   it("replay: resume-from-return returns to town", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    await bridge.dispatchIntent({ type: "retreat-from-dungeon" });
+    await bridge.dispatchIntent({ type: "continue-from-result" });
 
     const returnSnap = await bridge.dispatchIntent({ type: "resume-from-return" });
     expect(returnSnap.flowState).toBe("town");
@@ -191,6 +220,12 @@ describe("build-run smoke: meta-loop continuation", () => {
   it("live: continue-from-result transitions to return state", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    await bridge.dispatchIntent({ type: "retreat-from-dungeon" });
 
     const resultSnap = await bridge.dispatchIntent({ type: "continue-from-result" });
     expect(resultSnap.flowState).toBe("return");
@@ -200,6 +235,13 @@ describe("build-run smoke: meta-loop continuation", () => {
   it("live: resume-from-return returns to town", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    await bridge.dispatchIntent({ type: "retreat-from-dungeon" });
+    await bridge.dispatchIntent({ type: "continue-from-result" });
 
     const returnSnap = await bridge.dispatchIntent({ type: "resume-from-return" });
     expect(returnSnap.flowState).toBe("town");
@@ -213,7 +255,9 @@ describe("build-run smoke: meta-loop continuation", () => {
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
     await bridge.dispatchIntent({ type: "launch-expedition" });
-    await bridge.dispatchIntent({ type: "confirm-attack" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    await bridge.dispatchIntent({ type: "retreat-from-dungeon" });
 
     const returnSnap = await bridge.dispatchIntent({ type: "continue-from-result" });
     expect(returnSnap.flowState).toBe("return");

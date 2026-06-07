@@ -7,11 +7,10 @@ import type {
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
   HeroDetailViewModel,
-  BuildingDetailViewModel,
-  CombatViewModel
+  BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "combat" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "provisioning" | "expedition" | "dungeon-assist" | "dungeon-map" | "combat" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -40,6 +39,14 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "expedition") {
     return "expedition";
+  }
+
+  if (snapshot.viewModel.kind === "dungeon-assist") {
+    return "dungeon-assist";
+  }
+
+  if (snapshot.viewModel.kind === "dungeon-map") {
+    return "dungeon-map";
   }
 
   if (snapshot.viewModel.kind === "combat") {
@@ -190,6 +197,104 @@ export function canTransition(
       }
       if (!snapshot.viewModel.isLaunchable) {
         return { allowed: false, reason: "expedition is not launchable" };
+      }
+      return { allowed: true };
+
+    case "enter-dungeon-assist":
+      if (screen !== "expedition") {
+        return { allowed: false, reason: "enter-dungeon-assist is only valid in expedition" };
+      }
+      return { allowed: true };
+
+    case "select-assist-hero":
+      if (screen !== "dungeon-assist") {
+        return { allowed: false, reason: "select-assist-hero is only valid in dungeon-assist" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-assist") {
+        return { allowed: false, reason: "viewModel is not a dungeon-assist view model" };
+      }
+      if (!snapshot.viewModel.party.some((hero) => hero.id === intent.heroId)) {
+        return { allowed: false, reason: `assist hero ${intent.heroId} does not exist` };
+      }
+      return { allowed: true };
+
+    case "use-assist-action":
+      if (screen !== "dungeon-assist") {
+        return { allowed: false, reason: "use-assist-action is only valid in dungeon-assist" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-assist") {
+        return { allowed: false, reason: "viewModel is not a dungeon-assist view model" };
+      }
+      {
+        const action = snapshot.viewModel.assistActions.find((item) => item.id === intent.actionId);
+        if (!action) {
+          return { allowed: false, reason: `assist action ${intent.actionId} does not exist` };
+        }
+        if (!action.isAvailable) {
+          return { allowed: false, reason: `assist action ${intent.actionId} is not available` };
+        }
+      }
+      return { allowed: true };
+
+    case "enter-room":
+      if (screen !== "dungeon-map") {
+        return { allowed: false, reason: "enter-room is only valid on dungeon-map screen" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-map") {
+        return { allowed: false, reason: "viewModel is not a dungeon-map view model" };
+      }
+      if (!intent.roomId || typeof intent.roomId !== "string") {
+        return { allowed: false, reason: "roomId is required and must be a string" };
+      }
+      {
+        const mapVm = snapshot.viewModel;
+        const targetRoom = mapVm.rooms.find((r) => r.id === intent.roomId);
+        if (!targetRoom) {
+          return { allowed: false, reason: `room "${intent.roomId}" does not exist in the dungeon` };
+        }
+        const currentRoom = mapVm.rooms.find((r) => r.id === mapVm.currentRoomId);
+        if (currentRoom && intent.roomId !== currentRoom.id && !currentRoom.connections.includes(intent.roomId)) {
+          return { allowed: false, reason: `room "${intent.roomId}" is not connected to the current room` };
+        }
+        if (targetRoom && !targetRoom.isRevealed) {
+          return { allowed: false, reason: `room "${intent.roomId}" is not revealed` };
+        }
+      }
+      return { allowed: true };
+
+    case "continue-from-dungeon":
+      if (screen !== "dungeon-assist") {
+        return { allowed: false, reason: "continue-from-dungeon is only valid in dungeon-assist" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-assist") {
+        return { allowed: false, reason: "viewModel is not a dungeon-assist view model" };
+      }
+      if (!snapshot.viewModel.canContinue) {
+        return { allowed: false, reason: "cannot continue from dungeon-assist yet" };
+      }
+      return { allowed: true };
+
+    case "retreat-from-dungeon":
+      if (screen !== "dungeon-map") {
+        return { allowed: false, reason: "retreat-from-dungeon is only valid on dungeon-map screen" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-map") {
+        return { allowed: false, reason: "viewModel is not a dungeon-map view model" };
+      }
+      if (!snapshot.viewModel.isRetreatAvailable) {
+        return { allowed: false, reason: "retreat is not available" };
+      }
+      return { allowed: true };
+
+    case "complete-dungeon":
+      if (screen !== "dungeon-map") {
+        return { allowed: false, reason: "complete-dungeon is only valid on dungeon-map screen" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-map") {
+        return { allowed: false, reason: "viewModel is not a dungeon-map view model" };
+      }
+      if (!snapshot.viewModel.isComplete) {
+        return { allowed: false, reason: "dungeon is not complete" };
       }
       return { allowed: true };
 

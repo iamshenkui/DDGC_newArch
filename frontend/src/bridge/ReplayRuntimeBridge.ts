@@ -5,18 +5,21 @@ import {
   replayBuildingDetailViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
+  replayDungeonAssistViewModel,
+  replayDungeonMapViewModel,
   replayResultViewModel,
-  replayReturnViewModel,
-  replayCombatViewModel,
-  replayCombatSnapshot
+  replayReturnViewModel
 } from "../validation/replayFixtures";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
+import { canTransition } from "../session/FlowController";
 import type {
   DdgcFrontendIntent,
   DdgcFrontendSnapshot,
   TownViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
+  DungeonAssistViewModel,
+  DungeonMapViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
   CombatViewModel
@@ -160,12 +163,136 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "launch-expedition":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: launch-expedition rejected from current state."
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
-          flowState: "combat",
-          viewModel: replayCombatViewModel as CombatViewModel
+          flowState: "dungeon-assist",
+          viewModel: replayDungeonAssistViewModel as DungeonAssistViewModel
         };
         break;
+      case "enter-dungeon-assist":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: enter-dungeon-assist rejected outside expedition."
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-assist",
+          viewModel: replayDungeonAssistViewModel as DungeonAssistViewModel
+        };
+        break;
+      case "select-assist-hero": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Replay: assist hero ${intent.heroId} rejected.`
+          };
+          break;
+        }
+        const assistVm = this.snapshot.viewModel as DungeonAssistViewModel;
+        const updatedParty = assistVm.party.map((hero) =>
+          hero.id === intent.heroId
+            ? { ...hero, isSelected: true }
+            : { ...hero, isSelected: false }
+        );
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...assistVm,
+            party: updatedParty,
+            selectedHeroId: intent.heroId
+          }
+        };
+        break;
+      }
+      case "use-assist-action": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Replay: assist action ${intent.actionId} rejected.`
+          };
+          break;
+        }
+        const assistVm = this.snapshot.viewModel as DungeonAssistViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...assistVm,
+            canContinue: true
+          },
+          debugMessage: `Replay: assist action ${intent.actionId} used.`
+        };
+        break;
+      }
+      case "continue-from-dungeon":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: continue-from-dungeon rejected until dungeon assist is ready."
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-map",
+          viewModel: replayDungeonMapViewModel as DungeonMapViewModel
+        };
+        break;
+      case "enter-room": {
+        const mapVm = this.snapshot.viewModel as DungeonMapViewModel;
+        const targetRoom = mapVm.rooms.find((r) => r.id === intent.roomId);
+        if (!targetRoom) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `enter-room rejected: room "${intent.roomId}" does not exist`
+          };
+          break;
+        }
+        const currentRoom = mapVm.rooms.find((r) => r.id === mapVm.currentRoomId);
+        if (currentRoom && intent.roomId !== currentRoom.id && !currentRoom.connections.includes(intent.roomId)) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `enter-room rejected: room "${intent.roomId}" is not connected to the current room`
+          };
+          break;
+        }
+        if (targetRoom && !targetRoom.isRevealed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `enter-room rejected: room "${intent.roomId}" is not revealed`
+          };
+          break;
+        }
+        const updatedRooms = mapVm.rooms.map((room) =>
+          room.id === intent.roomId
+            ? { ...room, isVisited: true, isCurrent: true }
+            : { ...room, isCurrent: false }
+        );
+        const visitedCount = updatedRooms.filter((r) => r.isVisited).length;
+        const total = updatedRooms.length;
+        const newCompletion = Math.round((visitedCount / total) * 100);
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...mapVm,
+            currentRoomId: intent.roomId,
+            rooms: updatedRooms,
+            exploredCount: visitedCount,
+            completionPercent: newCompletion,
+            isComplete: newCompletion >= 80
+          }
+        };
+        break;
+      }
       case "select-skill": {
         const combatVm = this.snapshot.viewModel as CombatViewModel;
         this.snapshot = {
@@ -183,9 +310,9 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           ...this.snapshot,
           viewModel: {
             ...combatVm,
-            enemies: combatVm.enemies.map((e) => ({
-              ...e,
-              isTargeted: e.id === intent.enemyId
+            enemies: combatVm.enemies.map((enemy) => ({
+              ...enemy,
+              isTargeted: enemy.id === intent.enemyId
             }))
           }
         };
@@ -215,13 +342,55 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           viewModel: createReplayFleeResultViewModel()
         };
         break;
+      case "retreat-from-dungeon":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "result",
+          viewModel: {
+            ...replayResultViewModel,
+            outcome: "partial",
+            title: "Expedition Partial Success",
+            summary: "Your party retreated from the dungeon with what they could carry."
+          } as ExpeditionResultViewModel
+        };
+        break;
+      case "complete-dungeon": {
+        const mapVm = this.snapshot.viewModel as DungeonMapViewModel;
+        if (!mapVm.isComplete) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `complete-dungeon rejected: dungeon is not complete`
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "result",
+          viewModel: replayResultViewModel as ExpeditionResultViewModel
+        };
+        break;
+      }
       case "return-to-town":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: return-to-town rejected from current screen."
+          };
+          break;
+        }
         this.snapshot = replayReadySnapshot;
         break;
       case "boot":
         this.snapshot = replayReadySnapshot;
         break;
       case "continue-from-result":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: continue-from-result rejected outside result."
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "return",
@@ -229,6 +398,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       case "resume-from-return":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: resume-from-return rejected outside return."
+          };
+          break;
+        }
         this.snapshot = replayReadySnapshot;
         break;
     }
