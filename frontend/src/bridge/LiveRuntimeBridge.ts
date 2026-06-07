@@ -465,6 +465,13 @@ export class LiveRuntimeBridge implements RuntimeBridge {
           viewModel: createLiveDungeonAssistViewModel()
         };
         break;
+      case "enter-dungeon-assist":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-assist",
+          viewModel: createLiveDungeonAssistViewModel()
+        };
+        break;
       case "select-assist-hero": {
         const assistVm = this.snapshot.viewModel as DungeonAssistViewModel;
         const updatedParty = assistVm.party.map((hero) =>
