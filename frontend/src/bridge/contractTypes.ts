@@ -7,8 +7,9 @@ export type FlowState =
   | "provisioning"
   | "expedition"
   | "dungeon-assist"
-  | "combat"
   | "dungeon-map"
+  | "combat"
+  | "dungeon-interaction"
   | "result"
   | "return";
 
@@ -200,6 +201,31 @@ export interface ExpeditionHeroSummary {
   maxHp: string;
   stress: string;
   maxStress: string;
+}
+
+export interface DungeonInteractionSummary {
+  id: string;
+  label: string;
+  description: string;
+  isAvailable: boolean;
+}
+
+export interface DungeonInteractionViewModel {
+  kind: "dungeon-interaction";
+  title: string;
+  dungeonName: string;
+  roomType: "combat" | "event" | "corridor" | "boss" | "treasure" | "shop";
+  roomLabel: string;
+  roomDescription: string;
+  progress: {
+    currentRoom: number;
+    totalRooms: number;
+    roomsCleared: number;
+  };
+  party: ReadonlyArray<ExpeditionHeroSummary>;
+  interactions: ReadonlyArray<DungeonInteractionSummary>;
+  isProceedAvailable: boolean;
+  isRetreatAvailable: boolean;
 }
 
 export interface ExpeditionSetupViewModel {
@@ -418,6 +444,7 @@ export type DdgcViewModel =
   | DungeonAssistViewModel
   | DungeonMapViewModel
   | CombatViewModel
+  | DungeonInteractionViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
   | UnsupportedViewModel
@@ -439,6 +466,9 @@ export type DdgcFrontendIntent =
   | { type: "toggle-hero-selection"; heroId: string }
   | { type: "confirm-provisioning" }
   | { type: "launch-expedition" }
+  | { type: "proceed-dungeon" }
+  | { type: "interact-room"; interactionId: string }
+  | { type: "retreat-dungeon" }
   | { type: "enter-dungeon-assist" }
   | { type: "select-assist-hero"; heroId: string }
   | { type: "use-assist-action"; actionId: string }

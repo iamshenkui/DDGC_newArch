@@ -9,6 +9,7 @@ import type {
   BuildingDetailViewModel,
   CombatViewModel,
   DungeonAssistViewModel,
+  DungeonInteractionViewModel,
   DungeonMapViewModel,
   ExpeditionResultViewModel,
   ExpeditionSetupViewModel,
@@ -32,6 +33,7 @@ import { HeroDetailScreen } from "../screens/town/HeroDetailScreen";
 import { BuildingScreenRouter } from "../screens/town/BuildingScreenRouter";
 import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
+import { DungeonInteractionScreen } from "../screens/dungeon/DungeonInteractionScreen";
 import { DungeonAssistScreen } from "../screens/dungeon/DungeonAssistScreen";
 import { DungeonMapScreen } from "../screens/dungeon/DungeonMapScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
@@ -169,6 +171,22 @@ export function DdgcApp() {
             }}
             onReturnToTown={() => {
               void dispatchIntent(bridge, { type: "return-to-town" });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "dungeon-interaction" && snapshot().viewModel.kind === "dungeon-interaction"}
+        >
+          <DungeonInteractionScreen
+            viewModel={snapshot().viewModel as DungeonInteractionViewModel}
+            onProceed={() => {
+              void dispatchIntent(bridge, { type: "proceed-dungeon" });
+            }}
+            onInteract={(interactionId) => {
+              void dispatchIntent(bridge, { type: "interact-room", interactionId });
+            }}
+            onRetreat={() => {
+              void dispatchIntent(bridge, { type: "retreat-dungeon" });
             }}
           />
         </Match>

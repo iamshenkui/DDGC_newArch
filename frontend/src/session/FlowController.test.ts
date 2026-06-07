@@ -7,6 +7,7 @@ import type {
   ReturnViewModel,
   DungeonMapViewModel,
   CombatViewModel,
+  DungeonInteractionViewModel,
 } from "../bridge/contractTypes";
 import {
   fatalSnapshot,
@@ -19,6 +20,7 @@ import {
   startupSnapshot,
   provisioningSnapshot,
   expeditionSnapshot,
+  dungeonInteractionSnapshot,
   dungeonAssistSnapshot,
   dungeonMapSnapshot,
   combatSnapshot,
@@ -85,6 +87,11 @@ describe("FlowController", () => {
       expect(screen).toBe("expedition");
     });
 
+    it("returns dungeon-interaction screen for dungeon interaction view model", () => {
+      const screen = resolveScreen(dungeonInteractionSnapshot);
+      expect(screen).toBe("dungeon-interaction");
+    });
+
     it("returns dungeon-assist screen for dungeon assist view model", () => {
       const screen = resolveScreen(dungeonAssistSnapshot);
       expect(screen).toBe("dungeon-assist");
@@ -123,7 +130,7 @@ describe("FlowController", () => {
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "dungeon-assist", "dungeon-map", "combat", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "provisioning", "expedition", "dungeon-assist", "dungeon-map", "combat", "dungeon-interaction", "result", "return", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -137,6 +144,7 @@ describe("ScreenKey exhaustiveness", () => {
       "dungeon-assist": dungeonAssistSnapshot,
       "dungeon-map": dungeonMapSnapshot,
       combat: combatSnapshot,
+      "dungeon-interaction": dungeonInteractionSnapshot,
       result: resultSnapshot,
       return: returnSnapshot,
       unsupported: unsupportedSnapshot,
@@ -596,6 +604,91 @@ describe("canTransition - result and return meta-loop continuation", () => {
       const validation = canTransition(resultSnapshot, { type: "complete-dungeon" });
       expect(validation.allowed).toBe(false);
       expect(validation.reason).toContain("only valid on dungeon-map screen");
+    });
+  });
+
+  describe("dungeon-interaction transitions", () => {
+    it("allows interact-room when interaction exists and is available", () => {
+      const validation = canTransition(dungeonInteractionSnapshot, { type: "interact-room", interactionId: "investigate" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects interact-room when not on dungeon-interaction screen", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "interact-room", interactionId: "investigate" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in dungeon-interaction");
+    });
+
+    it("rejects interact-room for nonexistent interaction", () => {
+      const validation = canTransition(dungeonInteractionSnapshot, { type: "interact-room", interactionId: "unknown-interaction" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("does not exist");
+    });
+
+    it("rejects interact-room for unavailable interaction", () => {
+      const dungeonVm = dungeonInteractionSnapshot.viewModel as DungeonInteractionViewModel;
+      const lockedInteractionSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonInteractionSnapshot,
+        viewModel: {
+          ...dungeonVm,
+          interactions: dungeonVm.interactions.map((i) =>
+            i.id === "investigate" ? { ...i, isAvailable: false } : i
+          )
+        }
+      };
+      const validation = canTransition(lockedInteractionSnapshot, { type: "interact-room", interactionId: "investigate" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not available");
+    });
+
+    it("allows proceed-dungeon when proceed is available", () => {
+      const validation = canTransition(dungeonInteractionSnapshot, { type: "proceed-dungeon" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects proceed-dungeon when not on dungeon-interaction screen", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "proceed-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in dungeon-interaction");
+    });
+
+    it("rejects proceed-dungeon when proceed is not available", () => {
+      const dungeonVm = dungeonInteractionSnapshot.viewModel as DungeonInteractionViewModel;
+      const noProceedSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonInteractionSnapshot,
+        viewModel: {
+          ...dungeonVm,
+          isProceedAvailable: false
+        }
+      };
+      const validation = canTransition(noProceedSnapshot, { type: "proceed-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("proceed is not available");
+    });
+
+    it("allows retreat-dungeon when retreat is available", () => {
+      const validation = canTransition(dungeonInteractionSnapshot, { type: "retreat-dungeon" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects retreat-dungeon when not on dungeon-interaction screen", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "retreat-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in dungeon-interaction");
+    });
+
+    it("rejects retreat-dungeon when retreat is not available", () => {
+      const dungeonVm = dungeonInteractionSnapshot.viewModel as DungeonInteractionViewModel;
+      const noRetreatSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonInteractionSnapshot,
+        viewModel: {
+          ...dungeonVm,
+          isRetreatAvailable: false
+        }
+      };
+      const validation = canTransition(noRetreatSnapshot, { type: "retreat-dungeon" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("retreat is not available");
     });
   });
 

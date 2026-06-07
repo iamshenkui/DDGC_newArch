@@ -3297,6 +3297,19 @@ button {
   gap: 4px;
 }
 
+/* ── Dungeon Interaction Screen ───────────────────────────
+ * Mirrors Assets/Prefabs/UI/DungeonInteractionWindow.prefab
+ * Source hierarchy: UI_Dungeon/DungeonInteractionWindow
+ *   RoomInfoPanel → RoomLabel + RoomTypeBadge + RoomDescription
+ *   ProgressPanel → ProgressBar + ProgressText
+ *   PartyPanel → VitalsCard × 4
+ *   InteractionsPanel → InteractionButton × N
+ *   ControlBar → ProceedButton + RetreatButton
+ */
+
+.dungeon-interaction-viewport {
+}
+
 /* ── Combat Screen — 副本场景-人物攻击 ───────────────────── */
 .combat-viewport {
   min-height: 100vh;
@@ -4035,11 +4048,50 @@ button {
  *   Top HUD → Map Grid → Party Panel → Bottom Controls
  */
 .dungeon-map-viewport {
+
   display: flex;
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
   background: #0b0f14;
+}
+
+.dungeon-interaction-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 18px;
+  padding: 24px;
+  z-index: 1;
+  overflow-y: auto;
+}
+
+/* Room info panel */
+.dungeon-room-panel {
+  width: 100%;
+  max-width: 720px;
+  padding: 18px 22px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    180deg,
+    rgba(8, 16, 12, 0.85) 0%,
+    rgba(6, 12, 10, 0.8) 100%
+  );
+  border: 1px solid rgba(160, 204, 188, 0.14);
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(160, 204, 188, 0.05);
+}
+
+.dungeon-room-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
 }
 
 .dungeon-map-surface {
@@ -4092,17 +4144,116 @@ button {
 }
 
 .dungeon-map-grid-header {
+
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  margin-bottom: 10px;
+}
+
+.dungeon-room-label {
+
 }
 
 .dungeon-map-grid-title {
+
   font-family: var(--heading-font);
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--panel-accent);
+  letter-spacing: 0.03em;
+}
+
+.dungeon-room-description {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--panel-muted);
+  line-height: 1.5;
+  max-width: 56ch;
+}
+
+/* Room type badge */
+.room-type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.room-type-badge--combat {
+  color: #ea7767;
+  background: rgba(234, 119, 103, 0.12);
+  border: 1px solid rgba(234, 119, 103, 0.25);
+}
+
+.room-type-badge--event {
+  color: #82aaff;
+  background: rgba(130, 170, 255, 0.1);
+  border: 1px solid rgba(130, 170, 255, 0.22);
+}
+
+.room-type-badge--corridor {
+  color: var(--panel-muted);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(160, 204, 188, 0.15);
+}
+
+.room-type-badge--boss {
+  color: #c6d46a;
+  background: rgba(198, 212, 106, 0.12);
+  border: 1px solid rgba(198, 212, 106, 0.25);
+}
+
+.room-type-badge--treasure {
+  color: #e8a838;
+  background: rgba(232, 168, 56, 0.12);
+  border: 1px solid rgba(232, 168, 56, 0.22);
+}
+
+.room-type-badge--shop {
+  color: #5bbd6e;
+  background: rgba(91, 189, 110, 0.1);
+  border: 1px solid rgba(91, 189, 110, 0.2);
+}
+
+/* Progress bar */
+.dungeon-progress {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.dungeon-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.dungeon-progress-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--panel-muted);
+}
+
+.dungeon-progress-value {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--panel-text);
+}
+
+.dungeon-progress-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+
   letter-spacing: 0.04em;
 }
 
@@ -4430,8 +4581,103 @@ button {
   flex: 1;
   height: 5px;
   background: rgba(255, 255, 255, 0.08);
+
   border-radius: 999px;
   overflow: hidden;
+}
+
+.dungeon-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--panel-accent), var(--panel-accent-strong));
+  transition: width 0.4s ease;
+}
+
+/* Dungeon hero card override */
+.dungeon-hero-card {
+  transition: border-color 0.15s ease, transform 0.12s ease;
+}
+
+.dungeon-hero-card:hover {
+  border-color: rgba(160, 204, 188, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Interactions panel */
+.dungeon-interactions-panel {
+  width: 100%;
+  max-width: 720px;
+  padding: 16px 22px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    180deg,
+    rgba(8, 16, 12, 0.8) 0%,
+    rgba(6, 12, 10, 0.75) 100%
+  );
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(160, 204, 188, 0.05);
+}
+
+.dungeon-interactions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.dungeon-interaction-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(20, 30, 38, 0.7);
+  border: 1px solid rgba(160, 204, 188, 0.14);
+  color: var(--panel-text);
+  font-family: var(--page-font);
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.12s ease,
+    box-shadow 0.18s ease;
+  text-align: left;
+}
+
+.dungeon-interaction-btn:hover:not(:disabled) {
+  background: rgba(198, 212, 106, 0.1);
+  border-color: rgba(198, 212, 106, 0.3);
+  transform: translateY(-1px);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(198, 212, 106, 0.08);
+}
+
+.dungeon-interaction-btn:active:not(:disabled) {
+  transform: translateY(0);
+  background: rgba(198, 212, 106, 0.14);
+}
+
+.dungeon-interaction-btn--disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.dungeon-interaction-label {
+  font-family: var(--heading-font);
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--panel-text);
+}
+
+.dungeon-interaction-desc {
+  font-size: 0.72rem;
+  color: var(--panel-muted);
+  line-height: 1.35;
 }
 
 .dungeon-bar-fill {
@@ -4518,6 +4764,7 @@ button {
   padding: 2px 6px;
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.3);
+
 }
 
 /* ── Responsive: collapse to portrait on narrow screens ─ */
@@ -4543,6 +4790,16 @@ button {
   .viewport-title {
     font-size: 1rem;
   }
+
+  .dungeon-interactions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dungeon-room-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .dungeon-map-layout {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr auto;
@@ -5215,3 +5472,4 @@ button {
     grid-row: auto;
   }
 }
+

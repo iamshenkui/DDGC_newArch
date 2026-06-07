@@ -5,6 +5,7 @@ import {
   replayBuildingDetailViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
+  replayDungeonInteractionViewModel,
   replayDungeonAssistViewModel,
   replayDungeonMapViewModel,
   replayAttackCombatViewModel,
@@ -23,6 +24,7 @@ import type {
   DungeonMapViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
+  DungeonInteractionViewModel,
   CombatViewModel
 } from "./contractTypes";
 
@@ -472,6 +474,53 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           this.snapshot = {
             ...this.snapshot,
             debugMessage: `complete-dungeon rejected: dungeon is not complete`
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-interaction",
+          viewModel: replayDungeonInteractionViewModel as DungeonInteractionViewModel
+        };
+        break;
+      }
+      case "proceed-dungeon": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Replay: proceed-dungeon rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "result",
+          viewModel: replayResultViewModel as ExpeditionResultViewModel
+        };
+        break;
+      }
+      case "interact-room": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Replay: interact-room rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          debugMessage: `Replay: room interaction intent received for ${intent.interactionId}.`
+        };
+        break;
+      }
+      case "retreat-dungeon": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Replay: retreat-dungeon rejected: ${validation.reason ?? "invalid transition"}.`
           };
           break;
         }

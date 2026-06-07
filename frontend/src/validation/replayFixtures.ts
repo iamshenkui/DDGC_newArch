@@ -1,6 +1,7 @@
 import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
+  DungeonInteractionViewModel,
   DdgcFrontendSnapshot,
   DungeonAssistViewModel,
   ExpeditionSetupViewModel,
@@ -516,6 +517,32 @@ export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
   supplyLevel: "Adequate",
   provisionCost: "150 Gold",
   isLaunchable: true
+};
+
+export const replayDungeonInteractionViewModel: DungeonInteractionViewModel = {
+  kind: "dungeon-interaction",
+  title: "Dungeon Interaction",
+  dungeonName: "The Depths Await",
+  roomType: "event",
+  roomLabel: "Ancient Altar",
+  roomDescription: "An ancient altar stands before you, covered in moss and faintly glowing runes. Something about it feels both inviting and dangerous.",
+  progress: {
+    currentRoom: 3,
+    totalRooms: 9,
+    roomsCleared: 2
+  },
+  party: [
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", stress: "17", maxStress: "200" },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "8", maxStress: "200" }
+  ],
+  interactions: [
+    { id: "investigate", label: "Investigate", description: "Examine the altar closely for clues or hidden mechanisms.", isAvailable: true },
+    { id: "use-item", label: "Use Item", description: "Attempt to use a provision or tool on the altar.", isAvailable: true },
+    { id: "pray", label: "Pray", description: "Offer a prayer at the altar. The outcome is uncertain.", isAvailable: true },
+    { id: "ignore", label: "Ignore", description: "Leave the altar untouched and proceed.", isAvailable: true }
+  ],
+  isProceedAvailable: true,
+  isRetreatAvailable: true
 };
 
 export const replayDungeonAssistViewModel: DungeonAssistViewModel = {
@@ -1044,6 +1071,14 @@ export const expeditionSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing expedition launch screen."
 };
 
+// Dungeon interaction flow snapshot
+export const dungeonInteractionSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "dungeon-interaction",
+  viewModel: replayDungeonInteractionViewModel,
+  debugMessage: "Replay bridge showing dungeon interaction screen."
+};
+
 // Dungeon assist flow snapshot
 export const dungeonAssistSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -1110,7 +1145,7 @@ export function validateSnapshotContract(snapshot: DdgcFrontendSnapshot): string
   }
 
   // FlowState must be a valid FlowState
-  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "dungeon-assist", "combat", "dungeon-map", "result", "return"];
+  const validFlowStates: FlowState[] = ["boot", "load", "town", "provisioning", "expedition", "dungeon-assist", "dungeon-map", "combat", "dungeon-interaction", "result", "return"];
   if (!validFlowStates.includes(snapshot.flowState as FlowState)) {
     errors.push(
       `flowState "${String(snapshot.flowState)}" is not a valid FlowState. ` +
@@ -1168,6 +1203,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     "dungeon-assist": ["dungeon-assist"],
     combat: ["combat"],
     "dungeon-map": ["dungeon-map"],
+    "dungeon-interaction": ["dungeon-interaction"],
     result: ["result"],
     return: ["return"],
   };
@@ -1245,6 +1281,19 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (typeof vm.isLaunchable !== "boolean") e.push("ExpeditionSetupViewModel: isLaunchable is not a boolean");
       if (!vm.supplyLevel || typeof vm.supplyLevel !== "string") e.push("ExpeditionSetupViewModel: supplyLevel is missing");
       if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ExpeditionSetupViewModel: provisionCost is missing");
+      break;
+    }
+    case "dungeon-interaction": {
+      if (!vm.title || typeof vm.title !== "string") e.push("DungeonInteractionViewModel: title is missing");
+      if (!vm.dungeonName || typeof vm.dungeonName !== "string") e.push("DungeonInteractionViewModel: dungeonName is missing");
+      if (!vm.roomType || typeof vm.roomType !== "string") e.push("DungeonInteractionViewModel: roomType is missing");
+      if (!vm.roomLabel || typeof vm.roomLabel !== "string") e.push("DungeonInteractionViewModel: roomLabel is missing");
+      if (!vm.roomDescription || typeof vm.roomDescription !== "string") e.push("DungeonInteractionViewModel: roomDescription is missing");
+      if (!vm.progress || typeof vm.progress !== "object") e.push("DungeonInteractionViewModel: progress is missing");
+      if (!Array.isArray(vm.party)) { e.push("DungeonInteractionViewModel: party is not an array"); } else if (vm.party.length === 0) { e.push("DungeonInteractionViewModel: party array is empty"); }
+      if (!Array.isArray(vm.interactions)) e.push("DungeonInteractionViewModel: interactions is not an array");
+      if (typeof vm.isProceedAvailable !== "boolean") e.push("DungeonInteractionViewModel: isProceedAvailable is not a boolean");
+      if (typeof vm.isRetreatAvailable !== "boolean") e.push("DungeonInteractionViewModel: isRetreatAvailable is not a boolean");
       break;
     }
     case "dungeon-assist": {
