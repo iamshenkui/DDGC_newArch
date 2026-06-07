@@ -835,24 +835,18 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         if (!canTransition(this.snapshot, intent).allowed) {
           this.snapshot = {
             ...this.snapshot,
-            debugMessage: "Live: continue-from-combat rejected outside combat."
+            debugMessage: "Live: continue-from-combat rejected: not in character-hit acknowledgement."
           };
           break;
         }
-        if (this.snapshot.viewModel.kind === "combat" && this.snapshot.viewModel.phase === "character-hit") {
+        if (this.snapshot.viewModel.kind === "combat") {
           this.snapshot = {
             ...this.snapshot,
             flowState: "combat",
             viewModel: acknowledgeLiveCombatHit(this.snapshot.viewModel),
             debugMessage: "Live: character-hit acknowledgement accepted."
           };
-          break;
         }
-        this.snapshot = {
-          ...this.snapshot,
-          flowState: "result",
-          viewModel: createLiveResultViewModel()
-        };
         break;
       case "open-combat-settings":
         if (!canTransition(this.snapshot, intent).allowed) {

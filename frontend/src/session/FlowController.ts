@@ -212,6 +212,9 @@ export function canTransition(
       if (snapshot.viewModel.kind !== "combat") {
         return { allowed: false, reason: "viewModel is not a combat view model" };
       }
+      if (!isCharacterHitAcknowledgement(snapshot)) {
+        return { allowed: false, reason: "continue-from-combat is only valid during character-hit acknowledgement" };
+      }
       return { allowed: true };
 
     case "flee-combat":
@@ -248,11 +251,17 @@ export function canTransition(
       if (screen !== "combat") {
         return { allowed: false, reason: "open-combat-settings is only valid in combat" };
       }
+      if (isCharacterHitAcknowledgement(snapshot)) {
+        return { allowed: false, reason: "open-combat-settings is not valid during character-hit acknowledgement" };
+      }
       return { allowed: true };
 
     case "return-to-town":
       if (screen === "town" || screen === "startup" || screen === "loading") {
         return { allowed: false, reason: "already in town or transitioning" };
+      }
+      if (isCharacterHitAcknowledgement(snapshot)) {
+        return { allowed: false, reason: "return-to-town is not valid during character-hit acknowledgement" };
       }
       return { allowed: true };
 

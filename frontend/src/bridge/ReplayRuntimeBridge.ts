@@ -386,24 +386,18 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         if (!canTransition(this.snapshot, intent).allowed) {
           this.snapshot = {
             ...this.snapshot,
-            debugMessage: "Replay: continue-from-combat rejected outside combat."
+            debugMessage: "Replay: continue-from-combat rejected: not in character-hit acknowledgement."
           };
           break;
         }
-        if (this.snapshot.viewModel.kind === "combat" && this.snapshot.viewModel.phase === "character-hit") {
+        if (this.snapshot.viewModel.kind === "combat") {
           this.snapshot = {
             ...this.snapshot,
             flowState: "combat",
             viewModel: acknowledgeReplayCombatHit(this.snapshot.viewModel),
             debugMessage: "Replay: character-hit acknowledgement accepted."
           };
-          break;
         }
-        this.snapshot = {
-          ...this.snapshot,
-          flowState: "result",
-          viewModel: replayResultViewModel as ExpeditionResultViewModel
-        };
         break;
       case "open-combat-settings":
         if (!canTransition(this.snapshot, intent).allowed) {

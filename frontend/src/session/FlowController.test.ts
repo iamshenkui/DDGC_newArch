@@ -679,6 +679,10 @@ describe("canTransition - result and return meta-loop continuation", () => {
       expect(selectSkill.allowed).toBe(false);
       expect(selectSkill.reason).toContain("character-hit acknowledgement");
 
+      const selectTarget = canTransition(characterHitSnapshot, { type: "select-target", enemyId: "enemy-moth-01" });
+      expect(selectTarget.allowed).toBe(false);
+      expect(selectTarget.reason).toContain("character-hit acknowledgement");
+
       const confirmAttack = canTransition(characterHitSnapshot, { type: "confirm-attack" });
       expect(confirmAttack.allowed).toBe(false);
       expect(confirmAttack.reason).toContain("character-hit acknowledgement");
@@ -690,6 +694,19 @@ describe("canTransition - result and return meta-loop continuation", () => {
       const endTurn = canTransition(characterHitSnapshot, { type: "end-turn" });
       expect(endTurn.allowed).toBe(false);
       expect(endTurn.reason).toContain("character-hit acknowledgement");
+
+      const openSettings = canTransition(characterHitSnapshot, { type: "open-combat-settings" });
+      expect(openSettings.allowed).toBe(false);
+      expect(openSettings.reason).toContain("character-hit acknowledgement");
+
+      const returnToTown = canTransition(characterHitSnapshot, { type: "return-to-town" });
+      expect(returnToTown.allowed).toBe(false);
+      expect(returnToTown.reason).toContain("character-hit acknowledgement");
+    });
+
+    it("rejects continue-from-combat outside character-hit acknowledgement", () => {
+      expect(canTransition(combatSnapshot, { type: "continue-from-combat" }).allowed).toBe(false);
+      expect(canTransition(combatSnapshot, { type: "continue-from-combat" }).reason).toContain("character-hit acknowledgement");
     });
   });
 
