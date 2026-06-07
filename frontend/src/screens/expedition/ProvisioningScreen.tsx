@@ -44,19 +44,6 @@ function stressBarColor(stress: string): string {
   return "#ea7767";
 }
 
-/** Placeholder supply items rendered until inventory data is wired.
- *  BLOCKER-003: Supply item inventory with icons/quantities not in ProvisioningViewModel.
- */
-const placeholderSupplyItems = [
-  { id: "supply-food", name: "干粮", icon: "🍞", qty: 8 },
-  { id: "supply-torch", name: "火把", icon: "🔥", qty: 6 },
-  { id: "supply-bandage", name: "绷带", icon: "🩹", qty: 4 },
-  { id: "supply-antidote", name: "解毒剂", icon: "🧪", qty: 2 },
-  { id: "supply-shovel", name: "铁锹", icon: "⛏", qty: 2 },
-  { id: "supply-key", name: "万能钥匙", icon: "🔑", qty: 1 },
-  { id: "supply-holy", name: "圣水", icon: "✨", qty: 2 },
-];
-
 /**
  * Provisioning screen — 战前补给 (pre-battle supply preparation).
  *
@@ -73,8 +60,8 @@ const placeholderSupplyItems = [
  *   supply     — Assets/Resources/Sprites/inv_supply+rattle_drum.png
  *                GUID e401bf9b9275ede4aa2ff50d13cc6207.
  *                Not extracted (BLOCKER-001).
- *   supply items — BLOCKER-003: real inventory data not yet in view model.
- *                  Grid renders placeholder items with data-blocker annotations.
+ *   supply items — wired via ProvisioningViewModel.supplies (replay fixture data).
+ *                  When supplies are absent the grid renders an explicit blocked state.
  */
 export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) => {
   const [focusedHeroId, setFocusedHeroId] = createSignal<string | null>(null);
@@ -310,23 +297,37 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
                 <span class="provisioning-supply-subtitle">做好出发前的准备，合理分配补给</span>
               </div>
 
-              {/* Supply item grid — BLOCKER-003: real inventory data not wired */}
+              {/* Supply item grid — wired from ProvisioningViewModel.supplies */}
               <div
                 class="provisioning-supply-grid"
-                data-blocker="BLOCKER-003: Supply item inventory not in ProvisioningViewModel; grid renders placeholder items"
                 data-testid="supply-grid"
               >
-                <For each={placeholderSupplyItems}>
-                  {(item) => (
-                    <div class="provisioning-supply-item" data-testid={`supply-item-${item.id}`}>
-                      <span class="provisioning-supply-item-icon" aria-hidden="true">
-                        {item.icon}
-                      </span>
-                      <span class="provisioning-supply-item-name">{item.name}</span>
-                      <span class="provisioning-supply-item-qty">×{item.qty}</span>
+                <Show
+                  when={props.viewModel.supplies && props.viewModel.supplies.length > 0}
+                  fallback={
+                    <div
+                      class="provisioning-supply-blocked"
+                      data-blocker="BLOCKER-003: Supply item inventory not provided by runtime bridge"
+                      data-testid="supply-grid-blocked"
+                    >
+                      <span class="provisioning-supply-blocked-icon" aria-hidden="true">📦</span>
+                      <span class="provisioning-supply-blocked-text">补给数据未连接</span>
+                      <span class="provisioning-supply-blocked-sub">等待运行时提供补给清单</span>
                     </div>
-                  )}
-                </For>
+                  }
+                >
+                  <For each={props.viewModel.supplies}>
+                    {(item) => (
+                      <div class="provisioning-supply-item" data-testid={`supply-item-${item.id}`}>
+                        <span class="provisioning-supply-item-icon" aria-hidden="true">
+                          {item.icon}
+                        </span>
+                        <span class="provisioning-supply-item-name">{item.name}</span>
+                        <span class="provisioning-supply-item-qty">×{item.qty}</span>
+                      </div>
+                    )}
+                  </For>
+                </Show>
               </div>
 
               {/* Detail / equipment area */}

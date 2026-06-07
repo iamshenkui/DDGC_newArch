@@ -177,6 +177,13 @@ export interface ProvisioningHeroSummary {
   isSelected: boolean;
 }
 
+export interface SupplyItem {
+  id: string;
+  name: string;
+  icon: string;
+  qty: number;
+}
+
 export interface ProvisioningViewModel {
   kind: "provisioning";
   title: string;
@@ -188,6 +195,7 @@ export interface ProvisioningViewModel {
   isReadyToLaunch: boolean;
   supplyLevel: string;
   provisionCost: string;
+  supplies?: ReadonlyArray<SupplyItem>;
 }
 
 export interface ExpeditionHeroSummary {

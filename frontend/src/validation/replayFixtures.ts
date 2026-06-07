@@ -488,7 +488,16 @@ export const replayProvisioningViewModel: ProvisioningViewModel = {
   maxPartySize: 4,
   isReadyToLaunch: true,
   supplyLevel: "充足",
-  provisionCost: "150 金币"
+  provisionCost: "150 金币",
+  supplies: [
+    { id: "supply-food", name: "干粮", icon: "🍞", qty: 8 },
+    { id: "supply-torch", name: "火把", icon: "🔥", qty: 6 },
+    { id: "supply-bandage", name: "绷带", icon: "🩹", qty: 4 },
+    { id: "supply-antidote", name: "解毒剂", icon: "🧪", qty: 2 },
+    { id: "supply-shovel", name: "铁锹", icon: "⛏", qty: 2 },
+    { id: "supply-key", name: "万能钥匙", icon: "🔑", qty: 1 },
+    { id: "supply-holy", name: "圣水", icon: "✨", qty: 2 }
+  ]
 };
 
 export const replayExpeditionViewModel: ExpeditionSetupViewModel = {

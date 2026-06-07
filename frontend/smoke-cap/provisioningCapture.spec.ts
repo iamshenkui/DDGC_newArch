@@ -78,9 +78,9 @@ test.describe("provisioning screen: 战前补给 fidelity", () => {
     await expect(supplyGrid, "Supply grid must be visible").toBeVisible();
 
     const supplyItems = supplyGrid.locator(".provisioning-supply-item");
-    await expect(supplyItems, "Supply grid must contain placeholder items").toHaveCount(7);
+    await expect(supplyItems, "Supply grid must contain wired supply items from fixture").toHaveCount(7);
 
-    // Specific supply items
+    // Specific supply items (wired from replay fixture data)
     for (const itemId of [
       "supply-food",
       "supply-torch",
