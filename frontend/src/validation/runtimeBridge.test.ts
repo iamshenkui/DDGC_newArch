@@ -401,6 +401,7 @@ describe("dungeon-select to provisioning handoff", () => {
     await bridge.dispatchIntent({ type: "start-dungeon-select" });
     await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-forest-01" });
     await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-white-01" });
 
     const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
     expect(snapshot.flowState).toBe("provisioning");
@@ -436,7 +437,7 @@ describe("dungeon-select to provisioning handoff", () => {
     expect(provVm.isReadyToLaunch).toBe(true);
   });
 
-  it("replay confirm-dungeon-selection with single hero selection is ready to launch", async () => {
+  it("replay confirm-dungeon-selection with single hero selection is rejected", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();
 
@@ -445,10 +446,9 @@ describe("dungeon-select to provisioning handoff", () => {
     await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-black-01" });
 
     const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
-    const provVm = snapshot.viewModel as ProvisioningViewModel;
-
-    expect(provVm.party.find((h) => h.id === "hero-black-01")?.isSelected).toBe(true);
-    expect(provVm.isReadyToLaunch).toBe(true);
+    expect(snapshot.flowState).toBe("dungeon-select");
+    expect(snapshot.viewModel.kind).toBe("dungeon-select");
+    expect(snapshot.debugMessage).toContain("rejected");
   });
 
   it("live confirm-dungeon-selection preserves selected dungeon into provisioning", async () => {
@@ -458,6 +458,7 @@ describe("dungeon-select to provisioning handoff", () => {
     await bridge.dispatchIntent({ type: "start-dungeon-select" });
     await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-forest-live" });
     await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-live-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-white-live-01" });
 
     const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
     expect(snapshot.flowState).toBe("provisioning");
@@ -478,6 +479,7 @@ describe("dungeon-select to provisioning handoff", () => {
     await bridge.dispatchIntent({ type: "start-dungeon-select" });
     await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-ruins-live" });
     await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-live-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-white-live-01" });
 
     const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
     const provVm = snapshot.viewModel as ProvisioningViewModel;
@@ -486,25 +488,20 @@ describe("dungeon-select to provisioning handoff", () => {
     const white = provVm.party.find((h) => h.id === "hero-white-live-01");
 
     expect(hunter?.isSelected).toBe(true);
-    expect(white?.isSelected).toBe(false);
+    expect(white?.isSelected).toBe(true);
     expect(provVm.isReadyToLaunch).toBe(true);
   });
 
-  it("live confirm-dungeon-selection defaults to safe values when no dungeon is selected", async () => {
-    // This tests the defensive fallback; in practice FlowController rejects
-    // confirm-dungeon-selection when isReadyToProceed is false.
+  it("live confirm-dungeon-selection is rejected when selection is not ready", async () => {
     const bridge = new LiveRuntimeBridge();
     await bridge.boot();
 
     await bridge.dispatchIntent({ type: "start-dungeon-select" });
-    // Intentionally do NOT select a dungeon, and force the state manually
-    const preSnapshot = bridge.currentSnapshot();
-    const dsVm = preSnapshot.viewModel as DungeonSelectViewModel;
+    // Intentionally do NOT select a dungeon or enough heroes
     const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
-    const provVm = snapshot.viewModel as ProvisioningViewModel;
 
-    expect(provVm.expeditionLabel).toBe("Unknown Expedition");
-    expect(provVm.supplyLevel).toBe("Basic");
-    expect(provVm.provisionCost).toBe("0 Gold");
+    expect(snapshot.flowState).toBe("dungeon-select");
+    expect(snapshot.viewModel.kind).toBe("dungeon-select");
+    expect(snapshot.debugMessage).toContain("rejected");
   });
 });

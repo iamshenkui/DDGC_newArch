@@ -377,7 +377,9 @@ test.describe("browser smoke: fidelity gates", () => {
     await page.locator('[data-dungeon-id="dungeon-ruins-01"]').click();
     await settle(page);
 
-    // Select heroes
+    // Select heroes (need at least 2 to proceed)
+    await page.locator('.dungeon-select-roster-hero').first().click();
+    await settle(page);
     await page.locator('.dungeon-select-roster-hero').first().click();
     await settle(page);
 
@@ -650,8 +652,10 @@ test.describe("browser smoke: fidelity gates", () => {
       "Live dungeon select title must be visible"
     ).toBeVisible();
 
-    // Select a dungeon and hero, then confirm
+    // Select a dungeon and heroes (need at least 2 to proceed), then confirm
     await page.locator('[data-dungeon-id="dungeon-ruins-live"]').click();
+    await settle(page);
+    await page.locator('.dungeon-select-roster-hero').first().click();
     await settle(page);
     await page.locator('.dungeon-select-roster-hero').first().click();
     await settle(page);

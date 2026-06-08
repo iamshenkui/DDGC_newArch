@@ -37,7 +37,7 @@ function deriveProvisioningFromDungeonSelect(dsVm: DungeonSelectViewModel): Prov
     expeditionSummary: selectedDungeon?.description ?? "No description available.",
     party: provisionParty,
     maxPartySize: dsVm.maxPartySize,
-    isReadyToLaunch: selectedCount >= 1 && selectedCount <= dsVm.maxPartySize,
+    isReadyToLaunch: selectedCount >= 2 && selectedCount <= dsVm.maxPartySize,
     supplyLevel: selectedDungeon?.supplyLevel ?? "Basic",
     provisionCost: selectedDungeon?.provisionCost ?? "0 Gold"
   };
@@ -121,7 +121,7 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
             ...dsVm,
             selectedDungeonId: intent.dungeonId,
             isReadyToProceed:
-              dsVm.party.filter((h) => h.isSelected).length >= 1 &&
+              dsVm.party.filter((h) => h.isSelected).length >= 2 &&
               dsVm.party.filter((h) => h.isSelected).length <= dsVm.maxPartySize
           }
         };
@@ -142,7 +142,7 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
             party: updatedParty,
             isReadyToProceed:
               dsVm2.selectedDungeonId !== null &&
-              selectedCount >= 1 &&
+              selectedCount >= 2 &&
               selectedCount <= dsVm2.maxPartySize
           }
         };
@@ -150,6 +150,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       }
       case "confirm-dungeon-selection": {
         const dsVm = this.snapshot.viewModel as DungeonSelectViewModel;
+        if (!dsVm.isReadyToProceed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: confirm-dungeon-selection rejected — selection is not ready to proceed."
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "provisioning",
