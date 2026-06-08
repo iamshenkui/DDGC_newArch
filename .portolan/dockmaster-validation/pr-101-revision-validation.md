@@ -14,32 +14,51 @@
 - `confirm-dungeon-selection` rejects if the selected dungeon is unknown or unavailable
   (defense-in-depth beyond the `isReadyToProceed` check).
 - `FlowController.canTransition` now rejects `select-dungeon` for unknown or locked
-  dungeon IDs, and rejects `confirm-dungeon-selection` when the selected dungeon does
-  not exist or is not available.
+  dungeon IDs, and rejects `confirm-dungeon-selection` when the selected dungeon
+  does not exist or is not available.
 - Updated `ResultReturnFlow.test.ts` to use a real available dungeon ID in transition
   validation tests.
 - Added regression tests in `FlowController.test.ts` and `runtimeBridge.test.ts` for
   locked and unknown dungeon IDs.
 
+## Review Fixes (Round 3)
+- Fixed TS2339 narrowing error in `FlowController.ts` (`confirm-dungeon-selection`
+  branch). Extracted `const vm = snapshot.viewModel` after the `kind === "dungeon-select"`
+  narrowing check so `vm.selectedDungeonId` is used inside the `.find()` callback
+  instead of `snapshot.viewModel.selectedDungeonId`.
+
 ## Validation Commands
 
-### Unit Tests (relevant suites)
+### TypeScript typecheck
 ```bash
-npx vitest run src/validation src/session src/screens
+npm run typecheck
 ```
-Result: **7 test files passed, 274 tests passed**
+Result: **Exit 2** — the PR-specific TS2339 error in `FlowController.ts` is resolved.
+Three pre-existing TS2307 module-resolution errors remain in `AppProviders.tsx` and
+`PixiStage.tsx` (unable to resolve `@contracts/app-shell`, `@contracts/ui-substrate`,
+`@contracts/pixi-renderer`) because the `WorldEngine` sibling repository is not present
+in this sandbox. These files and their `@contracts/*` imports pre-date this PR.
 
 ### Full Frontend Test Suite
 ```bash
 npm test
 ```
-Result: **10 test files passed, 342 tests passed**
+Result: **Exit 0 — 10 test files passed, 342 tests passed**
 
-### Build + Smoke
+### Smoke Tests
 ```bash
-npm run build && npm run smoke
+npm run smoke
 ```
-Result: **Build succeeded, 4 test files passed, 146 tests passed**
+Result: **Exit 0 — 4 test files passed, 151 tests passed**
 
-## Exit Status
-All commands exited with status 0.
+### Production Build
+```bash
+npm run build
+```
+Result: **Exit 0 — build succeeded**
+
+### Browser Smoke Tests
+```bash
+npm run smoke-browser
+```
+Result: **Exit 0 — 2 tests passed**

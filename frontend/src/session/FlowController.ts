@@ -139,11 +139,12 @@ export function canTransition(
       if (snapshot.viewModel.kind !== "dungeon-select") {
         return { allowed: false, reason: "viewModel is not a dungeon-select view model" };
       }
-      if (!snapshot.viewModel.isReadyToProceed) {
-        return { allowed: false, reason: "dungeon selection is not ready to proceed" };
-      }
       {
-        const selectedDungeon = snapshot.viewModel.dungeons.find((d) => d.id === snapshot.viewModel.selectedDungeonId);
+        const vm = snapshot.viewModel;
+        if (!vm.isReadyToProceed) {
+          return { allowed: false, reason: "dungeon selection is not ready to proceed" };
+        }
+        const selectedDungeon = vm.dungeons.find((d) => d.id === vm.selectedDungeonId);
         if (!selectedDungeon) {
           return { allowed: false, reason: "selected dungeon does not exist" };
         }
