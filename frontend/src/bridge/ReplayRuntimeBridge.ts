@@ -21,6 +21,28 @@ import type {
   ReturnViewModel
 } from "./contractTypes";
 
+function deriveProvisioningFromDungeonSelect(dsVm: DungeonSelectViewModel): ProvisioningViewModel {
+  const selectedDungeon = dsVm.dungeons.find((d) => d.id === dsVm.selectedDungeonId);
+  const provisionParty = dsVm.party.map((hero) => ({
+    ...hero,
+    isSelected: hero.isSelected
+  }));
+  const selectedCount = provisionParty.filter((h) => h.isSelected).length;
+
+  return {
+    kind: "provisioning",
+    title: "Provision Expedition",
+    campaignName: dsVm.campaignName,
+    expeditionLabel: selectedDungeon?.name ?? "Unknown Expedition",
+    expeditionSummary: selectedDungeon?.description ?? "No description available.",
+    party: provisionParty,
+    maxPartySize: dsVm.maxPartySize,
+    isReadyToLaunch: selectedCount >= 1 && selectedCount <= dsVm.maxPartySize,
+    supplyLevel: selectedDungeon?.supplyLevel ?? "Basic",
+    provisionCost: selectedDungeon?.provisionCost ?? "0 Gold"
+  };
+}
+
 export class ReplayRuntimeBridge implements RuntimeBridge {
   readonly id = "ddgc-replay-bridge";
   readonly mode: RuntimeMode = "replay";
@@ -126,13 +148,15 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       }
-      case "confirm-dungeon-selection":
+      case "confirm-dungeon-selection": {
+        const dsVm = this.snapshot.viewModel as DungeonSelectViewModel;
         this.snapshot = {
           ...this.snapshot,
           flowState: "provisioning",
-          viewModel: replayProvisioningViewModel as ProvisioningViewModel
+          viewModel: deriveProvisioningFromDungeonSelect(dsVm)
         };
         break;
+      }
       case "start-provisioning":
         this.snapshot = {
           ...this.snapshot,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, ExpeditionResultViewModel, ReturnViewModel } from "../bridge/contractTypes";
+import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, ExpeditionResultViewModel, ReturnViewModel, DungeonSelectViewModel } from "../bridge/contractTypes";
 import { LiveRuntimeBridge } from "../bridge/LiveRuntimeBridge";
 import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 
@@ -390,5 +390,121 @@ describe("result and return meta-loop continuation", () => {
     const provSnapshot = await bridge.dispatchIntent({ type: "start-provisioning" });
     expect(provSnapshot.flowState).toBe("provisioning");
     expect(provSnapshot.viewModel.kind).toBe("provisioning");
+  });
+});
+
+describe("dungeon-select to provisioning handoff", () => {
+  it("replay confirm-dungeon-selection preserves selected dungeon into provisioning", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-forest-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-01" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
+    expect(snapshot.flowState).toBe("provisioning");
+    expect(snapshot.viewModel.kind).toBe("provisioning");
+
+    const provVm = snapshot.viewModel as ProvisioningViewModel;
+    expect(provVm.expeditionLabel).toBe("迷雾森林");
+    expect(provVm.expeditionSummary).toBe("被浓雾笼罩的古老森林，里面栖息着诡异的生物。需要一定的准备才能深入。");
+    expect(provVm.supplyLevel).toBe("标准");
+    expect(provVm.provisionCost).toBe("150 Gold");
+    expect(provVm.campaignName).toBe("苍灯远征");
+  });
+
+  it("replay confirm-dungeon-selection preserves selected party into provisioning", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-ruins-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-white-01" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
+    const provVm = snapshot.viewModel as ProvisioningViewModel;
+
+    const hunter = provVm.party.find((h) => h.id === "hero-hunter-01");
+    const white = provVm.party.find((h) => h.id === "hero-white-01");
+    const black = provVm.party.find((h) => h.id === "hero-black-01");
+
+    expect(hunter?.isSelected).toBe(true);
+    expect(white?.isSelected).toBe(true);
+    expect(black?.isSelected).toBe(false);
+    expect(provVm.isReadyToLaunch).toBe(true);
+  });
+
+  it("replay confirm-dungeon-selection with single hero selection is ready to launch", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-ruins-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-black-01" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
+    const provVm = snapshot.viewModel as ProvisioningViewModel;
+
+    expect(provVm.party.find((h) => h.id === "hero-black-01")?.isSelected).toBe(true);
+    expect(provVm.isReadyToLaunch).toBe(true);
+  });
+
+  it("live confirm-dungeon-selection preserves selected dungeon into provisioning", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-forest-live" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-live-01" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
+    expect(snapshot.flowState).toBe("provisioning");
+    expect(snapshot.viewModel.kind).toBe("provisioning");
+
+    const provVm = snapshot.viewModel as ProvisioningViewModel;
+    expect(provVm.expeditionLabel).toBe("迷雾森林");
+    expect(provVm.expeditionSummary).toBe("被浓雾笼罩的古老森林。");
+    expect(provVm.supplyLevel).toBe("标准");
+    expect(provVm.provisionCost).toBe("150 Gold");
+    expect(provVm.campaignName).toBe("新档位面");
+  });
+
+  it("live confirm-dungeon-selection preserves selected party into provisioning", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-ruins-live" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-live-01" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
+    const provVm = snapshot.viewModel as ProvisioningViewModel;
+
+    const hunter = provVm.party.find((h) => h.id === "hero-hunter-live-01");
+    const white = provVm.party.find((h) => h.id === "hero-white-live-01");
+
+    expect(hunter?.isSelected).toBe(true);
+    expect(white?.isSelected).toBe(false);
+    expect(provVm.isReadyToLaunch).toBe(true);
+  });
+
+  it("live confirm-dungeon-selection defaults to safe values when no dungeon is selected", async () => {
+    // This tests the defensive fallback; in practice FlowController rejects
+    // confirm-dungeon-selection when isReadyToProceed is false.
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    // Intentionally do NOT select a dungeon, and force the state manually
+    const preSnapshot = bridge.currentSnapshot();
+    const dsVm = preSnapshot.viewModel as DungeonSelectViewModel;
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
+    const provVm = snapshot.viewModel as ProvisioningViewModel;
+
+    expect(provVm.expeditionLabel).toBe("Unknown Expedition");
+    expect(provVm.supplyLevel).toBe("Basic");
+    expect(provVm.provisionCost).toBe("0 Gold");
   });
 });
