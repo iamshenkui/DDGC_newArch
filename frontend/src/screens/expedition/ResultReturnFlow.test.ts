@@ -185,7 +185,7 @@ describe("Dungeon select transition validation", () => {
   });
 
   it("allows select-dungeon from dungeon-select screen", () => {
-    const validation = canTransition(dungeonSelectSnapshot, { type: "select-dungeon", dungeonId: "dungeon-01" });
+    const validation = canTransition(dungeonSelectSnapshot, { type: "select-dungeon", dungeonId: "dungeon-ruins-01" });
     expect(validation.allowed).toBe(true);
   });
 
@@ -197,7 +197,7 @@ describe("Dungeon select transition validation", () => {
       resultSnapshot,
     ];
     for (const snap of nonDungeonSelectScreens) {
-      const validation = canTransition(snap, { type: "select-dungeon", dungeonId: "dungeon-01" });
+      const validation = canTransition(snap, { type: "select-dungeon", dungeonId: "dungeon-ruins-01" });
       expect(validation.allowed).toBe(false);
     }
   });

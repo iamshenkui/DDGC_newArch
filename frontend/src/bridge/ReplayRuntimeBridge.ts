@@ -115,14 +115,18 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       case "select-dungeon": {
         const dsVm = this.snapshot.viewModel as DungeonSelectViewModel;
+        const selectedDungeon = dsVm.dungeons.find((d) => d.id === intent.dungeonId);
+        const isDungeonValid = selectedDungeon !== undefined && selectedDungeon.isAvailable;
+        const selectedCount = dsVm.party.filter((h) => h.isSelected).length;
         this.snapshot = {
           ...this.snapshot,
           viewModel: {
             ...dsVm,
-            selectedDungeonId: intent.dungeonId,
+            selectedDungeonId: isDungeonValid ? intent.dungeonId : null,
             isReadyToProceed:
-              dsVm.party.filter((h) => h.isSelected).length >= 2 &&
-              dsVm.party.filter((h) => h.isSelected).length <= dsVm.maxPartySize
+              isDungeonValid &&
+              selectedCount >= 2 &&
+              selectedCount <= dsVm.maxPartySize
           }
         };
         break;
@@ -135,13 +139,15 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
             : hero
         );
         const selectedCount = updatedParty.filter((h) => h.isSelected).length;
+        const selectedDungeon = dsVm2.dungeons.find((d) => d.id === dsVm2.selectedDungeonId);
+        const isDungeonValid = selectedDungeon !== undefined && selectedDungeon.isAvailable;
         this.snapshot = {
           ...this.snapshot,
           viewModel: {
             ...dsVm2,
             party: updatedParty,
             isReadyToProceed:
-              dsVm2.selectedDungeonId !== null &&
+              isDungeonValid &&
               selectedCount >= 2 &&
               selectedCount <= dsVm2.maxPartySize
           }
@@ -154,6 +160,14 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           this.snapshot = {
             ...this.snapshot,
             debugMessage: "Replay: confirm-dungeon-selection rejected — selection is not ready to proceed."
+          };
+          break;
+        }
+        const selectedDungeon = dsVm.dungeons.find((d) => d.id === dsVm.selectedDungeonId);
+        if (!selectedDungeon || !selectedDungeon.isAvailable) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: confirm-dungeon-selection rejected — selected dungeon is not available."
           };
           break;
         }

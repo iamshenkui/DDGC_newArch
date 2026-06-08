@@ -505,3 +505,75 @@ describe("dungeon-select to provisioning handoff", () => {
     expect(snapshot.debugMessage).toContain("rejected");
   });
 });
+
+describe("dungeon-select availability guard", () => {
+  it("replay select-dungeon with locked dungeon does not set ready", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-white-01" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-depths-01" });
+    const dsVm = snapshot.viewModel as DungeonSelectViewModel;
+    expect(dsVm.selectedDungeonId).toBeNull();
+    expect(dsVm.isReadyToProceed).toBe(false);
+  });
+
+  it("replay select-dungeon with unknown dungeon does not set ready", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-white-01" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-unknown-99" });
+    const dsVm = snapshot.viewModel as DungeonSelectViewModel;
+    expect(dsVm.selectedDungeonId).toBeNull();
+    expect(dsVm.isReadyToProceed).toBe(false);
+  });
+
+  it("replay confirm-dungeon-selection with locked dungeon is rejected", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-white-01" });
+    await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-depths-01" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
+    expect(snapshot.flowState).toBe("dungeon-select");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("live select-dungeon with unknown dungeon does not set ready", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-live-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-white-live-01" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-unknown-live" });
+    const dsVm = snapshot.viewModel as DungeonSelectViewModel;
+    expect(dsVm.selectedDungeonId).toBeNull();
+    expect(dsVm.isReadyToProceed).toBe(false);
+  });
+
+  it("live confirm-dungeon-selection with unknown dungeon is rejected", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-live-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-white-live-01" });
+    await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-unknown-live" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
+    expect(snapshot.flowState).toBe("dungeon-select");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+});

@@ -112,6 +112,18 @@ export function canTransition(
       if (screen !== "dungeon-select") {
         return { allowed: false, reason: "select-dungeon is only valid in dungeon-select" };
       }
+      if (snapshot.viewModel.kind !== "dungeon-select") {
+        return { allowed: false, reason: "viewModel is not a dungeon-select view model" };
+      }
+      {
+        const dungeon = snapshot.viewModel.dungeons.find((d) => d.id === intent.dungeonId);
+        if (!dungeon) {
+          return { allowed: false, reason: "unknown dungeon id" };
+        }
+        if (!dungeon.isAvailable) {
+          return { allowed: false, reason: "dungeon is not available" };
+        }
+      }
       return { allowed: true };
 
     case "toggle-dungeon-hero":
@@ -129,6 +141,15 @@ export function canTransition(
       }
       if (!snapshot.viewModel.isReadyToProceed) {
         return { allowed: false, reason: "dungeon selection is not ready to proceed" };
+      }
+      {
+        const selectedDungeon = snapshot.viewModel.dungeons.find((d) => d.id === snapshot.viewModel.selectedDungeonId);
+        if (!selectedDungeon) {
+          return { allowed: false, reason: "selected dungeon does not exist" };
+        }
+        if (!selectedDungeon.isAvailable) {
+          return { allowed: false, reason: "selected dungeon is not available" };
+        }
       }
       return { allowed: true };
 

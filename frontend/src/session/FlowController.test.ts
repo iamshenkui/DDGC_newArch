@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { resolveScreen, canTransition, type ScreenKey } from "./FlowController";
 import type {
   DdgcFrontendSnapshot,
+  DungeonSelectViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
 } from "../bridge/contractTypes";
@@ -432,6 +433,66 @@ describe("canTransition - result and return meta-loop continuation", () => {
       // Hero detail and building detail screens resolve correctly
       expect(resolveScreen(replayHeroDetailSnapshot)).toBe("hero-detail");
       expect(resolveScreen(replayBuildingDetailSnapshot)).toBe("building-detail");
+    });
+  });
+
+  describe("dungeon-select availability guard", () => {
+    it("allows select-dungeon with an available dungeon", () => {
+      const validation = canTransition(dungeonSelectSnapshot, { type: "select-dungeon", dungeonId: "dungeon-ruins-01" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects select-dungeon with a locked dungeon", () => {
+      const validation = canTransition(dungeonSelectSnapshot, { type: "select-dungeon", dungeonId: "dungeon-depths-01" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not available");
+    });
+
+    it("rejects select-dungeon with an unknown dungeon id", () => {
+      const validation = canTransition(dungeonSelectSnapshot, { type: "select-dungeon", dungeonId: "dungeon-unknown-99" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("unknown");
+    });
+
+    it("allows confirm-dungeon-selection when dungeon is available and ready", () => {
+      const readySnapshot: DdgcFrontendSnapshot = {
+        ...dungeonSelectSnapshot,
+        viewModel: {
+          ...dungeonSelectSnapshot.viewModel,
+          selectedDungeonId: "dungeon-ruins-01",
+          isReadyToProceed: true
+        } as DungeonSelectViewModel
+      };
+      const validation = canTransition(readySnapshot, { type: "confirm-dungeon-selection" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects confirm-dungeon-selection when selected dungeon is locked", () => {
+      const lockedSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonSelectSnapshot,
+        viewModel: {
+          ...dungeonSelectSnapshot.viewModel,
+          selectedDungeonId: "dungeon-depths-01",
+          isReadyToProceed: true
+        } as DungeonSelectViewModel
+      };
+      const validation = canTransition(lockedSnapshot, { type: "confirm-dungeon-selection" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not available");
+    });
+
+    it("rejects confirm-dungeon-selection when selected dungeon is unknown", () => {
+      const unknownSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonSelectSnapshot,
+        viewModel: {
+          ...dungeonSelectSnapshot.viewModel,
+          selectedDungeonId: "dungeon-unknown-99",
+          isReadyToProceed: true
+        } as DungeonSelectViewModel
+      };
+      const validation = canTransition(unknownSnapshot, { type: "confirm-dungeon-selection" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("does not exist");
     });
   });
 });
