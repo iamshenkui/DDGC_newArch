@@ -949,13 +949,22 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       }
-      case "confirm-provisioning":
+      case "confirm-provisioning": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: confirm-provisioning rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "dungeon-hint",
           viewModel: createLiveDungeonHintViewModel()
         };
         break;
+      }
       case "accept-dungeon-hint": {
         const validation = canTransition(this.snapshot, intent);
         if (!validation.allowed) {

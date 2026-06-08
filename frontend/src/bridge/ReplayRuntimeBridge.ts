@@ -331,13 +331,22 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       }
-      case "confirm-provisioning":
+      case "confirm-provisioning": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Replay: confirm-provisioning rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "dungeon-hint",
           viewModel: replayDungeonHintViewModel
         };
         break;
+      }
       case "accept-dungeon-hint": {
         const validation = canTransition(this.snapshot, intent);
         if (!validation.allowed) {

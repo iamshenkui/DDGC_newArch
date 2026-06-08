@@ -1602,6 +1602,68 @@ describe("dungeon-interaction flow", () => {
     expect(snapshot.debugMessage).toContain("rejected");
   });
 
+  it("replay rejects confirm-provisioning from town state", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-provisioning" });
+
+    expect(snapshot.flowState).toBe("town");
+    expect(snapshot.viewModel.kind).toBe("town");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("live rejects confirm-provisioning from town state", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-provisioning" });
+
+    expect(snapshot.flowState).toBe("town");
+    expect(snapshot.viewModel.kind).toBe("town");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("replay rejects confirm-provisioning when provisioning is not ready", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    const provSnapshot = bridge.currentSnapshot();
+    (bridge as unknown as { snapshot: typeof provSnapshot }).snapshot = {
+      ...provSnapshot,
+      viewModel: {
+        ...(provSnapshot.viewModel as ProvisioningViewModel),
+        isReadyToLaunch: false
+      }
+    };
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-provisioning" });
+
+    expect(snapshot.flowState).toBe("provisioning");
+    expect(snapshot.viewModel.kind).toBe("provisioning");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("live rejects confirm-provisioning when provisioning is not ready", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    const provSnapshot = bridge.currentSnapshot();
+    (bridge as unknown as { snapshot: typeof provSnapshot }).snapshot = {
+      ...provSnapshot,
+      viewModel: {
+        ...(provSnapshot.viewModel as ProvisioningViewModel),
+        isReadyToLaunch: false
+      }
+    };
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-provisioning" });
+
+    expect(snapshot.flowState).toBe("provisioning");
+    expect(snapshot.viewModel.kind).toBe("provisioning");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
   it("replay rejects retreat-dungeon outside dungeon-interaction", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();

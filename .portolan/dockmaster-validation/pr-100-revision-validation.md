@@ -91,3 +91,58 @@ npm run build
 ```
 - Exit status: 0
 - Result: Build succeeded (45 modules transformed)
+
+---
+
+## Third Revision (2026-06-08)
+
+### Task
+Address review feedback: guard `confirm-provisioning` in both runtime bridges with `canTransition`, add replay/live regression tests for invalid `confirm-provisioning` from town and from not-ready provisioning, and restore unrelated PR #101/#102 validation record deletions.
+
+### Changes Made
+- `frontend/src/bridge/LiveRuntimeBridge.ts`:
+  - Added `canTransition` guard for `confirm-provisioning` intent; rejects with debugMessage when not in `provisioning` screen or when `isReadyToLaunch=false`.
+- `frontend/src/bridge/ReplayRuntimeBridge.ts`:
+  - Added matching `canTransition` guard for `confirm-provisioning` intent.
+- `frontend/src/validation/runtimeBridge.test.ts`:
+  - Added 4 regression tests:
+    - replay rejects `confirm-provisioning` from town state
+    - live rejects `confirm-provisioning` from town state
+    - replay rejects `confirm-provisioning` when provisioning is not ready
+    - live rejects `confirm-provisioning` when provisioning is not ready
+- `.portolan/dockmaster-validation/`:
+  - Restored `pr-101-merge-resolution.md`, `pr-101-revision-validation.md`, and `pr-102-smoke-cap.md` that were accidentally deleted during the PR #100 merge conflict resolution.
+
+### Validation Commands
+
+#### TypeScript Type Check
+```
+npx tsc --noEmit
+```
+- Exit status: 0
+- Result: No errors
+
+#### Full Test Suite
+```
+npm run test
+```
+- Exit status: 0
+- Result: 11 test files passed, 467 tests passed
+  - src/validation/replayFixtures.test.ts (88 tests)
+  - src/validation/runtimeBridge.test.ts (95 tests)
+  - src/session/FlowController.test.ts (110 tests)
+  - src/screens/expedition/ResultReturnFlow.test.ts (43 tests)
+  - src/build-run/smoke.test.ts (22 tests)
+  - src/session/ProvisioningFlow.test.ts (30 tests)
+  - src/session/SessionStore.test.ts (17 tests)
+  - src/build-run/packageSmoke.test.ts (14 tests)
+  - src/screens/combat/CombatScreen.test.tsx (3 tests)
+  - src/session/SaveLoadService.test.ts (11 tests)
+  - src/town/buildingCatalog.test.ts (34 tests)
+
+#### Build
+```
+npm run build
+```
+- Exit status: 0
+- Result: Build succeeded (dist/assets/index--31vfp0o.css, dist/assets/index-BhazyuYh.js)
