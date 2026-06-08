@@ -375,6 +375,7 @@ test.describe("browser smoke: fidelity gates", () => {
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
 
     // ── Phase 5: Full meta-loop ─────────────────────────────
+    // Town → Dungeon Select → Provisioning → Expedition → Result → Return → Town
     // Town → Expedition Planning → Provisioning → Expedition → Dungeon Assist → Dungeon Map → Combat → Result → Return → Town
 
     // 5a. Return to town
@@ -382,6 +383,7 @@ test.describe("browser smoke: fidelity gates", () => {
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
 
+    // 5b. Town → Dungeon Select
     // 5b. Town → Expedition Planning (位面探索)
     await page.locator(".estate-embark-button").click();
     await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
@@ -389,48 +391,44 @@ test.describe("browser smoke: fidelity gates", () => {
 
     await expect(
       page.getByText("位面探索"),
-      "Expedition planning eyebrow (位面探索) must be visible"
+      "Dungeon select eyebrow must be visible"
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Plane Exploration" }),
-      "Expedition planning title must be visible"
+      page.getByText("副本选择人物"),
+      "Dungeon select title must be visible"
     ).toBeVisible();
     await expect(
-      page.locator('[data-plane-id="qinglong"]'),
-      "QingLong plane card must be visible"
+      page.locator(".dungeon-list-panel"),
+      "Dungeon list panel must be visible"
     ).toBeVisible();
     await expect(
-      page.locator('[data-plane-id="baihu"]'),
-      "BaiHu plane card must be visible"
-    ).toBeVisible();
-    await expect(
-      page.locator('.plane-card-name').filter({ hasText: "青龙" }),
-      "QingLong plane card name must be visible"
-    ).toBeVisible();
-    await expect(
-      page.locator('.plane-card-name').filter({ hasText: "白虎" }),
-      "BaiHu plane card name must be visible"
-    ).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Proceed to Provisioning" }),
-      "Proceed to Provisioning button must be visible"
+      page.locator(".dungeon-detail-panel"),
+      "Dungeon detail panel must be visible"
     ).toBeVisible();
     await expectFidelity(
       page.locator(".expedition-viewport"),
-      "Expedition planning screen"
+      "Dungeon select screen"
     );
-    await expectFullPageFidelity(page, "Expedition planning screen");
+    await expectFullPageFidelity(page, "Dungeon select screen");
 
-    // Landscape viewport check for expedition planning
+    // Landscape viewport check for dungeon select
     await expect(
       page.locator(".expedition-viewport"),
-      "Expedition planning screen must use .expedition-viewport landscape layout"
+      "Dungeon select screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5c. Expedition Planning → Provisioning
-    await page
-      .getByRole("button", { name: "Proceed to Provisioning" })
-      .click();
+    // Select a dungeon
+    await page.locator('[data-dungeon-id="dungeon-ruins-01"]').click();
+    await settle(page);
+
+    // Select heroes (need at least 2 to proceed)
+    await page.locator('.dungeon-select-roster-hero').first().click();
+    await settle(page);
+    await page.locator('.dungeon-select-roster-hero').first().click();
+    await settle(page);
+
+    // 5c. Dungeon Select → Provisioning
+    await page.getByRole("button", { name: "确认出征" }).click();
     await settle(page);
 
     await expect(
@@ -438,8 +436,8 @@ test.describe("browser smoke: fidelity gates", () => {
       "Provisioning eyebrow (campaign name) must be visible"
     ).toBeVisible();
     await expect(
-      page.getByText("战前补给"),
-      "Provisioning title (战前补给) must be visible"
+      page.getByRole("heading", { name: "Provision Expedition" }),
+      "Provisioning title (Provision Expedition) must be visible"
     ).toBeVisible();
     await expect(
       page.locator('[data-testid="provisioning-left-panel"]'),
@@ -743,6 +741,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Live building detail screen must use .app-frame landscape layout"
     ).toBeVisible();
 
+    // Full live flow: dungeon-select → provisioning → expedition → result → return
     // Full live flow: expedition-planning → provisioning → expedition → result → return
     await page.getByRole("button", { name: "Return to Town" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
@@ -754,16 +753,28 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page);
 
     await expect(
-      page.getByText("位面探索"),
-      "Live expedition planning eyebrow must be visible"
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Plane Exploration" }),
-      "Live expedition planning title must be visible"
+      page.getByText("副本选择人物"),
+      "Live dungeon select title must be visible"
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
+    // Select a dungeon and heroes (need at least 2 to proceed), then confirm
+    await page.locator('[data-dungeon-id="dungeon-ruins-live"]').click();
     await settle(page);
+    await page.locator('.dungeon-select-roster-hero').first().click();
+    await settle(page);
+    await page.locator('.dungeon-select-roster-hero').first().click();
+    await settle(page);
+    await page.getByRole("button", { name: "确认出征" }).click();
+    await settle(page);
+
+    await expect(
+      page.getByText("新档位面"),
+      "Live provisioning eyebrow (campaign name) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Provision Expedition" }),
+      "Live provisioning title (Provision Expedition) must be visible"
+    ).toBeVisible();
 
     await page.locator('[data-testid="footer-btn-launch"]').click();
     await settle(page);
@@ -886,7 +897,14 @@ test.describe("browser smoke: fidelity gates", () => {
     await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
     await settle(page);
 
-    await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
+    // Select a dungeon and heroes, then confirm to reach provisioning
+    await page.locator('[data-dungeon-id="dungeon-ruins-01"]').click();
+    await settle(page);
+    await page.locator('.dungeon-select-roster-hero').first().click();
+    await settle(page);
+    await page.locator('.dungeon-select-roster-hero').first().click();
+    await settle(page);
+    await page.getByRole("button", { name: "确认出征" }).click();
     await settle(page);
 
     await page.locator('[data-testid="footer-btn-launch"]').click();

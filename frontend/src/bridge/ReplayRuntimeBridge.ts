@@ -3,6 +3,7 @@ import {
   replayReadySnapshot,
   replayHeroDetailViewModel,
   replayBuildingDetailViewModel,
+  replayDungeonSelectViewModel,
   replayExpeditionPlanningViewModel,
   replayProvisioningViewModel,
   replayExpeditionViewModel,
@@ -19,6 +20,7 @@ import type {
   DdgcFrontendIntent,
   DdgcFrontendSnapshot,
   TownViewModel,
+  DungeonSelectViewModel,
   ExpeditionPlanningViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
@@ -29,6 +31,28 @@ import type {
   DungeonInteractionViewModel,
   CombatViewModel
 } from "./contractTypes";
+
+function deriveProvisioningFromDungeonSelect(dsVm: DungeonSelectViewModel): ProvisioningViewModel {
+  const selectedDungeon = dsVm.dungeons.find((d) => d.id === dsVm.selectedDungeonId);
+  const provisionParty = dsVm.party.map((hero) => ({
+    ...hero,
+    isSelected: hero.isSelected
+  }));
+  const selectedCount = provisionParty.filter((h) => h.isSelected).length;
+
+  return {
+    kind: "provisioning",
+    title: "Provision Expedition",
+    campaignName: dsVm.campaignName,
+    expeditionLabel: selectedDungeon?.name ?? "Unknown Expedition",
+    expeditionSummary: selectedDungeon?.description ?? "No description available.",
+    party: provisionParty,
+    maxPartySize: dsVm.maxPartySize,
+    isReadyToLaunch: selectedCount >= 2 && selectedCount <= dsVm.maxPartySize,
+    supplyLevel: selectedDungeon?.supplyLevel ?? "Basic",
+    provisionCost: selectedDungeon?.provisionCost ?? "0 Gold"
+  };
+}
 
 function advanceReplayCombatTurn(combatVm: CombatViewModel): CombatViewModel {
   const livingParty = combatVm.party.filter((hero) => hero.isAlive);
@@ -166,6 +190,13 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           debugMessage: `Replay: building action intent received for ${intent.actionId}.`
         };
         break;
+      case "start-dungeon-select":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-select",
+          viewModel: replayDungeonSelectViewModel as DungeonSelectViewModel
+        };
+        break;
       case "start-expedition-planning":
         this.snapshot = {
           ...this.snapshot,
@@ -173,6 +204,24 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           viewModel: replayExpeditionPlanningViewModel as ExpeditionPlanningViewModel
         };
         break;
+      case "select-dungeon": {
+        const dsVm = this.snapshot.viewModel as DungeonSelectViewModel;
+        const selectedDungeon = dsVm.dungeons.find((d) => d.id === intent.dungeonId);
+        const isDungeonValid = selectedDungeon !== undefined && selectedDungeon.isAvailable;
+        const selectedCount = dsVm.party.filter((h) => h.isSelected).length;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...dsVm,
+            selectedDungeonId: isDungeonValid ? intent.dungeonId : null,
+            isReadyToProceed:
+              isDungeonValid &&
+              selectedCount >= 2 &&
+              selectedCount <= dsVm.maxPartySize
+          }
+        };
+        break;
+      }
       case "select-plane": {
         const planningVm = this.snapshot.viewModel as ExpeditionPlanningViewModel;
         this.snapshot = {
@@ -180,6 +229,29 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           viewModel: {
             ...planningVm,
             selectedPlaneId: intent.planeId
+          }
+        };
+        break;
+      }
+      case "toggle-dungeon-hero": {
+        const dsVm2 = this.snapshot.viewModel as DungeonSelectViewModel;
+        const updatedParty = dsVm2.party.map((hero) =>
+          hero.id === intent.heroId
+            ? { ...hero, isSelected: !hero.isSelected }
+            : hero
+        );
+        const selectedCount = updatedParty.filter((h) => h.isSelected).length;
+        const selectedDungeon = dsVm2.dungeons.find((d) => d.id === dsVm2.selectedDungeonId);
+        const isDungeonValid = selectedDungeon !== undefined && selectedDungeon.isAvailable;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...dsVm2,
+            party: updatedParty,
+            isReadyToProceed:
+              isDungeonValid &&
+              selectedCount >= 2 &&
+              selectedCount <= dsVm2.maxPartySize
           }
         };
         break;
@@ -199,6 +271,30 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
             partySlots: updatedSlots,
             isReadyToProvision: filledCount >= 1 && filledCount <= planningVm.maxPartySize
           }
+        };
+        break;
+      }
+      case "confirm-dungeon-selection": {
+        const dsVm = this.snapshot.viewModel as DungeonSelectViewModel;
+        if (!dsVm.isReadyToProceed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: confirm-dungeon-selection rejected — selection is not ready to proceed."
+          };
+          break;
+        }
+        const selectedDungeon = dsVm.dungeons.find((d) => d.id === dsVm.selectedDungeonId);
+        if (!selectedDungeon || !selectedDungeon.isAvailable) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: confirm-dungeon-selection rejected — selected dungeon is not available."
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "provisioning",
+          viewModel: deriveProvisioningFromDungeonSelect(dsVm)
         };
         break;
       }

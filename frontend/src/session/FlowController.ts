@@ -11,7 +11,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "expedition-planning" | "provisioning" | "expedition" | "dungeon-assist" | "dungeon-map" | "combat" | "dungeon-interaction" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "expedition-planning" | "dungeon-select" | "provisioning" | "expedition" | "dungeon-assist" | "dungeon-map" | "combat" | "dungeon-interaction" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -36,6 +36,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "expedition-planning") {
     return "expedition-planning";
+  }
+
+  if (snapshot.viewModel.kind === "dungeon-select") {
+    return "dungeon-select";
   }
 
   if (snapshot.viewModel.kind === "provisioning") {
@@ -301,6 +305,58 @@ export function canTransition(
       }
       if (!snapshot.viewModel.isReadyToProvision) {
         return { allowed: false, reason: "not ready to provision" };
+      }
+      return { allowed: true };
+
+    case "start-dungeon-select":
+      if (screen !== "town") {
+        return { allowed: false, reason: "start-dungeon-select is only valid in town" };
+      }
+      return { allowed: true };
+
+    case "select-dungeon":
+      if (screen !== "dungeon-select") {
+        return { allowed: false, reason: "select-dungeon is only valid in dungeon-select" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-select") {
+        return { allowed: false, reason: "viewModel is not a dungeon-select view model" };
+      }
+      {
+        const dungeon = snapshot.viewModel.dungeons.find((d) => d.id === intent.dungeonId);
+        if (!dungeon) {
+          return { allowed: false, reason: "unknown dungeon id" };
+        }
+        if (!dungeon.isAvailable) {
+          return { allowed: false, reason: "dungeon is not available" };
+        }
+      }
+      return { allowed: true };
+
+    case "toggle-dungeon-hero":
+      if (screen !== "dungeon-select") {
+        return { allowed: false, reason: "toggle-dungeon-hero is only valid in dungeon-select" };
+      }
+      return { allowed: true };
+
+    case "confirm-dungeon-selection":
+      if (screen !== "dungeon-select") {
+        return { allowed: false, reason: "confirm-dungeon-selection is only valid in dungeon-select" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-select") {
+        return { allowed: false, reason: "viewModel is not a dungeon-select view model" };
+      }
+      {
+        const vm = snapshot.viewModel;
+        if (!vm.isReadyToProceed) {
+          return { allowed: false, reason: "dungeon selection is not ready to proceed" };
+        }
+        const selectedDungeon = vm.dungeons.find((d) => d.id === vm.selectedDungeonId);
+        if (!selectedDungeon) {
+          return { allowed: false, reason: "selected dungeon does not exist" };
+        }
+        if (!selectedDungeon.isAvailable) {
+          return { allowed: false, reason: "selected dungeon is not available" };
+        }
       }
       return { allowed: true };
 

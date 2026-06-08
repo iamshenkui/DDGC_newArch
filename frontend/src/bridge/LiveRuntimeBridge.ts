@@ -9,6 +9,7 @@ import type {
   TownBuildingSummary,
   HeroDetailViewModel,
   BuildingDetailViewModel,
+  DungeonSelectViewModel,
   ExpeditionPlanningViewModel,
   ProvisioningViewModel,
   ExpeditionSetupViewModel,
@@ -20,6 +21,28 @@ import type {
   CombatViewModel
 } from "./contractTypes";
 import { createTownBuildingSummary } from "../town/buildingCatalog";
+
+function deriveProvisioningFromDungeonSelect(dsVm: DungeonSelectViewModel): ProvisioningViewModel {
+  const selectedDungeon = dsVm.dungeons.find((d) => d.id === dsVm.selectedDungeonId);
+  const provisionParty = dsVm.party.map((hero) => ({
+    ...hero,
+    isSelected: hero.isSelected
+  }));
+  const selectedCount = provisionParty.filter((h) => h.isSelected).length;
+
+  return {
+    kind: "provisioning",
+    title: "Provision Expedition",
+    campaignName: dsVm.campaignName,
+    expeditionLabel: selectedDungeon?.name ?? "Unknown Expedition",
+    expeditionSummary: selectedDungeon?.description ?? "No description available.",
+    party: provisionParty,
+    maxPartySize: dsVm.maxPartySize,
+    isReadyToLaunch: selectedCount >= 2 && selectedCount <= dsVm.maxPartySize,
+    supplyLevel: selectedDungeon?.supplyLevel ?? "Basic",
+    provisionCost: selectedDungeon?.provisionCost ?? "0 Gold"
+  };
+}
 
 const createLiveTownViewModel = (): TownViewModel => ({
   kind: "town",
@@ -272,6 +295,45 @@ const createLiveBuildingDetailViewModel = (building: TownBuildingSummary): Build
     upgradeRequirement: config.upgradeRequirement
   };
 };
+
+const createLiveDungeonSelectViewModel = (): DungeonSelectViewModel => ({
+  kind: "dungeon-select",
+  title: "副本选择人物",
+  campaignName: "新档位面",
+  selectedDungeonId: null,
+  dungeons: [
+    {
+      id: "dungeon-ruins-live",
+      name: "废墟遗迹",
+      description: "古老的废墟中隐藏着危险的敌人和珍贵的宝藏。",
+      difficulty: "简单",
+      estimatedDuration: "短",
+      recommendedLevel: 1,
+      provisionCost: "100 Gold",
+      supplyLevel: "基础",
+      rewards: ["古金币", "初级装备"],
+      isAvailable: true
+    },
+    {
+      id: "dungeon-forest-live",
+      name: "迷雾森林",
+      description: "被浓雾笼罩的古老森林。",
+      difficulty: "普通",
+      estimatedDuration: "中等",
+      recommendedLevel: 2,
+      provisionCost: "150 Gold",
+      supplyLevel: "标准",
+      rewards: ["神秘宝石", "中级装备"],
+      isAvailable: true
+    }
+  ],
+  party: [
+    { id: "hero-hunter-live-01", name: "Yuan", classLabel: "Hunter", hp: "42 / 42", maxHp: "42", health: 42, maxHealth: 42, stress: "0", maxStress: "200", level: 1, xp: 0, isWounded: false, isAfflicted: false, isSelected: false },
+    { id: "hero-white-live-01", name: "Mei", classLabel: "White", hp: "41 / 41", maxHp: "41", health: 41, maxHealth: 41, stress: "0", maxStress: "200", level: 1, xp: 0, isWounded: false, isAfflicted: false, isSelected: false }
+  ],
+  maxPartySize: 4,
+  isReadyToProceed: false
+});
 
 const createLiveExpeditionPlanningViewModel = (): ExpeditionPlanningViewModel => ({
   kind: "expedition-planning",
@@ -716,6 +778,13 @@ export class LiveRuntimeBridge implements RuntimeBridge {
           debugMessage: `Live: building action intent received for ${intent.actionId}.`
         };
         break;
+      case "start-dungeon-select":
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-select",
+          viewModel: createLiveDungeonSelectViewModel()
+        };
+        break;
       case "start-expedition-planning":
         this.snapshot = {
           ...this.snapshot,
@@ -723,6 +792,24 @@ export class LiveRuntimeBridge implements RuntimeBridge {
           viewModel: createLiveExpeditionPlanningViewModel()
         };
         break;
+      case "select-dungeon": {
+        const dsVm = this.snapshot.viewModel as DungeonSelectViewModel;
+        const selectedDungeon = dsVm.dungeons.find((d) => d.id === intent.dungeonId);
+        const isDungeonValid = selectedDungeon !== undefined && selectedDungeon.isAvailable;
+        const selectedCount = dsVm.party.filter((h) => h.isSelected).length;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...dsVm,
+            selectedDungeonId: isDungeonValid ? intent.dungeonId : null,
+            isReadyToProceed:
+              isDungeonValid &&
+              selectedCount >= 2 &&
+              selectedCount <= dsVm.maxPartySize
+          }
+        };
+        break;
+      }
       case "select-plane": {
         const planningVm = this.snapshot.viewModel as ExpeditionPlanningViewModel;
         this.snapshot = {
@@ -730,6 +817,29 @@ export class LiveRuntimeBridge implements RuntimeBridge {
           viewModel: {
             ...planningVm,
             selectedPlaneId: intent.planeId
+          }
+        };
+        break;
+      }
+      case "toggle-dungeon-hero": {
+        const dsVm2 = this.snapshot.viewModel as DungeonSelectViewModel;
+        const updatedParty = dsVm2.party.map((hero) =>
+          hero.id === intent.heroId
+            ? { ...hero, isSelected: !hero.isSelected }
+            : hero
+        );
+        const selectedCount = updatedParty.filter((h) => h.isSelected).length;
+        const selectedDungeon = dsVm2.dungeons.find((d) => d.id === dsVm2.selectedDungeonId);
+        const isDungeonValid = selectedDungeon !== undefined && selectedDungeon.isAvailable;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...dsVm2,
+            party: updatedParty,
+            isReadyToProceed:
+              isDungeonValid &&
+              selectedCount >= 2 &&
+              selectedCount <= dsVm2.maxPartySize
           }
         };
         break;
@@ -749,6 +859,30 @@ export class LiveRuntimeBridge implements RuntimeBridge {
             partySlots: updatedSlots,
             isReadyToProvision: filledCount >= 1 && filledCount <= planningVm.maxPartySize
           }
+        };
+        break;
+      }
+      case "confirm-dungeon-selection": {
+        const dsVm = this.snapshot.viewModel as DungeonSelectViewModel;
+        if (!dsVm.isReadyToProceed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: confirm-dungeon-selection rejected — selection is not ready to proceed."
+          };
+          break;
+        }
+        const selectedDungeon = dsVm.dungeons.find((d) => d.id === dsVm.selectedDungeonId);
+        if (!selectedDungeon || !selectedDungeon.isAvailable) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: confirm-dungeon-selection rejected — selected dungeon is not available."
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "provisioning",
+          viewModel: deriveProvisioningFromDungeonSelect(dsVm)
         };
         break;
       }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, DungeonAssistViewModel, DungeonMapViewModel, CombatViewModel, ExpeditionResultViewModel, ReturnViewModel, DungeonInteractionViewModel, DdgcFrontendIntent, DdgcFrontendSnapshot } from "../bridge/contractTypes";
+import type { BuildingDetailViewModel, HeroDetailViewModel, ProvisioningViewModel, ExpeditionSetupViewModel, DungeonAssistViewModel, DungeonMapViewModel, CombatViewModel, ExpeditionResultViewModel, ReturnViewModel, DungeonInteractionViewModel, DungeonSelectViewModel, DdgcFrontendIntent, DdgcFrontendSnapshot } from "../bridge/contractTypes";
 import { LiveRuntimeBridge } from "../bridge/LiveRuntimeBridge";
 import { ReplayRuntimeBridge } from "../bridge/ReplayRuntimeBridge";
 
@@ -927,6 +927,190 @@ describe("result and return meta-loop continuation", () => {
   });
 });
 
+describe("dungeon-select to provisioning handoff", () => {
+  it("replay confirm-dungeon-selection preserves selected dungeon into provisioning", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-forest-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-white-01" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
+    expect(snapshot.flowState).toBe("provisioning");
+    expect(snapshot.viewModel.kind).toBe("provisioning");
+
+    const provVm = snapshot.viewModel as ProvisioningViewModel;
+    expect(provVm.expeditionLabel).toBe("迷雾森林");
+    expect(provVm.expeditionSummary).toBe("被浓雾笼罩的古老森林，里面栖息着诡异的生物。需要一定的准备才能深入。");
+    expect(provVm.supplyLevel).toBe("标准");
+    expect(provVm.provisionCost).toBe("150 Gold");
+    expect(provVm.campaignName).toBe("苍灯远征");
+  });
+
+  it("replay confirm-dungeon-selection preserves selected party into provisioning", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-ruins-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-white-01" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
+    const provVm = snapshot.viewModel as ProvisioningViewModel;
+
+    const hunter = provVm.party.find((h) => h.id === "hero-hunter-01");
+    const white = provVm.party.find((h) => h.id === "hero-white-01");
+    const black = provVm.party.find((h) => h.id === "hero-black-01");
+
+    expect(hunter?.isSelected).toBe(true);
+    expect(white?.isSelected).toBe(true);
+    expect(black?.isSelected).toBe(false);
+    expect(provVm.isReadyToLaunch).toBe(true);
+  });
+
+  it("replay confirm-dungeon-selection with single hero selection is rejected", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-ruins-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-black-01" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
+    expect(snapshot.flowState).toBe("dungeon-select");
+    expect(snapshot.viewModel.kind).toBe("dungeon-select");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("live confirm-dungeon-selection preserves selected dungeon into provisioning", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-forest-live" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-live-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-white-live-01" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
+    expect(snapshot.flowState).toBe("provisioning");
+    expect(snapshot.viewModel.kind).toBe("provisioning");
+
+    const provVm = snapshot.viewModel as ProvisioningViewModel;
+    expect(provVm.expeditionLabel).toBe("迷雾森林");
+    expect(provVm.expeditionSummary).toBe("被浓雾笼罩的古老森林。");
+    expect(provVm.supplyLevel).toBe("标准");
+    expect(provVm.provisionCost).toBe("150 Gold");
+    expect(provVm.campaignName).toBe("新档位面");
+  });
+
+  it("live confirm-dungeon-selection preserves selected party into provisioning", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-ruins-live" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-live-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-white-live-01" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
+    const provVm = snapshot.viewModel as ProvisioningViewModel;
+
+    const hunter = provVm.party.find((h) => h.id === "hero-hunter-live-01");
+    const white = provVm.party.find((h) => h.id === "hero-white-live-01");
+
+    expect(hunter?.isSelected).toBe(true);
+    expect(white?.isSelected).toBe(true);
+    expect(provVm.isReadyToLaunch).toBe(true);
+  });
+
+  it("live confirm-dungeon-selection is rejected when selection is not ready", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    // Intentionally do NOT select a dungeon or enough heroes
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
+
+    expect(snapshot.flowState).toBe("dungeon-select");
+    expect(snapshot.viewModel.kind).toBe("dungeon-select");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+});
+
+describe("dungeon-select availability guard", () => {
+  it("replay select-dungeon with locked dungeon does not set ready", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-white-01" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-depths-01" });
+    const dsVm = snapshot.viewModel as DungeonSelectViewModel;
+    expect(dsVm.selectedDungeonId).toBeNull();
+    expect(dsVm.isReadyToProceed).toBe(false);
+  });
+
+  it("replay select-dungeon with unknown dungeon does not set ready", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-white-01" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-unknown-99" });
+    const dsVm = snapshot.viewModel as DungeonSelectViewModel;
+    expect(dsVm.selectedDungeonId).toBeNull();
+    expect(dsVm.isReadyToProceed).toBe(false);
+  });
+
+  it("replay confirm-dungeon-selection with locked dungeon is rejected", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-white-01" });
+    await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-depths-01" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
+    expect(snapshot.flowState).toBe("dungeon-select");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("live select-dungeon with unknown dungeon does not set ready", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-live-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-white-live-01" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-unknown-live" });
+    const dsVm = snapshot.viewModel as DungeonSelectViewModel;
+    expect(dsVm.selectedDungeonId).toBeNull();
+    expect(dsVm.isReadyToProceed).toBe(false);
+  });
+
+  it("live confirm-dungeon-selection with unknown dungeon is rejected", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    await bridge.dispatchIntent({ type: "start-dungeon-select" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-hunter-live-01" });
+    await bridge.dispatchIntent({ type: "toggle-dungeon-hero", heroId: "hero-white-live-01" });
+    await bridge.dispatchIntent({ type: "select-dungeon", dungeonId: "dungeon-unknown-live" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "confirm-dungeon-selection" });
+    expect(snapshot.flowState).toBe("dungeon-select");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+});
 describe("dungeon-interaction flow", () => {
   it("replay complete-dungeon transitions to dungeon-interaction state", async () => {
     const bridge = new ReplayRuntimeBridge();

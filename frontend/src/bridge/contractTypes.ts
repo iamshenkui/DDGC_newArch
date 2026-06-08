@@ -5,6 +5,7 @@ export type FlowState =
   | "load"
   | "town"
   | "expedition-planning"
+  | "dungeon-select"
   | "provisioning"
   | "expedition"
   | "dungeon-assist"
@@ -197,6 +198,23 @@ export interface ExpeditionPlanningHeroSlot {
   level: number;
 }
 
+export interface DungeonSelectHeroSummary {
+  id: string;
+  name: string;
+  classLabel: string;
+  hp: string;
+  maxHp: string;
+  health: number;
+  maxHealth: number;
+  stress: string;
+  maxStress: string;
+  level: number;
+  xp: number;
+  isWounded: boolean;
+  isAfflicted: boolean;
+  isSelected: boolean;
+}
+
 export interface ExpeditionPlane {
   id: string;
   name: string;
@@ -211,6 +229,20 @@ export interface ExpeditionPlane {
   themeColor: string;
 }
 
+export interface DungeonOption {
+  id: string;
+  name: string;
+  description: string;
+  difficulty: string;
+  estimatedDuration: string;
+  recommendedLevel: number;
+  provisionCost: string;
+  supplyLevel: string;
+  rewards: ReadonlyArray<string>;
+  isAvailable: boolean;
+  lockReason?: string;
+}
+
 export interface ExpeditionPlanningViewModel {
   kind: "expedition-planning";
   title: string;
@@ -221,6 +253,17 @@ export interface ExpeditionPlanningViewModel {
   maxPartySize: number;
   isReadyToProvision: boolean;
   provisionCost: string;
+}
+
+export interface DungeonSelectViewModel {
+  kind: "dungeon-select";
+  title: string;
+  campaignName: string;
+  selectedDungeonId: string | null;
+  dungeons: ReadonlyArray<DungeonOption>;
+  party: ReadonlyArray<DungeonSelectHeroSummary>;
+  maxPartySize: number;
+  isReadyToProceed: boolean;
 }
 
 export interface ProvisioningViewModel {
@@ -484,6 +527,7 @@ export type DdgcViewModel =
   | HeroDetailViewModel
   | BuildingDetailViewModel
   | ExpeditionPlanningViewModel
+  | DungeonSelectViewModel
   | ProvisioningViewModel
   | ExpeditionSetupViewModel
   | DungeonAssistViewModel
@@ -511,6 +555,10 @@ export type DdgcFrontendIntent =
   | { type: "select-plane"; planeId: string }
   | { type: "toggle-planning-hero"; heroId: string }
   | { type: "proceed-to-provisioning" }
+  | { type: "start-dungeon-select" }
+  | { type: "select-dungeon"; dungeonId: string }
+  | { type: "toggle-dungeon-hero"; heroId: string }
+  | { type: "confirm-dungeon-selection" }
   | { type: "start-provisioning" }
   | { type: "toggle-hero-selection"; heroId: string }
   | { type: "confirm-provisioning" }
