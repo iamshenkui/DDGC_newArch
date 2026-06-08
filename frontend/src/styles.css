@@ -3311,6 +3311,630 @@ button {
   gap: 4px;
 }
 
+/* ── Provisioning Layout (战前补给) ─────────────────────────
+ * Two-panel layout matching reference image:
+ *   Left  → focused hero portrait + vitals + action buttons
+ *   Right → supply item grid + detail area + resource strip
+ *
+ * Reference: 位面探索-战前补给.png
+ */
+.provisioning-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  width: 100%;
+  max-width: 1080px;
+  align-items: start;
+}
+
+/* ── Left panel: focused hero ───────────────────────────── */
+.provisioning-left-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 24px 20px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    180deg,
+    rgba(14, 24, 20, 0.85) 0%,
+    rgba(10, 18, 14, 0.92) 100%
+  );
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(160, 204, 188, 0.06);
+  min-height: 380px;
+}
+
+.provisioning-no-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 20px;
+  color: var(--panel-muted);
+  text-align: center;
+}
+
+.provisioning-no-hero-icon {
+  opacity: 0.3;
+}
+
+.provisioning-no-hero-text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--panel-text);
+}
+
+.provisioning-no-hero-sub {
+  font-size: 0.72rem;
+  opacity: 0.6;
+}
+
+.provisioning-hero-focus {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.provisioning-hero-portrait {
+  width: 180px;
+  height: 220px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 25%, rgba(27, 50, 44, 0.5), transparent 70%),
+    radial-gradient(ellipse at center, rgba(6, 12, 10, 0.8), rgba(0, 0, 0, 0.95));
+  border: 2px solid rgba(160, 204, 188, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  position: relative;
+}
+
+.provisioning-hero-portrait::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 30%, rgba(198, 212, 106, 0.06), transparent 70%);
+  pointer-events: none;
+}
+
+.provisioning-hero-portrait--image {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: rgba(198, 212, 106, 0.3);
+}
+
+.provisioning-hero-portrait--fallback {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(198, 212, 106, 0.12), rgba(0, 0, 0, 0.55) 70%),
+    repeating-linear-gradient(
+      135deg,
+      rgba(160, 204, 188, 0.04) 0,
+      rgba(160, 204, 188, 0.04) 4px,
+      rgba(160, 204, 188, 0.08) 4px,
+      rgba(160, 204, 188, 0.08) 8px
+    );
+  border-color: rgba(160, 204, 188, 0.25);
+  border-style: dashed;
+}
+
+.provisioning-hero-portrait-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  display: block;
+}
+
+.provisioning-hero-portrait-letter {
+  font-family: var(--heading-font);
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+  opacity: 0.4;
+  text-shadow: 0 0 30px rgba(198, 212, 106, 0.2);
+}
+
+.provisioning-hero-name {
+  font-family: var(--heading-font);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--panel-text);
+  text-align: center;
+}
+
+.provisioning-hero-class {
+  font-size: 0.72rem;
+  color: var(--panel-muted);
+  padding: 2px 10px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.provisioning-hero-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.provisioning-hero-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.provisioning-hero-badge--wounded {
+  color: #e8a838;
+  background: rgba(232, 168, 56, 0.15);
+  border: 1px solid rgba(232, 168, 56, 0.25);
+}
+
+.provisioning-hero-badge--afflicted {
+  color: #ea7767;
+  background: rgba(234, 119, 103, 0.15);
+  border: 1px solid rgba(234, 119, 103, 0.25);
+}
+
+.provisioning-hero-badge--healthy {
+  color: #5bbd6e;
+  background: rgba(91, 189, 110, 0.12);
+  border: 1px solid rgba(91, 189, 110, 0.2);
+}
+
+.provisioning-hero-vitals {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.provisioning-vital-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+}
+
+.provisioning-vital-label {
+  font-size: 0.65rem;
+  color: var(--panel-muted);
+  width: 28px;
+  flex: 0 0 auto;
+  font-weight: 600;
+}
+
+.provisioning-vital-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.provisioning-vital-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.provisioning-vital-value {
+  font-size: 0.65rem;
+  color: var(--panel-text);
+  font-weight: 600;
+  width: 48px;
+  text-align: right;
+  flex: 0 0 auto;
+}
+
+.provisioning-hero-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.provisioning-btn {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-family: var(--heading-font);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+  border: 1px solid transparent;
+}
+
+.provisioning-btn--secondary {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(160, 204, 188, 0.14);
+  color: var(--panel-text);
+}
+
+.provisioning-btn--secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(160, 204, 188, 0.25);
+}
+
+.provisioning-btn--primary {
+  background: linear-gradient(135deg, var(--panel-accent), var(--panel-accent-strong));
+  color: #15200b;
+  border-color: rgba(198, 212, 106, 0.3);
+  box-shadow: 0 4px 16px rgba(159, 191, 59, 0.25);
+}
+
+.provisioning-btn--primary:hover:not(:disabled) {
+  box-shadow: 0 6px 24px rgba(159, 191, 59, 0.4);
+  transform: translateY(-1px);
+}
+
+.provisioning-btn--primary:disabled {
+  opacity: 0.4;
+  filter: grayscale(0.6);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ── Right panel: supply grid ───────────────────────────── */
+.provisioning-right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 24px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    180deg,
+    rgba(14, 24, 20, 0.75) 0%,
+    rgba(10, 18, 14, 0.85) 100%
+  );
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(160, 204, 188, 0.06);
+  min-height: 380px;
+}
+
+.provisioning-supply-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.provisioning-supply-title {
+  font-family: var(--heading-font);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+  letter-spacing: 0.1em;
+}
+
+.provisioning-supply-subtitle {
+  font-size: 0.7rem;
+  color: var(--panel-muted);
+  opacity: 0.8;
+}
+
+.provisioning-supply-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.provisioning-supply-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+
+.provisioning-supply-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(198, 212, 106, 0.25);
+  transform: translateY(-2px);
+}
+
+.provisioning-supply-item-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.provisioning-supply-item-name {
+  font-size: 0.65rem;
+  color: var(--panel-text);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.provisioning-supply-item-qty {
+  font-size: 0.6rem;
+  color: var(--panel-muted);
+  font-weight: 600;
+}
+
+/* ── Supply grid blocked state (explicit non-fake fallback) ── */
+.provisioning-supply-blocked {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px dashed rgba(160, 204, 188, 0.15);
+  color: var(--panel-muted);
+  text-align: center;
+}
+
+.provisioning-supply-blocked-icon {
+  font-size: 1.6rem;
+  opacity: 0.35;
+}
+
+.provisioning-supply-blocked-text {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--panel-muted);
+}
+
+.provisioning-supply-blocked-sub {
+  font-size: 0.65rem;
+  opacity: 0.55;
+  max-width: 28ch;
+}
+
+/* ── Detail area ────────────────────────────────────────── */
+.provisioning-detail-area {
+  flex: 1;
+  min-height: 100px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(160, 204, 188, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.provisioning-detail-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 20px;
+  color: var(--panel-muted);
+  text-align: center;
+}
+
+.provisioning-detail-placeholder-icon {
+  font-size: 1.4rem;
+  opacity: 0.4;
+}
+
+.provisioning-detail-placeholder-text {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.provisioning-detail-placeholder-sub {
+  font-size: 0.65rem;
+  opacity: 0.6;
+  max-width: 28ch;
+}
+
+/* ── Resource strip ─────────────────────────────────────── */
+.provisioning-resource-strip {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  background: rgba(6, 12, 10, 0.6);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+}
+
+.provisioning-resource-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.provisioning-resource-label {
+  font-size: 0.6rem;
+  color: var(--panel-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.provisioning-resource-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--panel-text);
+}
+
+.provisioning-resource-value--gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Party strip (selected heroes) ──────────────────────── */
+.provisioning-party-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  background: rgba(6, 12, 10, 0.5);
+  border: 1px solid rgba(160, 204, 188, 0.1);
+  width: 100%;
+  max-width: 1080px;
+}
+
+.provisioning-party-strip-label {
+  font-size: 0.65rem;
+  color: var(--panel-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.provisioning-party-strip-heroes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.provisioning-party-hero {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(160, 204, 188, 0.12);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.provisioning-party-hero:hover {
+  background: rgba(234, 119, 103, 0.1);
+  border-color: rgba(234, 119, 103, 0.3);
+}
+
+.provisioning-party-hero--focused {
+  border-color: rgba(198, 212, 106, 0.4);
+  background: rgba(198, 212, 106, 0.1);
+}
+
+.provisioning-party-hero-portrait {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, rgba(198, 212, 106, 0.15), rgba(0, 0, 0, 0.3));
+  border: 1px solid rgba(198, 212, 106, 0.2);
+  overflow: hidden;
+}
+
+.provisioning-party-hero-portrait--image {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: rgba(198, 212, 106, 0.3);
+}
+
+.provisioning-party-hero-portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  display: block;
+}
+
+.provisioning-party-hero-portrait-letter {
+  font-family: var(--heading-font);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--panel-accent);
+}
+
+.provisioning-party-hero-name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--panel-text);
+}
+
+.provisioning-party-hero-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(234, 119, 103, 0.15);
+  border: 1px solid rgba(234, 119, 103, 0.3);
+  color: #ea7767;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.1s ease;
+  margin-left: 2px;
+  flex: 0 0 auto;
+  padding: 0;
+}
+
+.provisioning-party-hero-remove:hover {
+  background: rgba(234, 119, 103, 0.3);
+  transform: scale(1.15);
+}
+
+/* ── Responsive: provisioning layout ────────────────────── */
+@media (max-width: 920px) {
+  .provisioning-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .provisioning-left-panel {
+    min-height: auto;
+  }
+
+  .provisioning-supply-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ── Responsive: collapse to portrait on narrow screens ─ */
+@media (max-width: 920px) {
+  .app-shell {
+    padding: 16px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .viewport-hud {
+    flex-wrap: wrap;
+    padding: 8px 12px;
+  }
+
+  .viewport-hud-right {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .viewport-title {
+    font-size: 1rem;
+  }
+}
+
 /* ── Dungeon Interaction Screen ───────────────────────────
  * Mirrors Assets/Prefabs/UI/DungeonInteractionWindow.prefab
  * Source hierarchy: UI_Dungeon/DungeonInteractionWindow

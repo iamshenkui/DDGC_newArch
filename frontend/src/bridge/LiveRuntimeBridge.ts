@@ -343,18 +343,27 @@ const createLiveExpeditionPlanningViewModel = (): ExpeditionPlanningViewModel =>
 
 const createLiveProvisioningViewModel = (): ProvisioningViewModel => ({
   kind: "provisioning",
-  title: "Provision Expedition",
-  campaignName: "Fresh Campaign",
-  expeditionLabel: "The Azure Lantern Expedition",
-  expeditionSummary: "Deploy your party into the dungeon. Manage supplies and party composition carefully.",
+  title: "战前补给",
+  campaignName: "新档位面",
+  expeditionLabel: "苍灯远征",
+  expeditionSummary: "做好出发前的准备，合理分配补给。",
   party: [
     { id: "hero-hunter-live-01", name: "Yuan", classLabel: "Hunter", hp: "42 / 42", maxHp: "42", health: 42, maxHealth: 42, stress: "0", maxStress: "200", level: 1, xp: 0, isWounded: false, isAfflicted: false, isSelected: true },
     { id: "hero-white-live-01", name: "Mei", classLabel: "White", hp: "41 / 41", maxHp: "41", health: 41, maxHealth: 41, stress: "0", maxStress: "200", level: 1, xp: 0, isWounded: false, isAfflicted: false, isSelected: true }
   ],
   maxPartySize: 4,
   isReadyToLaunch: true,
-  supplyLevel: "Adequate",
-  provisionCost: "100 Gold"
+  supplyLevel: "充足",
+  provisionCost: "100 金币",
+  supplies: [
+    { id: "supply-food", name: "干粮", icon: "🍞", qty: 8 },
+    { id: "supply-torch", name: "火把", icon: "🔥", qty: 6 },
+    { id: "supply-bandage", name: "绷带", icon: "🩹", qty: 4 },
+    { id: "supply-antidote", name: "解毒剂", icon: "🧪", qty: 2 },
+    { id: "supply-shovel", name: "铁锹", icon: "⛏", qty: 2 },
+    { id: "supply-key", name: "万能钥匙", icon: "🔑", qty: 1 },
+    { id: "supply-holy", name: "圣水", icon: "✨", qty: 2 }
+  ]
 });
 
 const createLiveExpeditionViewModel = (): ExpeditionSetupViewModel => ({

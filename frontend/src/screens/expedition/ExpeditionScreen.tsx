@@ -320,13 +320,14 @@ export const ExpeditionScreen: Component<ExpeditionScreenProps> = (props) => {
           </span>
         </div>
         <div class="expedition-controls-right">
-          <button class="action-secondary" onClick={props.onReturnToTown}>
+          <button class="action-secondary" onClick={props.onReturnToTown} data-testid="expedition-btn-return">
             Return to Town
           </button>
           <button
             class="action-primary launch-primary"
             onClick={props.onLaunchExpedition}
             disabled={!props.viewModel.isLaunchable}
+            data-testid="expedition-btn-launch"
           >
             {props.viewModel.isLaunchable
               ? "Launch Expedition"

@@ -548,10 +548,10 @@ export const replayExpeditionPlanningViewModel: ExpeditionPlanningViewModel = {
 
 export const replayProvisioningViewModel: ProvisioningViewModel = {
   kind: "provisioning",
-  title: "Provision Expedition",
-  campaignName: "The Azure Lantern",
-  expeditionLabel: "The Depths Await",
-  expeditionSummary: "Assemble your party and provision wisely. The expedition awaits those who dare enter.",
+  title: "战前补给",
+  campaignName: "苍灯远征",
+  expeditionLabel: "深渊探查",
+  expeditionSummary: "做好出发前的准备，合理分配补给。",
   party: [
     { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", health: 38, maxHealth: 42, stress: "17", maxStress: "200", level: 2, xp: 240, isWounded: true, isAfflicted: false, isSelected: true },
     { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", health: 41, maxHealth: 41, stress: "8", maxStress: "200", level: 2, xp: 180, isWounded: false, isAfflicted: false, isSelected: true },
@@ -559,8 +559,17 @@ export const replayProvisioningViewModel: ProvisioningViewModel = {
   ],
   maxPartySize: 4,
   isReadyToLaunch: true,
-  supplyLevel: "Adequate",
-  provisionCost: "150 Gold"
+  supplyLevel: "充足",
+  provisionCost: "150 金币",
+  supplies: [
+    { id: "supply-food", name: "干粮", icon: "🍞", qty: 8 },
+    { id: "supply-torch", name: "火把", icon: "🔥", qty: 6 },
+    { id: "supply-bandage", name: "绷带", icon: "🩹", qty: 4 },
+    { id: "supply-antidote", name: "解毒剂", icon: "🧪", qty: 2 },
+    { id: "supply-shovel", name: "铁锹", icon: "⛏", qty: 2 },
+    { id: "supply-key", name: "万能钥匙", icon: "🔑", qty: 1 },
+    { id: "supply-holy", name: "圣水", icon: "✨", qty: 2 }
+  ]
 };
 
 export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
