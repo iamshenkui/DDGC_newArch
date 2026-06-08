@@ -22,13 +22,33 @@ test("UIR-009: capture result and return screens", async ({ page }) => {
   await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
   await page.waitForTimeout(400);
 
-  // Launch expedition
-  await page.getByRole("button", { name: "Confirm & Launch Expedition" }).click();
+  await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
+  await page.waitForSelector('[data-testid="provisioning-screen"]', { timeout: 5_000 });
   await page.waitForTimeout(400);
 
-  // Launch to result
-  await page.getByRole("button", { name: "Launch Expedition" }).click();
-  await page.waitForTimeout(600);
+  // Launch expedition
+  await page.locator('[data-testid="footer-btn-launch"]').click();
+  await page.waitForTimeout(400);
+
+  // Launch to result (through dungeon-assist → dungeon-map → combat)
+  await page.locator('[data-testid="expedition-btn-launch"]').click();
+  await page.waitForSelector(".dungeon-assist-viewport", { timeout: 5_000 });
+  await page.waitForTimeout(400);
+
+  await page.getByTestId("assist-action-heal-wound").click();
+  await page.waitForTimeout(400);
+  await page.getByRole("button", { name: "Continue Expedition" }).click();
+  await page.waitForSelector(".dungeon-map-viewport", { timeout: 5_000 });
+  await page.waitForTimeout(400);
+
+  await page.locator('[data-room-id="room-combat-1"] .dungeon-room-btn').click();
+  await page.waitForSelector(".combat-viewport", { timeout: 5_000 });
+  await page.waitForTimeout(400);
+
+  await page.getByRole("button", { name: "Confirm Attack" }).click();
+  await page.waitForTimeout(400);
+  await page.getByRole("button", { name: "Acknowledge" }).click();
+  await page.waitForTimeout(400);
 
   // Capture result screen (success outcome)
   await page.locator(".expedition-viewport").screenshot({

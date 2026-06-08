@@ -1,6 +1,6 @@
-import { For, type Component } from "solid-js";
+import { For, Show, createSignal, type Component } from "solid-js";
 
-import type { ProvisioningViewModel } from "../../bridge/contractTypes";
+import type { ProvisioningViewModel, ProvisioningHeroSummary } from "../../bridge/contractTypes";
 import { resolveChromeAsset, resolveHeroPortrait } from "../../assets/originalAssetPaths";
 
 interface ProvisioningScreenProps {
@@ -45,34 +45,29 @@ function stressBarColor(stress: string): string {
 }
 
 /**
- * Provisioning screen — landscape game viewport with party/loadout layout.
+ * Provisioning screen — 战前补给 (pre-battle supply preparation).
  *
- * Mirrors the party inventory and preparation feel from original Unity prefabs:
- *   Assets/Prefabs/UI/PartyInventorySlot.prefab
- *   Assets/Prefabs/UI/PartyInventorySlotInDungeon.prefab
- *   Assets/Prefabs/UI/ProvisionShop.prefab (estimated)
+ * Mirrors the reference image layout:
+ *   Left panel  → focused hero portrait + vitals + action buttons
+ *   Right panel → supply item grid + detail area + resource strip
+ *
+ * Reference: reference/ref_image/跨际元契约/3位面探索/位面探索-战前补给.png
  *
  * Original asset wiring:
  *   gold       — extracted, served from /original/chrome/gold.png (UIR-005B).
- *                Wired via resolveChromeAsset("goldIcon") on the cost pill.
  *   portraits  — extracted hunter family served from /original/heroes/ (UIR-005B).
- *                Wired via resolveHeroPortrait on selected party slots and the
- *                roster strip; un-extracted families fall through to a
- *                CSS-letter avatar.
+ *                Wired via resolveHeroPortrait on focused hero and party strip.
  *   supply     — Assets/Resources/Sprites/inv_supply+rattle_drum.png
  *                GUID e401bf9b9275ede4aa2ff50d13cc6207.
- *                Not extracted (BLOCKER-001) — pill keeps the explicit blocker
- *                annotation and a CSS fallback swatch until the PNG is staged.
+ *                Not extracted (BLOCKER-001).
+ *   supply items — wired via ProvisioningViewModel.supplies (replay fixture data).
+ *                  When supplies are absent the grid renders an explicit blocked state.
  */
 export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) => {
+  const [focusedHeroId, setFocusedHeroId] = createSignal<string | null>(null);
+
   const selectedCount = () =>
     props.viewModel.party.filter((h) => h.isSelected).length;
-
-  const woundedCount = () =>
-    props.viewModel.party.filter((h) => h.isSelected && h.isWounded).length;
-
-  const afflictedCount = () =>
-    props.viewModel.party.filter((h) => h.isSelected && h.isAfflicted).length;
 
   const selectedHeroes = () =>
     props.viewModel.party.filter((h) => h.isSelected);
@@ -80,23 +75,24 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
   const unselectedHeroes = () =>
     props.viewModel.party.filter((h) => !h.isSelected);
 
-  // Build party formation: selected heroes + empty slots
-  const partyFormation = () => {
-    const slots = [...selectedHeroes()];
-    while (slots.length < props.viewModel.maxPartySize) {
-      slots.push(null as unknown as typeof props.viewModel.party[number]);
+  const focusedHero = (): ProvisioningHeroSummary | null => {
+    const selected = selectedHeroes();
+    if (selected.length === 0) return null;
+    const fid = focusedHeroId();
+    if (fid) {
+      const found = selected.find((h) => h.id === fid);
+      if (found) return found;
     }
-    return slots;
+    return selected[0];
   };
 
   const isFull = () => selectedCount() >= props.viewModel.maxPartySize;
 
   const partyStatusLabel = () => {
-    if (selectedCount() === 0) return "No heroes selected";
-    if (afflictedCount() > 0) return `${afflictedCount()} afflicted in party`;
-    if (woundedCount() > 0) return `${woundedCount()} wounded in party`;
-    if (isFull()) return "Party ready to embark";
-    return `${selectedCount()} of ${props.viewModel.maxPartySize} heroes selected`;
+    if (selectedCount() === 0) return "尚未选择英雄";
+    if (selectedCount() < props.viewModel.maxPartySize)
+      return `已选择 ${selectedCount()} / ${props.viewModel.maxPartySize} 名英雄`;
+    return "队伍已满，可以出发";
   };
 
   return (
@@ -104,15 +100,15 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
       class="expedition-viewport"
       data-source-scene="UI_Provision/ProvisionShop"
       data-source-prefab="Assets/Prefabs/UI/ProvisionShop.prefab"
+      data-testid="provisioning-screen"
     >
       {/* ── Top HUD ─────────────────────────────────────── */}
       <header class="expedition-hud">
         <span class="expedition-hud-left">
-          <span class="eyebrow">Provisioning</span>
+          <span class="eyebrow">{props.viewModel.campaignName}</span>
           <h1 class="expedition-title">{props.viewModel.title}</h1>
         </span>
         <span class="expedition-hud-center">
-          {/* Party count pill with party glyph */}
           <span class="hud-pill hud-pill--with-icon">
             <span class="hud-pill-icon" aria-hidden="true">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
@@ -122,13 +118,11 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
                 <path d="M22 19c0-2.4-1.8-4-4-4" />
               </svg>
             </span>
-            Party: {selectedCount()}/{props.viewModel.maxPartySize}
+            队伍: {selectedCount()}/{props.viewModel.maxPartySize}
           </span>
-          {/* Expedition label */}
           <span class="hud-pill hud-pill-accent">
             {props.viewModel.expeditionLabel}
           </span>
-          {/* Supply level pill with icon */}
           <span
             class="hud-pill supply-pill"
             data-source-component="ProvisionInventoryEntry"
@@ -138,9 +132,8 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
             data-blocker="BLOCKER-001: Original Unity supply sprite not in repository"
           >
             <span class="supply-icon-fallback" aria-hidden="true" />
-            Supply: {props.viewModel.supplyLevel}
+            补给: {props.viewModel.supplyLevel}
           </span>
-          {/* Provision cost pill with extracted gold sprite */}
           <span
             class="hud-pill gold-pill"
             data-source-component="ProvisionCostEntry"
@@ -153,174 +146,312 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
               alt=""
               aria-hidden="true"
             />
-            Cost: {props.viewModel.provisionCost}
+            费用: {props.viewModel.provisionCost}
           </span>
-        </span>
-        {/* Readiness summary — compact game HUD element */}
-        <span class="expedition-hud-right">
-          {selectedCount() > 0 && (
-            <span class="readiness-summary">
-              {woundedCount() > 0 && (
-                <span class="readiness-badge readiness-badge--wounded" title="Wounded">
-                  {woundedCount()}W
-                </span>
-              )}
-              {afflictedCount() > 0 && (
-                <span class="readiness-badge readiness-badge--afflicted" title="Afflicted">
-                  {afflictedCount()}A
-                </span>
-              )}
-              {woundedCount() === 0 && afflictedCount() === 0 && selectedCount() > 0 && (
-                <span class="readiness-badge readiness-badge--ready" title="All heroes fit">
-                  Ready
-                </span>
-              )}
-            </span>
-          )}
         </span>
       </header>
 
-      {/* ── Game Surface with party formation ──────────────── */}
+      {/* ── Game Surface ─────────────────────────────────── */}
       <div class="expedition-surface">
         <div class="expedition-surface-bg" />
         <div class="expedition-surface-mist" />
 
         <div class="expedition-content provisioning-content">
-          <div class="party-formation-banner">
-            <span class="party-formation-banner-frame">
-              <span class="party-formation-banner-rule" aria-hidden="true" />
-              <span class="party-formation-banner-title">Party Formation</span>
-              <span class="party-formation-banner-rule" aria-hidden="true" />
-            </span>
-            <span class="party-formation-banner-hint">
-              Tap a hero card to remove from the formation. Add heroes from the roster below.
-            </span>
-          </div>
-
-          {/* Party formation — main focal area */}
-          <div class="party-formation">
-            <For each={partyFormation()}>
-              {(hero, index) => {
-                if (hero === null) {
+          {/* Two-panel layout matching reference image */}
+          <div class="provisioning-layout">
+            {/* ── Left panel: focused hero ─────────────────── */}
+            <section class="provisioning-left-panel" data-testid="provisioning-left-panel">
+              <Show
+                when={focusedHero()}
+                fallback={
+                  <div class="provisioning-no-hero">
+                    <span class="provisioning-no-hero-icon" aria-hidden="true">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="9" cy="8" r="3.5" />
+                        <path d="M2 20c0-3.6 3.2-6 7-6s7 2.4 7 6" />
+                        <circle cx="17" cy="9" r="2.5" />
+                        <path d="M22 19c0-2.4-1.8-4-4-4" />
+                      </svg>
+                    </span>
+                    <span class="provisioning-no-hero-text">请先选择英雄</span>
+                    <span class="provisioning-no-hero-sub">点击下方可用英雄加入队伍</span>
+                  </div>
+                }
+              >
+                {(hero) => {
+                  const h = hero();
+                  const portraitUrl = resolveHeroPortrait({
+                    heroId: h.id,
+                    classLabel: h.classLabel
+                  });
+                  const hpInfo = parseHp(h.hp);
                   return (
-                    <div class="party-slot party-slot--empty" data-slot-index={index()}>
-                      <span class="party-slot-empty-marker" aria-hidden="true">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                          <line x1="12" y1="5" x2="12" y2="19" />
-                          <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
-                      </span>
-                      <span class="party-slot-empty-hint">Open Slot</span>
-                      <span class="party-slot-empty-sub">Choose a hero from the roster</span>
+                    <div class="provisioning-hero-focus">
+                      {/* Portrait */}
+                      <div
+                        class={`provisioning-hero-portrait${portraitUrl ? " provisioning-hero-portrait--image" : " provisioning-hero-portrait--fallback"}`}
+                        data-testid="focused-hero-portrait"
+                      >
+                        {portraitUrl ? (
+                          <img
+                            class="provisioning-hero-portrait-image"
+                            src={portraitUrl}
+                            alt={h.name}
+                            data-testid="focused-hero-portrait-img"
+                          />
+                        ) : (
+                          <span
+                            class="provisioning-hero-portrait-letter"
+                            data-blocker="BLOCKER-002: portrait sprite not extracted for this hero family"
+                            data-class-label={h.classLabel}
+                          >
+                            {h.classLabel[0]}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Name & class */}
+                      <div class="provisioning-hero-name" data-testid="focused-hero-name">
+                        {h.name}
+                      </div>
+                      <div class="provisioning-hero-class">
+                        {h.classLabel} · Lv{h.level}
+                      </div>
+
+                      {/* Status badges */}
+                      <div class="provisioning-hero-badges">
+                        <Show when={h.isWounded}>
+                          <span class="provisioning-hero-badge provisioning-hero-badge--wounded">受伤</span>
+                        </Show>
+                        <Show when={h.isAfflicted}>
+                          <span class="provisioning-hero-badge provisioning-hero-badge--afflicted">受折磨</span>
+                        </Show>
+                        <Show when={!h.isWounded && !h.isAfflicted}>
+                          <span class="provisioning-hero-badge provisioning-hero-badge--healthy">健康</span>
+                        </Show>
+                      </div>
+
+                      {/* Vitals bars */}
+                      <div class="provisioning-hero-vitals">
+                        <div class="provisioning-vital-row">
+                          <span class="provisioning-vital-label">生命</span>
+                          <span class="provisioning-vital-track">
+                            <span
+                              class="provisioning-vital-fill"
+                              style={{
+                                width: `${healthPercent(h.hp)}%`,
+                                background: healthBarColor(h.hp),
+                              }}
+                            />
+                          </span>
+                          <span class="provisioning-vital-value">
+                            {hpInfo.current}/{hpInfo.max}
+                          </span>
+                        </div>
+                        <div class="provisioning-vital-row">
+                          <span class="provisioning-vital-label">压力</span>
+                          <span class="provisioning-vital-track">
+                            <span
+                              class="provisioning-vital-fill"
+                              style={{
+                                width: `${stressPercent(h.stress, h.maxStress)}%`,
+                                background: stressBarColor(h.stress),
+                              }}
+                            />
+                          </span>
+                          <span class="provisioning-vital-value">
+                            {h.stress}/{h.maxStress}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div class="provisioning-hero-actions">
+                        <button
+                          class="provisioning-btn provisioning-btn--secondary"
+                          onClick={props.onReturnToTown}
+                          data-testid="btn-return-town"
+                        >
+                          返回城镇
+                        </button>
+                        <button
+                          class="provisioning-btn provisioning-btn--primary"
+                          onClick={props.onConfirmProvisioning}
+                          disabled={!props.viewModel.isReadyToLaunch}
+                          data-testid="btn-start-adventure"
+                        >
+                          {props.viewModel.isReadyToLaunch ? "开始冒险" : "准备中"}
+                        </button>
+                      </div>
                     </div>
                   );
-                }
+                }}
+              </Show>
+            </section>
 
-                const showStatus = hero.isWounded || hero.isAfflicted;
-                const portraitUrl = resolveHeroPortrait({
-                  heroId: hero.id,
-                  classLabel: hero.classLabel
-                });
+            {/* ── Right panel: supply grid ─────────────────── */}
+            <section class="provisioning-right-panel" data-testid="provisioning-right-panel">
+              {/* Supply grid title */}
+              <div class="provisioning-supply-header">
+                <span class="provisioning-supply-title">补给物资</span>
+                <span class="provisioning-supply-subtitle">{props.viewModel.expeditionSummary}</span>
+              </div>
 
-                return (
-                  <button
-                    class="party-slot party-slot--selected"
-                    onClick={() => props.onToggleHeroSelection(hero.id)}
-                    title={`Remove ${hero.name} from party`}
-                    data-source-prefab="Assets/Prefabs/UI/PartyInventorySlot.prefab"
-                  >
-                    {/* Status badge */}
-                    {showStatus && (
-                      <span
-                        class={`party-slot-status ${
-                          hero.isAfflicted
-                            ? "party-slot-status--afflicted"
-                            : "party-slot-status--wounded"
-                        }`}
-                      >
-                        {hero.isAfflicted ? "A" : "W"}
-                      </span>
-                    )}
-                    {/* Level badge */}
-                    <span class="party-slot-level">Lv{hero.level}</span>
-                    {/* Portrait — original PNG when extracted, CSS letter otherwise */}
+              {/* Supply item grid — wired from ProvisioningViewModel.supplies */}
+              <div
+                class="provisioning-supply-grid"
+                data-testid="supply-grid"
+              >
+                <Show
+                  when={props.viewModel.supplies && props.viewModel.supplies.length > 0}
+                  fallback={
                     <div
-                      class={`party-slot-portrait${portraitUrl ? " party-slot-portrait--image" : " party-slot-portrait--fallback"}`}
+                      class="provisioning-supply-blocked"
+                      data-blocker="BLOCKER-003: Supply item inventory not provided by runtime bridge"
+                      data-testid="supply-grid-blocked"
                     >
-                      {portraitUrl ? (
-                        <img
-                          class="party-slot-portrait-image"
-                          src={portraitUrl}
-                          alt=""
-                          aria-hidden="true"
-                        />
-                      ) : (
-                        <span
-                          class="party-slot-initial"
-                          data-blocker="BLOCKER-002: portrait sprite not extracted for this hero family"
-                          data-class-label={hero.classLabel}
-                        >
-                          {hero.classLabel[0]}
+                      <span class="provisioning-supply-blocked-icon" aria-hidden="true">📦</span>
+                      <span class="provisioning-supply-blocked-text">补给数据未连接</span>
+                      <span class="provisioning-supply-blocked-sub">等待运行时提供补给清单</span>
+                    </div>
+                  }
+                >
+                  <For each={props.viewModel.supplies}>
+                    {(item) => (
+                      <div class="provisioning-supply-item" data-testid={`supply-item-${item.id}`}>
+                        <span class="provisioning-supply-item-icon" aria-hidden="true">
+                          {item.icon}
                         </span>
-                      )}
-                    </div>
-                    {/* Name */}
-                    <span class="party-slot-name">{hero.name}</span>
-                    <span class="party-slot-class">{hero.classLabel}</span>
-                    {/* Bars */}
-                    <div class="party-slot-bars">
-                      <div class="party-slot-bar-row">
-                        <div class="party-slot-bar-label">HP</div>
-                        <div class="party-slot-bar-track">
-                          <div
-                            class="party-slot-bar-fill"
-                            style={{
-                              width: `${healthPercent(hero.hp)}%`,
-                              background: healthBarColor(hero.hp),
-                            }}
-                          />
-                        </div>
+                        <span class="provisioning-supply-item-name">{item.name}</span>
+                        <span class="provisioning-supply-item-qty">×{item.qty}</span>
                       </div>
-                      <div class="party-slot-bar-row">
-                        <div class="party-slot-bar-label">ST</div>
-                        <div class="party-slot-bar-track">
-                          <div
-                            class="party-slot-bar-fill"
-                            style={{
-                              width: `${stressPercent(hero.stress, hero.maxStress)}%`,
-                              background: stressBarColor(hero.stress),
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                );
-              }}
-            </For>
+                    )}
+                  </For>
+                </Show>
+              </div>
+
+              {/* Detail / equipment area */}
+              <div class="provisioning-detail-area" data-testid="provisioning-detail-area">
+                <div class="provisioning-detail-placeholder">
+                  <span class="provisioning-detail-placeholder-icon" aria-hidden="true">📋</span>
+                  <span class="provisioning-detail-placeholder-text">选择补给查看详情</span>
+                  <span class="provisioning-detail-placeholder-sub">
+                    补给品将在远征中自动分配给队伍
+                  </span>
+                </div>
+              </div>
+
+              {/* Resource strip */}
+              <div class="provisioning-resource-strip" data-testid="resource-strip">
+                <div class="provisioning-resource-item">
+                  <span class="provisioning-resource-label">队伍</span>
+                  <span class="provisioning-resource-value">{selectedCount()}/{props.viewModel.maxPartySize}</span>
+                </div>
+                <div class="provisioning-resource-item">
+                  <span class="provisioning-resource-label">补给等级</span>
+                  <span class="provisioning-resource-value">{props.viewModel.supplyLevel}</span>
+                </div>
+                <div class="provisioning-resource-item">
+                  <span class="provisioning-resource-label">费用</span>
+                  <span class="provisioning-resource-value provisioning-resource-value--gold">
+                    <img
+                      class="gold-icon-image"
+                      src={resolveChromeAsset("goldIcon")}
+                      alt=""
+                      aria-hidden="true"
+                    />
+                    {props.viewModel.provisionCost}
+                  </span>
+                </div>
+              </div>
+            </section>
           </div>
+
+          {/* ── Selected party strip ───────────────────────── */}
+          <Show when={selectedHeroes().length > 0}>
+            <div class="provisioning-party-strip" data-testid="party-strip">
+              <span class="provisioning-party-strip-label">当前队伍</span>
+              <div class="provisioning-party-strip-heroes">
+                <For each={selectedHeroes()}>
+                  {(hero) => {
+                    const portraitUrl = resolveHeroPortrait({
+                      heroId: hero.id,
+                      classLabel: hero.classLabel
+                    });
+                    return (
+                      <div
+                        class={`provisioning-party-hero${focusedHero()?.id === hero.id ? " provisioning-party-hero--focused" : ""}`}
+                        onClick={() => {
+                          setFocusedHeroId(hero.id);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setFocusedHeroId(hero.id);
+                          }
+                        }}
+                        title={`${hero.name} — 点击切换焦点`}
+                        data-testid={`party-hero-${hero.id}`}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`${hero.name} — 点击切换焦点`}
+                      >
+                        <div
+                          class={`provisioning-party-hero-portrait${portraitUrl ? " provisioning-party-hero-portrait--image" : ""}`}
+                        >
+                          {portraitUrl ? (
+                            <img
+                              class="provisioning-party-hero-portrait-img"
+                              src={portraitUrl}
+                              alt=""
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <span class="provisioning-party-hero-portrait-letter">
+                              {hero.classLabel[0]}
+                            </span>
+                          )}
+                        </div>
+                        <span class="provisioning-party-hero-name">{hero.name}</span>
+                        {/* Explicit remove control — separates focus from removal */}
+                        <button
+                          type="button"
+                          class="provisioning-party-hero-remove"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            props.onToggleHeroSelection(hero.id);
+                          }}
+                          title={`移除 ${hero.name}`}
+                          data-testid={`party-hero-remove-${hero.id}`}
+                          aria-label={`移除 ${hero.name}`}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  }}
+                </For>
+              </div>
+            </div>
+          </Show>
         </div>
       </div>
 
-      {/* ── Available heroes roster strip (like town roster) ── */}
-      {unselectedHeroes().length > 0 && (
+      {/* ── Available heroes roster strip ──────────────────── */}
+      <Show when={unselectedHeroes().length > 0}>
         <section
           class="provisioning-roster-strip"
           data-source-hierarchy="UI_Provision/RosterPanel"
         >
           <div class="provisioning-roster-header">
-            <span class="provisioning-roster-label">Available Heroes</span>
+            <span class="provisioning-roster-label">可用英雄</span>
             <span class="provisioning-roster-count">
-              {unselectedHeroes().length} on standby
+              {unselectedHeroes().length} 名待命中
             </span>
           </div>
           <div class="roster-scroll provisioning-roster-scroll">
             <For each={unselectedHeroes()}>
               {(hero) => {
-                const hpInfo = parseHp(hero.hp);
-                const stressNum = Number(hero.stress);
-                const stressMax = Number(hero.maxStress || 200);
-                const showStatus = hero.isWounded || hero.isAfflicted;
                 const portraitUrl = resolveHeroPortrait({
                   heroId: hero.id,
                   classLabel: hero.classLabel
@@ -329,10 +460,13 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
                 return (
                   <button
                     class="roster-hero provisioning-roster-hero"
-                    onClick={() => props.onToggleHeroSelection(hero.id)}
+                    onClick={() => {
+                      props.onToggleHeroSelection(hero.id);
+                      setFocusedHeroId(hero.id);
+                    }}
                     disabled={!hero.isSelected && isFull()}
-                    title={isFull() ? "Party is full" : `Add ${hero.name} to party`}
-                    data-source-prefab="Assets/Prefabs/UI/HeroSlot.prefab"
+                    title={isFull() ? "队伍已满" : `添加 ${hero.name}`}
+                    data-testid={`roster-hero-${hero.id}`}
                   >
                     <div class="roster-hero-portrait">
                       <div class="roster-portrait-frame" />
@@ -357,9 +491,9 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
                         )}
                       </div>
                       <span class="roster-portrait-level">Lv{hero.level}</span>
-                      {showStatus && (
+                      {(hero.isWounded || hero.isAfflicted) && (
                         <span class="roster-portrait-status">
-                          {hero.isAfflicted ? "A" : "W"}
+                          {hero.isAfflicted ? "A" : "伤"}
                         </span>
                       )}
                     </div>
@@ -369,7 +503,7 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
                     </div>
                     <div class="roster-hero-bars">
                       <div class="roster-bar-row">
-                        <span class="roster-bar-label">HP</span>
+                        <span class="roster-bar-label">生命</span>
                         <span class="roster-bar-track">
                           <span
                             class="roster-bar-fill"
@@ -381,7 +515,7 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
                         </span>
                       </div>
                       <div class="roster-bar-row">
-                        <span class="roster-bar-label">ST</span>
+                        <span class="roster-bar-label">压力</span>
                         <span class="roster-bar-track">
                           <span
                             class="roster-bar-fill"
@@ -393,57 +527,51 @@ export const ProvisioningScreen: Component<ProvisioningScreenProps> = (props) =>
                         </span>
                       </div>
                     </div>
-                    <div class="roster-hero-footer">
-                      <span>HP {hpInfo.current}/{hpInfo.max}</span>
-                      <span>ST {stressNum}/{stressMax}</span>
-                    </div>
                   </button>
                 );
               }}
             </For>
           </div>
         </section>
-      )}
+      </Show>
 
       {/* ── Bottom Controls ───────────────────────────────── */}
       <footer class="expedition-controls">
         <div class="expedition-controls-left">
           <span
             class={`expedition-status-pill ${
-              afflictedCount() > 0
-                ? "expedition-status-pill--afflicted"
-                : woundedCount() > 0
+              selectedCount() === 0
+                ? "expedition-status-pill--neutral"
+                : selectedCount() < props.viewModel.maxPartySize
                   ? "expedition-status-pill--wounded"
-                  : isFull()
-                    ? "expedition-status-pill--ready"
-                    : "expedition-status-pill--neutral"
+                  : "expedition-status-pill--ready"
             }`}
             data-state={
-              afflictedCount() > 0
-                ? "afflicted"
-                : woundedCount() > 0
-                  ? "wounded"
-                  : isFull()
-                    ? "ready"
-                    : "incomplete"
+              selectedCount() === 0
+                ? "incomplete"
+                : selectedCount() < props.viewModel.maxPartySize
+                  ? "partial"
+                  : "ready"
             }
+            data-testid="party-status-pill"
           >
             <span class="expedition-status-pill-dot" aria-hidden="true" />
             {partyStatusLabel()}
           </span>
         </div>
         <div class="expedition-controls-right">
-          <button class="action-secondary" onClick={props.onReturnToTown}>
-            Return to Town
+          <button class="action-secondary" onClick={props.onReturnToTown} data-testid="footer-btn-return">
+            返回城镇
           </button>
           <button
             class="action-primary launch-primary"
             onClick={props.onConfirmProvisioning}
             disabled={!props.viewModel.isReadyToLaunch}
+            data-testid="footer-btn-launch"
           >
             {props.viewModel.isReadyToLaunch
-              ? "Confirm & Launch Expedition"
-              : "Fill Party Ranks"}
+              ? "确认出发"
+              : "准备中"}
           </button>
         </div>
       </footer>

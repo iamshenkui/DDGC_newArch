@@ -18,19 +18,19 @@
     "baseUrl": ".",
     "paths": {
       "@contracts/app-shell": [
-        "../../WorldEngine/crates/contracts/typescript/packages/app-shell/src/index.ts"
+        "src/contracts/app-shell.ts"
       ],
       "@contracts/ui-substrate": [
-        "../../WorldEngine/crates/contracts/typescript/packages/ui-substrate/src/index.ts"
+        "src/contracts/ui-substrate.ts"
       ],
       "@contracts/pixi-renderer": [
-        "../../WorldEngine/crates/contracts/typescript/packages/pixi-renderer/src/index.ts"
+        "src/contracts/pixi-renderer.ts"
       ],
       "@contracts/spine-bridge": [
-        "../../WorldEngine/crates/contracts/typescript/packages/spine-bridge/src/index.ts"
+        "src/contracts/spine-bridge.ts"
       ],
       "@contracts/replay-inspector": [
-        "../../WorldEngine/crates/contracts/typescript/packages/replay-inspector/src/index.ts"
+        "src/contracts/replay-inspector.ts"
       ]
     }
   },

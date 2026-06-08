@@ -126,6 +126,48 @@ async function settle(page: Page, ms = 400): Promise<void> {
   await page.waitForTimeout(ms);
 }
 
+async function enterCombatRoomFromExpedition(page: Page, label: string): Promise<void> {
+  await page.getByRole("button", { name: "Launch Expedition" }).click();
+  await page.waitForSelector(".dungeon-assist-viewport", { timeout: 5_000 });
+  await settle(page);
+
+  await expect(
+    page.locator(".dungeon-assist-viewport"),
+    `${label} dungeon assist screen must be visible`
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "人物辅助" }),
+    `${label} dungeon assist actions must be visible`
+  ).toBeVisible();
+  await expectFidelity(
+    page.locator(".dungeon-assist-viewport"),
+    `${label} dungeon assist screen`
+  );
+
+  await page.getByTestId("assist-action-heal-wound").click();
+  await settle(page);
+  await page.getByRole("button", { name: "Continue Expedition" }).click();
+  await page.waitForSelector(".dungeon-map-viewport", { timeout: 5_000 });
+  await settle(page);
+
+  await expect(
+    page.locator(".dungeon-map-viewport"),
+    `${label} dungeon map screen must be visible`
+  ).toBeVisible();
+  await expect(
+    page.getByText("Dungeon Exploration"),
+    `${label} dungeon map title must be visible`
+  ).toBeVisible();
+  await expectFidelity(
+    page.locator(".dungeon-map-viewport"),
+    `${label} dungeon map screen`
+  );
+
+  await page.locator('[data-room-id="room-combat-1"] .dungeon-room-btn').click();
+  await page.waitForSelector(".combat-viewport", { timeout: 5_000 });
+  await settle(page);
+}
+
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
 test.describe("browser smoke: fidelity gates", () => {
@@ -334,6 +376,7 @@ test.describe("browser smoke: fidelity gates", () => {
 
     // ── Phase 5: Full meta-loop ─────────────────────────────
     // Town → Dungeon Select → Provisioning → Expedition → Result → Return → Town
+    // Town → Expedition Planning → Provisioning → Expedition → Dungeon Assist → Dungeon Map → Combat → Result → Return → Town
 
     // 5a. Return to town
     await page.getByRole("button", { name: "Return to Town" }).click();
@@ -341,6 +384,7 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page);
 
     // 5b. Town → Dungeon Select
+    // 5b. Town → Expedition Planning (位面探索)
     await page.locator(".estate-embark-button").click();
     await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
     await settle(page);
@@ -390,10 +434,77 @@ test.describe("browser smoke: fidelity gates", () => {
     await expect(
       page.getByText("Provisioning"),
       "Provisioning eyebrow must be visible"
+      "Expedition planning eyebrow (位面探索) must be visible"
     ).toBeVisible();
     await expect(
-      page.getByText("Provision Expedition"),
-      "Provisioning title must be visible"
+      page.getByRole("heading", { name: "Plane Exploration" }),
+      "Expedition planning title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-plane-id="qinglong"]'),
+      "QingLong plane card must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-plane-id="baihu"]'),
+      "BaiHu plane card must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.plane-card-name').filter({ hasText: "青龙" }),
+      "QingLong plane card name must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('.plane-card-name').filter({ hasText: "白虎" }),
+      "BaiHu plane card name must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Proceed to Provisioning" }),
+      "Proceed to Provisioning button must be visible"
+    ).toBeVisible();
+    await expectFidelity(
+      page.locator(".expedition-viewport"),
+      "Expedition planning screen"
+    );
+    await expectFullPageFidelity(page, "Expedition planning screen");
+
+    // Landscape viewport check for expedition planning
+    await expect(
+      page.locator(".expedition-viewport"),
+      "Expedition planning screen must use .expedition-viewport landscape layout"
+    ).toBeVisible();
+
+    // 5c. Expedition Planning → Provisioning
+    await page
+      .getByRole("button", { name: "Proceed to Provisioning" })
+      .click();
+    await settle(page);
+
+    await expect(
+      page.getByText("苍灯远征"),
+      "Provisioning eyebrow (campaign name) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("战前补给"),
+      "Provisioning title (战前补给) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-testid="provisioning-left-panel"]'),
+      "Provisioning left panel (hero focus) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-testid="provisioning-right-panel"]'),
+      "Provisioning right panel (supply grid) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-testid="supply-grid"]'),
+      "Supply grid must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-testid="btn-return-town"]'),
+      "Return to Town button (返回城镇) must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-testid="btn-start-adventure"]'),
+      "Start Adventure button (开始冒险) must be visible"
     ).toBeVisible();
     await expectFidelity(
       page.locator(".expedition-viewport"),
@@ -411,6 +522,7 @@ test.describe("browser smoke: fidelity gates", () => {
     await page
       .getByRole("button", { name: "Confirm & Launch Expedition" })
       .click();
+    await page.locator('[data-testid="footer-btn-launch"]').click();
     await settle(page);
 
     await expect(
@@ -441,8 +553,50 @@ test.describe("browser smoke: fidelity gates", () => {
       "Expedition launch screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5d. Expedition → Result (success)
-    await page.getByRole("button", { name: "Launch Expedition" }).click();
+    // 5d. Expedition -> Dungeon Assist -> Dungeon Map -> Combat
+    await enterCombatRoomFromExpedition(page, "Replay");
+
+    await expect(
+      page.locator(".combat-viewport"),
+      "Combat screen must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "副本场景-人物攻击" }),
+      "Combat screen title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".combat-enemy-stand"),
+      "Combat enemies must be visible"
+    ).toHaveCount(2);
+    await expect(
+      page.locator(".combat-skill-slot"),
+      "Combat skill slots must be visible"
+    ).toHaveCount(5);
+    await expect(
+      page.getByRole("button", { name: "Confirm Attack" }),
+      "Confirm Attack button must be visible"
+    ).toBeVisible();
+    await expectFidelity(
+      page.locator(".combat-viewport"),
+      "Combat screen"
+    );
+    await expectFullPageFidelity(page, "Combat screen");
+
+    // Landscape viewport check for combat screen
+    await expect(
+      page.locator(".combat-viewport"),
+      "Combat screen must use .combat-viewport landscape layout"
+    ).toBeVisible();
+
+    // 5e. Combat -> Character Hit -> Result
+    await page.getByRole("button", { name: "Confirm Attack" }).click();
+    await settle(page);
+
+    await expect(
+      page.getByRole("button", { name: "Acknowledge" }),
+      "Acknowledge button must be visible after confirm attack"
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Acknowledge" }).click();
     await settle(page);
 
     await expect(
@@ -454,7 +608,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Result screen heading must be visible"
     ).toBeVisible();
     await expect(
-      page.getByText("Victory"),
+      page.locator(".outcome-banner-title").filter({ hasText: "Victory" }),
       "Victory outcome must be visible"
     ).toBeVisible();
     await expect(
@@ -473,7 +627,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Result screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5e. Result → Return
+    // 5h. Result -> Return
     await page.getByRole("button", { name: "Proceed to Return" }).click();
     await settle(page);
 
@@ -501,7 +655,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Return screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5f. Return → Town (back to the meta-loop)
+    // 5i. Return -> Town (back to the meta-loop)
     await page.getByRole("button", { name: "Resume Town Activities" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
@@ -638,11 +792,12 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toBeVisible();
 
     // Full live flow: dungeon-select → provisioning → expedition → result → return
+    // Full live flow: expedition-planning → provisioning → expedition → result → return
     await page.getByRole("button", { name: "Return to Town" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
 
-    // Launch expedition from live (button text may differ)
+    // Launch expedition from live
     await page.locator(".estate-embark-button").click();
     await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
     await settle(page);
@@ -663,6 +818,18 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page);
 
     await page.getByRole("button", { name: "Confirm & Launch Expedition" }).click();
+      page.getByText("位面探索"),
+      "Live expedition planning eyebrow must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Plane Exploration" }),
+      "Live expedition planning title must be visible"
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
+    await settle(page);
+
+    await page.locator('[data-testid="footer-btn-launch"]').click();
     await settle(page);
 
     await expect(
@@ -670,7 +837,30 @@ test.describe("browser smoke: fidelity gates", () => {
       "Live expedition launch title must be visible"
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Launch Expedition" }).click();
+    await enterCombatRoomFromExpedition(page, "Live");
+
+    await expect(
+      page.locator(".combat-viewport"),
+      "Live combat screen must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "副本场景-人物攻击" }),
+      "Live combat title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".combat-enemy-stand"),
+      "Live combat enemies must render"
+    ).toHaveCount(2);
+
+    // Confirm attack from live combat to character hit to result
+    await page.getByRole("button", { name: "Confirm Attack" }).click();
+    await settle(page);
+
+    await expect(
+      page.getByRole("button", { name: "Acknowledge" }),
+      "Live acknowledge button must be visible after confirm attack"
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Acknowledge" }).click();
     await settle(page);
 
     await expect(
@@ -743,5 +933,88 @@ test.describe("browser smoke: fidelity gates", () => {
     await expectFullPageFidelity(page, "Town after live meta-loop");
 
     expectNoErrors(pageErrors, consoleErrors, "Live boot flow");
+  });
+
+  test("combat attack flow reaches success result", async ({ page }) => {
+    const { consoleErrors, pageErrors } = setupErrorCollectors(page);
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState("networkidle");
+
+    // Boot replay and go through provisioning -> expedition -> combat
+    await page.getByRole("button", { name: "Boot Replay" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 8_000 });
+    await settle(page);
+
+    await page.locator(".estate-embark-button").click();
+    await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
+    await settle(page);
+
+    await page.locator('[data-testid="footer-btn-launch"]').click();
+    await settle(page);
+
+    await enterCombatRoomFromExpedition(page, "Replay combat flow");
+
+    await expect(
+      page.locator(".combat-viewport"),
+      "Combat screen must be visible after launch"
+    ).toBeVisible();
+    await expect(
+      page.locator(".combat-target-cell--selected"),
+      "Combat should have a selected target"
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "Confirm Attack" }).click();
+    await settle(page);
+
+    await expect(
+      page.getByRole("button", { name: "Acknowledge" }),
+      "Acknowledge button must be visible after confirm attack"
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Acknowledge" }).click();
+    await settle(page);
+
+    // Verify success result
+    await expect(
+      page.locator(".eyebrow").filter({ hasText: "Expedition Complete" }),
+      "Result screen eyebrow must be visible after completing dungeon"
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Expedition Complete" }),
+      "Result screen heading must show success after combat"
+    ).toBeVisible();
+    await expect(
+      page.locator(".outcome-banner-title").filter({ hasText: "Victory" }),
+      "Victory outcome must be visible after combat"
+    ).toBeVisible();
+
+    await expectFidelity(
+      page.locator(".expedition-viewport"),
+      "Success result screen"
+    );
+    await expectFullPageFidelity(page, "Success result screen");
+
+    // Continue to return and then town
+    await page.getByRole("button", { name: "Proceed to Return" }).click();
+    await settle(page);
+
+    await expect(
+      page.locator(".eyebrow").filter({ hasText: "Expedition Concluded" }),
+      "Return screen eyebrow must be visible"
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "Resume Town Activities" }).click();
+    await page.waitForSelector(".town-viewport", { timeout: 5_000 });
+    await settle(page);
+
+    await expect(
+      page.getByText("城镇中枢"),
+      "Must be back at town after combat result"
+    ).toBeVisible();
+
+    expectNoErrors(pageErrors, consoleErrors, "Combat attack flow");
   });
 });
