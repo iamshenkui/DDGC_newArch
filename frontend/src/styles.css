@@ -3331,6 +3331,9 @@ button {
     180deg,
     rgba(8, 16, 12, 0.8) 0%,
     rgba(6, 12, 10, 0.75) 100%
+  );
+}
+
 /* ── Provisioning Layout (战前补给) ─────────────────────────
  * Two-panel layout matching reference image:
  *   Left  → focused hero portrait + vitals + action buttons
@@ -3359,15 +3362,12 @@ button {
     180deg,
     rgba(14, 24, 20, 0.85) 0%,
     rgba(10, 18, 14, 0.92) 100%
-
   );
   border: 1px solid rgba(160, 204, 188, 0.12);
   box-shadow:
     0 8px 28px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(160, 204, 188, 0.05);
-  max-width: 760px;
-  width: 100%;
-  text-align: center;
+    inset 0 1px 0 rgba(160, 204, 188, 0.06);
+  min-height: 380px;
 }
 
 .dungeon-hint-banner-ornament {
@@ -3489,8 +3489,15 @@ button {
 .dungeon-hint-reward-marker {
   width: 18px;
   height: 18px;
-    inset 0 1px 0 rgba(160, 204, 188, 0.06);
-  min-height: 380px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  background: rgba(91, 189, 110, 0.14);
+  border: 1px solid rgba(91, 189, 110, 0.3);
+  color: #5bbd6e;
+  margin-top: 1px;
 }
 
 .provisioning-no-hero {
@@ -3981,24 +3988,17 @@ button {
 .provisioning-party-hero-portrait {
   width: 24px;
   height: 24px;
-
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 auto;
-  background: rgba(198, 212, 106, 0.14);
-  border: 1px solid rgba(198, 212, 106, 0.3);
-  color: var(--panel-accent);
+  background: radial-gradient(circle, rgba(198, 212, 106, 0.15), rgba(0, 0, 0, 0.3));
+  border: 1px solid rgba(198, 212, 106, 0.2);
+  overflow: hidden;
 }
 
 .dungeon-hint-reward-text {
   color: var(--panel-text);
-}
-
-  background: radial-gradient(circle, rgba(198, 212, 106, 0.15), rgba(0, 0, 0, 0.3));
-  border: 1px solid rgba(198, 212, 106, 0.2);
-  overflow: hidden;
 }
 
 .provisioning-party-hero-portrait--image {
@@ -4095,7 +4095,6 @@ button {
   .dungeon-hint-panels {
     grid-template-columns: 1fr;
   }
-}
 }
 
 /* ── Dungeon Select Screen ────────────────────────────────

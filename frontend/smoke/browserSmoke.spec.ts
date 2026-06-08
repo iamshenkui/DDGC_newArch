@@ -960,6 +960,9 @@ test.describe("browser smoke: fidelity gates", () => {
     await page.locator('[data-testid="footer-btn-launch"]').click();
     await settle(page);
 
+    await page.getByRole("button", { name: "Enter Dungeon" }).click();
+    await settle(page);
+
     await enterCombatRoomFromExpedition(page, "Replay combat flow");
 
     await expect(
