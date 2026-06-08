@@ -1514,6 +1514,94 @@ describe("dungeon-interaction flow", () => {
     expect(snapshot.debugMessage).toContain("not available");
   });
 
+  it("replay rejects accept-dungeon-hint from town state", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
+
+    expect(snapshot.flowState).toBe("town");
+    expect(snapshot.viewModel.kind).toBe("town");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("live rejects accept-dungeon-hint from town state", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
+
+    expect(snapshot.flowState).toBe("town");
+    expect(snapshot.viewModel.kind).toBe("town");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("replay rejects accept-dungeon-hint from provisioning state", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
+
+    expect(snapshot.flowState).toBe("provisioning");
+    expect(snapshot.viewModel.kind).toBe("provisioning");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("live rejects accept-dungeon-hint from provisioning state", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
+
+    expect(snapshot.flowState).toBe("provisioning");
+    expect(snapshot.viewModel.kind).toBe("provisioning");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("replay rejects accept-dungeon-hint when dungeon hint is not enterable", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    const hintSnapshot = bridge.currentSnapshot();
+    (bridge as unknown as { snapshot: typeof hintSnapshot }).snapshot = {
+      ...hintSnapshot,
+      viewModel: {
+        ...(hintSnapshot.viewModel as import("../bridge/contractTypes").DungeonHintViewModel),
+        isEnterable: false
+      }
+    };
+
+    const snapshot = await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
+
+    expect(snapshot.flowState).toBe("dungeon-hint");
+    expect(snapshot.viewModel.kind).toBe("dungeon-hint");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("live rejects accept-dungeon-hint when dungeon hint is not enterable", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    const hintSnapshot = bridge.currentSnapshot();
+    (bridge as unknown as { snapshot: typeof hintSnapshot }).snapshot = {
+      ...hintSnapshot,
+      viewModel: {
+        ...(hintSnapshot.viewModel as import("../bridge/contractTypes").DungeonHintViewModel),
+        isEnterable: false
+      }
+    };
+
+    const snapshot = await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
+
+    expect(snapshot.flowState).toBe("dungeon-hint");
+    expect(snapshot.viewModel.kind).toBe("dungeon-hint");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
   it("replay rejects retreat-dungeon outside dungeon-interaction", async () => {
     const bridge = new ReplayRuntimeBridge();
     await bridge.boot();

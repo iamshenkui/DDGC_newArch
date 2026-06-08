@@ -338,13 +338,22 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           viewModel: replayDungeonHintViewModel
         };
         break;
-      case "accept-dungeon-hint":
+      case "accept-dungeon-hint": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Replay: accept-dungeon-hint rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "expedition",
           viewModel: replayExpeditionViewModel as ExpeditionSetupViewModel
         };
         break;
+      }
       case "launch-expedition":
         if (!canTransition(this.snapshot, intent).allowed) {
           this.snapshot = {
