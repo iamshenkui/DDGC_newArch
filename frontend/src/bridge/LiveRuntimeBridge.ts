@@ -428,6 +428,37 @@ const createLiveProvisioningViewModel = (): ProvisioningViewModel => ({
   ]
 });
 
+const createLiveDungeonHintViewModel = (): import("./contractTypes").DungeonHintViewModel => ({
+  kind: "dungeon-hint",
+  title: "副本提示",
+  expeditionName: "The Azure Lantern Expedition",
+  dungeonDescription: "An ancient dungeon filled with corrupted spirits and forgotten treasures. Only the prepared will survive its depths.",
+  recommendedLevel: "Level 1+",
+  partySize: 2,
+  difficulty: "Challenging",
+  estimatedDuration: "Medium",
+  tips: [
+    "Bring torches to reduce stress accumulation",
+    "Healing supplies are essential for longer expeditions"
+  ],
+  warnings: [
+    "High stress environment detected",
+    "Enemy ambushes possible in corridors"
+  ],
+  expectedEnemies: [
+    "Bone Soldier",
+    "Shadow Wisp"
+  ],
+  rewardPreview: [
+    "Gold Coins",
+    "Equipment Upgrades",
+    "Experience"
+  ],
+  supplyLevel: "Adequate",
+  provisionCost: "100 Gold",
+  isEnterable: true
+});
+
 const createLiveExpeditionViewModel = (): ExpeditionSetupViewModel => ({
   kind: "expedition",
   title: "Expedition Launch",
@@ -918,13 +949,38 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       }
-      case "confirm-provisioning":
+      case "confirm-provisioning": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: confirm-provisioning rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-hint",
+          viewModel: createLiveDungeonHintViewModel()
+        };
+        break;
+      }
+      case "accept-dungeon-hint": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: accept-dungeon-hint rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "expedition",
           viewModel: createLiveExpeditionViewModel()
         };
         break;
+      }
       case "launch-expedition":
         if (!canTransition(this.snapshot, intent).allowed) {
           this.snapshot = {

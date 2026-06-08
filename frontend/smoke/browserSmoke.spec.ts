@@ -375,8 +375,7 @@ test.describe("browser smoke: fidelity gates", () => {
     expectNoErrors(pageErrors, consoleErrors, "Phase 4 (building detail)");
 
     // ── Phase 5: Full meta-loop ─────────────────────────────
-    // Town → Dungeon Select → Provisioning → Expedition → Result → Return → Town
-    // Town → Expedition Planning → Provisioning → Expedition → Dungeon Assist → Dungeon Map → Combat → Result → Return → Town
+    // Town → Dungeon Select → Provisioning → Dungeon Hint → Expedition → Dungeon Assist → Dungeon Map → Combat → Result → Return → Town
 
     // 5a. Return to town
     await page.getByRole("button", { name: "Return to Town" }).click();
@@ -471,8 +470,48 @@ test.describe("browser smoke: fidelity gates", () => {
       "Provisioning screen must use .expedition-viewport landscape layout"
     ).toBeVisible();
 
-    // 5d. Provisioning → Expedition
+    // 5d. Provisioning → Dungeon Hint
     await page.locator('[data-testid="footer-btn-launch"]').click();
+    await settle(page);
+
+    await expect(
+      page.getByRole("heading", { name: "副本提示" }),
+      "Dungeon hint title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("Enter Dungeon"),
+      "Enter Dungeon button must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".hud-pill").filter({ hasText: "Difficulty:" }),
+      "Difficulty hud-pill must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".dungeon-hint-banner-title"),
+      "Dungeon hint banner title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".details-overlay-title").filter({ hasText: "Dungeon Intel" }),
+      "Dungeon intel panel must be visible"
+    ).toBeVisible();
+    await expect(
+      page.locator(".details-overlay-title").filter({ hasText: "Threat Assessment" }),
+      "Threat assessment panel must be visible"
+    ).toBeVisible();
+    await expectFidelity(
+      page.locator(".expedition-viewport"),
+      "Dungeon hint screen"
+    );
+    await expectFullPageFidelity(page, "Dungeon hint screen");
+
+    // Landscape viewport check for dungeon hint
+    await expect(
+      page.locator(".expedition-viewport"),
+      "Dungeon hint screen must use .expedition-viewport landscape layout"
+    ).toBeVisible();
+
+    // 5d. Dungeon Hint → Expedition
+    await page.getByRole("button", { name: "Enter Dungeon" }).click();
     await settle(page);
 
     await expect(
@@ -741,8 +780,7 @@ test.describe("browser smoke: fidelity gates", () => {
       "Live building detail screen must use .app-frame landscape layout"
     ).toBeVisible();
 
-    // Full live flow: dungeon-select → provisioning → expedition → result → return
-    // Full live flow: expedition-planning → provisioning → expedition → result → return
+    // Full live flow: dungeon-select → provisioning → dungeon-hint → expedition → dungeon-assist → dungeon-map → combat → result → return
     await page.getByRole("button", { name: "Return to Town" }).click();
     await page.waitForSelector(".town-viewport", { timeout: 5_000 });
     await settle(page);
@@ -777,6 +815,18 @@ test.describe("browser smoke: fidelity gates", () => {
     ).toBeVisible();
 
     await page.locator('[data-testid="footer-btn-launch"]').click();
+    await settle(page);
+
+    await expect(
+      page.getByRole("heading", { name: "副本提示" }),
+      "Live dungeon hint title must be visible"
+    ).toBeVisible();
+    await expect(
+      page.getByText("Enter Dungeon"),
+      "Live Enter Dungeon button must be visible"
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "Enter Dungeon" }).click();
     await settle(page);
 
     await expect(
@@ -908,6 +958,9 @@ test.describe("browser smoke: fidelity gates", () => {
     await settle(page);
 
     await page.locator('[data-testid="footer-btn-launch"]').click();
+    await settle(page);
+
+    await page.getByRole("button", { name: "Enter Dungeon" }).click();
     await settle(page);
 
     await enterCombatRoomFromExpedition(page, "Replay combat flow");

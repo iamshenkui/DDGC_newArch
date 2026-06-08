@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { resolveScreen, canTransition, type ScreenKey } from "./FlowController";
 import type {
   DdgcFrontendSnapshot,
+  DungeonHintViewModel,
   DungeonSelectViewModel,
   ExpeditionResultViewModel,
   ReturnViewModel,
@@ -21,6 +22,7 @@ import {
   startupSnapshot,
   dungeonSelectSnapshot,
   provisioningSnapshot,
+  dungeonHintSnapshot,
   expeditionSnapshot,
   dungeonInteractionSnapshot,
   dungeonAssistSnapshot,
@@ -85,6 +87,11 @@ describe("FlowController", () => {
       expect(screen).toBe("provisioning");
     });
 
+    it("returns dungeon-hint screen for dungeon hint view model", () => {
+      const screen = resolveScreen(dungeonHintSnapshot);
+      expect(screen).toBe("dungeon-hint");
+    });
+
     it("returns expedition screen for expedition setup view model", () => {
       const screen = resolveScreen(expeditionSnapshot);
       expect(screen).toBe("expedition");
@@ -133,7 +140,7 @@ describe("FlowController", () => {
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "expedition-planning", "dungeon-select", "provisioning", "expedition", "dungeon-assist", "dungeon-map", "combat", "dungeon-interaction", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "expedition-planning", "dungeon-select", "provisioning", "dungeon-hint", "expedition", "dungeon-assist", "dungeon-map", "combat", "dungeon-interaction", "result", "return", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -145,6 +152,7 @@ describe("ScreenKey exhaustiveness", () => {
       "expedition-planning": expeditionPlanningSnapshot,
       "dungeon-select": dungeonSelectSnapshot,
       provisioning: provisioningSnapshot,
+      "dungeon-hint": dungeonHintSnapshot,
       expedition: expeditionSnapshot,
       "dungeon-assist": dungeonAssistSnapshot,
       "dungeon-map": dungeonMapSnapshot,
@@ -343,6 +351,32 @@ describe("canTransition - result and return meta-loop continuation", () => {
       // After continuing, we should be in town where start-provisioning is allowed
       const provValidation = canTransition(replayReadySnapshot, { type: "start-provisioning" });
       expect(provValidation.allowed).toBe(true);
+    });
+  });
+
+  describe("dungeon-hint transitions", () => {
+    it("allows accept-dungeon-hint when dungeon is enterable", () => {
+      const validation = canTransition(dungeonHintSnapshot, { type: "accept-dungeon-hint" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects accept-dungeon-hint when not in dungeon-hint screen", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "accept-dungeon-hint" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in dungeon-hint");
+    });
+
+    it("rejects accept-dungeon-hint when dungeon is not enterable", () => {
+      const unenterableDungeonHintSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonHintSnapshot,
+        viewModel: {
+          ...dungeonHintSnapshot.viewModel,
+          isEnterable: false,
+        } as DungeonHintViewModel,
+      };
+      const validation = canTransition(unenterableDungeonHintSnapshot, { type: "accept-dungeon-hint" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not enterable");
     });
   });
 

@@ -9,6 +9,7 @@ import type {
   BuildingDetailViewModel,
   CombatViewModel,
   DungeonAssistViewModel,
+  DungeonHintViewModel,
   DungeonInteractionViewModel,
   DungeonMapViewModel,
   ExpeditionPlanningViewModel,
@@ -36,6 +37,7 @@ import { BuildingScreenRouter } from "../screens/town/BuildingScreenRouter";
 import { DungeonSelectScreen } from "../screens/expedition/DungeonSelectScreen";
 import { ExpeditionPlanningScreen } from "../screens/expedition/ExpeditionPlanningScreen";
 import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
+import { DungeonHintScreen } from "../screens/expedition/DungeonHintScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
 import { DungeonInteractionScreen } from "../screens/dungeon/DungeonInteractionScreen";
 import { DungeonAssistScreen } from "../screens/dungeon/DungeonAssistScreen";
@@ -200,6 +202,19 @@ export function DdgcApp() {
             }}
             onConfirmProvisioning={() => {
               void dispatchIntent(bridge, { type: "confirm-provisioning" });
+            }}
+            onReturnToTown={() => {
+              void dispatchIntent(bridge, { type: "return-to-town" });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "dungeon-hint" && snapshot().viewModel.kind === "dungeon-hint"}
+        >
+          <DungeonHintScreen
+            viewModel={snapshot().viewModel as DungeonHintViewModel}
+            onEnterDungeon={() => {
+              void dispatchIntent(bridge, { type: "accept-dungeon-hint" });
             }}
             onReturnToTown={() => {
               void dispatchIntent(bridge, { type: "return-to-town" });

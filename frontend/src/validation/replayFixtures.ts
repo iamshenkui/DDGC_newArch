@@ -626,6 +626,39 @@ export const replayProvisioningViewModel: ProvisioningViewModel = {
   ]
 };
 
+export const replayDungeonHintViewModel: import("../bridge/contractTypes").DungeonHintViewModel = {
+  kind: "dungeon-hint",
+  title: "副本提示",
+  expeditionName: "The Depths Await",
+  dungeonDescription: "幽暗深渊中回响着远古的低语。探险者将面对腐败的亡灵军团与潜伏在阴影中的未知恐怖。只有最坚韧的意志才能抵达深处。",
+  recommendedLevel: "Level 2+",
+  partySize: 2,
+  difficulty: "Challenging",
+  estimatedDuration: "Medium",
+  tips: [
+    "Bring sufficient torches — darkness increases stress",
+    "Holy water is effective against undead foes",
+    "Camp before the boss room to recover stress"
+  ],
+  warnings: [
+    "High stress environment — torches burn faster",
+    "Undead enemies resist bleed effects"
+  ],
+  expectedEnemies: [
+    "Bone Soldier",
+    "Necromancer",
+    "Plague Bearer"
+  ],
+  rewardPreview: [
+    "Ancient Relics",
+    "Rare Gems",
+    "Hero Experience"
+  ],
+  supplyLevel: "Adequate",
+  provisionCost: "150 Gold",
+  isEnterable: true
+};
+
 export const replayExpeditionViewModel: ExpeditionSetupViewModel = {
   kind: "expedition",
   title: "Expedition Launch",
@@ -1211,6 +1244,14 @@ export const provisioningSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing provisioning screen."
 };
 
+// Dungeon hint flow snapshot
+export const dungeonHintSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "dungeon-hint",
+  viewModel: replayDungeonHintViewModel,
+  debugMessage: "Replay bridge showing dungeon hint screen."
+};
+
 // Expedition launch flow snapshot
 export const expeditionSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -1293,7 +1334,7 @@ export function validateSnapshotContract(snapshot: DdgcFrontendSnapshot): string
   }
 
   // FlowState must be a valid FlowState
-  const validFlowStates: FlowState[] = ["boot", "load", "town", "dungeon-select", "expedition-planning", "provisioning", "expedition", "dungeon-assist", "dungeon-map", "combat", "dungeon-interaction", "result", "return"];
+  const validFlowStates: FlowState[] = ["boot", "load", "town", "dungeon-select", "expedition-planning", "provisioning", "dungeon-hint", "expedition", "dungeon-assist", "dungeon-map", "combat", "dungeon-interaction", "result", "return"];
   if (!validFlowStates.includes(snapshot.flowState as FlowState)) {
     errors.push(
       `flowState "${String(snapshot.flowState)}" is not a valid FlowState. ` +
@@ -1349,6 +1390,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     "dungeon-select": ["dungeon-select"],
     "expedition-planning": ["expedition-planning"],
     provisioning: ["provisioning"],
+    "dungeon-hint": ["dungeon-hint"],
     expedition: ["expedition"],
     "dungeon-assist": ["dungeon-assist"],
     combat: ["combat"],
@@ -1439,6 +1481,22 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ProvisioningViewModel: provisionCost is missing");
       if (!vm.campaignName || typeof vm.campaignName !== "string") e.push("ProvisioningViewModel: campaignName is missing");
       if (!vm.expeditionLabel || typeof vm.expeditionLabel !== "string") e.push("ProvisioningViewModel: expeditionLabel is missing");
+      break;
+    }
+    case "dungeon-hint": {
+      if (!vm.title || typeof vm.title !== "string") e.push("DungeonHintViewModel: title is missing");
+      if (!vm.expeditionName || typeof vm.expeditionName !== "string") e.push("DungeonHintViewModel: expeditionName is missing");
+      if (!vm.dungeonDescription || typeof vm.dungeonDescription !== "string") e.push("DungeonHintViewModel: dungeonDescription is missing");
+      if (!vm.recommendedLevel || typeof vm.recommendedLevel !== "string") e.push("DungeonHintViewModel: recommendedLevel is missing");
+      if (typeof vm.partySize !== "number") e.push("DungeonHintViewModel: partySize is not a number");
+      if (!vm.difficulty || typeof vm.difficulty !== "string") e.push("DungeonHintViewModel: difficulty is missing");
+      if (!Array.isArray(vm.tips)) e.push("DungeonHintViewModel: tips is not an array");
+      if (!Array.isArray(vm.warnings)) e.push("DungeonHintViewModel: warnings is not an array");
+      if (!Array.isArray(vm.expectedEnemies)) e.push("DungeonHintViewModel: expectedEnemies is not an array");
+      if (!Array.isArray(vm.rewardPreview)) e.push("DungeonHintViewModel: rewardPreview is not an array");
+      if (!vm.supplyLevel || typeof vm.supplyLevel !== "string") e.push("DungeonHintViewModel: supplyLevel is missing");
+      if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("DungeonHintViewModel: provisionCost is missing");
+      if (typeof vm.isEnterable !== "boolean") e.push("DungeonHintViewModel: isEnterable is not a boolean");
       break;
     }
     case "expedition": {

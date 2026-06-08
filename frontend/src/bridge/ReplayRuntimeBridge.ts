@@ -6,6 +6,7 @@ import {
   replayDungeonSelectViewModel,
   replayExpeditionPlanningViewModel,
   replayProvisioningViewModel,
+  replayDungeonHintViewModel,
   replayExpeditionViewModel,
   replayDungeonInteractionViewModel,
   replayDungeonAssistViewModel,
@@ -330,13 +331,38 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         };
         break;
       }
-      case "confirm-provisioning":
+      case "confirm-provisioning": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Replay: confirm-provisioning rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-hint",
+          viewModel: replayDungeonHintViewModel
+        };
+        break;
+      }
+      case "accept-dungeon-hint": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Replay: accept-dungeon-hint rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           flowState: "expedition",
           viewModel: replayExpeditionViewModel as ExpeditionSetupViewModel
         };
         break;
+      }
       case "launch-expedition":
         if (!canTransition(this.snapshot, intent).allowed) {
           this.snapshot = {

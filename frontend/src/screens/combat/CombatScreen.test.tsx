@@ -114,6 +114,8 @@ describe("CombatScreen skill interactions", () => {
     await bridge.boot();
     await bridge.dispatchIntent({ type: "start-provisioning" });
     await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
     await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
     await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
     await bridge.dispatchIntent({ type: "continue-from-dungeon" });
