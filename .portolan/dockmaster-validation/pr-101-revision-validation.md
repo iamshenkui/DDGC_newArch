@@ -27,17 +27,33 @@
   narrowing check so `vm.selectedDungeonId` is used inside the `.find()` callback
   instead of `snapshot.viewModel.selectedDungeonId`.
 
+## Review Fixes (Round 4) — current revision
+- Fixed malformed TypeScript syntax in `frontend/smoke/browserSmoke.spec.ts`:
+  - Removed the concatenated expect message that caused a parse error.
+  - Repaired the live-flow smoke block by restoring the missing `await expect(` call.
+  - Updated the replay and live meta-loop tests to match the actual post-dungeon-select
+    flow: confirming the dungeon selection transitions directly to provisioning.
+  - Updated the combat attack flow test to select a dungeon and heroes before
+    confirming and launching.
+  - Replaced incorrect Chinese provisioning title expectations with the actual
+    English view-model title (`Provision Expedition`) and removed the obsolete
+    `getByRole("button", { name: "Confirm & Launch Expedition" })` clicks in favor
+    of the existing `data-testid="footer-btn-launch"` control.
+- Fixed malformed CSS block boundaries in `frontend/src/styles.css`:
+  - Closed the unbalanced `.dungeon-detail-active` rule before the Dungeon Interaction
+    CSS comment so downstream rules are no longer swallowed.
+  - Repaired the `.dungeon-party-portrait` declaration by adding the missing
+    `background: linear-gradient(` opening and restoring width/height/display rules.
+  - Closed `.dungeon-party-portrait-letter` and `.dungeon-party-name`, which were
+    left open and caused subsequent selectors to be malformed.
+
 ## Validation Commands
 
 ### TypeScript typecheck
 ```bash
 npm run typecheck
 ```
-Result: **Exit 2** — the PR-specific TS2339 error in `FlowController.ts` is resolved.
-Three pre-existing TS2307 module-resolution errors remain in `AppProviders.tsx` and
-`PixiStage.tsx` (unable to resolve `@contracts/app-shell`, `@contracts/ui-substrate`,
-`@contracts/pixi-renderer`) because the `WorldEngine` sibling repository is not present
-in this sandbox. These files and their `@contracts/*` imports pre-date this PR.
+Result: **Exit 0**
 
 ### Full Frontend Test Suite
 ```bash
@@ -49,7 +65,7 @@ Result: **Exit 0 — 10 test files passed, 342 tests passed**
 ```bash
 npm run smoke
 ```
-Result: **Exit 0 — 4 test files passed, 151 tests passed**
+Result: **Exit 0 — 4 test files passed, 207 tests passed**
 
 ### Production Build
 ```bash
@@ -61,4 +77,4 @@ Result: **Exit 0 — build succeeded**
 ```bash
 npm run smoke-browser
 ```
-Result: **Exit 0 — 2 tests passed**
+Result: **Exit 0 — 3 tests passed**

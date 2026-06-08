@@ -4151,6 +4151,8 @@ button {
   flex-direction: column;
   gap: 14px;
   padding: 18px 20px;
+}
+
 /* ── Dungeon Interaction Screen ───────────────────────────
  * Mirrors Assets/Prefabs/UI/DungeonInteractionWindow.prefab
  * Source hierarchy: UI_Dungeon/DungeonInteractionWindow
@@ -6271,6 +6273,14 @@ button {
 }
 
 .dungeon-party-portrait {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    180deg,
     rgba(14, 24, 20, 0.8) 0%,
     rgba(10, 18, 14, 0.9) 100%
   );
@@ -6281,9 +6291,8 @@ button {
   transition: border-color 0.18s ease, background 0.18s ease, transform 0.15s ease;
   cursor: pointer;
   position: relative;
-  border: none;
-  color: inherit;
-  font: inherit;
+  overflow: hidden;
+  flex: 0 0 auto;
 }
 
 .dungeon-assist-hero-token:hover {
@@ -6371,6 +6380,9 @@ button {
 .dungeon-party-portrait-letter {
   font-family: var(--heading-font);
   font-size: 1.1rem;
+  color: var(--panel-accent);
+}
+
 .dungeon-assist-token-initial {
   font-family: var(--heading-font);
   font-size: 1.2rem;
@@ -6381,6 +6393,9 @@ button {
 .dungeon-party-name {
   font-weight: 600;
   font-size: 0.75rem;
+  color: var(--panel-text);
+}
+
 .dungeon-assist-token-name {
   font-weight: 600;
   font-size: 0.78rem;
