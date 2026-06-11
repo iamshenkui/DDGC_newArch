@@ -1,0 +1,95 @@
+{
+  "task_id": "3af610a8-4668-5ede-9c29-433fbd282c58",
+  "task_title": "ddgc-ui-migrate-dungeon-runtime-pages",
+  "slice": "dungeon-runtime-page-family",
+  "pages_implemented": [
+    {
+      "reference": "副本场景-交互",
+      "screen": "dungeon-interaction",
+      "component": "src/screens/dungeon/DungeonInteractionScreen.tsx",
+      "status": "existing",
+      "notes": "Added open-inventory interaction path; already wired to replay/live bridges."
+    },
+    {
+      "reference": "副本场景-人物受击",
+      "screen": "combat",
+      "component": "src/screens/combat/CombatScreen.tsx",
+      "status": "existing",
+      "notes": "Character-hit phase rendered by CombatScreen via phase=character-hit."
+    },
+    {
+      "reference": "副本场景-人物攻击",
+      "screen": "combat",
+      "component": "src/screens/combat/CombatScreen.tsx",
+      "status": "existing",
+      "notes": "Player-turn combat screen with skill/target/confirm-attack flow."
+    },
+    {
+      "reference": "副本场景-人物辅助",
+      "screen": "dungeon-assist",
+      "component": "src/screens/dungeon/DungeonAssistScreen.tsx",
+      "status": "existing",
+      "notes": "Assist screen with hero selection and action grid."
+    },
+    {
+      "reference": "副本场景-地图",
+      "screen": "dungeon-map",
+      "component": "src/screens/dungeon/DungeonMapScreen.tsx",
+      "status": "existing",
+      "notes": "Added Inventory button to reach dungeon-items screen."
+    },
+    {
+      "reference": "副本场景-战斗",
+      "screen": "combat",
+      "component": "src/screens/combat/CombatScreen.tsx",
+      "status": "existing",
+      "notes": "Same combat screen as 人物攻击/人物受击 with phase differentiation."
+    },
+    {
+      "reference": "副本场景-物品",
+      "screen": "dungeon-items",
+      "component": "src/screens/dungeon/DungeonItemsScreen.tsx",
+      "status": "new",
+      "notes": "New inventory management page with item grid, hero target selection, use/return actions."
+    },
+    {
+      "reference": "副本结算",
+      "screen": "result",
+      "component": "src/screens/expedition/ResultScreen.tsx",
+      "status": "existing",
+      "notes": "Expedition result screen with outcomes, loot, and hero status."
+    }
+  ],
+  "runtime_wiring": {
+    "contract_types": "src/bridge/contractTypes.ts",
+    "flow_controller": "src/session/FlowController.ts",
+    "app_router": "src/app/DdgcApp.tsx",
+    "replay_bridge": "src/bridge/ReplayRuntimeBridge.ts",
+    "live_bridge": "src/bridge/LiveRuntimeBridge.ts",
+    "fixtures": "src/validation/replayFixtures.ts"
+  },
+  "intents_added": [
+    "open-dungeon-items",
+    "close-dungeon-items",
+    "select-dungeon-item",
+    "select-dungeon-item-target",
+    "use-dungeon-item"
+  ],
+  "validation": {
+    "build": "passed",
+    "unit_tests": "passed (FlowController, replayFixtures, runtimeBridge, CombatScreen)",
+    "playwright": "blocked by environment — missing libglib-2.0.so.0 prevents Chromium launch"
+  },
+  "blockers": [
+    {
+      "type": "environment-gap",
+      "description": "Playwright Chromium cannot launch in this container because libglib-2.0.so.0 is missing and system dependency installation requires root.",
+      "impact": "Browser screenshot tests cannot execute locally; build and unit tests validate the implementation.",
+      "classification": "game-gap"
+    }
+  ],
+  "review_gates": {
+    "30_percent": "cartographer/architecture_review",
+    "pre_merge": "quartermaster/code_review"
+  }
+}

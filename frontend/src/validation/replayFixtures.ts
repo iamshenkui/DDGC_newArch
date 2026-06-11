@@ -2,6 +2,7 @@ import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
   DungeonInteractionViewModel,
+  DungeonItemsViewModel,
   DdgcFrontendSnapshot,
   DungeonAssistViewModel,
   DungeonSelectViewModel,
@@ -703,11 +704,37 @@ export const replayDungeonInteractionViewModel: DungeonInteractionViewModel = {
   interactions: [
     { id: "investigate", label: "Investigate", description: "Examine the altar closely for clues or hidden mechanisms.", isAvailable: true },
     { id: "use-item", label: "Use Item", description: "Attempt to use a provision or tool on the altar.", isAvailable: true },
+    { id: "open-inventory", label: "Inventory", description: "Open the party inventory to manage supplies and items.", isAvailable: true },
     { id: "pray", label: "Pray", description: "Offer a prayer at the altar. The outcome is uncertain.", isAvailable: true },
     { id: "ignore", label: "Ignore", description: "Leave the altar untouched and proceed.", isAvailable: true }
   ],
   isProceedAvailable: true,
   isRetreatAvailable: true
+};
+
+export const replayDungeonItemsViewModel: DungeonItemsViewModel = {
+  kind: "dungeon-items",
+  title: "Dungeon Inventory",
+  dungeonName: "The Depths Await",
+  roomLabel: "Ancient Altar",
+  party: [
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", stress: "17", maxStress: "200", level: 2 },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "8", maxStress: "200", level: 2 },
+    { id: "hero-black-01", name: "Hei Zhen", classLabel: "Black", hp: "34 / 40", maxHp: "40", stress: "24", maxStress: "200", level: 1 }
+  ],
+  items: [
+    { id: "supply-food", name: "干粮", icon: "🍞", description: "恢复少量生命值并缓解饥饿。", qty: 4, isUsable: true, category: "heal" },
+    { id: "supply-torch", name: "火把", icon: "🔥", description: "提高光照等级，降低压力积累。", qty: 3, isUsable: true, category: "tool" },
+    { id: "supply-bandage", name: "绷带", icon: "🩹", description: "治疗流血效果并恢复生命值。", qty: 2, isUsable: true, category: "heal" },
+    { id: "supply-antidote", name: "解毒剂", icon: "🧪", description: "解除中毒与疾病效果。", qty: 1, isUsable: true, category: "heal" },
+    { id: "supply-holy", name: "圣水", icon: "✨", description: "对亡灵敌人有效，也可净化诅咒物品。", qty: 1, isUsable: true, category: "buff" },
+    { id: "loot-relic", name: "古老遗物", icon: "🏺", description: "一件沉重的遗物，可在返回城镇后兑换金币。", qty: 1, isUsable: false, category: "misc" }
+  ],
+  selectedItemId: "supply-food",
+  selectedHeroId: "hero-hunter-01",
+  maxItems: 20,
+  canContinue: true,
+  returnFlowState: "dungeon-interaction"
 };
 
 export const replayDungeonAssistViewModel: DungeonAssistViewModel = {
@@ -1268,6 +1295,14 @@ export const dungeonInteractionSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing dungeon interaction screen."
 };
 
+// Dungeon items flow snapshot
+export const dungeonItemsSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "dungeon-items",
+  viewModel: replayDungeonItemsViewModel,
+  debugMessage: "Replay bridge showing dungeon items/inventory screen."
+};
+
 // Dungeon assist flow snapshot
 export const dungeonAssistSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -1334,7 +1369,7 @@ export function validateSnapshotContract(snapshot: DdgcFrontendSnapshot): string
   }
 
   // FlowState must be a valid FlowState
-  const validFlowStates: FlowState[] = ["boot", "load", "town", "dungeon-select", "expedition-planning", "provisioning", "dungeon-hint", "expedition", "dungeon-assist", "dungeon-map", "combat", "dungeon-interaction", "result", "return"];
+  const validFlowStates: FlowState[] = ["boot", "load", "town", "dungeon-select", "expedition-planning", "provisioning", "dungeon-hint", "expedition", "dungeon-assist", "dungeon-map", "combat", "dungeon-interaction", "dungeon-items", "result", "return"];
   if (!validFlowStates.includes(snapshot.flowState as FlowState)) {
     errors.push(
       `flowState "${String(snapshot.flowState)}" is not a valid FlowState. ` +
@@ -1396,6 +1431,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     combat: ["combat"],
     "dungeon-map": ["dungeon-map"],
     "dungeon-interaction": ["dungeon-interaction"],
+    "dungeon-items": ["dungeon-items"],
     result: ["result"],
     return: ["return"],
   };
@@ -1522,6 +1558,17 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!Array.isArray(vm.interactions)) e.push("DungeonInteractionViewModel: interactions is not an array");
       if (typeof vm.isProceedAvailable !== "boolean") e.push("DungeonInteractionViewModel: isProceedAvailable is not a boolean");
       if (typeof vm.isRetreatAvailable !== "boolean") e.push("DungeonInteractionViewModel: isRetreatAvailable is not a boolean");
+      break;
+    }
+    case "dungeon-items": {
+      if (!vm.title || typeof vm.title !== "string") e.push("DungeonItemsViewModel: title is missing");
+      if (!vm.dungeonName || typeof vm.dungeonName !== "string") e.push("DungeonItemsViewModel: dungeonName is missing");
+      if (!vm.roomLabel || typeof vm.roomLabel !== "string") e.push("DungeonItemsViewModel: roomLabel is missing");
+      if (!Array.isArray(vm.party)) { e.push("DungeonItemsViewModel: party is not an array"); } else if (vm.party.length === 0) { e.push("DungeonItemsViewModel: party array is empty"); }
+      if (!Array.isArray(vm.items)) { e.push("DungeonItemsViewModel: items is not an array"); }
+      if (typeof vm.maxItems !== "number") e.push("DungeonItemsViewModel: maxItems is not a number");
+      if (typeof vm.canContinue !== "boolean") e.push("DungeonItemsViewModel: canContinue is not a boolean");
+      if (!vm.returnFlowState || typeof vm.returnFlowState !== "string") e.push("DungeonItemsViewModel: returnFlowState is missing");
       break;
     }
     case "dungeon-assist": {

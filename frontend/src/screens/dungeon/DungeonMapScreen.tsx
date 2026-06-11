@@ -8,6 +8,7 @@ interface DungeonMapScreenProps {
   onEnterRoom: (roomId: string) => void;
   onRetreat: () => void;
   onCompleteDungeon: () => void;
+  onOpenInventory?: () => void;
 }
 
 function parseHp(hp: string): { current: number; max: number } {
@@ -406,6 +407,13 @@ export const DungeonMapScreen: Component<DungeonMapScreenProps> = (props) => {
             <span class="expedition-status-pill-dot" aria-hidden="true" />
             {props.viewModel.isComplete ? "Dungeon complete — proceed to exit" : "Explore the dungeon carefully"}
           </span>
+          <button
+            class="action-secondary"
+            onClick={() => props.onOpenInventory?.()}
+            data-testid="open-inventory-map-btn"
+          >
+            Inventory
+          </button>
         </div>
         <div class="expedition-controls-right">
           <button

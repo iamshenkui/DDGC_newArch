@@ -12,6 +12,7 @@ interface CombatScreenProps {
   onEndTurn: () => void;
   onContinueCombat?: () => void;
   onOpenSettings?: () => void;
+  onOpenInventory?: () => void;
 }
 
 function parseHp(hp: string): { current: number; max: number } {
@@ -111,6 +112,15 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
           </span>
         </span>
         <span class="combat-hud-right">
+          <button
+            class="combat-settings-btn"
+            onClick={() => props.onOpenInventory?.()}
+            aria-label="Inventory"
+            title="Inventory"
+            data-testid="open-inventory-combat-btn"
+          >
+            物品
+          </button>
           <button
             class="combat-settings-btn"
             onClick={() => props.onOpenSettings?.()}

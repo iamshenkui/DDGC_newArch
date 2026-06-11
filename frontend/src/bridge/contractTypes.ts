@@ -13,6 +13,7 @@ export type FlowState =
   | "dungeon-map"
   | "combat"
   | "dungeon-interaction"
+  | "dungeon-items"
   | "result"
   | "return";
 
@@ -540,6 +541,41 @@ export interface CombatViewModel {
   settingsLabel?: string;
 }
 
+export interface DungeonItemsHero {
+  id: string;
+  name: string;
+  classLabel: string;
+  hp: string;
+  maxHp: string;
+  stress: string;
+  maxStress: string;
+  level: number;
+}
+
+export interface DungeonItem {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  qty: number;
+  isUsable: boolean;
+  category: "heal" | "stress" | "buff" | "tool" | "misc";
+}
+
+export interface DungeonItemsViewModel {
+  kind: "dungeon-items";
+  title: string;
+  dungeonName: string;
+  roomLabel: string;
+  party: ReadonlyArray<DungeonItemsHero>;
+  items: ReadonlyArray<DungeonItem>;
+  selectedItemId: string | null;
+  selectedHeroId: string | null;
+  maxItems: number;
+  canContinue: boolean;
+  returnFlowState: "dungeon-interaction" | "dungeon-map" | "combat";
+}
+
 export type DdgcViewModel =
   | BootLoadViewModel
   | TownViewModel
@@ -554,6 +590,7 @@ export type DdgcViewModel =
   | DungeonMapViewModel
   | CombatViewModel
   | DungeonInteractionViewModel
+  | DungeonItemsViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
   | UnsupportedViewModel
@@ -594,6 +631,11 @@ export type DdgcFrontendIntent =
   | { type: "enter-room"; roomId: string }
   | { type: "retreat-from-dungeon" }
   | { type: "complete-dungeon" }
+  | { type: "open-dungeon-items"; returnFlowState?: "dungeon-interaction" | "dungeon-map" | "combat" }
+  | { type: "close-dungeon-items" }
+  | { type: "select-dungeon-item"; itemId: string }
+  | { type: "select-dungeon-item-target"; heroId: string }
+  | { type: "use-dungeon-item"; itemId: string; heroId?: string }
   | { type: "return-to-town" }
   | { type: "continue-from-result" }
   | { type: "resume-from-return" }

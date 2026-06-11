@@ -18,6 +18,7 @@ import type {
   ExpeditionResultViewModel,
   ReturnViewModel,
   DungeonInteractionViewModel,
+  DungeonItemsViewModel,
   CombatViewModel
 } from "./contractTypes";
 import { createTownBuildingSummary } from "../town/buildingCatalog";
@@ -41,6 +42,52 @@ function deriveProvisioningFromDungeonSelect(dsVm: DungeonSelectViewModel): Prov
     isReadyToLaunch: selectedCount >= 2 && selectedCount <= dsVm.maxPartySize,
     supplyLevel: selectedDungeon?.supplyLevel ?? "Basic",
     provisionCost: selectedDungeon?.provisionCost ?? "0 Gold"
+  };
+}
+
+const liveDungeonItemsFixture: Omit<DungeonItemsViewModel, "returnFlowState" | "dungeonName" | "roomLabel" | "party"> = {
+  kind: "dungeon-items",
+  title: "Dungeon Inventory",
+  items: [
+    { id: "supply-food", name: "干粮", icon: "🍞", description: "恢复少量生命值并缓解饥饿。", qty: 6, isUsable: true, category: "heal" },
+    { id: "supply-torch", name: "火把", icon: "🔥", description: "提高光照等级，降低压力积累。", qty: 4, isUsable: true, category: "tool" },
+    { id: "supply-bandage", name: "绷带", icon: "🩹", description: "治疗流血效果并恢复生命值。", qty: 3, isUsable: true, category: "heal" },
+    { id: "supply-antidote", name: "解毒剂", icon: "🧪", description: "解除中毒与疾病效果。", qty: 2, isUsable: true, category: "heal" },
+    { id: "supply-shovel", name: "铁锹", icon: "⛏", description: "可以清除路障或挖掘宝藏。", qty: 2, isUsable: true, category: "tool" },
+    { id: "supply-key", name: "万能钥匙", icon: "🔑", description: "开启锁住的门或宝箱。", qty: 1, isUsable: true, category: "tool" },
+    { id: "supply-holy", name: "圣水", icon: "✨", description: "对亡灵敌人有效，也可净化诅咒物品。", qty: 2, isUsable: true, category: "buff" },
+    { id: "loot-relic", name: "古老遗物", icon: "🏺", description: "一件沉重的遗物，可在返回城镇后兑换金币。", qty: 1, isUsable: false, category: "misc" }
+  ],
+  selectedItemId: "supply-food",
+  selectedHeroId: "hero-hunter-live-01",
+  maxItems: 24,
+  canContinue: true
+};
+
+function createLiveDungeonItemsViewModel(
+  source: DungeonInteractionViewModel | DungeonMapViewModel | CombatViewModel,
+  returnFlowState: "dungeon-interaction" | "dungeon-map" | "combat"
+): DungeonItemsViewModel {
+  const party = "party" in source ? source.party : [];
+  return {
+    ...liveDungeonItemsFixture,
+    dungeonName: source.dungeonName ?? ("dungeonName" in source ? source.dungeonName : "Azure Lantern Depths"),
+    roomLabel: returnFlowState === "dungeon-interaction" && "roomLabel" in source
+      ? source.roomLabel
+      : returnFlowState === "dungeon-map" && "currentRoomId" in source
+        ? source.rooms.find((r) => r.id === source.currentRoomId)?.label ?? "Dungeon"
+        : "Combat",
+    party: party.map((hero) => ({
+      id: hero.id,
+      name: hero.name,
+      classLabel: hero.classLabel,
+      hp: hero.hp,
+      maxHp: hero.maxHp ?? hero.hp.split(" / ")[1] ?? hero.hp.split(" / ")[0],
+      stress: hero.stress,
+      maxStress: hero.maxStress ?? "200",
+      level: "level" in hero ? hero.level : 1
+    })),
+    returnFlowState
   };
 }
 
@@ -496,6 +543,7 @@ const createLiveDungeonInteractionViewModel = (): DungeonInteractionViewModel =>
   interactions: [
     { id: "investigate", label: "Investigate", description: "Examine the altar closely for clues or hidden mechanisms.", isAvailable: true },
     { id: "use-item", label: "Use Item", description: "Attempt to use a provision or tool on the altar.", isAvailable: true },
+    { id: "open-inventory", label: "Inventory", description: "Open the party inventory to manage supplies and items.", isAvailable: true },
     { id: "pray", label: "Pray", description: "Offer a prayer at the altar. The outcome is uncertain.", isAvailable: true },
     { id: "ignore", label: "Ignore", description: "Leave the altar untouched and proceed.", isAvailable: true }
   ],
@@ -1314,6 +1362,114 @@ export class LiveRuntimeBridge implements RuntimeBridge {
           ...this.snapshot,
           flowState: "result",
           viewModel: createLiveResultViewModel()
+        };
+        break;
+      }
+      case "open-dungeon-items": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: open-dungeon-items rejected from current screen."
+          };
+          break;
+        }
+        const returnFlowState = intent.returnFlowState ??
+          (this.snapshot.viewModel.kind === "dungeon-map" ? "dungeon-map" :
+            this.snapshot.viewModel.kind === "combat" ? "combat" : "dungeon-interaction");
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-items",
+          viewModel: createLiveDungeonItemsViewModel(this.snapshot.viewModel as DungeonInteractionViewModel | DungeonMapViewModel | CombatViewModel, returnFlowState)
+        };
+        break;
+      }
+      case "close-dungeon-items": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: close-dungeon-items rejected from current screen."
+          };
+          break;
+        }
+        const itemsVm = this.snapshot.viewModel as DungeonItemsViewModel;
+        const returnFlowState = itemsVm.returnFlowState;
+        if (returnFlowState === "dungeon-map") {
+          this.snapshot = {
+            ...this.snapshot,
+            flowState: "dungeon-map",
+            viewModel: createLiveDungeonMapViewModel()
+          };
+        } else if (returnFlowState === "combat") {
+          this.snapshot = {
+            ...this.snapshot,
+            flowState: "combat",
+            viewModel: createLiveCombatViewModel()
+          };
+        } else {
+          this.snapshot = {
+            ...this.snapshot,
+            flowState: "dungeon-interaction",
+            viewModel: createLiveDungeonInteractionViewModel()
+          };
+        }
+        break;
+      }
+      case "select-dungeon-item": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: select-dungeon-item ${intent.itemId} rejected.`
+          };
+          break;
+        }
+        const itemsVm = this.snapshot.viewModel as DungeonItemsViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...itemsVm,
+            selectedItemId: intent.itemId
+          }
+        };
+        break;
+      }
+      case "select-dungeon-item-target": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: select-dungeon-item-target ${intent.heroId} rejected.`
+          };
+          break;
+        }
+        const itemsVm = this.snapshot.viewModel as DungeonItemsViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...itemsVm,
+            selectedHeroId: intent.heroId
+          }
+        };
+        break;
+      }
+      case "use-dungeon-item": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: use-dungeon-item ${intent.itemId} rejected.`
+          };
+          break;
+        }
+        const itemsVm = this.snapshot.viewModel as DungeonItemsViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...itemsVm,
+            items: itemsVm.items.map((item) =>
+              item.id === intent.itemId
+                ? { ...item, qty: Math.max(0, item.qty - 1) }
+                : item
+            )
+          },
+          debugMessage: `Live: used item ${intent.itemId}${intent.heroId ? ` on ${intent.heroId}` : ""}.`
         };
         break;
       }

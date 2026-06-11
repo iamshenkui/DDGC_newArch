@@ -1,4 +1,9 @@
-import { Match, Switch, createMemo, createSignal } from "solid-js";
+import {
+  Match,
+  Switch,
+  createMemo,
+  createSignal
+} from "solid-js";
 
 import { AppProviders } from "./AppProviders";
 import { DEFAULT_RUNTIME_MODE, type RuntimeMode } from "./runtimeMode";
@@ -11,6 +16,7 @@ import type {
   DungeonAssistViewModel,
   DungeonHintViewModel,
   DungeonInteractionViewModel,
+  DungeonItemsViewModel,
   DungeonMapViewModel,
   ExpeditionPlanningViewModel,
   ExpeditionResultViewModel,
@@ -42,6 +48,7 @@ import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
 import { DungeonInteractionScreen } from "../screens/dungeon/DungeonInteractionScreen";
 import { DungeonAssistScreen } from "../screens/dungeon/DungeonAssistScreen";
 import { DungeonMapScreen } from "../screens/dungeon/DungeonMapScreen";
+import { DungeonItemsScreen } from "../screens/dungeon/DungeonItemsScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
 import { ReturnScreen } from "../screens/expedition/ReturnScreen";
 import { CombatScreen } from "../screens/combat/CombatScreen";
@@ -243,10 +250,33 @@ export function DdgcApp() {
               void dispatchIntent(bridge, { type: "proceed-dungeon" });
             }}
             onInteract={(interactionId) => {
-              void dispatchIntent(bridge, { type: "interact-room", interactionId });
+              if (interactionId === "open-inventory") {
+                void dispatchIntent(bridge, { type: "open-dungeon-items", returnFlowState: "dungeon-interaction" });
+              } else {
+                void dispatchIntent(bridge, { type: "interact-room", interactionId });
+              }
             }}
             onRetreat={() => {
               void dispatchIntent(bridge, { type: "retreat-dungeon" });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "dungeon-items" && snapshot().viewModel.kind === "dungeon-items"}
+        >
+          <DungeonItemsScreen
+            viewModel={snapshot().viewModel as DungeonItemsViewModel}
+            onClose={() => {
+              void dispatchIntent(bridge, { type: "close-dungeon-items" });
+            }}
+            onSelectItem={(itemId) => {
+              void dispatchIntent(bridge, { type: "select-dungeon-item", itemId });
+            }}
+            onSelectHero={(heroId) => {
+              void dispatchIntent(bridge, { type: "select-dungeon-item-target", heroId });
+            }}
+            onUseItem={(itemId, heroId) => {
+              void dispatchIntent(bridge, { type: "use-dungeon-item", itemId, heroId });
             }}
           />
         </Match>
@@ -283,6 +313,9 @@ export function DdgcApp() {
             onCompleteDungeon={() => {
               void dispatchIntent(bridge, { type: "complete-dungeon" });
             }}
+            onOpenInventory={() => {
+              void dispatchIntent(bridge, { type: "open-dungeon-items", returnFlowState: "dungeon-map" });
+            }}
           />
         </Match>
         <Match
@@ -310,6 +343,9 @@ export function DdgcApp() {
             }}
             onOpenSettings={() => {
               void dispatchIntent(bridge, { type: "open-combat-settings" });
+            }}
+            onOpenInventory={() => {
+              void dispatchIntent(bridge, { type: "open-dungeon-items", returnFlowState: "combat" });
             }}
           />
         </Match>

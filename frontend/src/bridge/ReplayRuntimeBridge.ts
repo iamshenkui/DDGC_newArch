@@ -9,6 +9,7 @@ import {
   replayDungeonHintViewModel,
   replayExpeditionViewModel,
   replayDungeonInteractionViewModel,
+  replayDungeonItemsViewModel,
   replayDungeonAssistViewModel,
   replayDungeonMapViewModel,
   replayAttackCombatViewModel,
@@ -30,6 +31,7 @@ import type {
   ExpeditionResultViewModel,
   ReturnViewModel,
   DungeonInteractionViewModel,
+  DungeonItemsViewModel,
   CombatViewModel
 } from "./contractTypes";
 
@@ -94,6 +96,39 @@ function createReplayFleeResultViewModel(): ExpeditionResultViewModel {
       supplies: -20,
       experience: 20
     }
+  };
+}
+
+function createDungeonItemsViewModel(
+  source: DungeonInteractionViewModel | DungeonMapViewModel | CombatViewModel,
+  returnFlowState: "dungeon-interaction" | "dungeon-map" | "combat"
+): DungeonItemsViewModel {
+  const party = "party" in source ? source.party : [];
+  return {
+    kind: "dungeon-items",
+    title: "Dungeon Inventory",
+    dungeonName: source.dungeonName ?? ("dungeonName" in source ? source.dungeonName : "The Depths Await"),
+    roomLabel: returnFlowState === "dungeon-interaction" && "roomLabel" in source
+      ? source.roomLabel
+      : returnFlowState === "dungeon-map" && "currentRoomId" in source
+        ? source.rooms.find((r) => r.id === source.currentRoomId)?.label ?? "Dungeon"
+        : "Combat",
+    party: party.map((hero) => ({
+      id: hero.id,
+      name: hero.name,
+      classLabel: hero.classLabel,
+      hp: hero.hp,
+      maxHp: hero.maxHp ?? hero.hp.split(" / ")[1] ?? hero.hp.split(" / ")[0],
+      stress: hero.stress,
+      maxStress: hero.maxStress ?? "200",
+      level: "level" in hero ? hero.level : 1
+    })),
+    items: replayDungeonItemsViewModel.items,
+    selectedItemId: replayDungeonItemsViewModel.items[0]?.id ?? null,
+    selectedHeroId: party[0]?.id ?? null,
+    maxItems: 20,
+    canContinue: true,
+    returnFlowState
   };
 }
 
@@ -695,6 +730,114 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           ...this.snapshot,
           flowState: "result",
           viewModel: replayResultViewModel as ExpeditionResultViewModel
+        };
+        break;
+      }
+      case "open-dungeon-items": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: open-dungeon-items rejected from current screen."
+          };
+          break;
+        }
+        const returnFlowState = intent.returnFlowState ??
+          (this.snapshot.viewModel.kind === "dungeon-map" ? "dungeon-map" :
+            this.snapshot.viewModel.kind === "combat" ? "combat" : "dungeon-interaction");
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-items",
+          viewModel: createDungeonItemsViewModel(this.snapshot.viewModel as DungeonInteractionViewModel | DungeonMapViewModel | CombatViewModel, returnFlowState)
+        };
+        break;
+      }
+      case "close-dungeon-items": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: close-dungeon-items rejected from current screen."
+          };
+          break;
+        }
+        const itemsVm = this.snapshot.viewModel as DungeonItemsViewModel;
+        const returnFlowState = itemsVm.returnFlowState;
+        if (returnFlowState === "dungeon-map") {
+          this.snapshot = {
+            ...this.snapshot,
+            flowState: "dungeon-map",
+            viewModel: replayDungeonMapViewModel as DungeonMapViewModel
+          };
+        } else if (returnFlowState === "combat") {
+          this.snapshot = {
+            ...this.snapshot,
+            flowState: "combat",
+            viewModel: replayAttackCombatViewModel as CombatViewModel
+          };
+        } else {
+          this.snapshot = {
+            ...this.snapshot,
+            flowState: "dungeon-interaction",
+            viewModel: replayDungeonInteractionViewModel as DungeonInteractionViewModel
+          };
+        }
+        break;
+      }
+      case "select-dungeon-item": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Replay: select-dungeon-item ${intent.itemId} rejected.`
+          };
+          break;
+        }
+        const itemsVm = this.snapshot.viewModel as DungeonItemsViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...itemsVm,
+            selectedItemId: intent.itemId
+          }
+        };
+        break;
+      }
+      case "select-dungeon-item-target": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Replay: select-dungeon-item-target ${intent.heroId} rejected.`
+          };
+          break;
+        }
+        const itemsVm = this.snapshot.viewModel as DungeonItemsViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...itemsVm,
+            selectedHeroId: intent.heroId
+          }
+        };
+        break;
+      }
+      case "use-dungeon-item": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Replay: use-dungeon-item ${intent.itemId} rejected.`
+          };
+          break;
+        }
+        const itemsVm = this.snapshot.viewModel as DungeonItemsViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...itemsVm,
+            items: itemsVm.items.map((item) =>
+              item.id === intent.itemId
+                ? { ...item, qty: Math.max(0, item.qty - 1) }
+                : item
+            )
+          },
+          debugMessage: `Replay: used item ${intent.itemId}${intent.heroId ? ` on ${intent.heroId}` : ""}.`
         };
         break;
       }

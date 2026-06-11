@@ -1,0 +1,33 @@
+{
+  "task_id": "3af610a8-4668-5ede-9c29-433fbd282c58",
+  "changed_files": [
+    "frontend/src/app/DdgcApp.tsx",
+    "frontend/src/bridge/LiveRuntimeBridge.ts",
+    "frontend/src/bridge/ReplayRuntimeBridge.ts",
+    "frontend/src/bridge/contractTypes.ts",
+    "frontend/src/screens/combat/CombatScreen.tsx",
+    "frontend/src/screens/dungeon/DungeonMapScreen.tsx",
+    "frontend/src/screens/dungeon/DungeonItemsScreen.tsx",
+    "frontend/src/session/FlowController.ts",
+    "frontend/src/styles.css",
+    "frontend/src/validation/replayFixtures.ts",
+    "frontend/smoke/dungeonRuntimePages.spec.ts"
+  ],
+  "new_files": [
+    "frontend/src/screens/dungeon/DungeonItemsScreen.tsx",
+    "frontend/smoke/dungeonRuntimePages.spec.ts",
+    ".portolan/evidence/implementation-slice.json",
+    ".portolan/evidence/changed-files.json"
+  ],
+  "modified_files": [
+    "frontend/src/app/DdgcApp.tsx",
+    "frontend/src/bridge/LiveRuntimeBridge.ts",
+    "frontend/src/bridge/ReplayRuntimeBridge.ts",
+    "frontend/src/bridge/contractTypes.ts",
+    "frontend/src/screens/combat/CombatScreen.tsx",
+    "frontend/src/screens/dungeon/DungeonMapScreen.tsx",
+    "frontend/src/session/FlowController.ts",
+    "frontend/src/styles.css",
+    "frontend/src/validation/replayFixtures.ts"
+  ]
+}
