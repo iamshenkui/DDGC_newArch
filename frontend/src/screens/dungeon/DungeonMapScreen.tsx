@@ -8,6 +8,7 @@ interface DungeonMapScreenProps {
   onEnterRoom: (roomId: string) => void;
   onRetreat: () => void;
   onCompleteDungeon: () => void;
+  onOpenItems?: () => void;
 }
 
 function parseHp(hp: string): { current: number; max: number } {
@@ -408,6 +409,13 @@ export const DungeonMapScreen: Component<DungeonMapScreenProps> = (props) => {
           </span>
         </div>
         <div class="expedition-controls-right">
+          <button
+            class="action-secondary"
+            onClick={props.onOpenItems}
+            data-testid="dungeon-open-items-btn"
+          >
+            物品背包
+          </button>
           <button
             class="action-secondary"
             onClick={props.onRetreat}

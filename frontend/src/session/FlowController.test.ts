@@ -25,6 +25,7 @@ import {
   dungeonHintSnapshot,
   expeditionSnapshot,
   dungeonInteractionSnapshot,
+  dungeonItemsSnapshot,
   dungeonAssistSnapshot,
   dungeonMapSnapshot,
   combatSnapshot,
@@ -102,6 +103,11 @@ describe("FlowController", () => {
       expect(screen).toBe("dungeon-interaction");
     });
 
+    it("returns dungeon-items screen for dungeon items view model", () => {
+      const screen = resolveScreen(dungeonItemsSnapshot);
+      expect(screen).toBe("dungeon-items");
+    });
+
     it("returns dungeon-assist screen for dungeon assist view model", () => {
       const screen = resolveScreen(dungeonAssistSnapshot);
       expect(screen).toBe("dungeon-assist");
@@ -140,7 +146,7 @@ describe("FlowController", () => {
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "expedition-planning", "dungeon-select", "provisioning", "dungeon-hint", "expedition", "dungeon-assist", "dungeon-map", "combat", "dungeon-interaction", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "expedition-planning", "dungeon-select", "provisioning", "dungeon-hint", "expedition", "dungeon-assist", "dungeon-map", "combat", "dungeon-interaction", "dungeon-items", "result", "return", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -158,6 +164,7 @@ describe("ScreenKey exhaustiveness", () => {
       "dungeon-map": dungeonMapSnapshot,
       combat: combatSnapshot,
       "dungeon-interaction": dungeonInteractionSnapshot,
+      "dungeon-items": dungeonItemsSnapshot,
       result: resultSnapshot,
       return: returnSnapshot,
       unsupported: unsupportedSnapshot,

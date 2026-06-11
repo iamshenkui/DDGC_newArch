@@ -8,6 +8,7 @@ interface DungeonInteractionScreenProps {
   onProceed: () => void;
   onInteract: (interactionId: string) => void;
   onRetreat: () => void;
+  onOpenItems?: () => void;
 }
 
 function parseHp(hp: string): { current: number; max: number } {
@@ -250,6 +251,13 @@ export const DungeonInteractionScreen: Component<DungeonInteractionScreenProps> 
           </span>
         </div>
         <div class="expedition-controls-right">
+          <button
+            class="action-secondary"
+            onClick={props.onOpenItems}
+            data-testid="dungeon-open-items-btn"
+          >
+            物品背包
+          </button>
           <button
             class="action-secondary"
             onClick={props.onRetreat}

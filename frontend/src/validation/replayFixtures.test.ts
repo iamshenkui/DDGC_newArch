@@ -24,6 +24,7 @@ import {
   startupSnapshot,
   provisioningSnapshot,
   expeditionSnapshot,
+  dungeonItemsSnapshot,
   combatSnapshot,
   resultSnapshot,
   failureResultSnapshot,
@@ -431,6 +432,7 @@ const allSnapshots: NamedSnapshot[] = [
   { name: "replayStagecoachBuildingSnapshot", snapshot: replayStagecoachBuildingSnapshot },
   { name: "provisioningSnapshot", snapshot: provisioningSnapshot },
   { name: "expeditionSnapshot", snapshot: expeditionSnapshot },
+  { name: "dungeonItemsSnapshot", snapshot: dungeonItemsSnapshot },
   { name: "combatSnapshot", snapshot: combatSnapshot },
   { name: "resultSnapshot", snapshot: resultSnapshot },
   { name: "failureResultSnapshot", snapshot: failureResultSnapshot },
@@ -522,6 +524,11 @@ describe("type discrimination", () => {
   it("expedition snapshot sets flowState and kind to expedition", () => {
     expect(expeditionSnapshot.flowState).toBe("expedition");
     expect(expeditionSnapshot.viewModel.kind).toBe("expedition");
+  });
+
+  it("dungeon-items snapshot sets flowState and kind to dungeon-items", () => {
+    expect(dungeonItemsSnapshot.flowState).toBe("dungeon-items");
+    expect(dungeonItemsSnapshot.viewModel.kind).toBe("dungeon-items");
   });
 
   it("combat snapshot sets flowState and kind to combat", () => {

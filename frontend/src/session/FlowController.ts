@@ -11,7 +11,7 @@ import type {
   BuildingDetailViewModel
 } from "../bridge/contractTypes";
 
-export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "expedition-planning" | "dungeon-select" | "provisioning" | "dungeon-hint" | "expedition" | "dungeon-assist" | "dungeon-map" | "combat" | "dungeon-interaction" | "result" | "return" | "unsupported" | "fatal";
+export type ScreenKey = "startup" | "loading" | "town" | "hero-detail" | "building-detail" | "expedition-planning" | "dungeon-select" | "provisioning" | "dungeon-hint" | "expedition" | "dungeon-assist" | "dungeon-map" | "combat" | "dungeon-interaction" | "dungeon-items" | "result" | "return" | "unsupported" | "fatal";
 
 export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
   if (snapshot.lifecycle === "fatal") {
@@ -68,6 +68,10 @@ export function resolveScreen(snapshot: DdgcFrontendSnapshot): ScreenKey {
 
   if (snapshot.viewModel.kind === "dungeon-interaction") {
     return "dungeon-interaction";
+  }
+
+  if (snapshot.viewModel.kind === "dungeon-items") {
+    return "dungeon-items";
   }
 
   if (snapshot.viewModel.kind === "result") {
@@ -270,6 +274,85 @@ export function canTransition(
       }
       if (isCharacterHitAcknowledgement(snapshot)) {
         return { allowed: false, reason: "open-combat-settings is not valid during character-hit acknowledgement" };
+      }
+      return { allowed: true };
+
+    case "open-dungeon-items":
+      if (screen !== "combat" && screen !== "dungeon-interaction" && screen !== "dungeon-map" && screen !== "dungeon-assist") {
+        return { allowed: false, reason: "open-dungeon-items is only valid inside a dungeon runtime screen" };
+      }
+      return { allowed: true };
+
+    case "close-dungeon-items":
+      if (screen !== "dungeon-items") {
+        return { allowed: false, reason: "close-dungeon-items is only valid on dungeon-items screen" };
+      }
+      return { allowed: true };
+
+    case "select-dungeon-item":
+      if (screen !== "dungeon-items") {
+        return { allowed: false, reason: "select-dungeon-item is only valid on dungeon-items screen" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-items") {
+        return { allowed: false, reason: "viewModel is not a dungeon-items view model" };
+      }
+      {
+        const item = snapshot.viewModel.items.find((i) => i.id === intent.itemId);
+        if (!item) {
+          return { allowed: false, reason: `item ${intent.itemId} does not exist` };
+        }
+        if (item.qty <= 0) {
+          return { allowed: false, reason: `item ${intent.itemId} is out of stock` };
+        }
+      }
+      return { allowed: true };
+
+    case "select-dungeon-item-target":
+      if (screen !== "dungeon-items") {
+        return { allowed: false, reason: "select-dungeon-item-target is only valid on dungeon-items screen" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-items") {
+        return { allowed: false, reason: "viewModel is not a dungeon-items view model" };
+      }
+      {
+        const hero = snapshot.viewModel.party.find((h) => h.id === intent.heroId);
+        if (!hero) {
+          return { allowed: false, reason: `target hero ${intent.heroId} does not exist` };
+        }
+        if (!hero.isAlive) {
+          return { allowed: false, reason: `target hero ${intent.heroId} is defeated` };
+        }
+      }
+      return { allowed: true };
+
+    case "use-dungeon-item":
+      if (screen !== "dungeon-items") {
+        return { allowed: false, reason: "use-dungeon-item is only valid on dungeon-items screen" };
+      }
+      if (snapshot.viewModel.kind !== "dungeon-items") {
+        return { allowed: false, reason: "viewModel is not a dungeon-items view model" };
+      }
+      {
+        const item = snapshot.viewModel.items.find((i) => i.id === intent.itemId);
+        if (!item) {
+          return { allowed: false, reason: `item ${intent.itemId} does not exist` };
+        }
+        if (item.qty <= 0) {
+          return { allowed: false, reason: `item ${intent.itemId} is out of stock` };
+        }
+        if (item.targetHeroId) {
+          const targetId = intent.heroId ?? snapshot.viewModel.selectedHeroId;
+          if (!targetId) {
+            return { allowed: false, reason: `item ${intent.itemId} requires a target hero` };
+          }
+          const hero = snapshot.viewModel.party.find((h) => h.id === targetId);
+          if (!hero) {
+            return { allowed: false, reason: `target hero ${targetId} does not exist` };
+          }
+          if (!hero.isAlive) {
+            return { allowed: false, reason: `target hero ${targetId} is defeated` };
+          }
+        }
       }
       return { allowed: true };
 

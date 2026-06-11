@@ -13,6 +13,7 @@ export type FlowState =
   | "dungeon-map"
   | "combat"
   | "dungeon-interaction"
+  | "dungeon-items"
   | "result"
   | "return";
 
@@ -334,6 +335,44 @@ export interface DungeonInteractionViewModel {
   isRetreatAvailable: boolean;
 }
 
+export interface DungeonItem {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  qty: number;
+  category: "consumable" | "tool" | "torch" | "curio" | "key";
+  isUsable: boolean;
+  targetHeroId?: string;
+}
+
+export interface DungeonItemsHero {
+  id: string;
+  name: string;
+  classLabel: string;
+  hp: string;
+  maxHp: string;
+  stress: string;
+  maxStress: string;
+  position: number;
+  isAlive: boolean;
+}
+
+export interface DungeonItemsViewModel {
+  kind: "dungeon-items";
+  title: string;
+  dungeonName: string;
+  roomLabel: string;
+  items: ReadonlyArray<DungeonItem>;
+  party: ReadonlyArray<DungeonItemsHero>;
+  selectedItemId: string | null;
+  selectedHeroId: string | null;
+  isUsable: boolean;
+  usageHint: string;
+  torchLevel: number;
+  maxTorchLevel: number;
+}
+
 export interface ExpeditionSetupViewModel {
   kind: "expedition";
   title: string;
@@ -554,6 +593,7 @@ export type DdgcViewModel =
   | DungeonMapViewModel
   | CombatViewModel
   | DungeonInteractionViewModel
+  | DungeonItemsViewModel
   | ExpeditionResultViewModel
   | ReturnViewModel
   | UnsupportedViewModel
@@ -603,4 +643,9 @@ export type DdgcFrontendIntent =
   | { type: "select-target"; enemyId: string }
   | { type: "confirm-attack" }
   | { type: "flee-combat" }
-  | { type: "end-turn" };
+  | { type: "end-turn" }
+  | { type: "open-dungeon-items" }
+  | { type: "close-dungeon-items" }
+  | { type: "select-dungeon-item"; itemId: string }
+  | { type: "select-dungeon-item-target"; heroId: string }
+  | { type: "use-dungeon-item"; itemId: string; heroId?: string };

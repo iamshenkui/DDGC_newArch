@@ -11,6 +11,7 @@ import type {
   DungeonAssistViewModel,
   DungeonHintViewModel,
   DungeonInteractionViewModel,
+  DungeonItemsViewModel,
   DungeonMapViewModel,
   ExpeditionPlanningViewModel,
   ExpeditionResultViewModel,
@@ -40,6 +41,7 @@ import { ProvisioningScreen } from "../screens/expedition/ProvisioningScreen";
 import { DungeonHintScreen } from "../screens/expedition/DungeonHintScreen";
 import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
 import { DungeonInteractionScreen } from "../screens/dungeon/DungeonInteractionScreen";
+import { DungeonItemsScreen } from "../screens/dungeon/DungeonItemsScreen";
 import { DungeonAssistScreen } from "../screens/dungeon/DungeonAssistScreen";
 import { DungeonMapScreen } from "../screens/dungeon/DungeonMapScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
@@ -248,6 +250,28 @@ export function DdgcApp() {
             onRetreat={() => {
               void dispatchIntent(bridge, { type: "retreat-dungeon" });
             }}
+            onOpenItems={() => {
+              void dispatchIntent(bridge, { type: "open-dungeon-items" });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "dungeon-items" && snapshot().viewModel.kind === "dungeon-items"}
+        >
+          <DungeonItemsScreen
+            viewModel={snapshot().viewModel as DungeonItemsViewModel}
+            onClose={() => {
+              void dispatchIntent(bridge, { type: "close-dungeon-items" });
+            }}
+            onSelectItem={(itemId) => {
+              void dispatchIntent(bridge, { type: "select-dungeon-item", itemId });
+            }}
+            onSelectHero={(heroId) => {
+              void dispatchIntent(bridge, { type: "select-dungeon-item-target", heroId });
+            }}
+            onUseItem={(itemId, heroId) => {
+              void dispatchIntent(bridge, { type: "use-dungeon-item", itemId, heroId });
+            }}
           />
         </Match>
         <Match
@@ -267,6 +291,9 @@ export function DdgcApp() {
             onReturnToTown={() => {
               void dispatchIntent(bridge, { type: "return-to-town" });
             }}
+            onOpenItems={() => {
+              void dispatchIntent(bridge, { type: "open-dungeon-items" });
+            }}
           />
         </Match>
         <Match
@@ -282,6 +309,9 @@ export function DdgcApp() {
             }}
             onCompleteDungeon={() => {
               void dispatchIntent(bridge, { type: "complete-dungeon" });
+            }}
+            onOpenItems={() => {
+              void dispatchIntent(bridge, { type: "open-dungeon-items" });
             }}
           />
         </Match>
@@ -310,6 +340,9 @@ export function DdgcApp() {
             }}
             onOpenSettings={() => {
               void dispatchIntent(bridge, { type: "open-combat-settings" });
+            }}
+            onOpenItems={() => {
+              void dispatchIntent(bridge, { type: "open-dungeon-items" });
             }}
           />
         </Match>

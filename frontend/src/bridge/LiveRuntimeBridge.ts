@@ -18,7 +18,9 @@ import type {
   ExpeditionResultViewModel,
   ReturnViewModel,
   DungeonInteractionViewModel,
-  CombatViewModel
+  DungeonItemsViewModel,
+  CombatViewModel,
+  FlowState
 } from "./contractTypes";
 import { createTownBuildingSummary } from "../town/buildingCatalog";
 
@@ -503,6 +505,32 @@ const createLiveDungeonInteractionViewModel = (): DungeonInteractionViewModel =>
   isRetreatAvailable: true
 });
 
+const createLiveDungeonItemsViewModel = (): DungeonItemsViewModel => ({
+  kind: "dungeon-items",
+  title: "Dungeon Items",
+  dungeonName: "Azure Lantern Depths",
+  roomLabel: "Combat Room",
+  items: [
+    { id: "supply-food", name: "干粮", icon: "🍞", description: "恢复少量生命值。", qty: 8, category: "consumable", isUsable: true, targetHeroId: "hero-hunter-live-01" },
+    { id: "supply-torch", name: "火把", icon: "🔥", description: "提升火炬亮度。", qty: 6, category: "torch", isUsable: true },
+    { id: "supply-bandage", name: "绷带", icon: "🩹", description: "治疗流血伤口。", qty: 4, category: "consumable", isUsable: true, targetHeroId: "hero-hunter-live-01" },
+    { id: "supply-antidote", name: "解毒剂", icon: "🧪", description: "解除中毒。", qty: 2, category: "consumable", isUsable: true, targetHeroId: "hero-hunter-live-01" },
+    { id: "supply-shovel", name: "铁锹", icon: "⛏", description: "清除障碍。", qty: 2, category: "tool", isUsable: true },
+    { id: "supply-key", name: "万能钥匙", icon: "🔑", description: "打开锁住的门。", qty: 1, category: "key", isUsable: true },
+    { id: "supply-holy", name: "圣水", icon: "✨", description: "净化亡灵。", qty: 2, category: "consumable", isUsable: true, targetHeroId: "hero-hunter-live-01" }
+  ],
+  party: [
+    { id: "hero-hunter-live-01", name: "Yuan", classLabel: "Hunter", hp: "42 / 42", maxHp: "42", stress: "0", maxStress: "200", position: 1, isAlive: true },
+    { id: "hero-white-live-01", name: "Mei", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "0", maxStress: "200", position: 2, isAlive: true }
+  ],
+  selectedItemId: "supply-food",
+  selectedHeroId: "hero-hunter-live-01",
+  isUsable: true,
+  usageHint: "Select a hero target and use the item.",
+  torchLevel: 75,
+  maxTorchLevel: 100
+});
+
 const createLiveDungeonAssistViewModel = (): DungeonAssistViewModel => ({
   kind: "dungeon-assist",
   title: "Dungeon Assist",
@@ -768,6 +796,7 @@ export class LiveRuntimeBridge implements RuntimeBridge {
 
   private listeners = new Set<RuntimeBridgeListener>();
   private snapshot = createLiveTownSnapshot();
+  private previousFlowState: FlowState = "dungeon-map";
 
   async boot(): Promise<DdgcFrontendSnapshot> {
     this.emit(this.snapshot);
@@ -1314,6 +1343,103 @@ export class LiveRuntimeBridge implements RuntimeBridge {
           ...this.snapshot,
           flowState: "result",
           viewModel: createLiveResultViewModel()
+        };
+        break;
+      }
+      case "open-dungeon-items": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: open-dungeon-items rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
+        this.previousFlowState = this.snapshot.flowState;
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-items",
+          viewModel: createLiveDungeonItemsViewModel()
+        };
+        break;
+      }
+      case "close-dungeon-items": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: close-dungeon-items rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: this.previousFlowState,
+          viewModel: createLiveDungeonMapViewModel()
+        };
+        break;
+      }
+      case "select-dungeon-item": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: select-dungeon-item rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
+        const itemsVm = this.snapshot.viewModel as DungeonItemsViewModel;
+        const item = itemsVm.items.find((i) => i.id === intent.itemId);
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...itemsVm,
+            selectedItemId: intent.itemId,
+            selectedHeroId: item?.targetHeroId ? itemsVm.selectedHeroId : null,
+            isUsable: Boolean(item?.isUsable && item.qty > 0)
+          }
+        };
+        break;
+      }
+      case "select-dungeon-item-target": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: select-dungeon-item-target rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
+        const itemsVm = this.snapshot.viewModel as DungeonItemsViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...itemsVm,
+            selectedHeroId: intent.heroId
+          }
+        };
+        break;
+      }
+      case "use-dungeon-item": {
+        const validation = canTransition(this.snapshot, intent);
+        if (!validation.allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: use-dungeon-item rejected: ${validation.reason ?? "invalid transition"}.`
+          };
+          break;
+        }
+        const itemsVm = this.snapshot.viewModel as DungeonItemsViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...itemsVm,
+            items: itemsVm.items.map((i) =>
+              i.id === intent.itemId ? { ...i, qty: Math.max(0, i.qty - 1) } : i
+            ),
+            usageHint: `Used ${itemsVm.items.find((i) => i.id === intent.itemId)?.name ?? "item"}.`
+          },
+          debugMessage: `Live: used dungeon item ${intent.itemId}.`
         };
         break;
       }

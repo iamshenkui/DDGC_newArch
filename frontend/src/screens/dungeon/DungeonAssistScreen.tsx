@@ -9,6 +9,7 @@ interface DungeonAssistScreenProps {
   onUseAssistAction: (actionId: string) => void;
   onContinue: () => void;
   onReturnToTown: () => void;
+  onOpenItems?: () => void;
 }
 
 function parseHp(hp: string): { current: number; max: number } {
@@ -359,6 +360,13 @@ export const DungeonAssistScreen: Component<DungeonAssistScreenProps> = (props) 
         <div class="dungeon-assist-controls-right">
           <button class="action-secondary" onClick={props.onReturnToTown} data-testid="return-to-town-btn">
             Return to Town
+          </button>
+          <button
+            class="action-secondary"
+            onClick={props.onOpenItems}
+            data-testid="dungeon-open-items-btn"
+          >
+            物品背包
           </button>
           <button
             class="action-primary launch-primary"

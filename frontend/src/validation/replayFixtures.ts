@@ -2,6 +2,7 @@ import type {
   BootLoadViewModel,
   BuildingDetailViewModel,
   DungeonInteractionViewModel,
+  DungeonItemsViewModel,
   DdgcFrontendSnapshot,
   DungeonAssistViewModel,
   DungeonSelectViewModel,
@@ -710,6 +711,33 @@ export const replayDungeonInteractionViewModel: DungeonInteractionViewModel = {
   isRetreatAvailable: true
 };
 
+export const replayDungeonItemsViewModel: DungeonItemsViewModel = {
+  kind: "dungeon-items",
+  title: "Dungeon Items",
+  dungeonName: "The Depths Await",
+  roomLabel: "Ancient Altar",
+  items: [
+    { id: "supply-food", name: "干粮", icon: "🍞", description: "恢复少量生命值，可在战斗或探索中使用。", qty: 6, category: "consumable", isUsable: true, targetHeroId: "hero-hunter-01" },
+    { id: "supply-torch", name: "火把", icon: "🔥", description: "提升火炬亮度，降低压力积累。", qty: 4, category: "torch", isUsable: true },
+    { id: "supply-bandage", name: "绷带", icon: "🩹", description: "治疗流血伤口并恢复生命值。", qty: 3, category: "consumable", isUsable: true, targetHeroId: "hero-hunter-01" },
+    { id: "supply-antidote", name: "解毒剂", icon: "🧪", description: "解除中毒效果并恢复少量生命。", qty: 2, category: "consumable", isUsable: true, targetHeroId: "hero-hunter-01" },
+    { id: "supply-shovel", name: "铁锹", icon: "⛏", description: "用于清除障碍物或挖掘宝藏。", qty: 2, category: "tool", isUsable: true },
+    { id: "supply-key", name: "万能钥匙", icon: "🔑", description: "打开锁住的宝箱或门。", qty: 1, category: "key", isUsable: true },
+    { id: "supply-holy", name: "圣水", icon: "✨", description: "对亡灵敌人有效，也可净化诅咒奇物。", qty: 2, category: "consumable", isUsable: true, targetHeroId: "hero-hunter-01" }
+  ],
+  party: [
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", stress: "17", maxStress: "200", position: 1, isAlive: true },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "8", maxStress: "200", position: 2, isAlive: true },
+    { id: "hero-black-01", name: "Hei Zhen", classLabel: "Black", hp: "34 / 40", maxHp: "40", stress: "24", maxStress: "200", position: 3, isAlive: true }
+  ],
+  selectedItemId: "supply-food",
+  selectedHeroId: "hero-hunter-01",
+  isUsable: true,
+  usageHint: "选择一名英雄作为目标，然后点击“使用物品”。",
+  torchLevel: 75,
+  maxTorchLevel: 100
+};
+
 export const replayDungeonAssistViewModel: DungeonAssistViewModel = {
   kind: "dungeon-assist",
   title: "Dungeon Assist",
@@ -1268,6 +1296,14 @@ export const dungeonInteractionSnapshot: DdgcFrontendSnapshot = {
   debugMessage: "Replay bridge showing dungeon interaction screen."
 };
 
+// Dungeon items flow snapshot
+export const dungeonItemsSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "dungeon-items",
+  viewModel: replayDungeonItemsViewModel,
+  debugMessage: "Replay bridge showing dungeon items screen."
+};
+
 // Dungeon assist flow snapshot
 export const dungeonAssistSnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",
@@ -1334,7 +1370,7 @@ export function validateSnapshotContract(snapshot: DdgcFrontendSnapshot): string
   }
 
   // FlowState must be a valid FlowState
-  const validFlowStates: FlowState[] = ["boot", "load", "town", "dungeon-select", "expedition-planning", "provisioning", "dungeon-hint", "expedition", "dungeon-assist", "dungeon-map", "combat", "dungeon-interaction", "result", "return"];
+  const validFlowStates: FlowState[] = ["boot", "load", "town", "dungeon-select", "expedition-planning", "provisioning", "dungeon-hint", "expedition", "dungeon-assist", "dungeon-map", "combat", "dungeon-interaction", "dungeon-items", "result", "return"];
   if (!validFlowStates.includes(snapshot.flowState as FlowState)) {
     errors.push(
       `flowState "${String(snapshot.flowState)}" is not a valid FlowState. ` +
@@ -1396,6 +1432,7 @@ function validateKindDiscrimination(lifecycle: string, flowState: string, kind: 
     combat: ["combat"],
     "dungeon-map": ["dungeon-map"],
     "dungeon-interaction": ["dungeon-interaction"],
+    "dungeon-items": ["dungeon-items"],
     result: ["result"],
     return: ["return"],
   };
@@ -1522,6 +1559,18 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!Array.isArray(vm.interactions)) e.push("DungeonInteractionViewModel: interactions is not an array");
       if (typeof vm.isProceedAvailable !== "boolean") e.push("DungeonInteractionViewModel: isProceedAvailable is not a boolean");
       if (typeof vm.isRetreatAvailable !== "boolean") e.push("DungeonInteractionViewModel: isRetreatAvailable is not a boolean");
+      break;
+    }
+    case "dungeon-items": {
+      if (!vm.title || typeof vm.title !== "string") e.push("DungeonItemsViewModel: title is missing");
+      if (!vm.dungeonName || typeof vm.dungeonName !== "string") e.push("DungeonItemsViewModel: dungeonName is missing");
+      if (!vm.roomLabel || typeof vm.roomLabel !== "string") e.push("DungeonItemsViewModel: roomLabel is missing");
+      if (!Array.isArray(vm.items)) { e.push("DungeonItemsViewModel: items is not an array"); } else if (vm.items.length === 0) { e.push("DungeonItemsViewModel: items array is empty"); }
+      if (!Array.isArray(vm.party)) { e.push("DungeonItemsViewModel: party is not an array"); } else if (vm.party.length === 0) { e.push("DungeonItemsViewModel: party array is empty"); }
+      if (typeof vm.isUsable !== "boolean") e.push("DungeonItemsViewModel: isUsable is not a boolean");
+      if (!vm.usageHint || typeof vm.usageHint !== "string") e.push("DungeonItemsViewModel: usageHint is missing");
+      if (typeof vm.torchLevel !== "number") e.push("DungeonItemsViewModel: torchLevel is not a number");
+      if (typeof vm.maxTorchLevel !== "number") e.push("DungeonItemsViewModel: maxTorchLevel is not a number");
       break;
     }
     case "dungeon-assist": {
