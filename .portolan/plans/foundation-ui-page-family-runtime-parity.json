@@ -1,0 +1,714 @@
+{
+  "schema_version": "atlas.portolan/plan/v1",
+  "plan_id": "foundation-ui-page-family-runtime-parity",
+  "task_id": "3c5d6a11-28fe-51b7-9aef-fa174dc43e61",
+  "title": "Foundation UI Page-Family Runtime Parity Plan",
+  "repo": "iamshenkui/DDGC_newArch",
+  "base_branch": "master",
+  "status": "approved_for_implementation",
+  "generated_at": "2026-06-11",
+  "overview": "Defines the minimal shared page-family foundation for UI migrations without implementing individual reference pages. Establishes target route/screen/component boundaries for expedition-planning and dungeon-runtime, the runtime/headless view-model adapter shape, NavigationShell entry/return semantics, stable state-slot naming, interaction handoff conventions, and screenshot parity harness pattern.",
+  "page_families": {
+    "expedition_planning": {
+      "family_id": "pf-expedition-planning",
+      "display_name": "Expedition Planning (位面探索)",
+      "screens": [
+        {
+          "screen_key": "expedition-planning",
+          "flow_state": "expedition-planning",
+          "view_model_kind": "expedition-planning",
+          "route_semantic": "town → expedition-planning",
+          "entry_intents": ["start-expedition-planning"],
+          "return_intent": "return-to-town",
+          "continue_intent": "proceed-to-provisioning",
+          "component": "ExpeditionPlanningScreen",
+          "component_path": "frontend/src/screens/expedition/ExpeditionPlanningScreen.tsx",
+          "contract_type_path": "frontend/src/bridge/contractTypes.ts:ExpeditionPlanningViewModel",
+          "rust_view_model": {
+            "exists": false,
+            "required_path": "src/contracts/viewmodels.rs:ExpeditionPlanningViewModel",
+            "gap_classification": "game-gap",
+            "gap_reason": "Rust contracts layer has no ExpeditionPlanningViewModel; frontend defines shape in contractTypes.ts. Must be added to contracts/viewmodels.rs with adapter in contracts/adapters.rs."
+          },
+          "runtime_data_source": {
+            "primary": "CampaignState.roster + BuildingRegistry + QuestRegistry",
+            "adapter": "adapters::expedition_planning_from_campaign",
+            "blocker": null
+          }
+        },
+        {
+          "screen_key": "dungeon-select",
+          "flow_state": "dungeon-select",
+          "view_model_kind": "dungeon-select",
+          "route_semantic": "town → dungeon-select (alternative entry)",
+          "entry_intents": ["start-dungeon-select"],
+          "return_intent": "return-to-town",
+          "continue_intent": "confirm-dungeon-selection",
+          "component": "DungeonSelectScreen",
+          "component_path": "frontend/src/screens/expedition/DungeonSelectScreen.tsx",
+          "contract_type_path": "frontend/src/bridge/contractTypes.ts:DungeonSelectViewModel",
+          "rust_view_model": {
+            "exists": false,
+            "required_path": "src/contracts/viewmodels.rs:DungeonSelectViewModel",
+            "gap_classification": "game-gap",
+            "gap_reason": "Rust contracts layer has no DungeonSelectViewModel. Must shape from CampaignState + dungeon config registry."
+          },
+          "runtime_data_source": {
+            "primary": "CampaignState.roster + get_dungeon_config() + QuestRegistry",
+            "adapter": "adapters::dungeon_select_from_campaign",
+            "blocker": null
+          }
+        },
+        {
+          "screen_key": "provisioning",
+          "flow_state": "provisioning",
+          "view_model_kind": "provisioning",
+          "route_semantic": "expedition-planning|dungeon-select → provisioning",
+          "entry_intents": ["proceed-to-provisioning", "start-provisioning", "confirm-dungeon-selection"],
+          "return_intent": "return-to-town",
+          "continue_intent": "confirm-provisioning",
+          "component": "ProvisioningScreen",
+          "component_path": "frontend/src/screens/expedition/ProvisioningScreen.tsx",
+          "contract_type_path": "frontend/src/bridge/contractTypes.ts:ProvisioningViewModel",
+          "rust_view_model": {
+            "exists": true,
+            "path": "src/contracts/viewmodels.rs:ProvisioningViewModel",
+            "adapter_path": "src/contracts/adapters.rs"
+          },
+          "runtime_data_source": {
+            "primary": "CampaignState.roster + selected dungeon/quest",
+            "adapter": "adapters::provisioning_from_campaign",
+            "blocker": null
+          }
+        },
+        {
+          "screen_key": "dungeon-hint",
+          "flow_state": "dungeon-hint",
+          "view_model_kind": "dungeon-hint",
+          "route_semantic": "provisioning → dungeon-hint",
+          "entry_intents": ["confirm-provisioning"],
+          "return_intent": "return-to-town",
+          "continue_intent": "accept-dungeon-hint",
+          "component": "DungeonHintScreen",
+          "component_path": "frontend/src/screens/expedition/DungeonHintScreen.tsx",
+          "contract_type_path": "frontend/src/bridge/contractTypes.ts:DungeonHintViewModel",
+          "rust_view_model": {
+            "exists": false,
+            "required_path": "src/contracts/viewmodels.rs:DungeonHintViewModel",
+            "gap_classification": "game-gap",
+            "gap_reason": "Rust contracts layer has no DungeonHintViewModel. Must shape from selected dungeon config + quest metadata."
+          },
+          "runtime_data_source": {
+            "primary": "DungeonMapConfig + QuestDefinition + selected party",
+            "adapter": "adapters::dungeon_hint_from_config",
+            "blocker": null
+          }
+        },
+        {
+          "screen_key": "expedition",
+          "flow_state": "expedition",
+          "view_model_kind": "expedition",
+          "route_semantic": "dungeon-hint → expedition (pre-launch review)",
+          "entry_intents": ["accept-dungeon-hint"],
+          "return_intent": "return-to-town",
+          "continue_intent": "launch-expedition",
+          "component": "ExpeditionScreen",
+          "component_path": "frontend/src/screens/expedition/ExpeditionScreen.tsx",
+          "contract_type_path": "frontend/src/bridge/contractTypes.ts:ExpeditionSetupViewModel",
+          "rust_view_model": {
+            "exists": true,
+            "path": "src/contracts/viewmodels.rs:ExpeditionSetupViewModel",
+            "adapter_path": "src/contracts/adapters.rs"
+          },
+          "runtime_data_source": {
+            "primary": "CampaignState.roster + quest/dungeon selection",
+            "adapter": "adapters::expedition_setup_from_campaign",
+            "blocker": null
+          }
+        }
+      ],
+      "navigation_semantics": {
+        "entry_point": "TownShellScreen invokes start-expedition-planning OR start-dungeon-select",
+        "entry_condition": "host.phase == Ready && flow_state == Town",
+        "return_target": "Town (flow_state: town, viewModel.kind: town)",
+        "return_semantic": "Abandon expedition planning — no state mutation to campaign",
+        "continue_target": "dungeon-assist (first dungeon-runtime screen after launch)",
+        "continue_condition": "launch-expedition intent succeeds → expedition transitions to dungeon-runtime family"
+      }
+    },
+    "dungeon_runtime": {
+      "family_id": "pf-dungeon-runtime",
+      "display_name": "Dungeon Runtime (副本)",
+      "screens": [
+        {
+          "screen_key": "dungeon-assist",
+          "flow_state": "dungeon-assist",
+          "view_model_kind": "dungeon-assist",
+          "route_semantic": "expedition → dungeon-assist (entry assist phase)",
+          "entry_intents": ["launch-expedition", "enter-dungeon-assist"],
+          "return_intent": "return-to-town",
+          "continue_intent": "continue-from-dungeon",
+          "component": "DungeonAssistScreen",
+          "component_path": "frontend/src/screens/dungeon/DungeonAssistScreen.tsx",
+          "contract_type_path": "frontend/src/bridge/contractTypes.ts:DungeonAssistViewModel",
+          "rust_view_model": {
+            "exists": false,
+            "required_path": "src/contracts/viewmodels.rs:DungeonAssistViewModel",
+            "gap_classification": "game-gap",
+            "gap_reason": "Rust contracts layer has no DungeonAssistViewModel. Must shape from active expedition hero states + camping skill registry."
+          },
+          "runtime_data_source": {
+            "primary": "GameState.active_expedition.heroes + camping_skills",
+            "adapter": "adapters::dungeon_assist_from_expedition",
+            "blocker": null
+          }
+        },
+        {
+          "screen_key": "dungeon-map",
+          "flow_state": "dungeon-map",
+          "view_model_kind": "dungeon-map",
+          "route_semantic": "dungeon-assist → dungeon-map (exploration)",
+          "entry_intents": ["continue-from-dungeon"],
+          "return_intent": "retreat-from-dungeon",
+          "continue_intent": "enter-room",
+          "component": "DungeonMapScreen",
+          "component_path": "frontend/src/screens/dungeon/DungeonMapScreen.tsx",
+          "contract_type_path": "frontend/src/bridge/contractTypes.ts:DungeonMapViewModel",
+          "rust_view_model": {
+            "exists": false,
+            "required_path": "src/contracts/viewmodels.rs:DungeonMapViewModel",
+            "gap_classification": "game-gap",
+            "gap_reason": "Rust contracts layer has DungeonViewModel but no grid-based DungeonMapViewModel. Must transform Floor/Room graph from framework_progression into frontend grid layout with x/y coordinates, connection edges, and revealed/visited state."
+          },
+          "runtime_data_source": {
+            "primary": "GameState.active_expedition.run + floor + state + heroes",
+            "adapter": "adapters::dungeon_map_from_run_result",
+            "blocker": null
+          }
+        },
+        {
+          "screen_key": "dungeon-interaction",
+          "flow_state": "dungeon-interaction",
+          "view_model_kind": "dungeon-interaction",
+          "route_semantic": "dungeon-map → dungeon-interaction (room event/curio/trap)",
+          "entry_intents": ["enter-room"],
+          "return_intent": "retreat-dungeon",
+          "continue_intent": "proceed-dungeon",
+          "component": "DungeonInteractionScreen",
+          "component_path": "frontend/src/screens/dungeon/DungeonInteractionScreen.tsx",
+          "contract_type_path": "frontend/src/bridge/contractTypes.ts:DungeonInteractionViewModel",
+          "rust_view_model": {
+            "exists": false,
+            "required_path": "src/contracts/viewmodels.rs:DungeonInteractionViewModel",
+            "gap_classification": "game-gap",
+            "gap_reason": "Rust contracts layer has no DungeonInteractionViewModel. Must shape from RoomKind + InteractionRecord + CurioRegistry/TrapRegistry."
+          },
+          "runtime_data_source": {
+            "primary": "RoomKind + InteractionRecord + curio/trap registry",
+            "adapter": "adapters::dungeon_interaction_from_room",
+            "blocker": null
+          }
+        },
+        {
+          "screen_key": "combat",
+          "flow_state": "combat",
+          "view_model_kind": "combat",
+          "route_semantic": "dungeon-interaction|dungeon-map → combat (encounter)",
+          "entry_intents": ["enter-room", "proceed-dungeon"],
+          "return_intent": "flee-combat",
+          "continue_intent": "continue-from-combat",
+          "component": "CombatScreen",
+          "component_path": "frontend/src/screens/combat/CombatScreen.tsx",
+          "contract_type_path": "frontend/src/bridge/contractTypes.ts:CombatViewModel",
+          "rust_view_model": {
+            "exists": true,
+            "path": "src/contracts/viewmodels.rs:CombatViewModel",
+            "adapter_path": "src/contracts/adapters.rs"
+          },
+          "runtime_data_source": {
+            "primary": "framework_viewmodels::CombatViewModel + GameState.active_combat",
+            "adapter": "adapters::combat_from_framework",
+            "blocker": "framework-gap: framework_viewmodels CombatViewModel may not expose all DDGC-specific fields (stress, death's door, skill cooldowns). Verify via adapter/viewmodel tests."
+          }
+        },
+        {
+          "screen_key": "result",
+          "flow_state": "result",
+          "view_model_kind": "result",
+          "route_semantic": "combat|dungeon-map → result (completion)",
+          "entry_intents": ["continue-from-combat", "complete-dungeon", "proceed-dungeon"],
+          "return_intent": null,
+          "continue_intent": "continue-from-result",
+          "component": "ResultScreen",
+          "component_path": "frontend/src/screens/expedition/ResultScreen.tsx",
+          "contract_type_path": "frontend/src/bridge/contractTypes.ts:ExpeditionResultViewModel",
+          "rust_view_model": {
+            "exists": true,
+            "path": "src/contracts/viewmodels.rs:ResultViewModel",
+            "adapter_path": "src/contracts/adapters.rs"
+          },
+          "runtime_data_source": {
+            "primary": "GameState.active_expedition.state + GameState.campaign",
+            "adapter": "adapters::result_from_run",
+            "blocker": null
+          }
+        },
+        {
+          "screen_key": "return",
+          "flow_state": "return",
+          "view_model_kind": "return",
+          "route_semantic": "result → return (journey to town)",
+          "entry_intents": ["continue-from-result"],
+          "return_intent": null,
+          "continue_intent": "resume-from-return",
+          "component": "ReturnScreen",
+          "component_path": "frontend/src/screens/expedition/ReturnScreen.tsx",
+          "contract_type_path": "frontend/src/bridge/contractTypes.ts:ReturnViewModel",
+          "rust_view_model": {
+            "exists": true,
+            "path": "src/contracts/viewmodels.rs:ReturnFlowViewModel",
+            "adapter_path": "src/contracts/adapters.rs"
+          },
+          "runtime_data_source": {
+            "primary": "GameState.active_expedition.state + heroes",
+            "adapter": "adapters::return_flow_from_state",
+            "blocker": null
+          }
+        }
+      ],
+      "navigation_semantics": {
+        "entry_point": "ExpeditionScreen invokes launch-expedition",
+        "entry_condition": "host.phase == Ready && flow_state == expedition && isLaunchable == true",
+        "return_target": "Result screen (retreat) or Town (abandon from assist)",
+        "return_semantic": "Retreat applies partial rewards/penalties; abandon discards expedition state",
+        "continue_target": "Town (flow_state: town) after resume-from-return",
+        "continue_condition": "resume-from-return intent succeeds → apply rewards/penalties to CampaignState → clear active_expedition"
+      }
+    }
+  },
+  "runtime_adapter_shape": {
+    "description": "The headless-to-frontend adapter boundary that shapes Rust runtime state into frontend-consumable view models.",
+    "current_state": {
+      "frontend_contracts": "Complete: contractTypes.ts defines all view model shapes and intent types.",
+      "rust_viewmodels": "Partial: BootLoad, Town, BuildingDetail, HeroDetail, Provisioning, ExpeditionSetup, Dungeon, CombatHud, Combat, Result, ReturnFlow exist. Missing: ExpeditionPlanning, DungeonSelect, DungeonHint, DungeonAssist, DungeonMap, DungeonInteraction.",
+      "rust_adapters": "Partial: adapters.rs has town_from_campaign, dungeon_from_run_result, combat_from_framework, result_from_run, return_flow_from_state, boot_load_from_host. Missing adapters for the 6 missing view models.",
+      "bridge_integration": "Synthetic: LiveRuntimeBridge creates hardcoded view models. No DdgcHost integration.",
+      "state_slot_naming": "Stable: GameState uses active_expedition, active_combat, active_result, active_return_flow as ephemeral state slots. These names are contract-stable and used by both Rust state layer and TS frontend."
+    },
+    "required_new_adapters": [
+      {
+        "adapter": "adapters::expedition_planning_from_campaign",
+        "inputs": ["&CampaignState", "&QuestRegistry", "&BuildingRegistry"],
+        "output": "ExpeditionPlanningViewModel",
+        "gap": "game-gap"
+      },
+      {
+        "adapter": "adapters::dungeon_select_from_campaign",
+        "inputs": ["&CampaignState", "DungeonType", "MapSize", "&DungeonEncounterRegistry"],
+        "output": "DungeonSelectViewModel",
+        "gap": "game-gap"
+      },
+      {
+        "adapter": "adapters::dungeon_hint_from_config",
+        "inputs": ["&DungeonMapConfig", "&QuestDefinition", "&[HeroState]"],
+        "output": "DungeonHintViewModel",
+        "gap": "game-gap"
+      },
+      {
+        "adapter": "adapters::dungeon_assist_from_expedition",
+        "inputs": ["&DdgcRunResult", "&CampingSkillRegistry"],
+        "output": "DungeonAssistViewModel",
+        "gap": "game-gap"
+      },
+      {
+        "adapter": "adapters::dungeon_map_from_run_result",
+        "inputs": ["&DdgcRunResult", "&Floor", "&[RoomId]"],
+        "output": "DungeonMapViewModel",
+        "gap": "game-gap"
+      },
+      {
+        "adapter": "adapters::dungeon_interaction_from_room",
+        "inputs": ["&RoomKind", "Option<&InteractionRecord>", "&CurioRegistry", "&TrapRegistry"],
+        "output": "DungeonInteractionViewModel",
+        "gap": "game-gap"
+      }
+    ],
+    "bridge_evolution": {
+      "current": "LiveRuntimeBridge creates synthetic view models directly in TypeScript.",
+      "target": "LiveRuntimeBridge invokes DdgcHost via WASM bindings or JSON-RPC to fetch real view models shaped by Rust adapters.",
+      "transition_path": "1) Implement missing Rust view models + adapters → 2) Add representative-campaign methods to GameState for each new VM → 3) Wire bridge to call representative methods → 4) Replace synthetic data with real DdgcHost data",
+      "blocker_classification": "game-gap — the bridge wiring is DDGC-specific and belongs in the frontend/ directory of this repo. No framework changes needed."
+    }
+  },
+  "navigation_shell_semantics": {
+    "description": "Entry, return, and continue-flow semantics for the migrated pages.",
+    "state_slot_contract": {
+      "active_expedition": {
+        "type": "Option<DdgcRunResult>",
+        "lifecycle": "Created at expedition launch, cleared on return-to-town",
+        "consumers": ["dungeon-assist", "dungeon-map", "dungeon-interaction", "combat"],
+        "handoff": "Expedition launch creates the run result; all dungeon-runtime screens read from this slot"
+      },
+      "active_combat": {
+        "type": "Option<CombatState>",
+        "lifecycle": "Created on combat entry, cleared on combat exit",
+        "consumers": ["combat"],
+        "handoff": "Combat screen receives encounter_id and initial vitals from expedition; updates through combat resolver"
+      },
+      "active_result": {
+        "type": "Option<ResultState>",
+        "lifecycle": "Created on expedition completion or combat end, cleared on continue-from-result",
+        "consumers": ["result"],
+        "handoff": "Result screen receives outcome, rewards, casualties from expedition/combat state"
+      },
+      "active_return_flow": {
+        "type": "Option<ReturnFlowState>",
+        "lifecycle": "Created on continue-from-result, cleared on resume-from-return",
+        "consumers": ["return"],
+        "handoff": "Return screen receives hero vitals, dungeon metadata, and completion status"
+      }
+    },
+    "intent_handoff_matrix": {
+      "start-expedition-planning": {
+        "from": "town",
+        "to": "expedition-planning",
+        "state_mutation": "None (read-only from CampaignState)",
+        "validation": "host.is_ready() && flow_state == Town"
+      },
+      "proceed-to-provisioning": {
+        "from": "expedition-planning",
+        "to": "provisioning",
+        "state_mutation": "Store selected plane/quest + party selection in transient planning state",
+        "validation": "isReadyToProvision == true"
+      },
+      "confirm-provisioning": {
+        "from": "provisioning",
+        "to": "dungeon-hint",
+        "state_mutation": "Deduct gold, mark heroes as on-expedition",
+        "validation": "isReadyToLaunch == true && canTransition() passes"
+      },
+      "accept-dungeon-hint": {
+        "from": "dungeon-hint",
+        "to": "expedition",
+        "state_mutation": "None (review only)",
+        "validation": "isEnterable == true && canTransition() passes"
+      },
+      "launch-expedition": {
+        "from": "expedition",
+        "to": "dungeon-assist",
+        "state_mutation": "Create active_expedition via run_ddgc_slice or DdgcHost boot",
+        "validation": "isLaunchable == true && canTransition() passes"
+      },
+      "continue-from-dungeon": {
+        "from": "dungeon-assist",
+        "to": "dungeon-map",
+        "state_mutation": "Apply camping/assist effects to active_expedition.heroes",
+        "validation": "canContinue == true"
+      },
+      "enter-room": {
+        "from": "dungeon-map",
+        "to": "dungeon-interaction|combat",
+        "state_mutation": "Update current room, mark visited, resolve room encounter",
+        "validation": "Room is accessible (connected + revealed) && canTransition() passes"
+      },
+      "continue-from-combat": {
+        "from": "combat",
+        "to": "result",
+        "state_mutation": "Apply combat result, update hero vitals in active_expedition",
+        "validation": "phase == character-hit (acknowledgement required)"
+      },
+      "continue-from-result": {
+        "from": "result",
+        "to": "return",
+        "state_mutation": "Create active_return_flow from active_expedition results",
+        "validation": "isContinueAvailable == true"
+      },
+      "resume-from-return": {
+        "from": "return",
+        "to": "town",
+        "state_mutation": "Apply rewards/penalties to CampaignState, clear active_expedition/active_result/active_return_flow, update roster",
+        "validation": "isTownResumeAvailable == true"
+      },
+      "return-to-town": {
+        "from": "any expedition-planning or dungeon-runtime screen",
+        "to": "town",
+        "state_mutation": "Discard transient planning state or abort expedition (with penalties if in dungeon-runtime)",
+        "validation": "Not already in town && not during character-hit acknowledgement"
+      }
+    }
+  },
+  "screenshot_parity_harness": {
+    "description": "Pattern for verifying migrated pages match reference screenshots.",
+    "reference_image_paths": {
+      "expedition_planning": "reference/ref_image/跨际元契约/3位面探索",
+      "dungeon_runtime": "reference/ref_image/跨际元契约/4副本",
+      "status": "NOT_PRESENT — these directories do not exist in the repository. Must be created and populated with reference screenshots before implementation tasks proceed."
+    },
+    "harness_stack": {
+      "test_runner": "Playwright",
+      "config": "frontend/playwright.config.ts (baseURL: http://localhost:4179, viewport: 1440x900)",
+      "capture_config": "frontend/playwright-cap.config.ts / playwright.cap.config.ts",
+      "existing_smoke_tests": [
+        "frontend/smoke-cap/provisioningCapture.spec.ts",
+        "frontend/smoke-cap/townCapture.spec.ts",
+        "frontend/smoke-cap/uir008Capture.spec.ts",
+        "frontend/smoke-cap/uir008Detail.spec.ts",
+        "frontend/smoke-cap/uir008Verify.spec.ts",
+        "frontend/smoke-cap/uir009Capture.spec.ts",
+        "frontend/smoke-cap/uir009Verify.spec.ts"
+      ],
+      "existing_browser_smoke": "frontend/smoke/browserSmoke.spec.ts"
+    },
+    "parity_verification_pattern": {
+      "step_1": "Capture reference screenshot from original Unity build or provided reference images.",
+      "step_2": "Load migrated frontend screen with representative campaign data (via replay fixture or live bridge representative method).",
+      "step_3": "Use Playwright to capture screenshot at identical viewport (1440x900).",
+      "step_4": "Compare using pixel-diff or structural comparison (layout regions, text content, color palette).",
+      "step_5": "Key interaction verification: assert that user actions (click, select, confirm) produce correct state transitions and view model updates.",
+      "acceptance_threshold": "30% review coverage — each page family must have at least one screenshot parity test and one interaction verification test before dependent implementation tasks are considered reviewable."
+    },
+    "required_new_capture_specs": [
+      {
+        "spec_file": "frontend/smoke-cap/expeditionPlanningCapture.spec.ts",
+        "target_screens": ["expedition-planning"],
+        "interactions": ["select-plane", "toggle-planning-hero", "proceed-to-provisioning", "return-to-town"]
+      },
+      {
+        "spec_file": "frontend/smoke-cap/dungeonSelectCapture.spec.ts",
+        "target_screens": ["dungeon-select"],
+        "interactions": ["select-dungeon", "toggle-dungeon-hero", "confirm-dungeon-selection", "return-to-town"]
+      },
+      {
+        "spec_file": "frontend/smoke-cap/dungeonHintCapture.spec.ts",
+        "target_screens": ["dungeon-hint"],
+        "interactions": ["accept-dungeon-hint", "return-to-town"]
+      },
+      {
+        "spec_file": "frontend/smoke-cap/dungeonMapCapture.spec.ts",
+        "target_screens": ["dungeon-map"],
+        "interactions": ["enter-room", "retreat-from-dungeon", "complete-dungeon"]
+      },
+      {
+        "spec_file": "frontend/smoke-cap/dungeonInteractionCapture.spec.ts",
+        "target_screens": ["dungeon-interaction"],
+        "interactions": ["interact-room", "proceed-dungeon", "retreat-dungeon"]
+      }
+    ]
+  },
+  "migration_blockers": {
+    "pre_implementation": [
+      {
+        "blocker_id": "BLOCKER-PRE-001",
+        "classification": "game-gap",
+        "description": "Reference screenshot directories (reference/ref_image/跨际元契约/3位面探索 and 4副本) do not exist. Cannot establish screenshot parity baseline without reference images.",
+        "resolution": "Create reference directories and populate with reference screenshots from original game build or design mockups. If unavailable, document that parity will be verified against frontend smoke-test fixtures instead.",
+        "affected_page_families": ["expedition_planning", "dungeon_runtime"]
+      },
+      {
+        "blocker_id": "BLOCKER-PRE-002",
+        "classification": "game-gap",
+        "description": "Missing Rust view models for 6 frontend screens: ExpeditionPlanning, DungeonSelect, DungeonHint, DungeonAssist, DungeonMap, DungeonInteraction.",
+        "resolution": "Implement missing view models in src/contracts/viewmodels.rs and corresponding adapters in src/contracts/adapters.rs. Each requires serde Serialize/Deserialize and no framework-specific types in the JSON contract.",
+        "affected_page_families": ["expedition_planning", "dungeon_runtime"]
+      }
+    ],
+    "runtime_data": [
+      {
+        "blocker_id": "BLOCKER-RUNTIME-001",
+        "classification": "game-gap",
+        "description": "LiveRuntimeBridge creates synthetic view models with hardcoded data. No integration with DdgcHost for real campaign state.",
+        "resolution": "Evolve bridge to call GameState representative methods (new_representative_expedition, new_representative_combat) via WASM or JSON-RPC, or at minimum align synthetic data with representative method outputs.",
+        "affected_page_families": ["expedition_planning", "dungeon_runtime"]
+      },
+      {
+        "blocker_id": "BLOCKER-RUNTIME-002",
+        "classification": "framework-gap",
+        "description": "framework_viewmodels::CombatViewModel may not expose DDGC-specific fields (stress, skill cooldowns, death's door). Verify via existing adapter/viewmodel tests.",
+        "resolution": "If framework_viewmodels lacks required fields, patch framework_viewmodels crate with regression test for generic combat view model fields. Do not add DDGC-specific fields to framework crate.",
+        "affected_page_families": ["dungeon_runtime"]
+      }
+    ]
+  },
+  "dependent_implementation_tasks": {
+    "description": "Ordered implementation tasks derived from this foundation plan. Each task references the plan artifacts and produces 30% review evidence.",
+    "task_order": [
+      {
+        "order": 1,
+        "task_id": "IMPL-RUST-VM-001",
+        "title": "Implement missing Rust view models for expedition-planning family",
+        "scope": "Add ExpeditionPlanningViewModel, DungeonSelectViewModel, DungeonHintViewModel to src/contracts/viewmodels.rs with serde Serialize/Deserialize.",
+        "dependencies": [],
+        "review_evidence": [
+          "cargo test --test ddgc_adapter_viewmodel_tests passes",
+          "View models serialize to JSON with no framework-specific type names in output",
+          "Contract boundary test verifies no framework types leak into expedition-planning view model JSON"
+        ]
+      },
+      {
+        "order": 2,
+        "task_id": "IMPL-RUST-VM-002",
+        "title": "Implement missing Rust view models for dungeon-runtime family",
+        "scope": "Add DungeonAssistViewModel, DungeonMapViewModel, DungeonInteractionViewModel to src/contracts/viewmodels.rs with serde Serialize/Deserialize.",
+        "dependencies": ["IMPL-RUST-VM-001"],
+        "review_evidence": [
+          "cargo test --test ddgc_adapter_viewmodel_tests passes",
+          "DungeonMapViewModel transforms Floor graph to grid layout correctly",
+          "Contract boundary test verifies no framework types leak into dungeon-runtime view model JSON"
+        ]
+      },
+      {
+        "order": 3,
+        "task_id": "IMPL-RUST-ADAPTER-001",
+        "title": "Implement Rust adapters for expedition-planning view models",
+        "scope": "Add adapters::expedition_planning_from_campaign, adapters::dungeon_select_from_campaign, adapters::dungeon_hint_from_config in src/contracts/adapters.rs.",
+        "dependencies": ["IMPL-RUST-VM-001"],
+        "review_evidence": [
+          "Adapter tests verify correct mapping from CampaignState + registries to view models",
+          "Error cases (empty roster, locked dungeons) produce ViewModelError::PartialMapping",
+          "30% review: at least one integration test boots DdgcHost and produces each view model"
+        ]
+      },
+      {
+        "order": 4,
+        "task_id": "IMPL-RUST-ADAPTER-002",
+        "title": "Implement Rust adapters for dungeon-runtime view models",
+        "scope": "Add adapters::dungeon_assist_from_expedition, adapters::dungeon_map_from_run_result, adapters::dungeon_interaction_from_room in src/contracts/adapters.rs.",
+        "dependencies": ["IMPL-RUST-VM-002", "IMPL-RUST-ADAPTER-001"],
+        "review_evidence": [
+          "Adapter tests verify correct mapping from DdgcRunResult to dungeon map grid",
+          "Room connection graph maps to DungeonMapRoom.connections correctly",
+          "Interaction records map to DungeonInteractionViewModel.interactions correctly"
+        ]
+      },
+      {
+        "order": 5,
+        "task_id": "IMPL-STATE-REP-001",
+        "title": "Add representative state methods for new view models",
+        "scope": "Add GameState::new_representative_expedition_planning(), new_representative_dungeon_select(), new_representative_dungeon_hint(), new_representative_dungeon_assist(), new_representative_dungeon_map(), new_representative_dungeon_interaction() methods.",
+        "dependencies": ["IMPL-RUST-ADAPTER-001", "IMPL-RUST-ADAPTER-002"],
+        "review_evidence": [
+          "Each representative method produces a valid view model with no empty required fields",
+          "State smoke tests verify NavigationShell transitions through all new flow states",
+          "Docs smoke tests verify representative methods are documented"
+        ]
+      },
+      {
+        "order": 6,
+        "task_id": "IMPL-BRIDGE-001",
+        "title": "Align LiveRuntimeBridge with representative Rust state methods",
+        "scope": "Replace hardcoded synthetic view models in LiveRuntimeBridge with calls to GameState representative methods (via WASM bindings or aligned data contract). Minimum: align TypeScript fixture shapes with Rust view model JSON shapes.",
+        "dependencies": ["IMPL-STATE-REP-001"],
+        "review_evidence": [
+          "Bridge produces snapshots that match Rust view model JSON schema",
+          "FlowController canTransition() passes on all bridge-produced snapshots",
+          "ProvisioningFlow.test.ts passes with bridge-aligned data"
+        ]
+      },
+      {
+        "order": 7,
+        "task_id": "IMPL-FRONTEND-PARITY-001",
+        "title": "Implement screenshot parity harness for expedition-planning family",
+        "scope": "Create Playwright capture specs for expedition-planning, dungeon-select, provisioning, dungeon-hint screens. Add reference images or document baseline.",
+        "dependencies": ["IMPL-BRIDGE-001"],
+        "review_evidence": [
+          "Playwright capture specs run successfully: npx playwright test smoke-cap/expeditionPlanningCapture.spec.ts",
+          "Screenshots match reference or documented baseline within tolerance",
+          "30% review: at least one screenshot parity test per screen + one interaction verification test"
+        ]
+      },
+      {
+        "order": 8,
+        "task_id": "IMPL-FRONTEND-PARITY-002",
+        "title": "Implement screenshot parity harness for dungeon-runtime family",
+        "scope": "Create Playwright capture specs for dungeon-assist, dungeon-map, dungeon-interaction, combat, result, return screens.",
+        "dependencies": ["IMPL-FRONTEND-PARITY-001"],
+        "review_evidence": [
+          "Playwright capture specs run successfully for all dungeon-runtime screens",
+          "Combat screen screenshot matches reference baseline",
+          "30% review: at least one screenshot parity test per screen + one interaction verification test"
+        ]
+      }
+    ]
+  },
+  "abstraction_boundary": {
+    "description": "The boundary between DDGC-specific content and framework crates.",
+    "contract_json_rule": "No framework-specific types (ActorId, EncounterId, RunId, RoomId, FloorId, CombatResolver, etc.) may appear in any view model serialized to JSON consumed by the frontend. All framework types must be mapped to String, u32, or DDGC-specific enums before serialization.",
+    "current_compliance": "Existing view models (TownViewModel, CombatViewModel, ResultViewModel, etc.) use String IDs and DDGC-specific enums. Compliance is verified by contracts_smoke_tests and ddgc_adapter_viewmodel_tests.",
+    "required_compliance": "All 6 new view models must follow the same pattern. Each must have a contract-boundary test that serializes to JSON and asserts no framework type names appear in the output.",
+    "ddgc_content_rule": "All DDGC-specific content (plane names like QingLong/BaiHu, dungeon configurations, hero classes, monster families) lives in DDGC_newArch. No DDGC-specific strings, IDs, or logic leak into framework crates.",
+    "current_compliance_ddgc": "Verified by no_ddgc_content_in_framework_crates integration test and MIGRATION_BLOCKERS.md rejection table.",
+    "headless_boundary": "The game runs headless. UI runtime behavior is outside the game runtime responsibility. The frontend is a separate TypeScript/SolidJS application that consumes contract JSON. The bridge between Rust headless runtime and TS frontend is the RuntimeBridge interface.",
+    "state_slot_boundary": "Ephemeral runtime state (active_expedition, active_combat, active_result, active_return_flow) is not persisted. Only CampaignState is the save/load boundary. This separation is already enforced in GameState."
+  },
+  "thirty_percent_review_evidence": {
+    "description": "Every dependent implementation task must produce at least 30% review evidence before downstream tasks may proceed.",
+    "required_evidence_categories": [
+      {
+        "category": "contract_compliance",
+        "minimum": "1 test per new view model verifying JSON serialization contains no framework types",
+        "rationale": "Ensures the abstraction boundary is maintained for all new screens"
+      },
+      {
+        "category": "adapter_correctness",
+        "minimum": "1 test per new adapter verifying correct mapping from runtime state to view model",
+        "rationale": "Ensures runtime data flows correctly to frontend"
+      },
+      {
+        "category": "flow_transition",
+        "minimum": "1 test per new flow state verifying NavigationShell valid_transitions() includes the state",
+        "rationale": "Ensures navigation semantics are wired correctly"
+      },
+      {
+        "category": "screenshot_parity",
+        "minimum": "1 Playwright capture spec per page family (expedition-planning + dungeon-runtime)",
+        "rationale": "Visual verification that migrated screens match reference"
+      },
+      {
+        "category": "interaction_verification",
+        "minimum": "1 test per page family verifying key user interactions (select, confirm, launch, enter)",
+        "rationale": "Behavioral verification that interaction handoffs work end-to-end"
+      }
+    ],
+    "verification_commands": [
+      "cargo test --test contracts_smoke_tests",
+      "cargo test --test ddgc_adapter_viewmodel_tests",
+      "cargo test --test state_smoke_tests",
+      "cargo test --test docs_smoke_tests",
+      "cd frontend && npm test",
+      "cd frontend && npx playwright test smoke/",
+      "cd frontend && npx playwright test smoke-cap/"
+    ]
+  },
+  "appendix": {
+    "existing_frontend_screens": [
+      "startup", "loading", "town", "hero-detail", "building-detail",
+      "expedition-planning", "dungeon-select", "provisioning", "dungeon-hint",
+      "expedition", "dungeon-assist", "dungeon-map", "combat",
+      "dungeon-interaction", "result", "return", "unsupported", "fatal"
+    ],
+    "existing_rust_view_models": [
+      "BootLoadViewModel", "TownViewModel", "BuildingDetailViewModel",
+      "HeroDetailViewModel", "ProvisioningViewModel", "ExpeditionSetupViewModel",
+      "DungeonViewModel", "ExplorationHudViewModel", "RoomMovementViewModel",
+      "EncounterEntryViewModel", "CombatViewModel", "CombatHudViewModel",
+      "ResultViewModel", "ReturnFlowViewModel"
+    ],
+    "existing_rust_adapters": [
+      "boot_load_from_host", "town_from_campaign", "dungeon_from_run_result",
+      "combat_from_framework", "result_from_run", "return_flow_from_state"
+    ],
+    "existing_bridge_intents": [
+      "boot", "open-hero", "open-building", "building-action",
+      "start-expedition-planning", "select-plane", "toggle-planning-hero",
+      "proceed-to-provisioning", "start-dungeon-select", "select-dungeon",
+      "toggle-dungeon-hero", "confirm-dungeon-selection", "start-provisioning",
+      "toggle-hero-selection", "confirm-provisioning", "accept-dungeon-hint",
+      "launch-expedition", "proceed-dungeon", "interact-room", "retreat-dungeon",
+      "enter-dungeon-assist", "select-assist-hero", "use-assist-action",
+      "continue-from-dungeon", "enter-room", "retreat-from-dungeon",
+      "complete-dungeon", "return-to-town", "continue-from-result",
+      "resume-from-return", "continue-from-combat", "open-combat-settings",
+      "select-skill", "select-target", "confirm-attack", "flee-combat", "end-turn"
+    ]
+  }
+}
