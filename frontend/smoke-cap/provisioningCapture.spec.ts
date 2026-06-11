@@ -22,7 +22,7 @@ async function settle(page: any, ms = 400): Promise<void> {
 }
 
 test.describe("provisioning screen: 战前补给 fidelity", () => {
-  test("replay boot → town → provisioning layout and copy", async ({ page }) => {
+  test("replay boot → town → expedition-planning → provisioning layout and copy", async ({ page }) => {
     // Boot replay and navigate to provisioning
     await page.goto(BASE_URL);
     await page.waitForLoadState("networkidle");
@@ -33,9 +33,10 @@ test.describe("provisioning screen: 战前补给 fidelity", () => {
 
     // Click embark to enter expedition planning, then proceed to provisioning
     await page.locator(".estate-embark-button").click();
-    await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
+    await page.waitForSelector('[data-testid="expedition-planning-screen"]', { timeout: 5_000 });
     await settle(page);
-    await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
+
+    await page.getByRole("button", { name: "前往战前补给" }).click();
     await page.waitForSelector('[data-testid="provisioning-screen"]', { timeout: 5_000 });
     await settle(page);
 
@@ -181,9 +182,9 @@ test.describe("provisioning screen: 战前补给 fidelity", () => {
     await settle(page);
 
     await page.locator(".estate-embark-button").click();
-    await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
+    await page.waitForSelector('[data-testid="expedition-planning-screen"]', { timeout: 5_000 });
     await settle(page);
-    await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
+    await page.getByRole("button", { name: "前往战前补给" }).click();
     await page.waitForSelector('[data-testid="provisioning-screen"]', { timeout: 5_000 });
     await settle(page);
 
@@ -212,9 +213,9 @@ test.describe("provisioning screen: 战前补给 fidelity", () => {
     await settle(page);
 
     await page.locator(".estate-embark-button").click();
-    await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
+    await page.waitForSelector('[data-testid="expedition-planning-screen"]', { timeout: 5_000 });
     await settle(page);
-    await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
+    await page.getByRole("button", { name: "前往战前补给" }).click();
     await page.waitForSelector('[data-testid="provisioning-screen"]', { timeout: 5_000 });
     await settle(page);
 

@@ -337,8 +337,8 @@ const createLiveDungeonSelectViewModel = (): DungeonSelectViewModel => ({
 
 const createLiveExpeditionPlanningViewModel = (): ExpeditionPlanningViewModel => ({
   kind: "expedition-planning",
-  title: "Plane Exploration",
-  campaignName: "Fresh Campaign",
+  title: "位面探索",
+  campaignName: "新档位面",
   selectedPlaneId: "qinglong",
   planes: [
     {
@@ -393,10 +393,14 @@ const createLiveExpeditionPlanningViewModel = (): ExpeditionPlanningViewModel =>
     }
   ],
   partySlots: [
-    { heroId: "hero-hunter-live-01", heroName: "Yuan", classLabel: "Hunter", hp: "42 / 42", stress: "0", level: 1 },
-    { heroId: "hero-white-live-01", heroName: "Mei", classLabel: "White", hp: "41 / 41", stress: "0", level: 1 },
+    { heroId: "hero-hunter-live-01", heroName: "Yuan", classLabel: "Hunter", hp: "42 / 42", maxHp: "42", stress: "0", maxStress: "200", level: 1, isWounded: false, isAfflicted: false },
+    { heroId: "hero-white-live-01", heroName: "Mei", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "0", maxStress: "200", level: 1, isWounded: false, isAfflicted: false },
     null,
     null
+  ],
+  roster: [
+    { heroId: "hero-hunter-live-01", heroName: "Yuan", classLabel: "Hunter", hp: "42 / 42", maxHp: "42", stress: "0", maxStress: "200", level: 1, isWounded: false, isAfflicted: false },
+    { heroId: "hero-white-live-01", heroName: "Mei", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "0", maxStress: "200", level: 1, isWounded: false, isAfflicted: false }
   ],
   maxPartySize: 4,
   isReadyToProvision: true,
@@ -877,11 +881,17 @@ export class LiveRuntimeBridge implements RuntimeBridge {
       }
       case "toggle-planning-hero": {
         const planningVm = this.snapshot.viewModel as ExpeditionPlanningViewModel;
-        const updatedSlots = planningVm.partySlots.map((slot) => {
-          if (slot === null) return null;
-          if (slot.heroId === intent.heroId) return null;
-          return slot;
-        });
+        const existingIndex = planningVm.partySlots.findIndex((s) => s !== null && s.heroId === intent.heroId);
+        let updatedSlots = planningVm.partySlots.slice();
+        if (existingIndex >= 0) {
+          updatedSlots[existingIndex] = null;
+        } else {
+          const emptyIndex = updatedSlots.findIndex((s) => s === null);
+          const hero = planningVm.roster.find((h) => h.heroId === intent.heroId);
+          if (emptyIndex >= 0 && hero) {
+            updatedSlots[emptyIndex] = hero;
+          }
+        }
         const filledCount = updatedSlots.filter((s) => s !== null).length;
         this.snapshot = {
           ...this.snapshot,

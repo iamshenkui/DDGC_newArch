@@ -259,11 +259,17 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       }
       case "toggle-planning-hero": {
         const planningVm = this.snapshot.viewModel as ExpeditionPlanningViewModel;
-        const updatedSlots = planningVm.partySlots.map((slot) => {
-          if (slot === null) return null;
-          if (slot.heroId === intent.heroId) return null;
-          return slot;
-        });
+        const existingIndex = planningVm.partySlots.findIndex((s) => s !== null && s.heroId === intent.heroId);
+        let updatedSlots = planningVm.partySlots.slice();
+        if (existingIndex >= 0) {
+          updatedSlots[existingIndex] = null;
+        } else {
+          const emptyIndex = updatedSlots.findIndex((s) => s === null);
+          const hero = planningVm.roster.find((h) => h.heroId === intent.heroId);
+          if (emptyIndex >= 0 && hero) {
+            updatedSlots[emptyIndex] = hero;
+          }
+        }
         const filledCount = updatedSlots.filter((s) => s !== null).length;
         this.snapshot = {
           ...this.snapshot,

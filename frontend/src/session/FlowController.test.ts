@@ -942,4 +942,72 @@ describe("canTransition - result and return meta-loop continuation", () => {
       expect(validation.reason).toContain("does not exist");
     });
   });
+
+  describe("expedition-planning transition guards", () => {
+    it("allows start-expedition-planning from town", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "start-expedition-planning" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects start-expedition-planning from non-town screens", () => {
+      const nonTownSnapshots: DdgcFrontendSnapshot[] = [
+        provisioningSnapshot,
+        expeditionSnapshot,
+        resultSnapshot,
+        returnSnapshot,
+        dungeonSelectSnapshot,
+        expeditionPlanningSnapshot
+      ];
+      for (const snap of nonTownSnapshots) {
+        const validation = canTransition(snap, { type: "start-expedition-planning" });
+        expect(validation.allowed).toBe(false);
+      }
+    });
+
+    it("allows select-plane in expedition-planning screen", () => {
+      const validation = canTransition(expeditionPlanningSnapshot, { type: "select-plane", planeId: "baihu" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects select-plane from non-expedition-planning screens", () => {
+      const validation = canTransition(dungeonSelectSnapshot, { type: "select-plane", planeId: "baihu" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in expedition-planning");
+    });
+
+    it("allows toggle-planning-hero in expedition-planning screen", () => {
+      const validation = canTransition(expeditionPlanningSnapshot, { type: "toggle-planning-hero", heroId: "hero-hunter-01" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects toggle-planning-hero from non-expedition-planning screens", () => {
+      const validation = canTransition(dungeonSelectSnapshot, { type: "toggle-planning-hero", heroId: "hero-hunter-01" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in expedition-planning");
+    });
+
+    it("allows proceed-to-provisioning when expedition planning is ready", () => {
+      const validation = canTransition(expeditionPlanningSnapshot, { type: "proceed-to-provisioning" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects proceed-to-provisioning when not ready to provision", () => {
+      const notReadySnapshot: DdgcFrontendSnapshot = {
+        ...expeditionPlanningSnapshot,
+        viewModel: {
+          ...expeditionPlanningSnapshot.viewModel,
+          isReadyToProvision: false
+        }
+      };
+      const validation = canTransition(notReadySnapshot, { type: "proceed-to-provisioning" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not ready");
+    });
+
+    it("rejects proceed-to-provisioning from non-expedition-planning screens", () => {
+      const validation = canTransition(dungeonSelectSnapshot, { type: "proceed-to-provisioning" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid in expedition-planning");
+    });
+  });
 });

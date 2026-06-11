@@ -864,6 +864,18 @@ button {
   transform: translateY(-2px);
 }
 
+.roster-hero:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  border-color: rgba(160, 204, 188, 0.08);
+  background: rgba(10, 18, 14, 0.5);
+}
+
+.roster-hero:disabled .roster-portrait-avatar {
+  filter: grayscale(0.7);
+}
+
 .roster-hero:active {
   transform: translateY(0);
 }

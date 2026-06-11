@@ -123,6 +123,9 @@ export function DdgcApp() {
             onOpenBuilding={(buildingId) => {
               void dispatchIntent(bridge, { type: "open-building", buildingId });
             }}
+            onStartExpeditionPlanning={() => {
+              void dispatchIntent(bridge, { type: "start-expedition-planning" });
+            }}
             onStartDungeonSelect={() => {
               void dispatchIntent(bridge, { type: "start-dungeon-select" });
             }}

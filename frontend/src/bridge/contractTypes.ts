@@ -195,8 +195,12 @@ export interface ExpeditionPlanningHeroSlot {
   heroName: string;
   classLabel: string;
   hp: string;
+  maxHp?: string;
   stress: string;
+  maxStress?: string;
   level: number;
+  isWounded?: boolean;
+  isAfflicted?: boolean;
 }
 
 export interface DungeonSelectHeroSummary {
@@ -251,6 +255,7 @@ export interface ExpeditionPlanningViewModel {
   selectedPlaneId: string;
   planes: ReadonlyArray<ExpeditionPlane>;
   partySlots: ReadonlyArray<ExpeditionPlanningHeroSlot | null>;
+  roster: ReadonlyArray<ExpeditionPlanningHeroSlot>;
   maxPartySize: number;
   isReadyToProvision: boolean;
   provisionCost: string;
