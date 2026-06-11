@@ -5978,10 +5978,18 @@ button {
   overflow-y: auto;
 }
 
+.plane-exploration-content {
+  gap: 16px;
+}
+
 /* Plane selection strip */
 .plane-selection-strip {
   width: 100%;
   max-width: 900px;
+}
+
+.plane-contract-strip {
+  max-width: 980px;
 }
 
 .plane-strip-header {
@@ -6038,9 +6046,11 @@ button {
 }
 
 /* Plane cards */
-.plane-card {
+.plane-card,
+.plane-contract-card {
   flex: 0 0 auto;
   width: 180px;
+  min-height: 150px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -6060,9 +6070,12 @@ button {
   transition: border-color 0.18s ease, background 0.18s ease, transform 0.15s ease,
     box-shadow 0.18s ease;
   position: relative;
+  color: var(--panel-text);
+  text-align: center;
 }
 
-.plane-card:hover:not(:disabled) {
+.plane-card:hover:not(:disabled),
+.plane-contract-card:hover:not(:disabled) {
   border-color: rgba(160, 204, 188, 0.35);
   transform: translateY(-3px);
   box-shadow:
@@ -6070,7 +6083,8 @@ button {
     inset 0 1px 0 rgba(160, 204, 188, 0.1);
 }
 
-.plane-card--selected {
+.plane-card--selected,
+.plane-contract-card--selected {
   border-color: rgba(198, 212, 106, 0.5);
   background: linear-gradient(
     180deg,
@@ -6083,7 +6097,8 @@ button {
     inset 0 1px 0 rgba(198, 212, 106, 0.08);
 }
 
-.plane-card--locked {
+.plane-card--locked,
+.plane-contract-card--locked {
   opacity: 0.55;
   cursor: not-allowed;
   border-style: dashed;
@@ -6095,26 +6110,41 @@ button {
   );
 }
 
-.plane-card--locked:hover {
+.plane-card--locked:hover,
+.plane-contract-card--locked:hover {
   transform: none;
   border-color: rgba(160, 204, 188, 0.1);
 }
 
-.plane-card-orb {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+.plane-card-orb,
+.plane-card-sigil {
+  width: 42px;
+  height: 34px;
+  border-radius: 6px;
   box-shadow:
     0 0 12px rgba(0, 0, 0, 0.4),
     inset 0 2px 4px rgba(255, 255, 255, 0.15);
   border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
+.plane-card-main {
+  display: grid;
+  gap: 4px;
+  min-height: 42px;
+  align-content: start;
+}
+
 .plane-card-name {
   font-weight: 700;
-  font-size: 0.88rem;
+  font-size: 0.96rem;
   color: var(--panel-text);
   letter-spacing: 0.04em;
+}
+
+.plane-card-meta {
+  font-size: 0.64rem;
+  color: var(--panel-muted);
+  letter-spacing: 0.02em;
 }
 
 .plane-card-difficulty {
@@ -6156,6 +6186,11 @@ button {
   align-items: start;
 }
 
+.plane-exploration-panels {
+  max-width: 980px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+}
+
 .expedition-planning-details {
   max-width: none;
 }
@@ -6167,10 +6202,11 @@ button {
   margin-bottom: 10px;
 }
 
-.plane-detail-orb {
+.plane-detail-orb,
+.plane-detail-sigil {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: 6px;
   box-shadow:
     0 0 16px rgba(0, 0, 0, 0.4),
     inset 0 2px 4px rgba(255, 255, 255, 0.15);
@@ -6247,6 +6283,15 @@ button {
   padding: 10px 8px;
 }
 
+.expedition-party-panel button.party-slot {
+  border: 1px solid rgba(160, 204, 188, 0.15);
+  cursor: pointer;
+}
+
+.expedition-party-panel button.party-slot:hover {
+  border-color: rgba(198, 212, 106, 0.45);
+}
+
 .party-panel-status {
   display: flex;
   justify-content: center;
@@ -6263,6 +6308,11 @@ button {
   }
 
   .plane-card {
+    width: 150px;
+    padding: 10px 8px;
+  }
+
+  .plane-contract-card {
     width: 150px;
     padding: 10px 8px;
   }
@@ -7099,5 +7149,4 @@ button {
     grid-row: auto;
   }
 }
-
 

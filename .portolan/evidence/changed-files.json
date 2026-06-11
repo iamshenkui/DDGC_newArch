@@ -1,0 +1,50 @@
+{
+  "task_id": "720246f7-1a5a-55b9-896d-7c06ffb72482",
+  "changed_files": [
+    {
+      "path": "frontend/src/screens/town/TownShellScreen.tsx",
+      "change_type": "modified",
+      "summary": "Embark control now prefers the expedition-planning foundation callback so 位面探索 is reachable from town."
+    },
+    {
+      "path": "frontend/src/screens/expedition/ExpeditionPlanningScreen.tsx",
+      "change_type": "modified",
+      "summary": "Implemented the 位面探索 screen hierarchy, labels, cards, slots, state text, return and continue controls, and reference blocker metadata."
+    },
+    {
+      "path": "frontend/src/styles.css",
+      "change_type": "modified",
+      "summary": "Added stable plane exploration layout, contract card, sigil, panel, and clickable party-slot styling."
+    },
+    {
+      "path": "frontend/src/session/FlowController.ts",
+      "change_type": "modified",
+      "summary": "Validated select-plane intents against known unlocked planes."
+    },
+    {
+      "path": "frontend/src/bridge/ReplayRuntimeBridge.ts",
+      "change_type": "modified",
+      "summary": "Rejected unknown or locked plane selections in replay runtime dispatch."
+    },
+    {
+      "path": "frontend/src/bridge/LiveRuntimeBridge.ts",
+      "change_type": "modified",
+      "summary": "Rejected unknown or locked plane selections in live runtime dispatch."
+    },
+    {
+      "path": "frontend/smoke/browserSmoke.spec.ts",
+      "change_type": "modified",
+      "summary": "Updated browser smoke route and assertions for 位面探索 plane selection and progression to provisioning."
+    },
+    {
+      "path": ".portolan/evidence/implementation-slice.json",
+      "change_type": "added",
+      "summary": "Recorded implementation evidence, validation, and classified blockers."
+    },
+    {
+      "path": ".portolan/evidence/changed-files.json",
+      "change_type": "added",
+      "summary": "Recorded changed-file evidence for review gates."
+    }
+  ]
+}

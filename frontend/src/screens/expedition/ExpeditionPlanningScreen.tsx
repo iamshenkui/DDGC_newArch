@@ -34,10 +34,15 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
 
   const isFull = () => filledSlots() >= props.viewModel.maxPartySize;
 
+  const readinessLabel = () =>
+    props.viewModel.isReadyToProvision
+      ? "队伍已整备，可进入补给"
+      : `已配置 ${filledSlots()}/${props.viewModel.maxPartySize} 名英雄`;
+
   const planeStatusClass = (plane: typeof props.viewModel.planes[number]) => {
-    if (plane.isLocked) return "plane-card plane-card--locked";
-    if (plane.id === props.viewModel.selectedPlaneId) return "plane-card plane-card--selected";
-    return "plane-card";
+    if (plane.isLocked) return "plane-contract-card plane-contract-card--locked";
+    if (plane.id === props.viewModel.selectedPlaneId) return "plane-contract-card plane-contract-card--selected";
+    return "plane-contract-card";
   };
 
   const difficultyPips = (count: number, max = 5) => {
@@ -51,14 +56,18 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
   return (
     <div
       class="expedition-viewport"
+      data-testid="expedition-planning-screen"
       data-source-scene="UI_Quest/SelectedQuestPanel"
       data-source-prefab="Assets/Prefabs/UI/QuestWindow.prefab"
+      data-reference-path="reference/ref_image/跨际元契约/3位面探索/位面探索.png"
+      data-reference-status="missing-in-checkout"
+      data-blocker="game-gap: reference screenshot path was not present in this repository checkout"
     >
       {/* ── Top HUD ─────────────────────────────────────── */}
       <header class="expedition-hud">
         <span class="expedition-hud-left">
           <span class="eyebrow">位面探索</span>
-          <h1 class="expedition-title">{props.viewModel.title}</h1>
+          <h1 class="expedition-title">位面探索</h1>
         </span>
         <span class="expedition-hud-center">
           <span class="hud-pill hud-pill-accent">
@@ -73,10 +82,22 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                 <path d="M22 19c0-2.4-1.8-4-4-4" />
               </svg>
             </span>
-            Party: {filledSlots()}/{props.viewModel.maxPartySize}
+            队伍: {filledSlots()}/{props.viewModel.maxPartySize}
           </span>
           <span class="hud-pill gold-pill">
-            Cost: {props.viewModel.provisionCost}
+            消耗: {props.viewModel.provisionCost}
+          </span>
+        </span>
+        <span class="expedition-hud-right">
+          <span
+            class={`expedition-status-pill ${
+              props.viewModel.isReadyToProvision
+                ? "expedition-status-pill--ready"
+                : "expedition-status-pill--neutral"
+            }`}
+          >
+            <span class="expedition-status-pill-dot" aria-hidden="true" />
+            {readinessLabel()}
           </span>
         </span>
       </header>
@@ -86,17 +107,17 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
         <div class="expedition-surface-bg" />
         <div class="expedition-surface-mist" />
 
-        <div class="expedition-content expedition-planning-content">
+        <div class="expedition-content expedition-planning-content plane-exploration-content">
           {/* Plane selection strip — horizontal scroll of available dungeons */}
           <section
-            class="plane-selection-strip"
+            class="plane-selection-strip plane-contract-strip"
             data-source-component="Dungeons"
             data-source-hierarchy="UI_Quest/Dungeons"
           >
             <div class="plane-strip-header">
-              <span class="plane-strip-title">Available Planes</span>
+              <span class="plane-strip-title">位面契约</span>
               <span class="plane-strip-hint">
-                Select a plane to explore. Locked planes require campaign progress.
+                选择探索目标，锁定契约需要战役进度。
               </span>
             </div>
             <div class="plane-strip-scroll">
@@ -110,14 +131,18 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                     disabled={plane.isLocked}
                     data-plane-id={plane.id}
                     data-locked={plane.isLocked}
+                    data-testid={`plane-card-${plane.id}`}
                   >
                     <div
-                      class="plane-card-orb"
+                      class="plane-card-sigil"
                       style={{ "background-color": plane.themeColor }}
                       aria-hidden="true"
                     />
-                    <span class="plane-card-name">{plane.name}</span>
-                    <div class="plane-card-difficulty">
+                    <div class="plane-card-main">
+                      <span class="plane-card-name">{plane.name}</span>
+                      <span class="plane-card-meta">{plane.difficulty} · {plane.estimatedDuration}</span>
+                    </div>
+                    <div class="plane-card-difficulty" aria-label={`难度 ${plane.difficultyPips}`}>
                       <For each={difficultyPips(plane.difficultyPips)}>
                         {(pip) => (
                           <span
@@ -143,28 +168,29 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
           </section>
 
           {/* Two-column layout: selected plane details + party panel */}
-          <div class="expedition-planning-panels">
+          <div class="expedition-planning-panels plane-exploration-panels">
             {/* Selected plane details */}
             <section
               class="details-overlay expedition-planning-details"
               data-source-component="SelectedQuestPanel"
+              data-testid="selected-plane-panel"
             >
               <header class="details-overlay-header">
                 <span class="details-overlay-frame-rule" aria-hidden="true" />
-                <h2 class="details-overlay-title">Plane Details</h2>
+                <h2 class="details-overlay-title">探索情报</h2>
                 <span class="details-overlay-frame-rule" aria-hidden="true" />
               </header>
 
               <div class="plane-detail-header">
                 <div
-                  class="plane-detail-orb"
+                  class="plane-detail-sigil"
                   style={{ "background-color": selectedPlane().themeColor }}
                   aria-hidden="true"
                 />
                 <div class="plane-detail-header-text">
                   <h3 class="plane-detail-name">{selectedPlane().name}</h3>
                   <span class="plane-detail-difficulty">
-                    Difficulty: {selectedPlane().difficulty}
+                    难度: {selectedPlane().difficulty}
                   </span>
                 </div>
               </div>
@@ -172,13 +198,17 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
               <p class="plane-detail-description">{selectedPlane().description}</p>
 
               <div class="details-overlay-row">
-                <span class="details-overlay-label">Estimated Duration</span>
+                <span class="details-overlay-label">预计时长</span>
                 <span class="details-overlay-value">{selectedPlane().estimatedDuration}</span>
+              </div>
+              <div class="details-overlay-row">
+                <span class="details-overlay-label">补给消耗</span>
+                <span class="details-overlay-value">{props.viewModel.provisionCost}</span>
               </div>
 
               {selectedPlane().objectives.length > 0 && (
                 <div class="details-overlay-objectives">
-                  <div class="details-overlay-objectives-title">Objectives</div>
+                  <div class="details-overlay-objectives-title">目标</div>
                   <For each={selectedPlane().objectives}>
                     {(obj) => (
                       <div class="details-overlay-objective">
@@ -196,7 +226,7 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
 
               {selectedPlane().rewards.length > 0 && (
                 <div class="plane-detail-rewards">
-                  <div class="plane-detail-rewards-title">Potential Rewards</div>
+                  <div class="plane-detail-rewards-title">可能奖励</div>
                   <div class="plane-detail-reward-list">
                     <For each={selectedPlane().rewards}>
                       {(reward) => (
@@ -213,10 +243,11 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
               class="details-overlay expedition-party-panel"
               data-source-component="RaidPartyPanel"
               data-source-hierarchy="UI_Quest/RaidPartyPanel"
+              data-testid="expedition-party-panel"
             >
               <header class="details-overlay-header">
                 <span class="details-overlay-frame-rule" aria-hidden="true" />
-                <h2 class="details-overlay-title">Expedition Party</h2>
+                <h2 class="details-overlay-title">出征队伍</h2>
                 <span class="details-overlay-frame-rule" aria-hidden="true" />
               </header>
 
@@ -232,8 +263,8 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                               <line x1="5" y1="12" x2="19" y2="12" />
                             </svg>
                           </span>
-                          <span class="party-slot-empty-hint">Open Slot</span>
-                          <span class="party-slot-empty-sub">Awaiting assignment</span>
+                          <span class="party-slot-empty-hint">空位</span>
+                          <span class="party-slot-empty-sub">等待编入</span>
                         </div>
                       );
                     }
@@ -244,9 +275,12 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                     });
 
                     return (
-                      <div
+                      <button
                         class="party-slot party-slot--selected party-slot--read-only"
                         data-hero-id={hero.heroId}
+                        data-testid={`planning-hero-${hero.heroId}`}
+                        onClick={() => props.onToggleHero(hero.heroId)}
+                        title={`移除 ${hero.heroName}`}
                       >
                         <span class="party-slot-level">Lv{hero.level}</span>
                         <div
@@ -297,7 +331,7 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </button>
                     );
                   }}
                 </For>
@@ -313,8 +347,8 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                 >
                   <span class="expedition-status-pill-dot" aria-hidden="true" />
                   {props.viewModel.isReadyToProvision
-                    ? "Party ready — select a plane and proceed"
-                    : `${filledSlots()} of ${props.viewModel.maxPartySize} heroes assigned`}
+                    ? "队伍已整备"
+                    : `已配置 ${filledSlots()}/${props.viewModel.maxPartySize}`}
                 </span>
               </div>
             </section>
@@ -327,12 +361,12 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
         <div class="expedition-controls-left">
           <span class="expedition-status-pill expedition-status-pill--neutral">
             <span class="expedition-status-pill-dot" aria-hidden="true" />
-            Select a plane and assign your party
+            选择位面并确认出征队伍
           </span>
         </div>
         <div class="expedition-controls-right">
           <button class="action-secondary" onClick={props.onReturnToTown}>
-            Return to Town
+            返回城镇
           </button>
           <button
             class="action-primary launch-primary"
@@ -340,8 +374,8 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
             disabled={!props.viewModel.isReadyToProvision}
           >
             {props.viewModel.isReadyToProvision
-              ? "Proceed to Provisioning"
-              : "Assign Party First"}
+              ? "进入补给"
+              : "先配置队伍"}
           </button>
         </div>
       </footer>

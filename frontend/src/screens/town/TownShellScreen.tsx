@@ -312,10 +312,10 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                 <button
                   class="estate-embark-button"
                   onClick={() => {
-                    if (props.onStartDungeonSelect) {
-                      props.onStartDungeonSelect();
-                    } else if (props.onStartProvisioning) {
+                    if (props.onStartProvisioning) {
                       props.onStartProvisioning();
+                    } else if (props.onStartDungeonSelect) {
+                      props.onStartDungeonSelect();
                     }
                   }}
                   data-source-scene="EstateManagement.unity"

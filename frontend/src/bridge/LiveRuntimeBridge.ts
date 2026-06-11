@@ -843,6 +843,14 @@ export class LiveRuntimeBridge implements RuntimeBridge {
       }
       case "select-plane": {
         const planningVm = this.snapshot.viewModel as ExpeditionPlanningViewModel;
+        const selectedPlane = planningVm.planes.find((plane) => plane.id === intent.planeId);
+        if (!selectedPlane || selectedPlane.isLocked) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: select-plane rejected for ${intent.planeId}.`
+          };
+          break;
+        }
         this.snapshot = {
           ...this.snapshot,
           viewModel: {

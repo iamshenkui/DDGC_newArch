@@ -1,0 +1,108 @@
+{
+  "task_id": "720246f7-1a5a-55b9-896d-7c06ffb72482",
+  "task_title": "implement-ui-migration-issue-49-expedition",
+  "checkpoint": "30_percent_cartographer_and_pre_merge_quartermaster",
+  "implemented_scope": [
+    "Routed the town embark control to the existing expedition-planning foundation flow for the 位面探索 page.",
+    "Reworked ExpeditionPlanningScreen hierarchy, labels, test ids, key buttons, party slots, plane cards, selected plane detail, rewards, costs, and readiness state around the existing runtime view model.",
+    "Preserved return-to-town and proceed-to-provisioning foundation intents.",
+    "Hardened replay/live select-plane handling so unknown or locked planes do not mutate selectedPlaneId.",
+    "Updated Playwright smoke expectations for the 位面探索 route and stable clickable plane/continue regions."
+  ],
+  "architecture_boundary": {
+    "frontend": "UI implementation and browser smoke coverage only.",
+    "src_contracts": "No Rust contract schema changes.",
+    "src_state": "No Rust state changes.",
+    "runtime_view_model": "Used existing frontend RuntimeBridge view models and typed contractTypes without adding framework-specific contract leakage."
+  },
+  "real_data_sources": [
+    "ExpeditionPlanningViewModel.planes for plane names, difficulty, duration, lock state, rewards, objectives, and theme colors.",
+    "ExpeditionPlanningViewModel.partySlots for assigned character slots, HP, stress, level, class, and hero identity.",
+    "ExpeditionPlanningViewModel.provisionCost and isReadyToProvision for cost/readiness button state.",
+    "ReplayRuntimeBridge and LiveRuntimeBridge for headless/runtime interaction semantics."
+  ],
+  "interaction_evidence": [
+    "Town embark button now dispatches start-expedition-planning through the existing DdgcApp foundation callback.",
+    "Plane cards dispatch select-plane only when unlocked.",
+    "Filled party slots dispatch toggle-planning-hero.",
+    "返回城镇 dispatches return-to-town.",
+    "进入补给 dispatches proceed-to-provisioning and remains disabled when isReadyToProvision is false."
+  ],
+  "classified_blockers": [
+    {
+      "id": "BLOCKER-EXPEDITION-REFERENCE-IMAGE",
+      "classification": "game-gap",
+      "surface": "reference/ref_image/跨际元契约/3位面探索/位面探索.png",
+      "status": "missing-in-checkout",
+      "impact": "Exact screenshot parity against the referenced PNG could not be visually compared in this workspace."
+    },
+    {
+      "id": "BLOCKER-PLAYWRIGHT-SYSTEM-DEPS",
+      "classification": "core-gap",
+      "surface": "local browser runtime",
+      "status": "environment-missing-libglib",
+      "impact": "npx playwright test cannot launch Chromium because libglib-2.0.so.0 is missing and install-deps requires unavailable root credentials."
+    },
+    {
+      "id": "BLOCKER-VITEST-MONOLITHIC-RESOURCE-LIMIT",
+      "classification": "core-gap",
+      "surface": "local Node/Vitest process",
+      "status": "container-process-killed",
+      "impact": "npm test -- --run is killed by the container after passing the early files; the same files pass when run in smaller batches except the large building catalog JSON test, which is also killed in this image."
+    }
+  ],
+  "validation": [
+    {
+      "command": "cd frontend && npm ci",
+      "status": "passed"
+    },
+    {
+      "command": "cd frontend && NODE_OPTIONS=--max-old-space-size=2048 npm run build",
+      "status": "passed"
+    },
+    {
+      "command": "cd frontend && NODE_OPTIONS=--max-old-space-size=2048 npx vitest run src/session/FlowController.test.ts src/build-run/smoke.test.ts",
+      "status": "passed",
+      "coverage": "132 tests"
+    },
+    {
+      "command": "cd frontend && NODE_OPTIONS=--max-old-space-size=2048 npx vitest run src/build-run/packageSmoke.test.ts",
+      "status": "passed",
+      "coverage": "14 tests"
+    },
+    {
+      "command": "cd frontend && NODE_OPTIONS=--max-old-space-size=2048 npx vitest run src/validation/runtimeBridge.test.ts src/validation/replayFixtures.test.ts",
+      "status": "passed",
+      "coverage": "183 tests"
+    },
+    {
+      "command": "cd frontend && NODE_OPTIONS=--max-old-space-size=2048 npx vitest run src/session/ProvisioningFlow.test.ts src/session/SessionStore.test.ts src/session/SaveLoadService.test.ts",
+      "status": "passed",
+      "coverage": "58 tests"
+    },
+    {
+      "command": "cd frontend && NODE_OPTIONS=--max-old-space-size=2048 npx vitest run src/screens/expedition/ResultReturnFlow.test.ts",
+      "status": "passed",
+      "coverage": "43 tests"
+    },
+    {
+      "command": "cd frontend && NODE_OPTIONS=--max-old-space-size=2048 npx vitest run src/screens/combat/CombatScreen.test.tsx",
+      "status": "passed",
+      "coverage": "3 tests"
+    },
+    {
+      "command": "cd frontend && npm test -- --run",
+      "status": "blocked",
+      "reason": "Process killed by container resource limits after early test files passed."
+    },
+    {
+      "command": "cd frontend && npx playwright test",
+      "status": "blocked",
+      "reason": "Chromium launch fails because libglib-2.0.so.0 is missing; npx playwright install-deps chromium requires root credentials and failed with su authentication failure."
+    }
+  ],
+  "review_notes": [
+    "Cartographer: changes stay within frontend/session bridge surfaces and preserve DDGC project responsibility boundaries.",
+    "Quartermaster: no framework crate edits, no Rust contract schema changes, and browser selectors are stable data-testid anchors."
+  ]
+}

@@ -292,6 +292,18 @@ export function canTransition(
       if (screen !== "expedition-planning") {
         return { allowed: false, reason: "select-plane is only valid in expedition-planning" };
       }
+      if (snapshot.viewModel.kind !== "expedition-planning") {
+        return { allowed: false, reason: "viewModel is not an expedition-planning view model" };
+      }
+      {
+        const plane = snapshot.viewModel.planes.find((item) => item.id === intent.planeId);
+        if (!plane) {
+          return { allowed: false, reason: "unknown plane id" };
+        }
+        if (plane.isLocked) {
+          return { allowed: false, reason: "plane is locked" };
+        }
+      }
       return { allowed: true };
 
     case "toggle-planning-hero":
