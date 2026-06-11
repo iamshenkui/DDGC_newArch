@@ -21,6 +21,18 @@ interface ExpeditionPlanningScreenProps {
  *   UI_Quest/Dungeons — BaiHu, ZhuQue, XuanWu, QingLong + locked states
  *
  * Source hierarchy: UI_Quest/SelectedQuestPanel + RaidPartyPanel + Dungeons
+ *
+ * Data sourcing:
+ *   - All plane names, descriptions, difficulty, rewards, objectives and lock
+ *     states come from ExpeditionPlanningViewModel.planes.
+ *   - Party slots are rendered from ExpeditionPlanningViewModel.partySlots.
+ *   - Costs and party size come from the view model.
+ *
+ * Known gap (game-gap):
+ *   - The view model does not expose a roster of available heroes, so party
+ *     assignment/removal interactions are not yet wired. Slots are read-only
+ *     until the runtime provides a hero roster. Tracked as B-??? in
+ *     MIGRATION_BLOCKERS.md.
  */
 export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> = (
   props
@@ -51,6 +63,7 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
   return (
     <div
       class="expedition-viewport"
+      data-testid="expedition-planning-screen"
       data-source-scene="UI_Quest/SelectedQuestPanel"
       data-source-prefab="Assets/Prefabs/UI/QuestWindow.prefab"
     >
@@ -73,10 +86,10 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                 <path d="M22 19c0-2.4-1.8-4-4-4" />
               </svg>
             </span>
-            Party: {filledSlots()}/{props.viewModel.maxPartySize}
+            队伍: {filledSlots()}/{props.viewModel.maxPartySize}
           </span>
           <span class="hud-pill gold-pill">
-            Cost: {props.viewModel.provisionCost}
+            费用: {props.viewModel.provisionCost}
           </span>
         </span>
       </header>
@@ -90,13 +103,14 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
           {/* Plane selection strip — horizontal scroll of available dungeons */}
           <section
             class="plane-selection-strip"
+            data-testid="plane-selection-strip"
             data-source-component="Dungeons"
             data-source-hierarchy="UI_Quest/Dungeons"
           >
             <div class="plane-strip-header">
-              <span class="plane-strip-title">Available Planes</span>
+              <span class="plane-strip-title">可选位面</span>
               <span class="plane-strip-hint">
-                Select a plane to explore. Locked planes require campaign progress.
+                选择一个位面进行探索。锁定位面需要战役进度解锁。
               </span>
             </div>
             <div class="plane-strip-scroll">
@@ -108,6 +122,7 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                       if (!plane.isLocked) props.onSelectPlane(plane.id);
                     }}
                     disabled={plane.isLocked}
+                    data-testid={`plane-card-${plane.id}`}
                     data-plane-id={plane.id}
                     data-locked={plane.isLocked}
                   >
@@ -147,11 +162,12 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
             {/* Selected plane details */}
             <section
               class="details-overlay expedition-planning-details"
+              data-testid="plane-details-panel"
               data-source-component="SelectedQuestPanel"
             >
               <header class="details-overlay-header">
                 <span class="details-overlay-frame-rule" aria-hidden="true" />
-                <h2 class="details-overlay-title">Plane Details</h2>
+                <h2 class="details-overlay-title">位面详情</h2>
                 <span class="details-overlay-frame-rule" aria-hidden="true" />
               </header>
 
@@ -164,7 +180,7 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                 <div class="plane-detail-header-text">
                   <h3 class="plane-detail-name">{selectedPlane().name}</h3>
                   <span class="plane-detail-difficulty">
-                    Difficulty: {selectedPlane().difficulty}
+                    难度: {selectedPlane().difficulty}
                   </span>
                 </div>
               </div>
@@ -172,13 +188,13 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
               <p class="plane-detail-description">{selectedPlane().description}</p>
 
               <div class="details-overlay-row">
-                <span class="details-overlay-label">Estimated Duration</span>
+                <span class="details-overlay-label">预计时长</span>
                 <span class="details-overlay-value">{selectedPlane().estimatedDuration}</span>
               </div>
 
               {selectedPlane().objectives.length > 0 && (
                 <div class="details-overlay-objectives">
-                  <div class="details-overlay-objectives-title">Objectives</div>
+                  <div class="details-overlay-objectives-title">目标</div>
                   <For each={selectedPlane().objectives}>
                     {(obj) => (
                       <div class="details-overlay-objective">
@@ -196,7 +212,7 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
 
               {selectedPlane().rewards.length > 0 && (
                 <div class="plane-detail-rewards">
-                  <div class="plane-detail-rewards-title">Potential Rewards</div>
+                  <div class="plane-detail-rewards-title">可能奖励</div>
                   <div class="plane-detail-reward-list">
                     <For each={selectedPlane().rewards}>
                       {(reward) => (
@@ -211,12 +227,14 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
             {/* Party assignment panel */}
             <section
               class="details-overlay expedition-party-panel"
+              data-testid="expedition-party-panel"
               data-source-component="RaidPartyPanel"
               data-source-hierarchy="UI_Quest/RaidPartyPanel"
+              data-blocker="game-gap: no hero roster in ExpeditionPlanningViewModel; assignment/removal not wired"
             >
               <header class="details-overlay-header">
                 <span class="details-overlay-frame-rule" aria-hidden="true" />
-                <h2 class="details-overlay-title">Expedition Party</h2>
+                <h2 class="details-overlay-title">远征队伍</h2>
                 <span class="details-overlay-frame-rule" aria-hidden="true" />
               </header>
 
@@ -232,8 +250,8 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                               <line x1="5" y1="12" x2="19" y2="12" />
                             </svg>
                           </span>
-                          <span class="party-slot-empty-hint">Open Slot</span>
-                          <span class="party-slot-empty-sub">Awaiting assignment</span>
+                          <span class="party-slot-empty-hint">空位</span>
+                          <span class="party-slot-empty-sub">等待分配英雄</span>
                         </div>
                       );
                     }
@@ -273,7 +291,7 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                         <span class="party-slot-class">{hero.classLabel}</span>
                         <div class="party-slot-bars">
                           <div class="party-slot-bar-row">
-                            <div class="party-slot-bar-label">HP</div>
+                            <div class="party-slot-bar-label">生命</div>
                             <div class="party-slot-bar-track">
                               <div
                                 class="party-slot-bar-fill"
@@ -285,7 +303,7 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                             </div>
                           </div>
                           <div class="party-slot-bar-row">
-                            <div class="party-slot-bar-label">ST</div>
+                            <div class="party-slot-bar-label">压力</div>
                             <div class="party-slot-bar-track">
                               <div
                                 class="party-slot-bar-fill"
@@ -313,8 +331,8 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                 >
                   <span class="expedition-status-pill-dot" aria-hidden="true" />
                   {props.viewModel.isReadyToProvision
-                    ? "Party ready — select a plane and proceed"
-                    : `${filledSlots()} of ${props.viewModel.maxPartySize} heroes assigned`}
+                    ? "队伍已就绪 — 可前往战前补给"
+                    : `已分配 ${filledSlots()} / ${props.viewModel.maxPartySize} 名英雄`}
                 </span>
               </div>
             </section>
@@ -327,21 +345,24 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
         <div class="expedition-controls-left">
           <span class="expedition-status-pill expedition-status-pill--neutral">
             <span class="expedition-status-pill-dot" aria-hidden="true" />
-            Select a plane and assign your party
+            {props.viewModel.isReadyToProvision
+              ? "已选择位面，可以前往补给"
+              : "选择位面并分配队伍"}
           </span>
         </div>
         <div class="expedition-controls-right">
-          <button class="action-secondary" onClick={props.onReturnToTown}>
-            Return to Town
+          <button class="action-secondary" onClick={props.onReturnToTown} data-testid="expedition-planning-btn-return">
+            返回城镇
           </button>
           <button
             class="action-primary launch-primary"
             onClick={props.onProceedToProvisioning}
             disabled={!props.viewModel.isReadyToProvision}
+            data-testid="expedition-planning-btn-proceed"
           >
             {props.viewModel.isReadyToProvision
-              ? "Proceed to Provisioning"
-              : "Assign Party First"}
+              ? "前往补给"
+              : "请先组建队伍"}
           </button>
         </div>
       </footer>

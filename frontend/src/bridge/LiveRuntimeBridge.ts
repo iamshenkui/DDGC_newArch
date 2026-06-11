@@ -337,7 +337,7 @@ const createLiveDungeonSelectViewModel = (): DungeonSelectViewModel => ({
 
 const createLiveExpeditionPlanningViewModel = (): ExpeditionPlanningViewModel => ({
   kind: "expedition-planning",
-  title: "Plane Exploration",
+  title: "位面探索",
   campaignName: "Fresh Campaign",
   selectedPlaneId: "qinglong",
   planes: [

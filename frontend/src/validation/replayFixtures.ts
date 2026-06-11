@@ -534,7 +534,7 @@ export const replayDungeonSelectViewModel: DungeonSelectViewModel = {
 
 export const replayExpeditionPlanningViewModel: ExpeditionPlanningViewModel = {
   kind: "expedition-planning",
-  title: "Plane Exploration",
+  title: "位面探索",
   campaignName: "The Azure Lantern",
   selectedPlaneId: "qinglong",
   planes: [
