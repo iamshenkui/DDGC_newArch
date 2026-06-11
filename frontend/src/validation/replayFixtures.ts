@@ -869,6 +869,31 @@ export const replayPartialResultViewModel: ExpeditionResultViewModel = {
   isContinueAvailable: true
 };
 
+export const replayDungeonItemsViewModel: import("../bridge/contractTypes").DungeonItemsViewModel = {
+  kind: "dungeon-items",
+  title: "副本场景-物品",
+  dungeonName: "The Depths Await",
+  roomNumber: 3,
+  party: [
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", stress: "17", maxStress: "200" },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "8", maxStress: "200" },
+    { id: "hero-black-01", name: "Hei Zhen", classLabel: "Black", hp: "34 / 40", maxHp: "40", stress: "24", maxStress: "200" }
+  ],
+  items: [
+    { id: "item-torch", name: "火把", icon: "🔥", qty: 4, description: "照亮黑暗，降低队伍压力积累。", category: "consumable", isUsable: true },
+    { id: "item-food", name: "干粮", icon: "🍞", qty: 6, description: "恢复少量生命值。", category: "consumable", isUsable: true },
+    { id: "item-bandage", name: "绷带", icon: "🩹", qty: 2, description: "治疗流血状态。", category: "consumable", isUsable: true },
+    { id: "item-key", name: "万能钥匙", icon: "🔑", qty: 1, description: "打开上锁的宝箱或门。", category: "key", isUsable: false },
+    { id: "item-shovel", name: "铁锹", icon: "⛏", qty: 1, description: "清除障碍物或挖掘隐藏宝藏。", category: "tool", isUsable: false },
+    { id: "item-antidote", name: "解毒剂", icon: "🧪", qty: 1, description: "解除中毒状态。", category: "consumable", isUsable: true },
+    { id: "item-relic", name: "古代遗物", icon: "🏺", qty: 1, description: "带回城镇换取金币。", category: "treasure", isUsable: false },
+    { id: "item-holy", name: "圣水", icon: "✨", qty: 1, description: "对亡灵敌人造成伤害或解除诅咒。", category: "consumable", isUsable: true }
+  ],
+  selectedItemId: null,
+  selectedHeroId: null,
+  isUsable: false
+};
+
 export const replayReturnViewModel: ReturnViewModel = {
   kind: "return",
   title: "Returning to Town",
@@ -1304,6 +1329,14 @@ export const partialResultSnapshot: DdgcFrontendSnapshot = {
   flowState: "result",
   viewModel: replayPartialResultViewModel,
   debugMessage: "Replay bridge showing partial result screen."
+};
+
+// Dungeon items flow snapshot
+export const dungeonItemsSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "dungeon-items",
+  viewModel: replayDungeonItemsViewModel,
+  debugMessage: "Replay bridge showing dungeon items screen."
 };
 
 // Return flow snapshot

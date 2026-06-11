@@ -1757,3 +1757,109 @@ describe("dungeon-interaction flow", () => {
   });
 });
 
+describe("dungeon-items flow", () => {
+  it("replay open-dungeon-items transitions to dungeon-items state", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "open-dungeon-items" });
+    expect(snapshot.flowState).toBe("dungeon-items");
+    expect(snapshot.viewModel.kind).toBe("dungeon-items");
+    const itemsVm = snapshot.viewModel as import("../bridge/contractTypes").DungeonItemsViewModel;
+    expect(itemsVm.items.length).toBeGreaterThan(0);
+  });
+
+  it("replay close-dungeon-items returns to dungeon-map", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    await bridge.dispatchIntent({ type: "open-dungeon-items" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "close-dungeon-items" });
+    expect(snapshot.flowState).toBe("dungeon-map");
+    expect(snapshot.viewModel.kind).toBe("dungeon-map");
+  });
+
+  it("replay select-dungeon-item updates selected item", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    await bridge.dispatchIntent({ type: "open-dungeon-items" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "select-dungeon-item", itemId: "item-torch" });
+    expect(snapshot.viewModel.kind).toBe("dungeon-items");
+    const itemsVm = snapshot.viewModel as import("../bridge/contractTypes").DungeonItemsViewModel;
+    expect(itemsVm.selectedItemId).toBe("item-torch");
+    expect(itemsVm.isUsable).toBe(true);
+  });
+
+  it("replay use-dungeon-item reduces item quantity", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    await bridge.dispatchIntent({ type: "open-dungeon-items" });
+
+    const before = bridge.currentSnapshot().viewModel as import("../bridge/contractTypes").DungeonItemsViewModel;
+    const torchQty = before.items.find((i) => i.id === "item-torch")!.qty;
+
+    const snapshot = await bridge.dispatchIntent({ type: "use-dungeon-item", itemId: "item-torch" });
+    expect(snapshot.viewModel.kind).toBe("dungeon-items");
+    const after = snapshot.viewModel as import("../bridge/contractTypes").DungeonItemsViewModel;
+    expect(after.items.find((i) => i.id === "item-torch")!.qty).toBe(torchQty - 1);
+  });
+
+  it("live open-dungeon-items transitions to dungeon-items state", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "open-dungeon-items" });
+    expect(snapshot.flowState).toBe("dungeon-items");
+    expect(snapshot.viewModel.kind).toBe("dungeon-items");
+    const itemsVm = snapshot.viewModel as import("../bridge/contractTypes").DungeonItemsViewModel;
+    expect(itemsVm.items.length).toBeGreaterThan(0);
+  });
+
+  it("live close-dungeon-items returns to dungeon-map", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+    await bridge.dispatchIntent({ type: "confirm-provisioning" });
+    await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
+    await bridge.dispatchIntent({ type: "launch-expedition" });
+    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
+    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
+    await bridge.dispatchIntent({ type: "open-dungeon-items" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "close-dungeon-items" });
+    expect(snapshot.flowState).toBe("dungeon-map");
+    expect(snapshot.viewModel.kind).toBe("dungeon-map");
+  });
+});
+

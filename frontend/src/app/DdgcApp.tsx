@@ -11,6 +11,7 @@ import type {
   DungeonAssistViewModel,
   DungeonHintViewModel,
   DungeonInteractionViewModel,
+  DungeonItemsViewModel,
   DungeonMapViewModel,
   ExpeditionPlanningViewModel,
   ExpeditionResultViewModel,
@@ -42,6 +43,7 @@ import { ExpeditionScreen } from "../screens/expedition/ExpeditionScreen";
 import { DungeonInteractionScreen } from "../screens/dungeon/DungeonInteractionScreen";
 import { DungeonAssistScreen } from "../screens/dungeon/DungeonAssistScreen";
 import { DungeonMapScreen } from "../screens/dungeon/DungeonMapScreen";
+import { DungeonItemsScreen } from "../screens/dungeon/DungeonItemsScreen";
 import { ResultScreen } from "../screens/expedition/ResultScreen";
 import { ReturnScreen } from "../screens/expedition/ReturnScreen";
 import { CombatScreen } from "../screens/combat/CombatScreen";
@@ -67,6 +69,9 @@ export function DdgcApp() {
 
     setActiveMode(mode);
     bridge = createBridge(mode);
+    if (typeof window !== "undefined") {
+      (window as unknown as Record<string, unknown>).__ddgcBridge = bridge;
+    }
     unsubscribeBridge = bridge.subscribe((snapshot) => {
       session.replace(snapshot);
     });
@@ -282,6 +287,25 @@ export function DdgcApp() {
             }}
             onCompleteDungeon={() => {
               void dispatchIntent(bridge, { type: "complete-dungeon" });
+            }}
+          />
+        </Match>
+        <Match
+          when={screen() === "dungeon-items" && snapshot().viewModel.kind === "dungeon-items"}
+        >
+          <DungeonItemsScreen
+            viewModel={snapshot().viewModel as DungeonItemsViewModel}
+            onSelectItem={(itemId) => {
+              void dispatchIntent(bridge, { type: "select-dungeon-item", itemId });
+            }}
+            onSelectHero={(heroId) => {
+              void dispatchIntent(bridge, { type: "select-assist-hero", heroId });
+            }}
+            onUseItem={(itemId, heroId) => {
+              void dispatchIntent(bridge, { type: "use-dungeon-item", itemId, heroId });
+            }}
+            onClose={() => {
+              void dispatchIntent(bridge, { type: "close-dungeon-items" });
             }}
           />
         </Match>

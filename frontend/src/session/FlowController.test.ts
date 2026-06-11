@@ -34,6 +34,7 @@ import {
   partialResultSnapshot,
   returnSnapshot,
   expeditionPlanningSnapshot,
+  dungeonItemsSnapshot,
 } from "../validation/replayFixtures";
 
 describe("FlowController", () => {
@@ -117,6 +118,11 @@ describe("FlowController", () => {
       expect(screen).toBe("combat");
     });
 
+    it("returns dungeon-items screen for dungeon items view model", () => {
+      const screen = resolveScreen(dungeonItemsSnapshot);
+      expect(screen).toBe("dungeon-items");
+    });
+
     it("returns result screen for result view model", () => {
       const screen = resolveScreen(resultSnapshot);
       expect(screen).toBe("result");
@@ -140,7 +146,7 @@ describe("FlowController", () => {
 });
 
 describe("ScreenKey exhaustiveness", () => {
-  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "expedition-planning", "dungeon-select", "provisioning", "dungeon-hint", "expedition", "dungeon-assist", "dungeon-map", "combat", "dungeon-interaction", "result", "return", "unsupported", "fatal"];
+  const allScreenKeys: ScreenKey[] = ["startup", "loading", "town", "hero-detail", "building-detail", "expedition-planning", "dungeon-select", "provisioning", "dungeon-hint", "expedition", "dungeon-assist", "dungeon-map", "combat", "dungeon-interaction", "dungeon-items", "result", "return", "unsupported", "fatal"];
 
   it("covers all screen keys in FlowController.resolveScreen", () => {
     const snapshotsByScreen: Record<ScreenKey, DdgcFrontendSnapshot> = {
@@ -158,6 +164,7 @@ describe("ScreenKey exhaustiveness", () => {
       "dungeon-map": dungeonMapSnapshot,
       combat: combatSnapshot,
       "dungeon-interaction": dungeonInteractionSnapshot,
+      "dungeon-items": dungeonItemsSnapshot,
       result: resultSnapshot,
       return: returnSnapshot,
       unsupported: unsupportedSnapshot,
@@ -940,6 +947,84 @@ describe("canTransition - result and return meta-loop continuation", () => {
       const validation = canTransition(unknownSnapshot, { type: "confirm-dungeon-selection" });
       expect(validation.allowed).toBe(false);
       expect(validation.reason).toContain("does not exist");
+    });
+  });
+
+  describe("dungeon-items transitions", () => {
+    it("allows open-dungeon-items from dungeon-interaction", () => {
+      const validation = canTransition(dungeonInteractionSnapshot, { type: "open-dungeon-items" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("allows open-dungeon-items from dungeon-map", () => {
+      const validation = canTransition(dungeonMapSnapshot, { type: "open-dungeon-items" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects open-dungeon-items from town", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "open-dungeon-items" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid inside a dungeon runtime screen");
+    });
+
+    it("allows close-dungeon-items from dungeon-items screen", () => {
+      const validation = canTransition(dungeonItemsSnapshot, { type: "close-dungeon-items" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects close-dungeon-items from town", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "close-dungeon-items" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on dungeon-items screen");
+    });
+
+    it("allows select-dungeon-item for existing items", () => {
+      const validation = canTransition(dungeonItemsSnapshot, { type: "select-dungeon-item", itemId: "item-torch" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects select-dungeon-item for unknown items", () => {
+      const validation = canTransition(dungeonItemsSnapshot, { type: "select-dungeon-item", itemId: "unknown-item" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("does not exist");
+    });
+
+    it("rejects select-dungeon-item from town", () => {
+      const validation = canTransition(replayReadySnapshot, { type: "select-dungeon-item", itemId: "item-torch" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("only valid on dungeon-items screen");
+    });
+
+    it("allows use-dungeon-item for usable items", () => {
+      const validation = canTransition(dungeonItemsSnapshot, { type: "use-dungeon-item", itemId: "item-torch" });
+      expect(validation.allowed).toBe(true);
+    });
+
+    it("rejects use-dungeon-item for non-usable items", () => {
+      const validation = canTransition(dungeonItemsSnapshot, { type: "use-dungeon-item", itemId: "item-key" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("not usable");
+    });
+
+    it("rejects use-dungeon-item for out-of-stock items", () => {
+      const outOfStockSnapshot: DdgcFrontendSnapshot = {
+        ...dungeonItemsSnapshot,
+        viewModel: {
+          ...dungeonItemsSnapshot.viewModel,
+          items: dungeonItemsSnapshot.viewModel.items.map((i) =>
+            i.id === "item-torch" ? { ...i, qty: 0 } : i
+          )
+        }
+      };
+      const validation = canTransition(outOfStockSnapshot, { type: "use-dungeon-item", itemId: "item-torch" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("out of stock");
+    });
+
+    it("rejects use-dungeon-item for unknown heroes", () => {
+      const validation = canTransition(dungeonItemsSnapshot, { type: "use-dungeon-item", itemId: "item-torch", heroId: "unknown-hero" });
+      expect(validation.allowed).toBe(false);
+      expect(validation.reason).toContain("does not exist in party");
     });
   });
 });

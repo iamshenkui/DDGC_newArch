@@ -18,6 +18,7 @@ import type {
   ExpeditionResultViewModel,
   ReturnViewModel,
   DungeonInteractionViewModel,
+  DungeonItemsViewModel,
   CombatViewModel
 } from "./contractTypes";
 import { createTownBuildingSummary } from "../town/buildingCatalog";
@@ -554,6 +555,30 @@ const createLiveDungeonMapViewModel = (): DungeonMapViewModel => ({
   isComplete: false,
   minimapRows: 5,
   minimapCols: 6
+});
+
+const createLiveDungeonItemsViewModel = (): DungeonItemsViewModel => ({
+  kind: "dungeon-items",
+  title: "副本场景-物品",
+  dungeonName: "Azure Lantern Depths",
+  roomNumber: 3,
+  party: [
+    { id: "hero-hunter-live-01", name: "Yuan", classLabel: "Hunter", hp: "42 / 42", maxHp: "42", stress: "0", maxStress: "200" },
+    { id: "hero-white-live-01", name: "Mei", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "0", maxStress: "200" }
+  ],
+  items: [
+    { id: "item-torch", name: "火把", icon: "🔥", qty: 4, description: "照亮黑暗，降低队伍压力积累。", category: "consumable", isUsable: true },
+    { id: "item-food", name: "干粮", icon: "🍞", qty: 6, description: "恢复少量生命值。", category: "consumable", isUsable: true },
+    { id: "item-bandage", name: "绷带", icon: "🩹", qty: 2, description: "治疗流血状态。", category: "consumable", isUsable: true },
+    { id: "item-key", name: "万能钥匙", icon: "🔑", qty: 1, description: "打开上锁的宝箱或门。", category: "key", isUsable: false },
+    { id: "item-shovel", name: "铁锹", icon: "⛏", qty: 1, description: "清除障碍物或挖掘隐藏宝藏。", category: "tool", isUsable: false },
+    { id: "item-antidote", name: "解毒剂", icon: "🧪", qty: 1, description: "解除中毒状态。", category: "consumable", isUsable: true },
+    { id: "item-relic", name: "古代遗物", icon: "🏺", qty: 1, description: "带回城镇换取金币。", category: "treasure", isUsable: false },
+    { id: "item-holy", name: "圣水", icon: "✨", qty: 1, description: "对亡灵敌人造成伤害或解除诅咒。", category: "consumable", isUsable: true }
+  ],
+  selectedItemId: null,
+  selectedHeroId: null,
+  isUsable: false
 });
 
 const createLiveResultViewModel = (): ExpeditionResultViewModel => ({
@@ -1314,6 +1339,81 @@ export class LiveRuntimeBridge implements RuntimeBridge {
           ...this.snapshot,
           flowState: "result",
           viewModel: createLiveResultViewModel()
+        };
+        break;
+      }
+      case "open-dungeon-items": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: open-dungeon-items rejected outside dungeon runtime."
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-items",
+          viewModel: createLiveDungeonItemsViewModel(),
+          debugMessage: "Live: opened dungeon items inventory."
+        };
+        break;
+      }
+      case "close-dungeon-items": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: close-dungeon-items rejected outside dungeon-items screen."
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-map",
+          viewModel: createLiveDungeonMapViewModel(),
+          debugMessage: "Live: closed dungeon items inventory."
+        };
+        break;
+      }
+      case "select-dungeon-item": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: select-dungeon-item rejected: ${canTransition(this.snapshot, intent).reason ?? "invalid transition"}.`
+          };
+          break;
+        }
+        const itemsVm = this.snapshot.viewModel as DungeonItemsViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...itemsVm,
+            selectedItemId: intent.itemId,
+            selectedHeroId: null,
+            isUsable: itemsVm.items.find((i) => i.id === intent.itemId)?.isUsable ?? false
+          },
+          debugMessage: `Live: selected dungeon item ${intent.itemId}.`
+        };
+        break;
+      }
+      case "use-dungeon-item": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Live: use-dungeon-item rejected: ${canTransition(this.snapshot, intent).reason ?? "invalid transition"}.`
+          };
+          break;
+        }
+        const itemsVm = this.snapshot.viewModel as DungeonItemsViewModel;
+        const updatedItems = itemsVm.items.map((i) =>
+          i.id === intent.itemId ? { ...i, qty: Math.max(0, i.qty - 1) } : i
+        );
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...itemsVm,
+            items: updatedItems
+          },
+          debugMessage: `Live: used dungeon item ${intent.itemId}.`
         };
         break;
       }

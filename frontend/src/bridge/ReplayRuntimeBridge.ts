@@ -13,7 +13,8 @@ import {
   replayDungeonMapViewModel,
   replayAttackCombatViewModel,
   replayResultViewModel,
-  replayReturnViewModel
+  replayReturnViewModel,
+  replayDungeonItemsViewModel
 } from "../validation/replayFixtures";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
 import { canTransition } from "../session/FlowController";
@@ -695,6 +696,81 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
           ...this.snapshot,
           flowState: "result",
           viewModel: replayResultViewModel as ExpeditionResultViewModel
+        };
+        break;
+      }
+      case "open-dungeon-items": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: open-dungeon-items rejected outside dungeon runtime."
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-items",
+          viewModel: replayDungeonItemsViewModel,
+          debugMessage: "Replay: opened dungeon items inventory."
+        };
+        break;
+      }
+      case "close-dungeon-items": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: close-dungeon-items rejected outside dungeon-items screen."
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "dungeon-map",
+          viewModel: replayDungeonMapViewModel as DungeonMapViewModel,
+          debugMessage: "Replay: closed dungeon items inventory."
+        };
+        break;
+      }
+      case "select-dungeon-item": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Replay: select-dungeon-item rejected: ${canTransition(this.snapshot, intent).reason ?? "invalid transition"}.`
+          };
+          break;
+        }
+        const itemsVm = this.snapshot.viewModel as import("./contractTypes").DungeonItemsViewModel;
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...itemsVm,
+            selectedItemId: intent.itemId,
+            selectedHeroId: null,
+            isUsable: itemsVm.items.find((i) => i.id === intent.itemId)?.isUsable ?? false
+          },
+          debugMessage: `Replay: selected dungeon item ${intent.itemId}.`
+        };
+        break;
+      }
+      case "use-dungeon-item": {
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: `Replay: use-dungeon-item rejected: ${canTransition(this.snapshot, intent).reason ?? "invalid transition"}.`
+          };
+          break;
+        }
+        const itemsVm = this.snapshot.viewModel as import("./contractTypes").DungeonItemsViewModel;
+        const updatedItems = itemsVm.items.map((i) =>
+          i.id === intent.itemId ? { ...i, qty: Math.max(0, i.qty - 1) } : i
+        );
+        this.snapshot = {
+          ...this.snapshot,
+          viewModel: {
+            ...itemsVm,
+            items: updatedItems
+          },
+          debugMessage: `Replay: used dungeon item ${intent.itemId}.`
         };
         break;
       }
