@@ -259,19 +259,44 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
       }
       case "toggle-planning-hero": {
         const planningVm = this.snapshot.viewModel as ExpeditionPlanningViewModel;
-        const updatedSlots = planningVm.partySlots.map((slot) => {
-          if (slot === null) return null;
-          if (slot.heroId === intent.heroId) return null;
-          return slot;
-        });
-        const filledCount = updatedSlots.filter((s) => s !== null).length;
+        const assignedIndex = planningVm.partySlots.findIndex(
+          (slot) => slot !== null && slot.heroId === intent.heroId
+        );
+
+        let nextSlots = [...planningVm.partySlots];
+        let nextAvailable = [...planningVm.availableHeroes];
+
+        if (assignedIndex >= 0) {
+          // Remove from party and return to available roster
+          const removed = nextSlots[assignedIndex];
+          nextSlots[assignedIndex] = null;
+          if (removed) {
+            nextAvailable.push(removed);
+          }
+        } else {
+          // Add from available roster to first empty party slot
+          const candidate = planningVm.availableHeroes.find(
+            (h) => h.heroId === intent.heroId
+          );
+          const firstEmpty = nextSlots.findIndex((s) => s === null);
+          if (candidate && firstEmpty >= 0) {
+            nextSlots[firstEmpty] = candidate;
+            nextAvailable = nextAvailable.filter(
+              (h) => h.heroId !== intent.heroId
+            );
+          }
+        }
+
+        const filledCount = nextSlots.filter((s) => s !== null).length;
         this.snapshot = {
           ...this.snapshot,
           viewModel: {
             ...planningVm,
-            partySlots: updatedSlots,
-            isReadyToProvision: filledCount >= 1 && filledCount <= planningVm.maxPartySize
-          }
+            partySlots: nextSlots,
+            availableHeroes: nextAvailable,
+            isReadyToProvision:
+              filledCount >= 1 && filledCount <= planningVm.maxPartySize,
+          },
         };
         break;
       }

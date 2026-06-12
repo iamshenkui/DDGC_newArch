@@ -534,8 +534,8 @@ export const replayDungeonSelectViewModel: DungeonSelectViewModel = {
 
 export const replayExpeditionPlanningViewModel: ExpeditionPlanningViewModel = {
   kind: "expedition-planning",
-  title: "Plane Exploration",
-  campaignName: "The Azure Lantern",
+  title: "位面探索",
+  campaignName: "苍灯远征",
   selectedPlaneId: "qinglong",
   planes: [
     {
@@ -590,10 +590,13 @@ export const replayExpeditionPlanningViewModel: ExpeditionPlanningViewModel = {
     }
   ],
   partySlots: [
-    { heroId: "hero-hunter-01", heroName: "Shen", classLabel: "Hunter", hp: "38 / 42", stress: "17", level: 2 },
-    { heroId: "hero-white-01", heroName: "Bai Xiu", classLabel: "White", hp: "41 / 41", stress: "8", level: 2 },
+    { heroId: "hero-hunter-01", heroName: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", stress: "17", maxStress: "200", level: 2, isWounded: true, isAfflicted: false },
+    { heroId: "hero-white-01", heroName: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", stress: "8", maxStress: "200", level: 2, isWounded: false, isAfflicted: false },
     null,
     null
+  ],
+  availableHeroes: [
+    { heroId: "hero-black-01", heroName: "Hei Zhen", classLabel: "Black", hp: "34 / 40", maxHp: "40", stress: "24", maxStress: "200", level: 1, isWounded: true, isAfflicted: false }
   ],
   maxPartySize: 4,
   isReadyToProvision: true,
@@ -1467,6 +1470,7 @@ function validateRequiredFields(kind: string, vm: Record<string, unknown>): stri
       if (!vm.selectedPlaneId || typeof vm.selectedPlaneId !== "string") e.push("ExpeditionPlanningViewModel: selectedPlaneId is missing");
       if (!Array.isArray(vm.planes)) { e.push("ExpeditionPlanningViewModel: planes is not an array"); } else if (vm.planes.length === 0) { e.push("ExpeditionPlanningViewModel: planes array is empty"); }
       if (!Array.isArray(vm.partySlots)) e.push("ExpeditionPlanningViewModel: partySlots is not an array");
+      if (!Array.isArray(vm.availableHeroes)) e.push("ExpeditionPlanningViewModel: availableHeroes is not an array");
       if (typeof vm.maxPartySize !== "number") e.push("ExpeditionPlanningViewModel: maxPartySize is not a number");
       if (typeof vm.isReadyToProvision !== "boolean") e.push("ExpeditionPlanningViewModel: isReadyToProvision is not a boolean");
       if (!vm.provisionCost || typeof vm.provisionCost !== "string") e.push("ExpeditionPlanningViewModel: provisionCost is missing");

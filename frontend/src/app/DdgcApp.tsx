@@ -126,6 +126,9 @@ export function DdgcApp() {
             onStartDungeonSelect={() => {
               void dispatchIntent(bridge, { type: "start-dungeon-select" });
             }}
+            onStartExpeditionPlanning={() => {
+              void dispatchIntent(bridge, { type: "start-expedition-planning" });
+            }}
             onStartProvisioning={() => {
               void dispatchIntent(bridge, { type: "start-expedition-planning" });
             }}

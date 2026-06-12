@@ -35,7 +35,7 @@ test.describe("provisioning screen: 战前补给 fidelity", () => {
     await page.locator(".estate-embark-button").click();
     await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
     await settle(page);
-    await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
+    await page.locator('[data-testid="planning-btn-proceed"]').click();
     await page.waitForSelector('[data-testid="provisioning-screen"]', { timeout: 5_000 });
     await settle(page);
 
@@ -183,7 +183,7 @@ test.describe("provisioning screen: 战前补给 fidelity", () => {
     await page.locator(".estate-embark-button").click();
     await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
     await settle(page);
-    await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
+    await page.locator('[data-testid="planning-btn-proceed"]').click();
     await page.waitForSelector('[data-testid="provisioning-screen"]', { timeout: 5_000 });
     await settle(page);
 
@@ -214,7 +214,7 @@ test.describe("provisioning screen: 战前补给 fidelity", () => {
     await page.locator(".estate-embark-button").click();
     await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
     await settle(page);
-    await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
+    await page.locator('[data-testid="planning-btn-proceed"]').click();
     await page.waitForSelector('[data-testid="provisioning-screen"]', { timeout: 5_000 });
     await settle(page);
 

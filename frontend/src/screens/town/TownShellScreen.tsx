@@ -9,6 +9,7 @@ interface TownShellScreenProps {
   viewModel: TownViewModel;
   onOpenHero: (heroId: string) => void;
   onOpenBuilding: (buildingId: string) => void;
+  onStartExpeditionPlanning?: () => void;
   onStartDungeonSelect?: () => void;
   onStartProvisioning?: () => void;
 }
@@ -312,7 +313,9 @@ export const TownShellScreen: Component<TownShellScreenProps> = (props) => {
                 <button
                   class="estate-embark-button"
                   onClick={() => {
-                    if (props.onStartDungeonSelect) {
+                    if (props.onStartExpeditionPlanning) {
+                      props.onStartExpeditionPlanning();
+                    } else if (props.onStartDungeonSelect) {
                       props.onStartDungeonSelect();
                     } else if (props.onStartProvisioning) {
                       props.onStartProvisioning();
