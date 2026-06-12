@@ -90,6 +90,15 @@ Game-gap blockers are solved entirely within `game_ddgc_headless`.
 
 ---
 
+### B-011: Expedition Supply Item Inventory
+- **Classification:** game-gap
+- **Batch:** UI/UX (Expedition Pages)
+- **Description:** The 位面探索-战前补给 (provisioning) screen renders supply items (food, torches, bandages, etc.) from hardcoded fixture data. The runtime bridge does not yet expose a real supply inventory or costs derived from the selected plane/dungeon.
+- **Resolution:** Extend the game-layer expedition/run state to track available supplies and costs. Expose them through the contract/runtime bridge as `SupplyItem[]` on `ProvisioningViewModel`. Until then, the UI renders fixture-derived supplies with explicit `data-blocker` annotations.
+- **Status:** Open — UI wired to consume real data once bridge provides it.
+
+---
+
 ## Rejected Backflow Requests
 
 These were considered for framework patches but rejected as game-specific:
@@ -137,3 +146,4 @@ Every core-gap or framework-gap patch **must** include a regression test in the 
 | B-008 | game-gap | 2 | Resolved |
 | B-009 | game-gap | 3 | Resolved |
 | B-010 | game-gap | 3 | Resolved |
+| B-011 | game-gap | UI/UX (Expedition Pages) | Open |

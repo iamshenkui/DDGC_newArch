@@ -254,6 +254,7 @@ export interface ExpeditionPlanningViewModel {
   maxPartySize: number;
   isReadyToProvision: boolean;
   provisionCost: string;
+  roster?: ReadonlyArray<ProvisioningHeroSummary>;
 }
 
 export interface DungeonSelectViewModel {

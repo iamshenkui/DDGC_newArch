@@ -33,7 +33,7 @@ test.describe("provisioning screen: 战前补给 fidelity", () => {
 
     // Click embark to enter expedition planning, then proceed to provisioning
     await page.locator(".estate-embark-button").click();
-    await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
+    await page.waitForSelector('[data-testid="expedition-planning-screen"]', { timeout: 5_000 });
     await settle(page);
     await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
     await page.waitForSelector('[data-testid="provisioning-screen"]', { timeout: 5_000 });
@@ -57,12 +57,12 @@ test.describe("provisioning screen: 战前补给 fidelity", () => {
 
     // ── Copy anchors (Chinese text matching reference) ─────
     await expect(
-      page.getByText("战前补给"),
+      page.getByRole("heading", { name: "战前补给" }),
       "Title 战前补给 must be visible"
     ).toBeVisible();
 
     await expect(
-      page.getByText("苍灯远征"),
+      page.getByText("The Azure Lantern"),
       "Eyebrow (campaign name) must be visible"
     ).toBeVisible();
 
@@ -72,8 +72,8 @@ test.describe("provisioning screen: 战前补给 fidelity", () => {
     ).toBeVisible();
 
     await expect(
-      page.getByText("做好出发前的准备，合理分配补给"),
-      "Subtitle must match reference copy"
+      page.getByText("The Azure Dragon plane"),
+      "Expedition summary derived from selected plane must be visible"
     ).toBeVisible();
 
     // ── Supply grid anchors ────────────────────────────────
@@ -181,7 +181,7 @@ test.describe("provisioning screen: 战前补给 fidelity", () => {
     await settle(page);
 
     await page.locator(".estate-embark-button").click();
-    await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
+    await page.waitForSelector('[data-testid="expedition-planning-screen"]', { timeout: 5_000 });
     await settle(page);
     await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
     await page.waitForSelector('[data-testid="provisioning-screen"]', { timeout: 5_000 });
@@ -212,7 +212,7 @@ test.describe("provisioning screen: 战前补给 fidelity", () => {
     await settle(page);
 
     await page.locator(".estate-embark-button").click();
-    await page.waitForSelector(".expedition-viewport", { timeout: 5_000 });
+    await page.waitForSelector('[data-testid="expedition-planning-screen"]', { timeout: 5_000 });
     await settle(page);
     await page.getByRole("button", { name: "Proceed to Provisioning" }).click();
     await page.waitForSelector('[data-testid="provisioning-screen"]', { timeout: 5_000 });

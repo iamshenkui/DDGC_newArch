@@ -597,7 +597,12 @@ export const replayExpeditionPlanningViewModel: ExpeditionPlanningViewModel = {
   ],
   maxPartySize: 4,
   isReadyToProvision: true,
-  provisionCost: "150 Gold"
+  provisionCost: "150 Gold",
+  roster: [
+    { id: "hero-hunter-01", name: "Shen", classLabel: "Hunter", hp: "38 / 42", maxHp: "42", health: 38, maxHealth: 42, stress: "17", maxStress: "200", level: 2, xp: 240, isWounded: true, isAfflicted: false, isSelected: true },
+    { id: "hero-white-01", name: "Bai Xiu", classLabel: "White", hp: "41 / 41", maxHp: "41", health: 41, maxHealth: 41, stress: "8", maxStress: "200", level: 2, xp: 180, isWounded: false, isAfflicted: false, isSelected: true },
+    { id: "hero-black-01", name: "Hei Zhen", classLabel: "Black", hp: "34 / 40", maxHp: "40", health: 34, maxHealth: 40, stress: "24", maxStress: "200", level: 1, xp: 60, isWounded: true, isAfflicted: false, isSelected: false }
+  ]
 };
 
 export const replayProvisioningViewModel: ProvisioningViewModel = {

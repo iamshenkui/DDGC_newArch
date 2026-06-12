@@ -11,6 +11,40 @@ interface ExpeditionPlanningScreenProps {
   onReturnToTown: () => void;
 }
 
+function parseHp(hp: string): { current: number; max: number } {
+  const parts = hp.split("/");
+  if (parts.length === 2) {
+    return { current: Number(parts[0].trim()), max: Number(parts[1].trim()) };
+  }
+  return { current: 0, max: 1 };
+}
+
+function healthPercent(hp: string): number {
+  const { current, max } = parseHp(hp);
+  if (max <= 0) return 0;
+  return Math.round((current / max) * 100);
+}
+
+function healthBarColor(hp: string): string {
+  const pct = healthPercent(hp);
+  if (pct >= 80) return "#5bbd6e";
+  if (pct >= 40) return "#e8a838";
+  return "#ea7767";
+}
+
+function stressPercent(stress: string, maxStress: string): number {
+  const s = Number(stress);
+  const m = Number(maxStress || 200);
+  return Math.min(Math.round((s / m) * 100), 100);
+}
+
+function stressBarColor(stress: string): string {
+  const s = Number(stress);
+  if (s <= 20) return "#5bbd6e";
+  if (s <= 40) return "#e8a838";
+  return "#ea7767";
+}
+
 /**
  * Expedition planning screen — 位面探索 (Plane Exploration).
  *
@@ -51,6 +85,7 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
   return (
     <div
       class="expedition-viewport"
+      data-testid="expedition-planning-screen"
       data-source-scene="UI_Quest/SelectedQuestPanel"
       data-source-prefab="Assets/Prefabs/UI/QuestWindow.prefab"
     >
@@ -90,6 +125,7 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
           {/* Plane selection strip — horizontal scroll of available dungeons */}
           <section
             class="plane-selection-strip"
+            data-testid="plane-selection-strip"
             data-source-component="Dungeons"
             data-source-hierarchy="UI_Quest/Dungeons"
           >
@@ -110,6 +146,7 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                     disabled={plane.isLocked}
                     data-plane-id={plane.id}
                     data-locked={plane.isLocked}
+                    data-testid={`plane-card-${plane.id}`}
                   >
                     <div
                       class="plane-card-orb"
@@ -147,6 +184,7 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
             {/* Selected plane details */}
             <section
               class="details-overlay expedition-planning-details"
+              data-testid="expedition-planning-details"
               data-source-component="SelectedQuestPanel"
             >
               <header class="details-overlay-header">
@@ -211,6 +249,7 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
             {/* Party assignment panel */}
             <section
               class="details-overlay expedition-party-panel"
+              data-testid="expedition-party-panel"
               data-source-component="RaidPartyPanel"
               data-source-hierarchy="UI_Quest/RaidPartyPanel"
             >
@@ -225,7 +264,7 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                   {(hero, index) => {
                     if (hero === null) {
                       return (
-                        <div class="party-slot party-slot--empty" data-slot-index={index()}>
+                        <div class="party-slot party-slot--empty" data-slot-index={index()} data-testid={`party-slot-empty-${index()}`}>
                           <span class="party-slot-empty-marker" aria-hidden="true">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                               <line x1="12" y1="5" x2="12" y2="19" />
@@ -247,6 +286,7 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                       <div
                         class="party-slot party-slot--selected party-slot--read-only"
                         data-hero-id={hero.heroId}
+                        data-testid={`party-slot-hero-${hero.heroId}`}
                       >
                         <span class="party-slot-level">Lv{hero.level}</span>
                         <div
@@ -278,8 +318,8 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                               <div
                                 class="party-slot-bar-fill"
                                 style={{
-                                  width: "80%",
-                                  background: "#5bbd6e",
+                                  width: `${healthPercent(hero.hp)}%`,
+                                  background: healthBarColor(hero.hp),
                                 }}
                               />
                             </div>
@@ -290,8 +330,8 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
                               <div
                                 class="party-slot-bar-fill"
                                 style={{
-                                  width: "20%",
-                                  background: "#5bbd6e",
+                                  width: `${stressPercent(hero.stress, "200")}%`,
+                                  background: stressBarColor(hero.stress),
                                 }}
                               />
                             </div>
@@ -331,13 +371,14 @@ export const ExpeditionPlanningScreen: Component<ExpeditionPlanningScreenProps> 
           </span>
         </div>
         <div class="expedition-controls-right">
-          <button class="action-secondary" onClick={props.onReturnToTown}>
+          <button class="action-secondary" onClick={props.onReturnToTown} data-testid="expedition-planning-btn-return">
             Return to Town
           </button>
           <button
             class="action-primary launch-primary"
             onClick={props.onProceedToProvisioning}
             disabled={!props.viewModel.isReadyToProvision}
+            data-testid="expedition-planning-btn-proceed"
           >
             {props.viewModel.isReadyToProvision
               ? "Proceed to Provisioning"

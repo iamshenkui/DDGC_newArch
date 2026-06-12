@@ -1,0 +1,51 @@
+{
+  "task_id": "530a94f9-97b9-551d-8326-699adc5ec12a",
+  "task_title": "ddgc-ui-migrate-expedition-pages",
+  "slice_focus": "Implement 位面探索 (ExpeditionPlanningScreen) and 位面探索-战前补给 (ProvisioningScreen) pages using the established expedition-planning foundation.",
+  "pages_delivered": [
+    {
+      "name": "位面探索",
+      "screen_component": "frontend/src/screens/expedition/ExpeditionPlanningScreen.tsx",
+      "route_from_town": "TownShellScreen.embark-button → start-expedition-planning intent → expedition-planning flowState",
+      "key_regions": [
+        "Plane selection strip with selectable/locked plane cards",
+        "Selected plane details panel",
+        "Party assignment panel with real hero vitals",
+        "Bottom controls (Return to Town, Proceed to Provisioning)"
+      ],
+      "data_source": "ExpeditionPlanningViewModel from replay/live bridge fixtures; hero HP/ST bars now parsed from real slot data"
+    },
+    {
+      "name": "位面探索-战前补给",
+      "screen_component": "frontend/src/screens/expedition/ProvisioningScreen.tsx",
+      "route_from_planning": "expedition-planning-btn-proceed → proceed-to-provisioning intent → provisioning flowState",
+      "key_regions": [
+        "Focused hero portrait + vitals + action buttons",
+        "Supply item grid",
+        "Selected party strip",
+        "Available heroes roster strip",
+        "Resource strip and footer controls"
+      ],
+      "data_source": "ProvisioningViewModel derived from ExpeditionPlanningViewModel (selected plane, party slots, roster)"
+    }
+  ],
+  "data_gaps_recorded": [
+    {
+      "blocker_id": "B-011",
+      "classification": "game-gap",
+      "description": "Supply item inventory on provisioning screen is hardcoded fixture data; runtime bridge does not yet expose real supply inventory or costs.",
+      "destination": "DDGC_newArch game project",
+      "file": "MIGRATION_BLOCKERS.md"
+    }
+  ],
+  "validation": {
+    "typecheck": "pass",
+    "unit_tests": "467 passed",
+    "build": "pass",
+    "playwright_smoke": "blocked by environment — Playwright Chromium requires system libraries (libglib-2.0.so.0, libnss3, etc.) not installable in this container without root"
+  },
+  "review_gates": {
+    "30_percent": "cartographer/architecture_review",
+    "pre_merge": "quartermaster/code_review"
+  }
+}

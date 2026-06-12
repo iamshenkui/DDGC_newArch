@@ -18,7 +18,8 @@ import type {
   ExpeditionResultViewModel,
   ReturnViewModel,
   DungeonInteractionViewModel,
-  CombatViewModel
+  CombatViewModel,
+  ProvisioningHeroSummary
 } from "./contractTypes";
 import { createTownBuildingSummary } from "../town/buildingCatalog";
 
@@ -41,6 +42,40 @@ function deriveProvisioningFromDungeonSelect(dsVm: DungeonSelectViewModel): Prov
     isReadyToLaunch: selectedCount >= 2 && selectedCount <= dsVm.maxPartySize,
     supplyLevel: selectedDungeon?.supplyLevel ?? "Basic",
     provisionCost: selectedDungeon?.provisionCost ?? "0 Gold"
+  };
+}
+
+function deriveProvisioningFromExpeditionPlanning(planningVm: ExpeditionPlanningViewModel): ProvisioningViewModel {
+  const selectedPlane = planningVm.planes.find((p) => p.id === planningVm.selectedPlaneId);
+  const selectedIds = new Set(planningVm.partySlots.filter((s): s is NonNullable<typeof s> => s !== null).map((s) => s.heroId));
+  const roster = planningVm.roster ?? [];
+
+  const party: ProvisioningHeroSummary[] = roster.map((hero) => ({
+    ...hero,
+    isSelected: selectedIds.has(hero.id)
+  }));
+  const selectedCount = party.filter((h) => h.isSelected).length;
+
+  return {
+    kind: "provisioning",
+    title: "战前补给",
+    campaignName: planningVm.campaignName,
+    expeditionLabel: selectedPlane?.name ?? "未知远征",
+    expeditionSummary: selectedPlane?.description ?? "做好出发前的准备，合理分配补给。",
+    party,
+    maxPartySize: planningVm.maxPartySize,
+    isReadyToLaunch: selectedCount >= 2 && selectedCount <= planningVm.maxPartySize,
+    supplyLevel: "充足",
+    provisionCost: planningVm.provisionCost,
+    supplies: [
+      { id: "supply-food", name: "干粮", icon: "🍞", qty: 8 },
+      { id: "supply-torch", name: "火把", icon: "🔥", qty: 6 },
+      { id: "supply-bandage", name: "绷带", icon: "🩹", qty: 4 },
+      { id: "supply-antidote", name: "解毒剂", icon: "🧪", qty: 2 },
+      { id: "supply-shovel", name: "铁锹", icon: "⛏", qty: 2 },
+      { id: "supply-key", name: "万能钥匙", icon: "🔑", qty: 1 },
+      { id: "supply-holy", name: "圣水", icon: "✨", qty: 2 }
+    ]
   };
 }
 
@@ -400,7 +435,11 @@ const createLiveExpeditionPlanningViewModel = (): ExpeditionPlanningViewModel =>
   ],
   maxPartySize: 4,
   isReadyToProvision: true,
-  provisionCost: "100 Gold"
+  provisionCost: "100 Gold",
+  roster: [
+    { id: "hero-hunter-live-01", name: "Yuan", classLabel: "Hunter", hp: "42 / 42", maxHp: "42", health: 42, maxHealth: 42, stress: "0", maxStress: "200", level: 1, xp: 0, isWounded: false, isAfflicted: false, isSelected: true },
+    { id: "hero-white-live-01", name: "Mei", classLabel: "White", hp: "41 / 41", maxHp: "41", health: 41, maxHealth: 41, stress: "0", maxStress: "200", level: 1, xp: 0, isWounded: false, isAfflicted: false, isSelected: true }
+  ]
 });
 
 const createLiveProvisioningViewModel = (): ProvisioningViewModel => ({
@@ -917,13 +956,15 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         };
         break;
       }
-      case "proceed-to-provisioning":
+      case "proceed-to-provisioning": {
+        const planningVm = this.snapshot.viewModel as ExpeditionPlanningViewModel;
         this.snapshot = {
           ...this.snapshot,
           flowState: "provisioning",
-          viewModel: createLiveProvisioningViewModel()
+          viewModel: deriveProvisioningFromExpeditionPlanning(planningVm)
         };
         break;
+      }
       case "start-provisioning":
         this.snapshot = {
           ...this.snapshot,

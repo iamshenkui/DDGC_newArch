@@ -1,0 +1,45 @@
+{
+  "task_id": "530a94f9-97b9-551d-8326-699adc5ec12a",
+  "changed_files": [
+    {
+      "path": "frontend/src/screens/town/TownShellScreen.tsx",
+      "change": "Prioritized onStartProvisioning over onStartDungeonSelect so the main 位面探索 embark button routes to ExpeditionPlanningScreen."
+    },
+    {
+      "path": "frontend/src/screens/expedition/ExpeditionPlanningScreen.tsx",
+      "change": "Sourced hero HP and stress bar widths from real party slot data; added stable data-testid selectors for smoke-cap tests."
+    },
+    {
+      "path": "frontend/src/bridge/contractTypes.ts",
+      "change": "Added optional roster field to ExpeditionPlanningViewModel to support provisioning derivation."
+    },
+    {
+      "path": "frontend/src/bridge/ReplayRuntimeBridge.ts",
+      "change": "Added deriveProvisioningFromExpeditionPlanning helper and wired proceed-to-provisioning to derive the provisioning view model from expedition-planning choices."
+    },
+    {
+      "path": "frontend/src/bridge/LiveRuntimeBridge.ts",
+      "change": "Added deriveProvisioningFromExpeditionPlanning helper and wired proceed-to-provisioning to derive the provisioning view model from expedition-planning choices."
+    },
+    {
+      "path": "frontend/src/validation/replayFixtures.ts",
+      "change": "Added roster to replayExpeditionPlanningViewModel so provisioning derivation has available/unselected heroes."
+    },
+    {
+      "path": "frontend/smoke-cap/expeditionPlanningCapture.spec.ts",
+      "change": "New Playwright screenshot/capture test for the 位面探索 (ExpeditionPlanningScreen) page."
+    },
+    {
+      "path": "frontend/smoke-cap/provisioningCapture.spec.ts",
+      "change": "Updated navigation selectors and copy assertions to match the new expedition-planning-derived provisioning view model."
+    },
+    {
+      "path": "frontend/smoke/browserSmoke.spec.ts",
+      "change": "Updated replay and live meta-loop tests to route Town → Expedition Planning → Provisioning instead of Dungeon Select."
+    },
+    {
+      "path": "MIGRATION_BLOCKERS.md",
+      "change": "Recorded B-011 game-gap blocker for runtime supply inventory not yet available to the provisioning screen."
+    }
+  ]
+}
