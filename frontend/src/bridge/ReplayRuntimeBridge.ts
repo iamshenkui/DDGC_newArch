@@ -43,7 +43,7 @@ function deriveProvisioningFromDungeonSelect(dsVm: DungeonSelectViewModel): Prov
 
   return {
     kind: "provisioning",
-    title: "Provision Expedition",
+    title: "战前补给",
     campaignName: dsVm.campaignName,
     expeditionLabel: selectedDungeon?.name ?? "Unknown Expedition",
     expeditionSummary: selectedDungeon?.description ?? "No description available.",
