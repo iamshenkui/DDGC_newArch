@@ -89,6 +89,17 @@ export const StartupScreen: Component<StartupScreenProps> = (props) => {
           >
             Boot Live
           </button>
+
+          <div class="title-page-divider" aria-hidden="true" />
+
+          <button
+            class="title-page-button title-page-button--demo"
+            onClick={() => {
+              window.location.href = `${window.location.pathname}?demo=true`;
+            }}
+          >
+            Demo
+          </button>
         </nav>
       </div>
     </main>

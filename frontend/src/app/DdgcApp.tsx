@@ -1,5 +1,7 @@
 import { Match, Switch, createMemo, createSignal } from "solid-js";
 
+import { DemoScreen } from "../screens/demo/DemoScreen";
+
 import { AppProviders } from "./AppProviders";
 import { DEFAULT_RUNTIME_MODE, type RuntimeMode } from "./runtimeMode";
 import { LiveRuntimeBridge } from "../bridge/LiveRuntimeBridge";
@@ -50,7 +52,30 @@ function createBridge(mode: RuntimeMode): RuntimeBridge {
   return mode === "live" ? new LiveRuntimeBridge() : new ReplayRuntimeBridge();
 }
 
+/**
+ * Check for a `?demo=true` URL parameter to render the isolated chaos-dungeon demo
+ * instead of the normal startup / session flow.
+ */
+const DEMO_URL_FLAG = "demo";
+
+function hasDemoParam(): boolean {
+  if (typeof window === "undefined") return false;
+  const params = new URLSearchParams(window.location.search);
+  return params.has(DEMO_URL_FLAG);
+}
+
 export function DdgcApp() {
+  const [showDemo] = createSignal<boolean>(hasDemoParam());
+
+  // When the demo param is present, render the isolated demo and skip the full app
+  if (showDemo()) {
+    return (
+      <AppProviders>
+        <DemoScreen />
+      </AppProviders>
+    );
+  }
+
   const session = createSessionStore(fatalSnapshot);
   const [booted, setBooted] = createSignal(false);
   const [activeMode, setActiveMode] = createSignal<RuntimeMode>(DEFAULT_RUNTIME_MODE);
