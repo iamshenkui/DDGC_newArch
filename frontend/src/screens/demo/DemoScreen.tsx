@@ -1,8 +1,23 @@
-import { Switch, Match, type Component, createMemo, createSignal } from "solid-js";
+import { Switch, Match, onMount, type Component, createMemo, createSignal } from "solid-js";
 
 import type { GameAction, GameState, RunOutcome } from "../../demo/types";
 import { demoReducer } from "../../demo/reducer";
 import { createSeedState } from "../../demo/seedContent";
+import { DemoTelemetryManager } from "../../demo/demoTelemetryManager";
+import { TelemetryCollector } from "../../demo/telemetryCollector";
+
+/**
+ * Module-level reference to the active telemetry collector.
+ * Set when DemoScreen mounts.  Tests can access the collector
+ * via this getter to verify telemetry event emission without
+ * needing the component to expose internals as props.
+ */
+let _activeCollector: TelemetryCollector | null = null;
+
+/** Retrieve the active telemetry collector, or null if not mounted. */
+export function getDemoTelemetryCollector(): TelemetryCollector | null {
+  return _activeCollector;
+}
 
 /**
  * Isolated chaos-dungeon demo screen.
@@ -233,8 +248,33 @@ function outcomeLabel(outcome: RunOutcome | null): string {
 export const DemoScreen: Component = () => {
   const [state, setState] = createSignal<GameState>(createSeedState());
 
+  // ── Telemetry ─────────────────────────────────────────────
+  const telemetry = new DemoTelemetryManager();
+  _activeCollector = telemetry.collector;
+
+  // Emit game_loaded once on mount
+  onMount(() => {
+    telemetry.onGameLoaded(state());
+  });
+
+  // Wrapped dispatch: emit telemetry before and after the reducer runs
   const dispatch = (action: GameAction) => {
-    setState((prev) => demoReducer(prev, action));
+    const before = state();
+    telemetry.onAction(action, before);
+    setState((prev) => {
+      const next = demoReducer(prev, action);
+      // Telemetry hook after state has been updated
+      // (called synchronously since setState runs the callback immediately)
+      return next;
+    });
+    // Read the updated state and emit post-reducer events
+    telemetry.onStateChanged(state());
+  };
+
+  /** Reset the run — generates a new run_id for telemetry. */
+  const resetRun = () => {
+    telemetry.onRunReset();
+    setState(createSeedState());
   };
 
   const phase = createMemo(() => state().phase);
@@ -368,7 +408,7 @@ export const DemoScreen: Component = () => {
 
             <button
               class="demo-btn demo-btn--primary"
-              onClick={() => setState(createSeedState())}
+              onClick={resetRun}
               data-testid="btn-new-run"
             >
               New Run
