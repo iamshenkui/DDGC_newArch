@@ -233,6 +233,7 @@ export function demoReducer(state: GameState, action: GameAction): GameState {
           phase: "event",
           currentRoom: room,
           turnCount: nextTurn,
+          roomCount: state.roomCount + 1,
           chaosMeter: state.chaosMeter + 1,
           runLog: [
             ...state.runLog,
@@ -247,6 +248,7 @@ export function demoReducer(state: GameState, action: GameAction): GameState {
           phase: "combat",
           currentRoom: room,
           turnCount: nextTurn,
+          roomCount: state.roomCount + 1,
           chaosMeter: state.chaosMeter + 1,
           combatEncounter: createCombatEncounter(room.enemyGroup),
           runLog: [
@@ -261,6 +263,7 @@ export function demoReducer(state: GameState, action: GameAction): GameState {
         ...state,
         currentRoom: room,
         turnCount: nextTurn,
+        roomCount: state.roomCount + 1,
         runLog: [
           ...state.runLog,
           `${room.name} — nothing of interest. Moving on.`,
@@ -324,6 +327,7 @@ export function demoReducer(state: GameState, action: GameAction): GameState {
             ],
             resultMessage:
               "Chaos overwhelms the realm. The run ends in catastrophe.",
+            runOutcome: "catastrophe" as const,
           };
         }
         // If the room has enemies, transition to combat after the event
@@ -339,6 +343,7 @@ export function demoReducer(state: GameState, action: GameAction): GameState {
               `The ${state.currentRoom!.enemyGroup.name} attack!`,
             ],
             resultMessage: null,
+            runOutcome: null,
           };
         }
         return {
@@ -352,6 +357,7 @@ export function demoReducer(state: GameState, action: GameAction): GameState {
             "You ready yourself for what lies ahead.",
           ],
           resultMessage: null,
+          runOutcome: null,
         };
       };
 
@@ -365,6 +371,7 @@ export function demoReducer(state: GameState, action: GameAction): GameState {
         combatEncounter: continuation.combatEncounter,
         runLog: continuation.runLog,
         resultMessage: continuation.resultMessage,
+        runOutcome: continuation.runOutcome ?? null,
       };
     }
 
@@ -600,6 +607,7 @@ export function demoReducer(state: GameState, action: GameAction): GameState {
         phase: "result",
         currentRoom: null,
         combatEncounter: null,
+        runOutcome: "defeat",
         resultMessage:
           "Your party has fallen. The dungeon claims another soul.",
         runLog: [
@@ -652,6 +660,7 @@ export function demoReducer(state: GameState, action: GameAction): GameState {
         currentRoom: null,
         chaosMeter: state.chaosMeter + 3,
         combatEncounter: null,
+        runOutcome: "retreat",
         runLog: [
           ...state.runLog,
           "The expedition returns, battered but alive.",

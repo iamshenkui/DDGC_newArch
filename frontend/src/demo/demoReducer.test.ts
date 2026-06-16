@@ -724,4 +724,105 @@ describe("demoReducer", () => {
       }
     });
   });
+
+  // ── Seed fixture terminal reachability ────────────────────────
+
+  describe("seed fixture reaches terminal state", () => {
+    it("can reach result phase via END_RUN with retreat outcome", () => {
+      let state = createSeedState();
+      state = demoReducer(state, { type: "START_RUN" });
+      // Enter a few rooms, then end the run
+      state = demoReducer(state, { type: "ENTER_ROOM" });
+      if (state.phase === "event") {
+        state = demoReducer(state, { type: "RESOLVE_EVENT", choiceIndex: 0 });
+      }
+      state = demoReducer(state, { type: "END_RUN" });
+
+      expect(state.phase).toBe("result");
+      expect(state.runOutcome).toBe("retreat");
+      expect(state.roomCount).toBeGreaterThanOrEqual(1);
+      expect(state.chaosMeter).toBeGreaterThanOrEqual(0);
+    });
+
+    it("can reach result phase via COMBAT_LOST with defeat outcome", () => {
+      let state = createSeedState();
+      state = demoReducer(state, { type: "START_RUN" });
+
+      // Reach combat phase
+      while (state.phase !== "combat") {
+        if (state.phase === "event") {
+          state = demoReducer(state, { type: "RESOLVE_EVENT", choiceIndex: 0 });
+        } else {
+          state = demoReducer(state, { type: "ENTER_ROOM" });
+        }
+      }
+
+      // Accept defeat
+      state = demoReducer(state, { type: "COMBAT_LOST" });
+
+      expect(state.phase).toBe("result");
+      expect(state.runOutcome).toBe("defeat");
+      expect(state.roomCount).toBeGreaterThanOrEqual(1);
+    });
+
+    it("can reach result phase via chaos catastrophe from event choice", () => {
+      // Set up state at high chaos with a chaos-increasing choice
+      const state = demoReducer(
+        {
+          ...createSeedState(),
+          chaosMeter: 13,
+          phase: "event",
+          currentRoom: {
+            id: "room-test",
+            name: "Test Chamber",
+            description: "High chaos test.",
+            enemyGroup: null,
+            event: {
+              id: "evt-test",
+              title: "Critical Surge",
+              description: "Chaos is at the tipping point.",
+              choices: [
+                {
+                  label: "Push further",
+                  chaosDelta: 3,
+                  outcome: "The dungeon convulses!",
+                },
+              ],
+            },
+          },
+        },
+        { type: "RESOLVE_EVENT", choiceIndex: 0 },
+      );
+
+      expect(state.phase).toBe("result");
+      expect(state.runOutcome).toBe("catastrophe");
+      expect(state.chaosMeter).toBeGreaterThanOrEqual(15);
+    });
+
+    it("result output includes roomCount, outcome, chaos, and party survival", () => {
+      let state = createSeedState();
+      state = demoReducer(state, { type: "START_RUN" });
+      state = demoReducer(state, { type: "ENTER_ROOM" });
+      if (state.phase === "event") {
+        state = demoReducer(state, { type: "RESOLVE_EVENT", choiceIndex: 0 });
+      }
+      state = demoReducer(state, { type: "END_RUN" });
+
+      // Validate the result surface content
+      expect(state.phase).toBe("result");
+      expect(typeof state.roomCount).toBe("number");
+      expect(state.roomCount).toBeGreaterThanOrEqual(1);
+      expect(typeof state.chaosMeter).toBe("number");
+      expect(state.runOutcome).toBe("retreat");
+      expect(state.resultMessage).toBeTruthy();
+
+      // Party survival — all party members should be present
+      expect(state.party.length).toBe(4);
+      for (const member of state.party) {
+        expect(member.hp).toBeGreaterThanOrEqual(0);
+        expect(typeof member.hp).toBe("number");
+        expect(typeof member.stress).toBe("number");
+      }
+    });
+  });
 });

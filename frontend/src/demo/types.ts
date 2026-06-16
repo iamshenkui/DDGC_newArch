@@ -98,6 +98,21 @@ export interface CombatEncounter {
   outcome: "undecided" | "victory" | "defeat";
 }
 
+/**
+ * Terminal outcome of a completed demo run.
+ * - "victory": The party achieved its goal (e.g. all bosses defeated).
+ * - "defeat": The party was wiped in combat.
+ * - "retreat": The party fled from combat or abandoned the run early.
+ * - "catastrophe": Chaos exceeded the threshold and the dungeon collapsed.
+ * - "abandoned": The player explicitly ended the run without a combat resolution.
+ */
+export type RunOutcome =
+  | "victory"
+  | "defeat"
+  | "retreat"
+  | "catastrophe"
+  | "abandoned";
+
 export interface GameState {
   phase: DemoPhase;
   party: PartyMember[];
@@ -105,9 +120,13 @@ export interface GameState {
   currentRoom: Room | null;
   chaosMeter: number;
   turnCount: number;
+  /** Number of rooms visited this run (incremented on each ENTER_ROOM). */
+  roomCount: number;
   runLog: string[];
   /** Set when the run ends — explains why. */
   resultMessage: string | null;
+  /** Terminal outcome of the run — non-null only when phase === "result". */
+  runOutcome: RunOutcome | null;
   /** Combat sub-state — non-null only when phase === "combat". */
   combatEncounter: CombatEncounter | null;
 }

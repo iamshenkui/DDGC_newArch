@@ -175,8 +175,10 @@ export function createSeedState(): GameState {
     currentRoom: null,
     chaosMeter: 5,
     turnCount: 0,
+    roomCount: 0,
     runLog: ["The Darkest Dungeon awaits…"],
     resultMessage: null,
+    runOutcome: null,
     combatEncounter: null,
   };
 }

@@ -1,6 +1,6 @@
 import { type Component, createMemo, createSignal } from "solid-js";
 
-import type { GameAction, GameState } from "../../demo/types";
+import type { GameAction, GameState, RunOutcome } from "../../demo/types";
 import { demoReducer } from "../../demo/reducer";
 import { createSeedState } from "../../demo/seedContent";
 
@@ -210,6 +210,26 @@ function RunLog(props: { entries: string[] }) {
   );
 }
 
+/**
+ * Human-readable label for each terminal run outcome.
+ */
+function outcomeLabel(outcome: RunOutcome | null): string {
+  switch (outcome) {
+    case "victory":
+      return "Victory";
+    case "defeat":
+      return "Defeat — Party Wiped";
+    case "retreat":
+      return "Retreat";
+    case "catastrophe":
+      return "Catastrophe — Chaos Overload";
+    case "abandoned":
+      return "Abandoned";
+    default:
+      return "Unknown";
+  }
+}
+
 export const DemoScreen: Component = () => {
   const [state, setState] = createSignal<GameState>(createSeedState());
 
@@ -301,10 +321,51 @@ export const DemoScreen: Component = () => {
           <section class="demo-phase-panel" data-testid="phase-result">
             <h3 class="demo-section-title">Run Over</h3>
             <p class="demo-result-message">{state().resultMessage}</p>
-            <p class="demo-run-stats">
-              Turns survived: {state().turnCount} &middot; Final chaos:{" "}
-              {state().chaosMeter}
+
+            {/* Run outcome label */}
+            <p class="demo-result-outcome" data-testid="run-outcome">
+              <span class="demo-result-label">Outcome: </span>
+              <strong class={`demo-outcome-${state().runOutcome ?? "unknown"}`}>
+                {outcomeLabel(state().runOutcome)}
+              </strong>
             </p>
+
+            {/* Run statistics */}
+            <div class="demo-run-stats" data-testid="run-stats">
+              <p>Rooms explored: {state().roomCount}</p>
+              <p>Turns survived: {state().turnCount}</p>
+              <p>Final chaos: {state().chaosMeter}</p>
+            </div>
+
+            {/* Party survival status */}
+            <div class="demo-party-survival" data-testid="party-survival">
+              <h4 class="demo-section-title demo-section-title--sm">
+                Party Survival
+              </h4>
+              <div class="demo-party-grid">
+                {state().party.map((m) => (
+                  <div
+                    class="demo-party-member"
+                    classList={{ "demo-party--dead": m.hp <= 0 }}
+                    data-testid={`survival-${m.id}`}
+                  >
+                    <span class="demo-party-name">{m.name}</span>
+                    <span class="demo-party-class">{m.class}</span>
+                    <span
+                      classList={{
+                        "demo-status-alive": m.hp > 0,
+                        "demo-status-dead": m.hp <= 0,
+                      }}
+                    >
+                      {m.hp > 0
+                        ? `HP: ${m.hp}/${m.maxHp} · Stress: ${m.stress}`
+                        : "DEAD"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <button
               class="demo-btn demo-btn--primary"
               onClick={() => setState(createSeedState())}
@@ -501,7 +562,21 @@ function ensureStyles() {
 .demo-btn--danger { background: #3d0f0f; border-color: #ef4444; color: #ef4444; }
 .demo-btn--choice { background: #16213e; border-color: #555; text-align: left; display: flex; justify-content: space-between; width: 100%; }
 .demo-result-message { color: #ef4444; font-size: 1.1rem; margin-bottom: 0.5rem; }
-.demo-run-stats { color: #aaa; margin-bottom: 1rem; }
+.demo-result-outcome { margin-bottom: 0.75rem; color: #ccc; font-size: 1rem; }
+.demo-result-label { color: #888; }
+.demo-outcome-victory { color: #4ade80; }
+.demo-outcome-defeat { color: #ef4444; }
+.demo-outcome-retreat { color: #facc15; }
+.demo-outcome-catastrophe { color: #ef4444; }
+.demo-outcome-abandoned { color: #888; }
+.demo-outcome-unknown { color: #888; }
+.demo-run-stats { color: #aaa; margin-bottom: 0.75rem; }
+.demo-run-stats p { margin: 0.15rem 0; font-size: 0.85rem; }
+.demo-party-survival { margin-bottom: 1rem; }
+.demo-party--dead { opacity: 0.5; }
+.demo-status-alive { color: #4ade80; font-size: 0.75rem; }
+.demo-status-dead { color: #ef4444; font-weight: bold; font-size: 0.75rem; }
+.demo-section-title--sm { font-size: 0.85rem; margin-bottom: 0.4rem; }
 .demo-log { margin-top: 1.5rem; }
 .demo-log-summary { cursor: pointer; color: #888; font-size: 0.8rem; }
 .demo-log-entries { max-height: 200px; overflow-y: auto; background: #111; padding: 0.5rem; border-radius: 4px; margin-top: 0.25rem; }
