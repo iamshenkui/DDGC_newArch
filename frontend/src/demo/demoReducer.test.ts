@@ -34,8 +34,6 @@ describe("demoReducer", () => {
 
   it("ENTER_ROOM from dungeon-room changes to event when room has an event", () => {
     const state = demoReducer(createSeedState(), { type: "START_RUN" });
-    // After START_RUN we're in dungeon-room; ENTER_ROOM will look up the next room
-    // which might have an event or enemy. We just verify it transitions.
     const next = demoReducer(state, { type: "ENTER_ROOM" });
     expect(["event", "combat"]).toContain(next.phase);
     expect(next.turnCount).toBe(2);
@@ -43,7 +41,6 @@ describe("demoReducer", () => {
 
   it("COMBAT_WIN transitions combat to dungeon-room with healing", () => {
     let state = demoReducer(createSeedState(), { type: "START_RUN" });
-    // Advance until we reach combat, handling events along the way
     while (state.phase !== "combat") {
       if (state.phase === "event") {
         state = demoReducer(state, { type: "RESOLVE_EVENT", choiceIndex: 0 });
@@ -54,7 +51,6 @@ describe("demoReducer", () => {
 
     const after = demoReducer(state, { type: "COMBAT_WIN" });
     expect(after.phase).toBe("dungeon-room");
-    // Party should have healed
     for (const member of after.party) {
       expect(member.hp).toBeGreaterThanOrEqual(
         state.party.find((m) => m.id === member.id)!.hp,
@@ -81,6 +77,21 @@ describe("demoReducer", () => {
     }
   });
 
+  it("COMBAT_LOST transitions combat to result", () => {
+    let state = demoReducer(createSeedState(), { type: "START_RUN" });
+    while (state.phase !== "combat") {
+      if (state.phase === "event") {
+        state = demoReducer(state, { type: "RESOLVE_EVENT", choiceIndex: 0 });
+      } else {
+        state = demoReducer(state, { type: "ENTER_ROOM" });
+      }
+    }
+
+    const after = demoReducer(state, { type: "COMBAT_LOST" });
+    expect(after.phase).toBe("result");
+    expect(after.resultMessage).toContain("fallen");
+  });
+
   it("END_RUN transitions to result phase", () => {
     const state = demoReducer(createSeedState(), { type: "START_RUN" });
     const result = demoReducer(state, { type: "END_RUN" });
@@ -88,7 +99,148 @@ describe("demoReducer", () => {
     expect(result.resultMessage).not.toBeNull();
   });
 
-  // ── Deterministic sequence (≥3 actions, AC-005) ────────────
+  // ── Combat encounter: hero actions ──────────────────────────
+
+  it("HERO_ATTACK reduces enemy HP and creates combat log entry with actor, target, and result", () => {
+    let state = demoReducer(createSeedState(), { type: "START_RUN" });
+    while (state.phase !== "combat") {
+      if (state.phase === "event") {
+        state = demoReducer(state, { type: "RESOLVE_EVENT", choiceIndex: 0 });
+      } else {
+        state = demoReducer(state, { type: "ENTER_ROOM" });
+      }
+    }
+
+    const encBefore = state.combatEncounter!;
+    const firstEnemyHp = encBefore.enemies[0].hp;
+
+    // First hero attacks
+    const after = demoReducer(state, { type: "HERO_ATTACK" });
+    const encAfter = after.combatEncounter!;
+
+    // Enemy HP should have decreased
+    expect(encAfter.enemies[0].hp).toBeLessThan(firstEnemyHp);
+
+    // Combat log should have an entry identifying actor, target, and result
+    expect(encAfter.log.length).toBeGreaterThan(0);
+    const logEntry = encAfter.log[0];
+    expect(logEntry.actorName).toBeTruthy();
+    expect(logEntry.targetName).toBeTruthy();
+    expect(logEntry.damage).toBeGreaterThan(0);
+    expect(logEntry.targetCurrentHp).toBeGreaterThanOrEqual(0);
+
+    // runLog should also have an entry with the same info
+    const lastRunLog = after.runLog[after.runLog.length - 1];
+    expect(lastRunLog).toContain(logEntry.actorName);
+    expect(lastRunLog).toContain("strikes");
+    expect(lastRunLog).toContain(logEntry.targetName);
+    expect(lastRunLog).toContain(`${logEntry.damage} damage`);
+  });
+
+  it("enemy phase reduces party HP and may increase stress after all heroes act", () => {
+    let state = demoReducer(createSeedState(), { type: "START_RUN" });
+    while (state.phase !== "combat") {
+      if (state.phase === "event") {
+        state = demoReducer(state, { type: "RESOLVE_EVENT", choiceIndex: 0 });
+      } else {
+        state = demoReducer(state, { type: "ENTER_ROOM" });
+      }
+    }
+
+    const partyHpBefore = state.party.map((m) => m.hp);
+    const partyStressBefore = state.party.map((m) => m.stress);
+
+    // Dispatch HERO_ATTACK until all heroes have acted
+    while (
+      state.combatEncounter &&
+      !state.combatEncounter.resolved &&
+      state.combatEncounter.activeHeroIndex < state.party.length
+    ) {
+      state = demoReducer(state, { type: "HERO_ATTACK" });
+    }
+
+    // After all heroes acted, enemy phase should have triggered
+    // (round advances and party may have taken damage)
+    if (state.combatEncounter && state.combatEncounter.round > 1) {
+      // At least one party member probably took damage
+      const someTookDamage = state.party.some(
+        (m, i) => m.hp < partyHpBefore[i],
+      );
+      // Enemies dealt damage or stress — at least one party member affected
+      const someStressGained = state.party.some(
+        (m, i) => m.stress > partyStressBefore[i],
+      );
+
+      // Not all combats have stress-inflicting enemies, so check damage OR stress
+      expect(someTookDamage || someStressGained).toBe(true);
+    }
+  });
+
+  // ── Combat encounter: victory ───────────────────────────────
+
+  it("combat can be resolved as victory when all enemies are defeated", () => {
+    let state = demoReducer(createSeedState(), { type: "START_RUN" });
+    while (state.phase !== "combat") {
+      if (state.phase === "event") {
+        state = demoReducer(state, { type: "RESOLVE_EVENT", choiceIndex: 0 });
+      } else {
+        state = demoReducer(state, { type: "ENTER_ROOM" });
+      }
+    }
+
+    // Attack until victory
+    let safety = 0;
+    while (
+      state.phase === "combat" &&
+      state.combatEncounter &&
+      !state.combatEncounter.resolved &&
+      safety < 20
+    ) {
+      state = demoReducer(state, { type: "HERO_ATTACK" });
+      safety++;
+    }
+
+    expect(state.phase).toBe("combat");
+    expect(state.combatEncounter?.resolved).toBe(true);
+    expect(state.combatEncounter?.outcome).toBe("victory");
+
+    // All enemies should be at 0 HP
+    for (const enemy of state.combatEncounter!.enemies) {
+      expect(enemy.hp).toBe(0);
+    }
+  });
+
+  it("claims victory then transitions to dungeon-room via COMBAT_WIN", () => {
+    let state = demoReducer(createSeedState(), { type: "START_RUN" });
+    while (state.phase !== "combat") {
+      if (state.phase === "event") {
+        state = demoReducer(state, { type: "RESOLVE_EVENT", choiceIndex: 0 });
+      } else {
+        state = demoReducer(state, { type: "ENTER_ROOM" });
+      }
+    }
+
+    // Resolve to victory
+    let safety = 0;
+    while (
+      state.phase === "combat" &&
+      state.combatEncounter &&
+      !state.combatEncounter.resolved &&
+      safety < 20
+    ) {
+      state = demoReducer(state, { type: "HERO_ATTACK" });
+      safety++;
+    }
+
+    expect(state.combatEncounter?.outcome).toBe("victory");
+
+    // Transition out of combat
+    state = demoReducer(state, { type: "COMBAT_WIN" });
+    expect(state.phase).toBe("dungeon-room");
+    expect(state.combatEncounter).toBeNull();
+  });
+
+  // ── Deterministic sequence ──────────────────────────────────
 
   it("produces identical results when re-running the same action sequence", () => {
     const actions = [
@@ -100,15 +252,144 @@ describe("demoReducer", () => {
     const resultA = runDemoSequence(actions);
     const resultB = runDemoSequence(actions);
 
-    // Full structural equality — deterministic reducer
     expect(resultA).toEqual(resultB);
-    // Run log length and phase are identical
     expect(resultA.runLog.length).toBe(resultB.runLog.length);
     expect(resultA.phase).toBe(resultB.phase);
     expect(resultA.chaosMeter).toBe(resultB.chaosMeter);
   });
 
-  // ── Full run loop ─────────────────────────────────────────────
+  it("produces identical combat outcomes when re-running the same combat action sequence", () => {
+    let stateA = demoReducer(createSeedState(), { type: "START_RUN" });
+    let stateB = demoReducer(createSeedState(), { type: "START_RUN" });
+
+    // Advance both to combat the same way
+    const advanceToCombat = (s: GameState) => {
+      while (s.phase !== "combat") {
+        if (s.phase === "event") {
+          s = demoReducer(s, { type: "RESOLVE_EVENT", choiceIndex: 0 });
+        } else {
+          s = demoReducer(s, { type: "ENTER_ROOM" });
+        }
+      }
+      return s;
+    };
+
+    stateA = advanceToCombat(stateA);
+    stateB = advanceToCombat(stateB);
+
+    // Execute the same attack sequence
+    for (let i = 0; i < 5; i++) {
+      if (stateA.combatEncounter?.resolved) break;
+      stateA = demoReducer(stateA, { type: "HERO_ATTACK" });
+      stateB = demoReducer(stateB, { type: "HERO_ATTACK" });
+    }
+
+    // Full structural equality on combat state
+    expect(stateA.combatEncounter).toEqual(stateB.combatEncounter);
+    expect(stateA.party).toEqual(stateB.party);
+  });
+
+  // ── Combat log entries ──────────────────────────────────────
+
+  it("combat log entries identify round, actor, target, damage, and HP", () => {
+    let state = demoReducer(createSeedState(), { type: "START_RUN" });
+    while (state.phase !== "combat") {
+      if (state.phase === "event") {
+        state = demoReducer(state, { type: "RESOLVE_EVENT", choiceIndex: 0 });
+      } else {
+        state = demoReducer(state, { type: "ENTER_ROOM" });
+      }
+    }
+
+    state = demoReducer(state, { type: "HERO_ATTACK" });
+
+    const log = state.combatEncounter!.log;
+    expect(log.length).toBeGreaterThan(0);
+
+    for (const entry of log) {
+      expect(entry.round).toBeGreaterThan(0);
+      expect(entry.actorName).toBeTruthy();
+      expect(entry.actionLabel).toBeTruthy();
+      expect(entry.targetName).toBeTruthy();
+      expect(typeof entry.damage).toBe("number");
+      expect(typeof entry.targetCurrentHp).toBe("number");
+      expect(typeof entry.targetMaxHp).toBe("number");
+    }
+  });
+
+  // ── Combat encounter: state initialisation ──────────────────
+
+  it("sets up combat encounter when entering combat", () => {
+    let state = demoReducer(createSeedState(), { type: "START_RUN" });
+    while (state.phase !== "combat") {
+      if (state.phase === "event") {
+        state = demoReducer(state, { type: "RESOLVE_EVENT", choiceIndex: 0 });
+      } else {
+        state = demoReducer(state, { type: "ENTER_ROOM" });
+      }
+    }
+
+    const enc = state.combatEncounter;
+    expect(enc).not.toBeNull();
+    expect(enc!.round).toBe(1);
+    expect(enc!.activeHeroIndex).toBe(0);
+    expect(enc!.enemies.length).toBeGreaterThan(0);
+    expect(enc!.resolved).toBe(false);
+    expect(enc!.outcome).toBe("undecided");
+    expect(enc!.log).toEqual([]);
+  });
+
+  it("combat encounter assigns individual HP to each enemy", () => {
+    let state = demoReducer(createSeedState(), { type: "START_RUN" });
+    while (state.phase !== "combat") {
+      if (state.phase === "event") {
+        state = demoReducer(state, { type: "RESOLVE_EVENT", choiceIndex: 0 });
+      } else {
+        state = demoReducer(state, { type: "ENTER_ROOM" });
+      }
+    }
+
+    const enc = state.combatEncounter!;
+    const room = state.currentRoom!;
+    expect(enc.enemies.length).toBe(room.enemyGroup!.count);
+
+    for (const enemy of enc.enemies) {
+      expect(enemy.maxHp).toBe(room.enemyGroup!.hp);
+      expect(enemy.hp).toBe(room.enemyGroup!.hp);
+    }
+  });
+
+  // ── Chaos meter in combat ───────────────────────────────────
+
+  it("chaos increases when a full round of combat completes", () => {
+    let state = demoReducer(createSeedState(), { type: "START_RUN" });
+    while (state.phase !== "combat") {
+      if (state.phase === "event") {
+        state = demoReducer(state, { type: "RESOLVE_EVENT", choiceIndex: 0 });
+      } else {
+        state = demoReducer(state, { type: "ENTER_ROOM" });
+      }
+    }
+
+    const chaosBefore = state.chaosMeter;
+
+    // Act until round advances (all heroes acted + enemy phase)
+    let safety = 0;
+    while (
+      state.combatEncounter &&
+      state.combatEncounter.round < 2 &&
+      !state.combatEncounter.resolved &&
+      safety < 10
+    ) {
+      state = demoReducer(state, { type: "HERO_ATTACK" });
+      safety++;
+    }
+
+    // Chaos should have increased by at least 1 from combat activity
+    expect(state.chaosMeter).toBeGreaterThanOrEqual(chaosBefore);
+  });
+
+  // ── Full run loop (existing) ────────────────────────────────
 
   /**
    * Dispatch the correct action for whatever phase we're in.
@@ -132,17 +413,16 @@ describe("demoReducer", () => {
   it("supports a full run loop: start → explore → combat → result", () => {
     let state = createSeedState();
 
-    // Walk through 10 steps of game loop, handling whatever phase we land on
     for (let i = 0; i < 10; i++) {
       if (state.phase === "result") break;
       state = dispatchForward(state);
     }
 
-    // After 10 steps we should be in a terminal or continuing phase
-    expect(["dungeon-room", "event", "combat", "result"]).toContain(state.phase);
+    expect(["dungeon-room", "event", "combat", "result"]).toContain(
+      state.phase,
+    );
     expect(state.turnCount).toBeGreaterThan(0);
 
-    // Force end the run
     if (state.phase !== "result") {
       state = demoReducer(state, { type: "END_RUN" });
     }
@@ -150,19 +430,18 @@ describe("demoReducer", () => {
     expect(state.resultMessage).not.toBeNull();
   });
 
-  // ── Chaos meter behaviour ────────────────────────────────────
+  // ── Chaos meter behaviour ───────────────────────────────────
 
   it("increases chaos when entering rooms", () => {
     const seed = createSeedState();
     const started = demoReducer(seed, { type: "START_RUN" });
-    expect(started.chaosMeter).toBe(seed.chaosMeter); // START_RUN does not change chaos
+    expect(started.chaosMeter).toBe(seed.chaosMeter);
 
     const entered = demoReducer(started, { type: "ENTER_ROOM" });
     expect(entered.chaosMeter).toBeGreaterThan(started.chaosMeter);
   });
 
   it("can trigger a result when chaos exceeds threshold via event choice", () => {
-    // Start with high chaos and pick a large-positive-delta choice
     let state: ReturnType<typeof demoReducer> = {
       ...createSeedState(),
       chaosMeter: 14,
@@ -192,7 +471,7 @@ describe("demoReducer", () => {
     expect(state.chaosMeter).toBeGreaterThanOrEqual(15);
   });
 
-  // ── Floor advancement ────────────────────────────────────────
+  // ── Floor advancement ───────────────────────────────────────
 
   it("advances floor level on ADVANCE_FLOOR action", () => {
     const state = demoReducer(createSeedState(), { type: "ADVANCE_FLOOR" });

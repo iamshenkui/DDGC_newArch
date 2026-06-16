@@ -3,6 +3,10 @@
  *
  * The demo models a minimal dungeon-crawl loop: start a run, explore rooms,
  * resolve events or combat, and track the escalating chaos-meter value.
+ *
+ * Combat encounters are resolved as deterministic turn-based exchanges:
+ * heroes act one at a time, then enemies retaliate. No randomness or browser
+ * globals are used — every transition is a pure function of (state, action).
  */
 
 /** Overall run phase — the screen uses this to decide what to render. */
@@ -54,6 +58,42 @@ export interface Room {
   event: DungeonEvent | null;
 }
 
+// ── Combat Types ────────────────────────────────────────────────────────────
+
+/** An individual enemy combatant spawned from an EnemyGroup. */
+export interface CombatEnemy {
+  id: string;
+  name: string;
+  slot: number;
+  hp: number;
+  maxHp: number;
+}
+
+/** A single structured entry in the combat action log. */
+export interface CombatLogEntry {
+  round: number;
+  actorName: string;
+  actionLabel: string;
+  targetName: string;
+  damage: number;
+  targetCurrentHp: number;
+  targetMaxHp: number;
+}
+
+/** Sub-state within the "combat" phase tracking round-by-round progression. */
+export interface CombatEncounter {
+  round: number;
+  /** Index into the party array for the hero whose turn it is. */
+  activeHeroIndex: number;
+  /** Array of individual enemy combatants. */
+  enemies: CombatEnemy[];
+  /** Structured log of every action taken this encounter. */
+  log: CombatLogEntry[];
+  /** Whether the encounter has been decided (win or loss). */
+  resolved: boolean;
+  outcome: "undecided" | "victory" | "defeat";
+}
+
 export interface GameState {
   phase: DemoPhase;
   party: PartyMember[];
@@ -64,6 +104,8 @@ export interface GameState {
   runLog: string[];
   /** Set when the run ends — explains why. */
   resultMessage: string | null;
+  /** Combat sub-state — non-null only when phase === "combat". */
+  combatEncounter: CombatEncounter | null;
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -72,7 +114,9 @@ export type GameAction =
   | { type: "START_RUN" }
   | { type: "ENTER_ROOM" }
   | { type: "RESOLVE_EVENT"; choiceIndex: number }
+  | { type: "HERO_ATTACK" }
   | { type: "COMBAT_WIN" }
+  | { type: "COMBAT_LOST" }
   | { type: "COMBAT_FLEE" }
   | { type: "ADVANCE_FLOOR" }
   | { type: "END_RUN" };

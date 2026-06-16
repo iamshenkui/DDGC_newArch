@@ -146,5 +146,6 @@ export function createSeedState(): GameState {
     turnCount: 0,
     runLog: ["The Darkest Dungeon awaits…"],
     resultMessage: null,
+    combatEncounter: null,
   };
 }
