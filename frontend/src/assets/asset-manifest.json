@@ -239,6 +239,102 @@
       }
     },
 
+    "first_combat_demo_assets": {
+      "description": "First-combat browser demo (HB-iamshenkui-DDGC-newArch-116). Sources for the high-level hero party and the preferred mantis flower monster encounter.",
+      "hero_data_sources": {
+        "hunter": "Assets/Resources/Data/Heroes/Info/Hunter.bytes",
+        "alchemist": "Assets/Resources/Data/Heroes/Info/Alchemist.bytes",
+        "diviner": "Assets/Resources/Data/Heroes/Info/Diviner.bytes",
+        "shaman": "Assets/Resources/Data/Heroes/Info/Shaman.bytes",
+        "tank": "Assets/Resources/Data/Heroes/Info/Tank.bytes"
+      },
+      "hero_portrait_source_patterns": {
+        "pattern": "Assets/Resources/Data/Heroes/Sprites/{class}/A/{class}_portrait_roster.png",
+        "variants": [
+          "Assets/Resources/Data/Heroes/Sprites/hunter/A/hunter_portrait_roster.png",
+          "Assets/Resources/Data/Heroes/Sprites/alchemist/A/alchemist_portrait_roster.png",
+          "Assets/Resources/Data/Heroes/Sprites/diviner/A/diviner_portrait_roster.png",
+          "Assets/Resources/Data/Heroes/Sprites/shaman/A/shaman_portrait_roster.png",
+          "Assets/Resources/Data/Heroes/Sprites/tank/A/tank_portrait_roster.png"
+        ],
+        "repo_status": "hunter extracted; alchemist/diviner/shaman/tank deferred (BLOCKER-001)"
+      },
+      "hero_spine_sources": {
+        "hunter": {
+          "json": "Assets/Spines/Heroes/hunter/lieren.json",
+          "atlas": "Assets/Spines/Heroes/hunter/lieren.atlas.txt",
+          "texture": "Assets/Spines/Heroes/hunter/lieren.png",
+          "skeleton_data": "Assets/Spines/Heroes/hunter/lieren_SkeletonData.asset"
+        },
+        "alchemist": {
+          "json": "Assets/Spines/Heroes/alchemist/yaoshi.json",
+          "atlas": "Assets/Spines/Heroes/alchemist/yaoshi.atlas.txt",
+          "texture": "Assets/Spines/Heroes/alchemist/yaoshi.png",
+          "skeleton_data": "Assets/Spines/Heroes/alchemist/yaoshi_SkeletonData.asset"
+        },
+        "diviner": {
+          "json": "Assets/Spines/Heroes/diviner/wenzhenren.json",
+          "atlas": "Assets/Spines/Heroes/diviner/wenzhenren.atlas.txt",
+          "texture": "Assets/Spines/Heroes/diviner/wenzhenren.png",
+          "skeleton_data": "Assets/Spines/Heroes/diviner/wenzhenren_SkeletonData.asset"
+        },
+        "shaman": {
+          "json": "Assets/Spines/Heroes/shaman/wuzhu.json",
+          "atlas": "Assets/Spines/Heroes/shaman/wuzhu.atlas.txt",
+          "texture": "Assets/Spines/Heroes/shaman/wuzhu.png",
+          "skeleton_data": "Assets/Spines/Heroes/shaman/wuzhu_SkeletonData.asset"
+        },
+        "tank": {
+          "json": "Assets/Spines/Heroes/tank/yukanguan.json",
+          "atlas": "Assets/Spines/Heroes/tank/yukanguan.atlas.txt",
+          "texture": "Assets/Spines/Heroes/tank/yukanguan.png",
+          "skeleton_data": "Assets/Spines/Heroes/tank/yukanguan_SkeletonData.asset"
+        }
+      },
+      "monster_data_sources": {
+        "mantis_walking_flower": "Assets/Resources/Data/Monsters/mantis_walking_flower_1.txt",
+        "mantis_spiny_flower": "Assets/Resources/Data/Monsters/mantis_spiny_flower_1.txt",
+        "mantis_magic_flower": "Assets/Resources/Data/Monsters/mantis_magic_flower_1.txt"
+      },
+      "monster_spine_sources": {
+        "mantis_walking_flower": {
+          "json": "Assets/Spines/Monsters/mantis_walking_flower/mantis3.json",
+          "atlas": "Assets/Spines/Monsters/mantis_walking_flower/mantis3.atlas.txt",
+          "texture": "Assets/Spines/Monsters/mantis_walking_flower/mantis3.png",
+          "skeleton_data": "Assets/Spines/Monsters/mantis_walking_flower/mantis3_SkeletonData.asset"
+        },
+        "mantis_spiny_flower": {
+          "json": "Assets/Spines/Monsters/mantis_spiny_flower/mantis2.json",
+          "atlas": "Assets/Spines/Monsters/mantis_spiny_flower/mantis2.atlas.txt",
+          "texture": "Assets/Spines/Monsters/mantis_spiny_flower/mantis2.png",
+          "skeleton_data": "Assets/Spines/Monsters/mantis_spiny_flower/mantis2_SkeletonData.asset"
+        },
+        "mantis_magic_flower": {
+          "json": "Assets/Spines/Monsters/mantis_magic_flower/mantis01.json",
+          "atlas": "Assets/Spines/Monsters/mantis_magic_flower/mantis01.atlas.txt",
+          "texture": "Assets/Spines/Monsters/mantis_magic_flower/mantis01.png",
+          "skeleton_data": "Assets/Spines/Monsters/mantis_magic_flower/mantis01_SkeletonData.asset"
+        }
+      },
+      "raid_combat_support_sources": {
+        "backdrop_animations": "Assets/Animations/Raid/Backdrop/",
+        "hero_controller": "Assets/Animations/Raid/Heroes/Default/HeroController.controller",
+        "monster_controller": "Assets/Animations/Raid/Monsters/MonsterController.controller",
+        "unit_selector": "Assets/Animations/Raid/UnitSelector/",
+        "unit_overlay": "Assets/Animations/Raid/UnitOverlay/",
+        "torch_meter": "Assets/Animations/Raid/TorchMeter/",
+        "raid_ui_prefabs": "Assets/Prefabs/UI/Raid/"
+      },
+      "frontend_usage": [
+        "screens/startup/StartupScreen.tsx — First Combat Demo button",
+        "app/DdgcApp.tsx — dispatches start-first-combat-demo intent",
+        "bridge/ReplayRuntimeBridge.ts — loads firstCombatDemoViewModel",
+        "validation/replayFixtures.ts — firstCombatDemoViewModel fixture",
+        "screens/combat/CombatScreen.tsx — renders the demo combat view model"
+      ],
+      "inventory_status": "confirmed (source paths documented; raster assets not extracted — BLOCKER-001)"
+    },
+
     "title_menu_assets": {
       "description": "Title/menu screen art referenced by MainMenuWindow.prefab and Intro.unity. These assets provide the visual identity for the startup/title screen (StartupScreen.tsx), including the menu background, button sprites, close button, and any logo/branding art.",
       "background_sprites": {

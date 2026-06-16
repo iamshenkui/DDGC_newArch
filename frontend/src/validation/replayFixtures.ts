@@ -990,6 +990,204 @@ export const replayAttackCombatViewModel = {
   canFlee: true
 };
 
+/**
+ * First-combat browser demo fixture.
+ *
+ * Mirrors the original DDGC first combat encounter using high-level heroes from
+ * the five recruitable families and the preferred mantis flower monster set.
+ *
+ * Hero data sources:
+ *   - Hunter:     Assets/Resources/Data/Heroes/Info/Hunter.bytes
+ *   - Alchemist:  Assets/Resources/Data/Heroes/Info/Alchemist.bytes
+ *   - Diviner:    Assets/Resources/Data/Heroes/Info/Diviner.bytes
+ *   - Shaman:     Assets/Resources/Data/Heroes/Info/Shaman.bytes
+ *   - Tank:       Assets/Resources/Data/Heroes/Info/Tank.bytes
+ *
+ * Hero portrait source patterns:
+ *   - Assets/Resources/Data/Heroes/Sprites/{class}/A/{class}_portrait_roster.png
+ *   (e.g. hunter, alchemist, diviner, shaman, tank)
+ *
+ * Hero Spine source paths:
+ *   - Assets/Spines/Heroes/hunter/lieren.json
+ *   - Assets/Spines/Heroes/alchemist/yaoshi.json
+ *   - Assets/Spines/Heroes/diviner/wenzhenren.json
+ *   - Assets/Spines/Heroes/shaman/wuzhu.json
+ *   - Assets/Spines/Heroes/tank/yukanguan.json
+ *
+ * Monster data sources:
+ *   - mantis_walking_flower_1.txt
+ *   - mantis_spiny_flower_1.txt
+ *   - mantis_magic_flower_1.txt
+ *
+ * Monster Spine source paths:
+ *   - Assets/Spines/Monsters/mantis_walking_flower/mantis3.json
+ *   - Assets/Spines/Monsters/mantis_spiny_flower/mantis2.json
+ *   - Assets/Spines/Monsters/mantis_magic_flower/mantis01.json
+ *
+ * Raid UI / combat support source areas:
+ *   - Assets/Animations/Raid/Backdrop/
+ *   - Assets/Animations/Raid/Heroes/Default/HeroController.controller
+ *   - Assets/Animations/Raid/Monsters/MonsterController.controller
+ *   - Assets/Prefabs/UI/Raid/
+ */
+export const firstCombatDemoViewModel = {
+  kind: "combat" as const,
+  title: "First Combat Demo",
+  dungeonName: "QingLong Grove — Mantis Nest",
+  roundLabel: "Round 1",
+  phase: "player-turn" as const,
+  round: 1,
+  turnPhase: "player" as const,
+  activeHeroId: "hero-hunter-01",
+  party: [
+    {
+      id: "hero-hunter-01",
+      name: "Shen",
+      classLabel: "Hunter",
+      hp: "68 / 72",
+      maxHp: "72",
+      stress: "12",
+      maxStress: "200",
+      position: 1,
+      isActive: true,
+      isAlive: true,
+      level: 5,
+      skills: [
+        { id: "skill-hunter-1", name: "Hunting Bow", description: "Ranged attack that marks the target.", target: "Enemy", hitRating: "90%", critRating: "9%", cooldown: 0, cooldownRemaining: 0 },
+        { id: "skill-hunter-2", name: "Rapid Shot", description: "Fire two quick shots at the target.", target: "Enemy", hitRating: "80%", critRating: "7%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "skill-hunter-3", name: "Marked for Death", description: "Mark a target to take increased damage.", target: "Enemy", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 0 },
+        { id: "skill-hunter-4", name: "Batty Advice", description: "Grant a random buff to an ally.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 3, cooldownRemaining: 0 }
+      ]
+    },
+    {
+      id: "hero-alchemist-01",
+      name: "Yao Chen",
+      classLabel: "Alchemist",
+      hp: "62 / 66",
+      maxHp: "66",
+      stress: "18",
+      maxStress: "200",
+      position: 2,
+      isActive: false,
+      isAlive: true,
+      level: 5,
+      skills: [
+        { id: "skill-alchemist-1", name: "Elixir Bomb", description: "Throw a volatile elixir at the enemy line.", target: "Enemy", hitRating: "85%", critRating: "6%", cooldown: 0, cooldownRemaining: 0 },
+        { id: "skill-alchemist-2", name: "Restorative Brew", description: "Heal and clear one negative status from an ally.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "skill-alchemist-3", name: "Toxic Cloud", description: "Poison all enemies.", target: "Enemy", hitRating: "80%", critRating: "4%", cooldown: 2, cooldownRemaining: 0 },
+        { id: "skill-alchemist-4", name: "Stimulant", description: "Increase an ally's speed and damage.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 3, cooldownRemaining: 0 }
+      ]
+    },
+    {
+      id: "hero-diviner-01",
+      name: "Wen Zhenren",
+      classLabel: "Diviner",
+      hp: "54 / 58",
+      maxHp: "58",
+      stress: "22",
+      maxStress: "200",
+      position: 3,
+      isActive: false,
+      isAlive: true,
+      level: 5,
+      skills: [
+        { id: "skill-diviner-1", name: "Oracle Strike", description: "A precise strike guided by prophecy.", target: "Enemy", hitRating: "95%", critRating: "5%", cooldown: 0, cooldownRemaining: 0 },
+        { id: "skill-diviner-2", name: "Fortune Ward", description: "Shield an ally from the next attack.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "skill-diviner-3", name: "Hex", description: "Reduce an enemy's accuracy and dodge.", target: "Enemy", hitRating: "90%", critRating: "0%", cooldown: 2, cooldownRemaining: 0 },
+        { id: "skill-diviner-4", name: "Reveal Weakness", description: "Mark all enemies, increasing damage taken.", target: "Enemy", hitRating: "100%", critRating: "0%", cooldown: 3, cooldownRemaining: 0 }
+      ]
+    },
+    {
+      id: "hero-shaman-01",
+      name: "Wu Zhu",
+      classLabel: "Shaman",
+      hp: "70 / 78",
+      maxHp: "78",
+      stress: "15",
+      maxStress: "200",
+      position: 4,
+      isActive: false,
+      isAlive: true,
+      level: 5,
+      skills: [
+        { id: "skill-shaman-1", name: "Spirit Claw", description: "Call a spirit claw to rake the enemy.", target: "Enemy", hitRating: "88%", critRating: "8%", cooldown: 0, cooldownRemaining: 0 },
+        { id: "skill-shaman-2", name: "Ancestral Heal", description: "Restore health to the party over time.", target: "Party", hitRating: "100%", critRating: "0%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "skill-shaman-3", name: "Totem Guard", description: "Summon a totem that guards the front rank.", target: "Self", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 0 },
+        { id: "skill-shaman-4", name: "Curse of Frailty", description: "Weaken an enemy's armor.", target: "Enemy", hitRating: "90%", critRating: "0%", cooldown: 3, cooldownRemaining: 0 }
+      ]
+    },
+    {
+      id: "hero-tank-01",
+      name: "Yu Kanguan",
+      classLabel: "Tank",
+      hp: "95 / 105",
+      maxHp: "105",
+      stress: "10",
+      maxStress: "200",
+      position: 5,
+      isActive: false,
+      isAlive: true,
+      level: 5,
+      skills: [
+        { id: "skill-tank-1", name: "Iron Bash", description: "A heavy shield bash that stuns the target.", target: "Enemy", hitRating: "85%", critRating: "4%", cooldown: 0, cooldownRemaining: 0 },
+        { id: "skill-tank-2", name: "Hold the Line", description: "Guard an ally, redirecting attacks to yourself.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "skill-tank-3", name: "Fortify", description: "Gain a large armor boost for one turn.", target: "Self", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 0 },
+        { id: "skill-tank-4", name: "Tackle", description: "Charge an enemy, knocking it back a rank.", target: "Enemy", hitRating: "80%", critRating: "5%", cooldown: 3, cooldownRemaining: 0 }
+      ]
+    }
+  ],
+  enemies: [
+    {
+      id: "enemy-mantis-walking-01",
+      name: "Mantis Walking Flower",
+      hp: "55 / 65",
+      maxHp: "65",
+      position: 1,
+      isAlive: true,
+      isTargeted: true,
+      size: "medium" as const
+    },
+    {
+      id: "enemy-mantis-spiny-01",
+      name: "Mantis Spiny Flower",
+      hp: "42 / 48",
+      maxHp: "48",
+      position: 2,
+      isAlive: true,
+      isTargeted: false,
+      size: "small" as const
+    },
+    {
+      id: "enemy-mantis-magic-01",
+      name: "Mantis Magic Flower",
+      hp: "38 / 44",
+      maxHp: "44",
+      position: 3,
+      isAlive: true,
+      isTargeted: false,
+      size: "small" as const
+    }
+  ],
+  selectedSkillId: "skill-hunter-1",
+  combatLog: [
+    "Round 1 begins...",
+    "The party stumbles into a mantis flower nest.",
+    "Shen readies Hunting Bow. Select a target to attack."
+  ],
+  isPlayerTurn: true,
+  canFlee: true,
+  isFleeAvailable: true,
+  turnCount: 1,
+  settingsLabel: "设置"
+};
+
+export const firstCombatDemoSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "combat",
+  viewModel: firstCombatDemoViewModel,
+  debugMessage: "First-combat browser demo loaded via replay bridge."
+};
+
 export const replayCombatViewModel = {
   ...replayAttackCombatViewModel,
   title: "Dungeon Combat",

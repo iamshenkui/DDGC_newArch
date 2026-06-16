@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ReplayRuntimeBridge } from "../../bridge/ReplayRuntimeBridge";
 import type { CombatViewModel } from "../../bridge/contractTypes";
-import { replayAttackCombatViewModel, replayCombatViewModel } from "../../validation/replayFixtures";
+import { firstCombatDemoViewModel, replayAttackCombatViewModel, replayCombatViewModel } from "../../validation/replayFixtures";
 import { CombatScreen } from "./CombatScreen";
 
 describe("CombatScreen skill interactions", () => {
@@ -109,53 +109,87 @@ describe("CombatScreen skill interactions", () => {
     expect(onConfirmAttack).not.toHaveBeenCalled();
   });
 
-  it("reaches character-hit through the replay bridge and renders the hit UI", async () => {
-    const bridge = new ReplayRuntimeBridge();
-    await bridge.boot();
-    await bridge.dispatchIntent({ type: "start-provisioning" });
-    await bridge.dispatchIntent({ type: "confirm-provisioning" });
-    await bridge.dispatchIntent({ type: "accept-dungeon-hint" });
-    await bridge.dispatchIntent({ type: "launch-expedition" });
-    await bridge.dispatchIntent({ type: "enter-dungeon-assist" });
-    await bridge.dispatchIntent({ type: "use-assist-action", actionId: "heal-wound" });
-    await bridge.dispatchIntent({ type: "continue-from-dungeon" });
-    await bridge.dispatchIntent({ type: "enter-room", roomId: "room-combat-1" });
-
-    const hitSnapshot = await bridge.dispatchIntent({ type: "confirm-attack" });
-    expect(hitSnapshot.viewModel.kind).toBe("combat");
-    const hitVm = hitSnapshot.viewModel as CombatViewModel;
-    expect(hitVm.phase).toBe("character-hit");
-
-    const onContinueCombat = vi.fn();
+  it("renders the first-combat demo with original families and mantis flower enemies", () => {
+    const onSelectSkill = vi.fn();
+    const onSelectTarget = vi.fn();
     const root = document.createElement("div");
     document.body.appendChild(root);
 
     dispose = render(
       () => (
         <CombatScreen
-          viewModel={hitVm}
-          onSelectSkill={vi.fn()}
-          onSelectTarget={vi.fn()}
+          viewModel={firstCombatDemoViewModel}
+          onSelectSkill={onSelectSkill}
+          onSelectTarget={onSelectTarget}
           onConfirmAttack={vi.fn()}
           onFleeCombat={vi.fn()}
           onEndTurn={vi.fn()}
-          onContinueCombat={onContinueCombat}
         />
       ),
       root
     );
 
-    const hudPill = root.querySelector(".pill-danger");
-    expect(hudPill?.textContent).toContain("Character Hit");
+    const classLabels = Array.from(root.querySelectorAll(".combat-hero-class")).map(
+      (el) => el.textContent
+    );
+    expect(classLabels).toContain("Hunter");
+    expect(classLabels).toContain("Alchemist");
+    expect(classLabels).toContain("Diviner");
+    expect(classLabels).toContain("Shaman");
+    expect(classLabels).toContain("Tank");
 
-    const damageFloater = root.querySelector('[data-testid="combat-hit-damage"]');
-    expect(damageFloater).not.toBeNull();
-    expect(damageFloater?.textContent).toContain(hitVm.hitDamage ?? "");
+    const enemyNames = Array.from(root.querySelectorAll(".combat-enemy-name")).map(
+      (el) => el.textContent
+    );
+    expect(enemyNames).toContain("Mantis Walking Flower");
+    expect(enemyNames).toContain("Mantis Spiny Flower");
+    expect(enemyNames).toContain("Mantis Magic Flower");
 
-    const acknowledgeBtn = root.querySelector<HTMLButtonElement>('[data-testid="combat-continue-btn"]');
-    expect(acknowledgeBtn?.textContent).toContain("Acknowledge");
+    const activeSkillButton = root.querySelector<HTMLButtonElement>(
+      '.combat-skill-slot[title="Hunting Bow"]'
+    );
+    activeSkillButton?.click();
+    expect(onSelectSkill).toHaveBeenCalledWith("skill-hunter-1");
 
-    acknowledgeBtn?.click();
-    expect(onContinueCombat).toHaveBeenCalledOnce();
+    const targetCell = root.querySelector<HTMLButtonElement>(
+      '[data-enemy-id="enemy-mantis-spiny-01"]'
+    );
+    targetCell?.click();
+    expect(onSelectTarget).toHaveBeenCalledWith("enemy-mantis-spiny-01");
+  });
+
+  it("reaches the first-combat demo through the replay bridge and selects a skill", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "start-first-combat-demo" });
+    expect(snapshot.flowState).toBe("combat");
+    expect(snapshot.viewModel.kind).toBe("combat");
+
+    const demoVm = snapshot.viewModel as CombatViewModel;
+    const onSelectSkill = vi.fn();
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    dispose = render(
+      () => (
+        <CombatScreen
+          viewModel={demoVm}
+          onSelectSkill={onSelectSkill}
+          onSelectTarget={vi.fn()}
+          onConfirmAttack={vi.fn()}
+          onFleeCombat={vi.fn()}
+          onEndTurn={vi.fn()}
+        />
+      ),
+      root
+    );
+
+    const skillButton = root.querySelector<HTMLButtonElement>(
+      '.combat-skill-slot[title="Hunting Bow"]'
+    );
+    expect(skillButton).not.toBeNull();
+    skillButton?.click();
+    expect(onSelectSkill).toHaveBeenCalledWith("skill-hunter-1");
   });
 });

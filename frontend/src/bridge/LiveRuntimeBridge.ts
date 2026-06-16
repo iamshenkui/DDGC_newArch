@@ -1,6 +1,7 @@
 import type { RuntimeMode } from "../app/runtimeMode";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
 import { canTransition } from "../session/FlowController";
+import { firstCombatDemoViewModel } from "../validation/replayFixtures";
 import type {
   DdgcFrontendIntent,
   DdgcFrontendSnapshot,
@@ -782,6 +783,14 @@ export class LiveRuntimeBridge implements RuntimeBridge {
     switch (intent.type) {
       case "boot":
         this.snapshot = createLiveTownSnapshot();
+        break;
+      case "start-first-combat-demo":
+        this.snapshot = {
+          lifecycle: "ready",
+          flowState: "combat",
+          viewModel: firstCombatDemoViewModel,
+          debugMessage: "Live: first-combat browser demo entered from startup."
+        };
         break;
       case "open-hero": {
         const townVm = this.snapshot.viewModel as TownViewModel;

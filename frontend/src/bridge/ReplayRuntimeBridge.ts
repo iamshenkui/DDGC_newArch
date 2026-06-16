@@ -13,7 +13,8 @@ import {
   replayDungeonMapViewModel,
   replayAttackCombatViewModel,
   replayResultViewModel,
-  replayReturnViewModel
+  replayReturnViewModel,
+  firstCombatDemoViewModel
 } from "../validation/replayFixtures";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
 import { canTransition } from "../session/FlowController";
@@ -710,6 +711,14 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       case "boot":
         this.snapshot = replayReadySnapshot;
+        break;
+      case "start-first-combat-demo":
+        this.snapshot = {
+          lifecycle: "ready",
+          flowState: "combat",
+          viewModel: firstCombatDemoViewModel,
+          debugMessage: "Replay: first-combat browser demo entered from startup."
+        };
         break;
       case "continue-from-result":
         if (!canTransition(this.snapshot, intent).allowed) {

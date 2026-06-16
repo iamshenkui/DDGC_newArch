@@ -26,6 +26,33 @@ describe("runtime bridge skeleton", () => {
     expect(snapshot.viewModel.kind).toBe("town");
   });
 
+  it("replay start-first-combat-demo transitions directly to combat with demo content", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "start-first-combat-demo" });
+
+    expect(snapshot.flowState).toBe("combat");
+    expect(snapshot.viewModel.kind).toBe("combat");
+    const combatVm = snapshot.viewModel as CombatViewModel;
+    expect(combatVm.title).toBe("First Combat Demo");
+    expect(combatVm.party.length).toBeGreaterThanOrEqual(4);
+    expect(combatVm.enemies.some((e) => e.name.includes("Mantis"))).toBe(true);
+    expect(combatVm.isPlayerTurn).toBe(true);
+  });
+
+  it("live start-first-combat-demo transitions directly to combat with demo content", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "start-first-combat-demo" });
+
+    expect(snapshot.flowState).toBe("combat");
+    expect(snapshot.viewModel.kind).toBe("combat");
+    const combatVm = snapshot.viewModel as CombatViewModel;
+    expect(combatVm.title).toBe("First Combat Demo");
+  });
+
   it("surfaces live mode as ready town shell after wiring", async () => {
     const bridge = new LiveRuntimeBridge();
     const snapshot = await bridge.boot();

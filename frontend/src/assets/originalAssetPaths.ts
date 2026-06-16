@@ -12,6 +12,9 @@
  *   heroes/     3 hunter family portraits (base, white, black variants)
  *   All other hero families (alchemist, diviner, shaman, tank) — not yet extracted
  *
+ * First-combat demo source paths (mantis flower monsters + 5 hero families)
+ * are recorded in asset-manifest.json under "first_combat_demo_assets".
+ *
  * See asset-manifest.json for the full inventory with GUIDs and deferred items.
  */
 

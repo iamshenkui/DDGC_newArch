@@ -111,6 +111,9 @@ export function DdgcApp() {
             onLiveBoot={() => runBoot("live")}
             onNewCampaign={handleNewCampaign}
             onLoadCampaign={handleLoadCampaign}
+            onFirstCombatDemo={() => {
+              void dispatchIntent(bridge, { type: "start-first-combat-demo" });
+            }}
             hasSavedCampaign={saveLoad.hasSavedCampaign()}
           />
         </Match>

@@ -503,6 +503,11 @@ export interface CombatHero {
   isHit?: boolean;
   skills: ReadonlyArray<CombatSkill>;
   portrait?: string;
+  /**
+   * Optional resolve/hero level for combat demo and high-level encounters.
+   * Not all bridges populate this; the UI should degrade gracefully when absent.
+   */
+  level?: number;
 }
 
 export interface CombatEnemy {
@@ -568,6 +573,7 @@ export interface DdgcFrontendSnapshot {
 
 export type DdgcFrontendIntent =
   | { type: "boot"; mode: RuntimeMode }
+  | { type: "start-first-combat-demo" }
   | { type: "open-hero"; heroId: string }
   | { type: "open-building"; buildingId: string }
   | { type: "building-action"; actionId: string }

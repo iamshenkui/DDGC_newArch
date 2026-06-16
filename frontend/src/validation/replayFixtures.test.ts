@@ -47,6 +47,8 @@ import {
   replayLegacyTowerBuildingSnapshot,
   replayMarketBuildingSnapshot,
   replayCampingTrainerBuildingSnapshot,
+  firstCombatDemoViewModel,
+  firstCombatDemoSnapshot,
 } from "./replayFixtures";
 
 describe("replay fixtures — hero and campaign state consistency", () => {
@@ -438,6 +440,7 @@ const allSnapshots: NamedSnapshot[] = [
   { name: "returnSnapshot", snapshot: returnSnapshot },
   { name: "unsupportedSnapshot", snapshot: unsupportedSnapshot },
   { name: "fatalSnapshot", snapshot: fatalSnapshot },
+  { name: "firstCombatDemoSnapshot", snapshot: firstCombatDemoSnapshot },
 ];
 
 // ── Snapshot contract boundary validation ─────────────────────────────────
@@ -699,7 +702,50 @@ describe("hero data consistency across fixtures", () => {
   });
 });
 
-// ── HP/health numeric consistency ─────────────────────────────────────────
+// ── First-combat demo fixture validation ────────────────────────────────────
+
+describe("first-combat demo fixture", () => {
+  it("uses original DDGC hero families, not placeholder White/Black classes", () => {
+    const classLabels = firstCombatDemoViewModel.party.map((hero) => hero.classLabel);
+    expect(classLabels).toContain("Hunter");
+    expect(classLabels).toContain("Alchemist");
+    expect(classLabels).toContain("Diviner");
+    expect(classLabels).toContain("Shaman");
+    expect(classLabels).toContain("Tank");
+    expect(classLabels).not.toContain("White");
+    expect(classLabels).not.toContain("Black");
+  });
+
+  it("party heroes are high level", () => {
+    for (const hero of firstCombatDemoViewModel.party) {
+      expect(hero.level).toBeGreaterThanOrEqual(4);
+    }
+  });
+
+  it("active hero has usable combat skills immediately", () => {
+    const activeHero = firstCombatDemoViewModel.party.find(
+      (hero) => hero.id === firstCombatDemoViewModel.activeHeroId
+    );
+    expect(activeHero).toBeDefined();
+    const usableSkill = activeHero!.skills.find(
+      (skill) => skill.cooldownRemaining === 0
+    );
+    expect(usableSkill).toBeDefined();
+    expect(firstCombatDemoViewModel.selectedSkillId).toBe(usableSkill!.id);
+  });
+
+  it("encounter uses mantis flower monster references", () => {
+    const enemyNames = firstCombatDemoViewModel.enemies.map((enemy) => enemy.name);
+    expect(enemyNames).toContain("Mantis Walking Flower");
+    expect(enemyNames).toContain("Mantis Spiny Flower");
+    expect(enemyNames).toContain("Mantis Magic Flower");
+  });
+
+  it("snapshot is a valid combat state", () => {
+    expect(firstCombatDemoSnapshot.flowState).toBe("combat");
+    expect(firstCombatDemoSnapshot.viewModel.kind).toBe("combat");
+  });
+});
 
 describe("health and stress numeric consistency", () => {
   it("hero health field matches parsed HP current value", () => {
