@@ -166,19 +166,32 @@ function EventPanel(props: { state: GameState; onChoice: (index: number) => void
       <h3 class="demo-section-title">{evt()!.title}</h3>
       <p class="demo-event-desc">{evt()!.description}</p>
       <div class="demo-event-choices">
-        {evt()!.choices.map((c, i) => (
-          <button
-            class="demo-btn demo-btn--choice"
-            onClick={() => props.onChoice(i)}
-            data-testid={`choice-${i}`}
-          >
-            {c.label}
-            <span class="demo-choice-chaos">
-              {c.chaosDelta >= 0 ? "+" : ""}
-              {c.chaosDelta} chaos
-            </span>
-          </button>
-        ))}
+        {evt()!.choices.map((c, i) => {
+          const effects: string[] = [];
+          effects.push(
+            `${c.chaosDelta >= 0 ? "+" : ""}${c.chaosDelta} chaos`,
+          );
+          if (c.partyHpDelta !== undefined) {
+            effects.push(
+              `HP ${c.partyHpDelta >= 0 ? "+" : ""}${c.partyHpDelta} each`,
+            );
+          }
+          if (c.partyStressDelta !== undefined) {
+            effects.push(
+              `Stress ${c.partyStressDelta >= 0 ? "+" : ""}${c.partyStressDelta} each`,
+            );
+          }
+          return (
+            <button
+              class="demo-btn demo-btn--choice"
+              onClick={() => props.onChoice(i)}
+              data-testid={`choice-${i}`}
+            >
+              <span>{c.label}</span>
+              <span class="demo-choice-effects">{effects.join(" · ")}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -480,7 +493,7 @@ function ensureStyles() {
 .demo-event { margin-bottom: 1rem; }
 .demo-event-desc { color: #aaa; margin-bottom: 0.75rem; }
 .demo-event-choices { display: flex; flex-direction: column; gap: 0.5rem; }
-.demo-choice-chaos { display: inline-block; font-size: 0.75rem; margin-left: 0.5rem; opacity: 0.7; }
+.demo-choice-effects { display: inline-block; font-size: 0.75rem; margin-left: 0.5rem; opacity: 0.7; white-space: nowrap; }
 .demo-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
 .demo-btn { padding: 0.6rem 1.2rem; border: 1px solid #555; border-radius: 4px; font-family: inherit; font-size: 0.9rem; cursor: pointer; transition: background 0.2s; color: #ddd; }
 .demo-btn:hover { filter: brightness(1.2); }

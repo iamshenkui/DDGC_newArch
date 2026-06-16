@@ -45,6 +45,10 @@ export interface EventChoice {
   label: string;
   /** Chaos delta applied when this choice is selected. */
   chaosDelta: number;
+  /** HP change applied to each party member (positive = heal, negative = damage). */
+  partyHpDelta?: number;
+  /** Stress change applied to each party member. */
+  partyStressDelta?: number;
   /** Flavour text shown after picking this choice. */
   outcome: string;
 }

@@ -37,12 +37,14 @@ export const ROOM_POOL: Room[] = [
         {
           label: "Smash the altar",
           chaosDelta: -2,
+          partyHpDelta: -3,
           outcome:
             "The party shatters the altar. A wave of rancid energy bursts forth but dissipates, leaving the air clearer.",
         },
         {
           label: "Offer a prayer",
           chaosDelta: 1,
+          partyStressDelta: -2,
           outcome:
             "Maren offers a quiet prayer. The altar trembles — something heard, and it is not pleased.",
         },
@@ -66,7 +68,32 @@ export const ROOM_POOL: Room[] = [
       count: 3,
       hp: 6,
     },
-    event: null,
+    event: {
+      id: "evt-02",
+      title: "Murky Pool",
+      description:
+        "At the centre of the flooded chamber, an eerie luminescent pool pulsates. " +
+        "Tendrils of light dance beneath the surface, offering an unsettling warmth.",
+      choices: [
+        {
+          label: "Drink from the pool",
+          chaosDelta: 2,
+          partyHpDelta: 5,
+          partyStressDelta: -3,
+          outcome:
+            "The water is strangely sweet. A wave of vitality washes over the party, " +
+            "though the dungeon seems to grow more alert to your presence.",
+        },
+        {
+          label: "Disturb the water",
+          chaosDelta: -1,
+          partyHpDelta: -2,
+          outcome:
+            "The pool erupts in sudden fury — barbed tendrils lash out, cutting deep " +
+            "before retreating. The water stills, somehow calmer than before.",
+        },
+      ],
+    },
   },
   {
     id: "room-03",
@@ -80,7 +107,7 @@ export const ROOM_POOL: Room[] = [
       hp: 20,
     },
     event: {
-      id: "evt-02",
+      id: "evt-03",
       title: "Cursed Blade",
       description:
         "A sword pulses with dark energy on a pedestal. It promises power — at a cost.",
@@ -88,12 +115,14 @@ export const ROOM_POOL: Room[] = [
         {
           label: "Take the blade",
           chaosDelta: 3,
+          partyStressDelta: 5,
           outcome:
             "Gripping the hilt sends a jolt through your arm. Power surges, but the blade whispers dark promises.",
         },
         {
           label: "Shatter the blade",
           chaosDelta: -1,
+          partyHpDelta: -2,
           outcome:
             "The blade shatters. A scream echoes through the dungeon as the curse is lifted.",
         },
@@ -112,7 +141,7 @@ export const ROOM_POOL: Room[] = [
       hp: 8,
     },
     event: {
-      id: "evt-03",
+      id: "evt-04",
       title: "Pulsing Core",
       description:
         "The heart beats in a rhythm that resonates with your own. The chaos in the room is palpable.",
@@ -120,12 +149,14 @@ export const ROOM_POOL: Room[] = [
         {
           label: "Strike the core",
           chaosDelta: -3,
+          partyHpDelta: 4,
           outcome:
-            "Your blow lands true. The heart spasms and a wave of calm spreads through the chamber.",
+            "Your blow lands true. The heart spasms and a wave of calm spreads through the chamber, mending wounds.",
         },
         {
           label: "Feed it your rage",
           chaosDelta: 4,
+          partyStressDelta: 4,
           outcome:
             "The heart drinks in your anger and swells. The dungeon trembles with renewed fury.",
         },

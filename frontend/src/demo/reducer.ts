@@ -277,26 +277,78 @@ export function demoReducer(state: GameState, action: GameAction): GameState {
 
       const nextChaos = state.chaosMeter + choice.chaosDelta;
 
+      // Apply party value changes from the event choice
+      let partyEffectLog: string[] = [];
+      const updatedParty = state.party.map((member) => {
+        let { hp, stress } = member;
+
+        if (choice.partyHpDelta !== undefined) {
+          hp = Math.max(0, Math.min(member.maxHp, hp + choice.partyHpDelta));
+        }
+        if (choice.partyStressDelta !== undefined) {
+          stress = Math.max(0, stress + choice.partyStressDelta);
+        }
+
+        const changed =
+          hp !== member.hp || stress !== member.stress;
+
+        if (changed) {
+          const parts: string[] = [];
+          if (hp !== member.hp) {
+            const diff = hp - member.hp;
+            parts.push(`HP ${diff > 0 ? "+" : ""}${diff}`);
+          }
+          if (stress !== member.stress) {
+            const diff = stress - member.stress;
+            parts.push(`Stress ${diff > 0 ? "+" : ""}${diff}`);
+          }
+          partyEffectLog.push(
+            `${member.name}: ${parts.join(", ")}.`,
+          );
+        }
+
+        return { ...member, hp, stress };
+      });
+
       const nextAfterEvent = () => {
         if (nextChaos >= 15) {
           return {
             phase: "result" as const,
             currentRoom: null,
+            combatEncounter: null as CombatEncounter | null,
             runLog: [
               ...state.runLog,
               choice.outcome,
+              ...partyEffectLog,
               `Chaos reached ${nextChaos}! The dungeon collapses around you.`,
             ],
             resultMessage:
               "Chaos overwhelms the realm. The run ends in catastrophe.",
           };
         }
+        // If the room has enemies, transition to combat after the event
+        if (state.currentRoom?.enemyGroup) {
+          return {
+            phase: "combat" as const,
+            currentRoom: state.currentRoom,
+            combatEncounter: createCombatEncounter(state.currentRoom!.enemyGroup),
+            runLog: [
+              ...state.runLog,
+              choice.outcome,
+              ...partyEffectLog,
+              `The ${state.currentRoom!.enemyGroup.name} attack!`,
+            ],
+            resultMessage: null,
+          };
+        }
         return {
           phase: "dungeon-room" as const,
           currentRoom: null,
+          combatEncounter: null as CombatEncounter | null,
           runLog: [
             ...state.runLog,
             choice.outcome,
+            ...partyEffectLog,
             "You ready yourself for what lies ahead.",
           ],
           resultMessage: null,
@@ -306,9 +358,11 @@ export function demoReducer(state: GameState, action: GameAction): GameState {
       const continuation = nextAfterEvent();
       return {
         ...state,
+        party: updatedParty,
         phase: continuation.phase,
         currentRoom: continuation.currentRoom,
         chaosMeter: nextChaos,
+        combatEncounter: continuation.combatEncounter,
         runLog: continuation.runLog,
         resultMessage: continuation.resultMessage,
       };

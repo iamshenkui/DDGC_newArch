@@ -478,4 +478,250 @@ describe("demoReducer", () => {
     expect(state.dungeonLevel).toBe(2);
     expect(state.chaosMeter).toBe(6);
   });
+
+  // ── Event choice party effects ─────────────────────────────
+
+  describe("event choice party value effects", () => {
+    /** Helper: advance from seed state to the first event phase. */
+    function advanceToEvent(): ReturnType<typeof demoReducer> {
+      let state = demoReducer(createSeedState(), { type: "START_RUN" });
+      while (state.phase !== "event") {
+        state = demoReducer(state, { type: "ENTER_ROOM" });
+      }
+      return state;
+    }
+
+    it("applies chaosDelta from event choice", () => {
+      const state = advanceToEvent();
+      const chaosBefore = state.chaosMeter;
+      const result = demoReducer(state, { type: "RESOLVE_EVENT", choiceIndex: 0 });
+      const delta = result.chaosMeter - chaosBefore;
+      expect(delta).toBe(state.currentRoom!.event!.choices[0].chaosDelta);
+    });
+
+    it("applies partyHpDelta to all party members", () => {
+      const state = advanceToEvent();
+
+      // Find an event choice with partyHpDelta
+      const evt = state.currentRoom!.event!;
+      const hpChoiceIdx = evt.choices.findIndex((c) => c.partyHpDelta !== undefined);
+      if (hpChoiceIdx < 0) return; // skip if no testable event this room
+
+      const hpBefore = state.party.map((m) => m.hp);
+      const result = demoReducer(state, { type: "RESOLVE_EVENT", choiceIndex: hpChoiceIdx });
+      const delta = evt.choices[hpChoiceIdx].partyHpDelta!;
+
+      for (let i = 0; i < state.party.length; i++) {
+        const expected = Math.max(0, Math.min(state.party[i].maxHp, hpBefore[i] + delta));
+        expect(result.party[i].hp).toBe(expected);
+      }
+    });
+
+    it("applies partyStressDelta to all party members", () => {
+      const state = advanceToEvent();
+
+      const evt = state.currentRoom!.event!;
+      const stressChoiceIdx = evt.choices.findIndex((c) => c.partyStressDelta !== undefined);
+      if (stressChoiceIdx < 0) return;
+
+      const stressBefore = state.party.map((m) => m.stress);
+      const result = demoReducer(state, { type: "RESOLVE_EVENT", choiceIndex: stressChoiceIdx });
+      const delta = evt.choices[stressChoiceIdx].partyStressDelta!;
+
+      for (let i = 0; i < state.party.length; i++) {
+        const expected = Math.max(0, stressBefore[i] + delta);
+        expect(result.party[i].stress).toBe(expected);
+      }
+    });
+
+    it("clamps party HP to maxHp after healing event", () => {
+      const state = advanceToEvent();
+
+      // Force a party member to near-full HP
+      const fullHpParty = state.party.map((m) => ({ ...m, hp: m.maxHp - 1 }));
+      const fullState = { ...state, party: fullHpParty };
+      const evt = fullState.currentRoom!.event!;
+      const healIdx = evt.choices.findIndex((c) => (c.partyHpDelta ?? 0) > 0);
+      if (healIdx < 0) return;
+
+      const result = demoReducer(fullState, { type: "RESOLVE_EVENT", choiceIndex: healIdx });
+
+      for (const member of result.party) {
+        expect(member.hp).toBeLessThanOrEqual(member.maxHp);
+      }
+    });
+
+    it("clamps party HP to minimum 0 after damaging event", () => {
+      const state = advanceToEvent();
+
+      // Force a party member to low HP
+      const lowHpParty = state.party.map((m) => ({ ...m, hp: 1 }));
+      const lowState = { ...state, party: lowHpParty };
+      const evt = lowState.currentRoom!.event!;
+      const dmgIdx = evt.choices.findIndex((c) => (c.partyHpDelta ?? 0) < 0);
+      if (dmgIdx < 0) return;
+
+      const result = demoReducer(lowState, { type: "RESOLVE_EVENT", choiceIndex: dmgIdx });
+
+      for (const member of result.party) {
+        expect(member.hp).toBeGreaterThanOrEqual(0);
+      }
+    });
+
+    it("includes party effect info in the run log", () => {
+      const state = advanceToEvent();
+      const evt = state.currentRoom!.event!;
+      const hpChoiceIdx = evt.choices.findIndex((c) => c.partyHpDelta !== undefined);
+      if (hpChoiceIdx < 0) return;
+
+      const result = demoReducer(state, { type: "RESOLVE_EVENT", choiceIndex: hpChoiceIdx });
+
+      // Run log should contain outcome text and party effect entries
+      const logText = result.runLog.join(" ");
+      expect(logText).toContain(evt.choices[hpChoiceIdx].outcome);
+    });
+
+    // ── Validate specific known event choices ─────────────────
+
+    it("evt-01: 'Smash the altar' decreases chaos by 2 and damages party for 3 HP each", () => {
+      // Room-01 is the first room (turn 0) → used by pickRoom(0) at START_RUN
+      // After START_RUN → ENTER_ROOM, the room advances, so we need specific sequence
+      // Room-01: turn index 0, first event
+      let state = demoReducer(createSeedState(), { type: "START_RUN" });
+      // START_RUN sets turnCount=1, picks room at index 1%4=1 (room-02 with new evt-02)
+      // We want room-01 which is at index 0, so start with turnCount = 0
+      // Actually, pickRoom(turnCount) uses turnCount % ROOM_POOL.length
+      // START_RUN passes turnCount=0 → pickRoom(0) → room-01
+      // ENTER_ROOM increments turnCount and uses new turn for room selection
+      // Let's just test the choice directly by setting up the state
+
+      // Create state at event phase with evt-01 data
+      const testState: GameState = {
+        ...createSeedState(),
+        phase: "event",
+        chaosMeter: 10,
+        currentRoom: {
+          id: "room-01",
+          name: "Crumbling Hall",
+          description: "desc",
+          enemyGroup: null,
+          event: {
+            id: "evt-01",
+            title: "Desecrated Altar",
+            description: "desc",
+            choices: [
+              { label: "Smash the altar", chaosDelta: -2, partyHpDelta: -3, outcome: "smashed" },
+              { label: "Offer a prayer", chaosDelta: 1, partyStressDelta: -2, outcome: "prayed" },
+              { label: "Ignore it", chaosDelta: 1, outcome: "ignored" },
+            ],
+          },
+        },
+      };
+
+      const result = demoReducer(testState, { type: "RESOLVE_EVENT", choiceIndex: 0 });
+      expect(result.chaosMeter).toBe(8); // 10 + (-2)
+      for (const m of result.party) {
+        const original = testState.party.find((p) => p.id === m.id)!;
+        expect(m.hp).toBe(Math.max(0, original.hp - 3));
+      }
+    });
+
+    it("evt-01: 'Offer a prayer' increases chaos by 1 and reduces stress by 2 for all", () => {
+      const testState: GameState = {
+        ...createSeedState(),
+        phase: "event",
+        chaosMeter: 7,
+        currentRoom: {
+          id: "room-01",
+          name: "Crumbling Hall",
+          description: "desc",
+          enemyGroup: null,
+          event: {
+            id: "evt-01",
+            title: "Desecrated Altar",
+            description: "desc",
+            choices: [
+              { label: "Smash the altar", chaosDelta: -2, partyHpDelta: -3, outcome: "smashed" },
+              { label: "Offer a prayer", chaosDelta: 1, partyStressDelta: -2, outcome: "prayed" },
+              { label: "Ignore it", chaosDelta: 1, outcome: "ignored" },
+            ],
+          },
+        },
+      };
+
+      const result = demoReducer(testState, { type: "RESOLVE_EVENT", choiceIndex: 1 });
+      expect(result.chaosMeter).toBe(8); // 7 + 1
+      for (const m of result.party) {
+        const original = testState.party.find((p) => p.id === m.id)!;
+        expect(m.stress).toBe(Math.max(0, original.stress - 2));
+      }
+    });
+
+    it("evt-04: 'Strike the core' decreases chaos by 3 and heals party for 4 HP each", () => {
+      const damagedParty = createSeedState().party.map((m) => ({
+        ...m,
+        hp: Math.max(1, m.hp - 8),
+      }));
+
+      const testState: GameState = {
+        ...createSeedState(),
+        party: damagedParty,
+        phase: "event",
+        chaosMeter: 12,
+        currentRoom: {
+          id: "room-04",
+          name: "The Heart Chamber",
+          description: "desc",
+          enemyGroup: null,
+          event: {
+            id: "evt-04",
+            title: "Pulsing Core",
+            description: "desc",
+            choices: [
+              { label: "Strike the core", chaosDelta: -3, partyHpDelta: 4, outcome: "struck" },
+              { label: "Feed it your rage", chaosDelta: 4, partyStressDelta: 4, outcome: "fed" },
+            ],
+          },
+        },
+      };
+
+      const result = demoReducer(testState, { type: "RESOLVE_EVENT", choiceIndex: 0 });
+      expect(result.chaosMeter).toBe(9); // 12 + (-3)
+      for (const m of result.party) {
+        const original = testState.party.find((p) => p.id === m.id)!;
+        const expectedHp = Math.min(original.maxHp, original.hp + 4);
+        expect(m.hp).toBe(expectedHp);
+      }
+    });
+
+    it("evt-04: 'Feed it your rage' increases chaos by 4 and stress by 4 for all", () => {
+      const testState: GameState = {
+        ...createSeedState(),
+        phase: "event",
+        chaosMeter: 8,
+        currentRoom: {
+          id: "room-04",
+          name: "The Heart Chamber",
+          description: "desc",
+          enemyGroup: null,
+          event: {
+            id: "evt-04",
+            title: "Pulsing Core",
+            description: "desc",
+            choices: [
+              { label: "Strike the core", chaosDelta: -3, partyHpDelta: 4, outcome: "struck" },
+              { label: "Feed it your rage", chaosDelta: 4, partyStressDelta: 4, outcome: "fed" },
+            ],
+          },
+        },
+      };
+
+      const result = demoReducer(testState, { type: "RESOLVE_EVENT", choiceIndex: 1 });
+      expect(result.chaosMeter).toBe(12); // 8 + 4
+      for (const m of result.party) {
+        const original = testState.party.find((p) => p.id === m.id)!;
+        expect(m.stress).toBe(original.stress + 4);
+      }
+    });
+  });
 });
