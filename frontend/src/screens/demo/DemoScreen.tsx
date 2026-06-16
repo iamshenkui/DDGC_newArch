@@ -1,4 +1,4 @@
-import { type Component, createMemo, createSignal } from "solid-js";
+import { Switch, Match, type Component, createMemo, createSignal } from "solid-js";
 
 import type { GameAction, GameState, RunOutcome } from "../../demo/types";
 import { demoReducer } from "../../demo/reducer";
@@ -248,9 +248,9 @@ export const DemoScreen: Component = () => {
 
       <PartySummary state={state()} />
 
-      <Switch phase={phase()}>
+      <Switch fallback={null}>
         {/* ── Start ── */}
-        <Match when="start">
+        <Match when={phase() === "start"}>
           <section class="demo-phase-panel" data-testid="phase-start">
             <p class="demo-instruction">
               Prepare your party. The darkness below stirs…
@@ -266,7 +266,7 @@ export const DemoScreen: Component = () => {
         </Match>
 
         {/* ── Dungeon Room (exploration) ── */}
-        <Match when="dungeon-room">
+        <Match when={phase() === "dungeon-room"}>
           <section class="demo-phase-panel" data-testid="phase-room">
             <h3 class="demo-section-title">
               {state().currentRoom?.name ?? "Unknown Chamber"}
@@ -292,7 +292,7 @@ export const DemoScreen: Component = () => {
         </Match>
 
         {/* ── Event ── */}
-        <Match when="event">
+        <Match when={phase() === "event"}>
           <section class="demo-phase-panel" data-testid="phase-event">
             <EventPanel
               state={state()}
@@ -302,7 +302,7 @@ export const DemoScreen: Component = () => {
         </Match>
 
         {/* ── Combat ── */}
-        <Match when="combat">
+        <Match when={phase() === "combat"}>
           <section class="demo-phase-panel" data-testid="phase-combat">
             <p class="demo-round-label" data-testid="combat-round">
               Round {state().combatEncounter?.round ?? 1}
@@ -317,7 +317,7 @@ export const DemoScreen: Component = () => {
         </Match>
 
         {/* ── Result ── */}
-        <Match when="result">
+        <Match when={phase() === "result"}>
           <section class="demo-phase-panel" data-testid="phase-result">
             <h3 class="demo-section-title">Run Over</h3>
             <p class="demo-result-message">{state().resultMessage}</p>
@@ -462,27 +462,6 @@ function renderCombatActions(
       </div>
     </div>
   );
-}
-
-// ── Minimal helper to replace solid-js Switch/Match at the phase level ──
-
-/**
- * Inline Switch component that renders the first child whose `when` prop
- * matches the current `phase` value.
- * Avoids pulling in a full routing or conditional library.
- */
-function Switch(props: { phase: string; children: any }) {
-  const children = Array.isArray(props.children)
-    ? props.children
-    : [props.children];
-  const match = children.find(
-    (c: any) => c?.when === props.phase || c?.props?.when === props.phase,
-  );
-  return match ?? null;
-}
-
-function Match(props: { when: string; children: any }) {
-  return props.children;
 }
 
 // ── Inline CSS injected once per mount ─────────────────────────────────────
