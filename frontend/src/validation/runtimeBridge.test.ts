@@ -862,6 +862,61 @@ describe("combat character-hit resolution flow", () => {
   });
 });
 
+describe("first-combat demo shortcut", () => {
+  it("replay start-first-combat-demo resolves to the first-combat fixture", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "start-first-combat-demo" });
+
+    expect(snapshot.flowState).toBe("combat");
+    expect(snapshot.viewModel.kind).toBe("combat");
+    const combatVm = snapshot.viewModel as CombatViewModel;
+    expect(combatVm.title).toBe("初战：苍灯林地");
+    expect(combatVm.enemies.length).toBe(3);
+    expect(combatVm.enemies.some((e) => e.id === "enemy-mantis-magic-01")).toBe(true);
+    expect(combatVm.party.some((h) => h.id === "hero-hunter-01")).toBe(true);
+  });
+
+  it("live start-first-combat-demo resolves to the first-combat fixture", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+
+    const snapshot = await bridge.dispatchIntent({ type: "start-first-combat-demo" });
+
+    expect(snapshot.flowState).toBe("combat");
+    expect(snapshot.viewModel.kind).toBe("combat");
+    const combatVm = snapshot.viewModel as CombatViewModel;
+    expect(combatVm.title).toBe("初战：苍灯林地");
+    expect(combatVm.enemies.length).toBe(3);
+    expect(combatVm.enemies.some((e) => e.id === "enemy-mantis-magic-01")).toBe(true);
+  });
+
+  it("replay rejects start-first-combat-demo outside town/startup/loading", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "start-first-combat-demo" });
+
+    expect(snapshot.flowState).toBe("provisioning");
+    expect(snapshot.viewModel.kind).toBe("provisioning");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+
+  it("live rejects start-first-combat-demo outside town/startup/loading", async () => {
+    const bridge = new LiveRuntimeBridge();
+    await bridge.boot();
+    await bridge.dispatchIntent({ type: "start-provisioning" });
+
+    const snapshot = await bridge.dispatchIntent({ type: "start-first-combat-demo" });
+
+    expect(snapshot.flowState).toBe("provisioning");
+    expect(snapshot.viewModel.kind).toBe("provisioning");
+    expect(snapshot.debugMessage).toContain("rejected");
+  });
+});
+
 describe("result and return meta-loop continuation", () => {
   it("continue-from-result transitions to return state", async () => {
     const bridge = new ReplayRuntimeBridge();

@@ -1,0 +1,149 @@
+# DDGC H5 Demo M3 — Dependency Graph
+# Task: HB-iamshenkui-DDGC-newArch-126
+# Title: DDGC H5 Demo M3: Replay bridge route into existing combat flow
+#
+# This file records the dependency relationships that make the first-combat
+# demo reachable through existing bridge/runtime surfaces. It is part of the
+# architecture boundary preserved from the upstream plan artifact.
+
+metadata:
+  task_id: HB-iamshenkui-DDGC-newArch-126
+  title: DDGC H5 Demo M3 - Replay bridge route into existing combat flow
+  base_branch: master
+  generated: "2026-06-18"
+  plan_artifact_version: "1.0"
+  related_surfaces: repos/DDGC_newArch/surfaces.yaml
+
+scope:
+  in_scope:
+    - |
+      Document dependencies required for start-first-combat-demo to resolve
+      through ReplayRuntimeBridge and LiveRuntimeBridge.
+    - |
+      Show that the first-combat fixture is the only new data dependency;
+      runtime/session code dependencies are existing surfaces.
+    - |
+      Preserve the architecture boundary by not introducing hidden or
+      cross-layer dependencies.
+
+  out_of_scope:
+    - |
+      Full package-dependency analysis or external library audits.
+    - |
+      Asset extraction dependency chains (still blocked; see architecture.yaml).
+
+dependencies:
+  - source: ReplayRuntimeBridge
+    target: replayFixtures
+    relationship: imports
+    detail: |
+      ReplayRuntimeBridge imports replayFirstCombatViewModel from
+      frontend/src/validation/replayFixtures.ts to serve the
+      start-first-combat-demo intent.
+
+  - source: LiveRuntimeBridge
+    target: replayFixtures
+    relationship: imports
+    detail: |
+      LiveRuntimeBridge imports replayFirstCombatViewModel from
+      frontend/src/validation/replayFixtures.ts to serve the same demo intent,
+      demonstrating the fixture is backend-agnostic at the RuntimeBridge seam.
+
+  - source: ReplayRuntimeBridge
+    target: FlowController
+    relationship: uses
+    detail: |
+      ReplayRuntimeBridge calls canTransition for guarded intents including
+      start-first-combat-demo.
+
+  - source: LiveRuntimeBridge
+    target: FlowController
+    relationship: uses
+    detail: |
+      LiveRuntimeBridge calls canTransition for guarded intents including
+      start-first-combat-demo.
+
+  - source: FlowController
+    target: contractTypes
+    relationship: imports
+    detail: |
+      FlowController imports DdgcFrontendSnapshot, DdgcFrontendIntent, and
+      view-model types from frontend/src/bridge/contractTypes.ts.
+
+  - source: DdgcApp
+    target: ReplayRuntimeBridge
+    relationship: instantiates
+    detail: |
+      DdgcApp creates a ReplayRuntimeBridge when runtime mode is replay.
+
+  - source: DdgcApp
+    target: LiveRuntimeBridge
+    relationship: instantiates
+    detail: |
+      DdgcApp creates a LiveRuntimeBridge when runtime mode is live.
+
+  - source: DdgcApp
+    target: FlowController
+    relationship: uses
+    detail: |
+      DdgcApp uses resolveScreen from FlowController to select the active screen.
+
+  - source: DdgcApp
+    target: CombatScreen
+    relationship: renders
+    detail: |
+      When snapshot.viewModel.kind === "combat", DdgcApp renders CombatScreen
+      with the CombatViewModel emitted by the bridge.
+
+  - source: CombatScreen
+    target: contractTypes
+    relationship: imports
+    detail: |
+      CombatScreen imports CombatViewModel from contractTypes.
+
+  - source: CombatScreen
+    target: originalAssetPaths
+    relationship: uses
+    detail: |
+      CombatScreen calls resolveHeroPortrait for optional portraits; unresolved
+      assets fall back to class-label initials.
+
+required_paths:
+  - path: frontend/src/bridge/ReplayRuntimeBridge.ts
+    role: Replay bridge start-first-combat-demo wiring.
+  - path: frontend/src/bridge/LiveRuntimeBridge.ts
+    role: Live bridge start-first-combat-demo wiring.
+  - path: frontend/src/session/FlowController.ts
+    role: Existing transition guard reused for the demo intent.
+  - path: repos/DDGC_newArch/surfaces.yaml
+    role: Runtime surface inventory for M3.
+  - path: repos/DDGC_newArch/dependencies.yaml
+    role: This dependency graph.
+
+acceptance_criteria:
+  - |
+    A bridge-level dispatch of start-first-combat-demo enters the first-combat
+    demo snapshot through existing RuntimeBridge surfaces.
+  - |
+    The resulting snapshot has flowState="combat" and viewModel.kind="combat".
+  - |
+    The resulting CombatViewModel remains consumable by the existing
+    CombatScreen without contract changes.
+  - |
+    Focused bridge/runtime tests prove the first-combat intent resolves to
+    combat state in both replay and live bridges.
+
+validation:
+  typecheck_command: cd frontend && npm run typecheck
+  test_command: cd frontend && npm run test
+
+implementation_evidence:
+  cartographer_30_checkpoint:
+    - Dependency graph shows first-combat fixture imported by both bridges.
+    - No new screen or page dependencies introduced.
+    - Existing FlowController and CombatScreen dependencies unchanged.
+
+  quartermaster_pre_merge:
+    - Typecheck passes.
+    - Bridge/runtime tests pass, including new first-combat demo tests.
+    - Dependency graph reviewed for hidden cross-layer imports.

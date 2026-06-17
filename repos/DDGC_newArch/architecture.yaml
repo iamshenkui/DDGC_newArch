@@ -1,0 +1,227 @@
+# DDGC H5 Demo M5 — Architecture Boundary
+# Task: HB-iamshenkui-DDGC-newArch-128
+# Title: DDGC H5 Demo M5: First combat tests and browser smoke
+#
+# This file preserves the architecture boundary from the upstream plan artifact.
+# It is the source of truth for what is in scope, what is explicitly out of scope,
+# and how the implementation evidence is organized for the 30% Cartographer
+# checkpoint and pre-merge Quartermaster review.
+
+metadata:
+  task_id: HB-iamshenkui-DDGC-newArch-128
+  title: DDGC H5 Demo M5 - First combat tests and browser smoke
+  base_branch: master
+  generated: "2026-06-18"
+  plan_artifact_version: "1.0"
+
+scope:
+  in_scope:
+    - |
+      Add focused unit tests in frontend/src/screens/startup/StartupScreen.test.tsx
+      that prove the First Combat Demo startup entry can be triggered.
+    - |
+      Extend frontend/src/screens/combat/CombatScreen.test.tsx to validate the
+      first-combat fixture renders the existing migrated CombatScreen and that a
+      combat interaction (select skill → confirm attack) remains usable.
+    - |
+      Keep the validation path inside the existing app surfaces: StartupScreen
+      dispatches through the replay bridge, CombatScreen renders from the same
+      Switch/Match wiring used by the full meta-loop.
+    - |
+      Add a focused browser smoke test (frontend/smoke/firstCombatDemo.spec.ts)
+      that proves the first-combat demo renders non-blank through the existing app.
+    - |
+      Update this architecture boundary artifact at
+      repos/DDGC_newArch/architecture.yaml to record the exact validation commands.
+
+  out_of_scope:
+    - |
+      Modifying the first-combat fixture itself (replayFirstCombatViewModel in
+      frontend/src/validation/replayFixtures.ts) beyond what validation consumes.
+    - |
+      Changing combat resolution logic, encounter runtime, or Rust backend content.
+    - |
+      Adding new art, placeholder sprites, or asset extractions.
+    - |
+      Modifying screens beyond StartupScreen, CombatScreen, and the bridge dispatch
+      path.
+    - |
+      Expanding the existing meta-loop browser smoke beyond a focused first-combat
+      demo scenario.
+
+architecture_boundary:
+  layers:
+    - name: startup_screen
+      description: Main-menu page rewritten from the original DDGC MainMenuWindow prefab.
+      files:
+        - frontend/src/screens/startup/StartupScreen.tsx
+        - frontend/src/screens/startup/StartupScreen.test.tsx
+      rules:
+        - Demo entry must be a normal menu button alongside existing options.
+        - Unit test must render StartupScreen and invoke onStartFirstCombatDemo.
+
+    - name: app_shell
+      description: Root Solid component that owns bridge lifecycle and screen routing.
+      files:
+        - frontend/src/app/DdgcApp.tsx
+      rules:
+        - The demo handler must create/subscribe a replay bridge before dispatch.
+        - The demo handler must transition app state so resolveScreen renders combat.
+        - Default boot, new/load campaign, and fatal/unsupported recovery paths stay intact.
+
+    - name: replay_bridge
+      description: RuntimeBridge implementation that replay-runs fixture snapshots.
+      files:
+        - frontend/src/bridge/ReplayRuntimeBridge.ts
+        - frontend/src/session/FlowController.ts
+      rules:
+        - start-first-combat-demo intent must be accepted from startup/loading/town.
+        - Intent must set flowState=combat and viewModel=replayFirstCombatViewModel.
+        - FlowController canTransition must allow the startup transition.
+
+    - name: combat_screen
+      description: Existing migrated combat UI rendered through normal screen resolution.
+      files:
+        - frontend/src/screens/combat/CombatScreen.tsx
+        - frontend/src/screens/combat/CombatScreen.test.tsx
+      rules:
+        - Must render without new props or special demo branching.
+        - Must be reached through the existing Switch/Resolve screen wiring.
+
+    - name: validation_surface
+      description: Deterministic runtime bridge and fixture validation tests.
+      files:
+        - frontend/src/validation/replayFixtures.ts
+        - frontend/src/validation/replayFixtures.test.ts
+        - frontend/src/validation/runtimeBridge.test.ts
+        - frontend/src/build-run/smoke.test.ts
+      rules:
+        - Existing fixtures and bridge tests remain the authoritative contract.
+        - First-combat demo shortcut must be covered by runtimeBridge.test.ts.
+
+    - name: browser_smoke
+      description: Focused Playwright smoke proving the demo renders in a real browser.
+      files:
+        - frontend/smoke/firstCombatDemo.spec.ts
+        - frontend/playwright.config.ts
+      rules:
+        - Test must launch the existing app, click First Combat Demo, and assert
+          the existing .combat-viewport renders with the first-combat title.
+        - Must exercise at least one combat interaction end-to-end.
+
+    - name: architecture_plan
+      description: Checked-in architecture boundary from the upstream plan artifact.
+      files:
+        - repos/DDGC_newArch/architecture.yaml
+      rules:
+        - Must enumerate in-scope and out-of-scope items.
+        - Must map required paths, acceptance criteria, and validation commands.
+
+source_of_truth:
+  hero_families:
+    reference: HERO_CLASS_FAMILIES.md
+    families:
+      - alchemist
+      - diviner
+      - hunter
+      - shaman
+      - tank
+    variants:
+      - base
+      - white
+      - black
+    note: |
+      First combat fixture uses base variants of four families (Hunter,
+      Alchemist, Diviner, Shaman) to demonstrate high-level original DDGC
+      party composition.
+
+  enemies:
+    reference: MONSTER_FAMILIES.md
+    first_combat_encounter:
+      dungeon: QingLong
+      families:
+        - mantis_magic_flower
+        - mantis_spiny_flower
+        - mantis_walking_flower
+      tier: common
+      hp_t1: 88
+      size: medium
+
+required_paths:
+  - path: frontend/src/screens/startup/StartupScreen.test.tsx
+    role: Unit validation that the first-combat demo entry launches from startup.
+  - path: frontend/src/screens/combat/CombatScreen.test.tsx
+    role: Unit validation that the first-combat fixture renders the migrated combat screen and stays interactive.
+  - path: frontend/src/bridge
+    role: RuntimeBridge seam used by the demo entry and combat interactions.
+  - path: frontend/src/validation
+    role: Fixture and bridge contract validation surfaces used by tests.
+  - path: repos/DDGC_newArch/architecture.yaml
+    role: This architecture boundary artifact.
+
+acceptance_criteria:
+  - |
+    cd frontend && npm run typecheck passes with no TypeScript errors.
+  - |
+    cd frontend && npm run test passes the full Vitest suite, including the new
+    StartupScreen and CombatScreen first-combat fixture tests.
+  - |
+    cd frontend && npm run build produces a production bundle.
+  - |
+    A focused browser smoke command proves the first-combat demo renders non-blank
+    through the existing app:
+      cd frontend && npm run build && npx playwright test smoke/firstCombatDemo.spec.ts
+  - |
+    Test evidence confirms the rendered view is the existing migrated combat screen
+    (.combat-viewport with title "初战：苍灯林地") and not a new isolated page.
+
+validation:
+  typecheck_command: cd frontend && npm run typecheck
+  test_command: cd frontend && npm run test
+  build_command: cd frontend && npm run build
+  browser_smoke_command: cd frontend && npm run build && npx playwright test smoke/firstCombatDemo.spec.ts
+
+blockers:
+  - id: BLOCKER-001
+    title: Original Unity sprite/texture assets not present in repository
+    scope: Global; affects hero portraits and Spine data in addition to combat sprites.
+    status: unresolved
+
+  - id: BLOCKER-005
+    title: Original monster combat sprites not extracted
+    scope: combat_assets/monster_sprites
+    assets:
+      - mantis_magic_flower.png
+      - mantis_spiny_flower.png
+      - mantis_walking_flower.png
+    source: Assets/Resources/Data/Monsters/Sprites/
+    status: unresolved
+
+  - id: BLOCKER-006
+    title: Combat UI chrome sprites not extracted
+    scope: combat_assets/combat_ui_chrome
+    assets:
+      - combat_turn_banner.png
+      - combat_target_reticle.png
+      - combat_action_bar_bg.png
+      - combat_log_bg.png
+      - combat_hp_bar_frame.png
+      - combat_stress_bar_frame.png
+    source: Assets/Sprites/ui/
+    status: unresolved
+
+implementation_evidence:
+  cartographer_30_checkpoint:
+    - StartupScreen.test.tsx asserts the First Combat Demo button is present and clickable.
+    - CombatScreen.test.tsx asserts the first-combat fixture renders party, enemies, skills, and a usable Confirm Attack interaction.
+    - firstCombatDemo.spec.ts provides a browser-level proof that the demo renders the existing CombatScreen end-to-end.
+    - architecture.yaml records scope, required paths, acceptance criteria, and exact validation commands.
+
+  quartermaster_pre_merge:
+    - Typecheck passes.
+    - Full Vitest suite passes.
+    - Production build succeeds.
+    - Focused browser smoke command is documented and runnable.
+    - Default startup/replay/live/campaign flows remain intact.
+    - No isolated demo route or unrelated art introduced.
+    - Blockers explicitly recorded rather than hidden.

@@ -1,0 +1,154 @@
+# DDGC H5 Demo M3 — Runtime Surfaces
+# Task: HB-iamshenkui-DDGC-newArch-126
+# Title: DDGC H5 Demo M3: Replay bridge route into existing combat flow
+#
+# This file preserves the architecture boundary from the upstream plan artifact.
+# It inventories the existing bridge/runtime surfaces that carry the first-combat
+# demo into the migrated combat flow, without adding new screens or demo pages.
+
+metadata:
+  task_id: HB-iamshenkui-DDGC-newArch-126
+  title: DDGC H5 Demo M3 - Replay bridge route into existing combat flow
+  base_branch: master
+  generated: "2026-06-18"
+  plan_artifact_version: "1.0"
+  parent_plan: repos/DDGC_newArch/architecture.yaml
+
+scope:
+  in_scope:
+    - |
+      Wire the first-combat fixture (replayFirstCombatViewModel) into the
+      existing RuntimeBridge dispatch surface via the start-first-combat-demo
+      intent, for both ReplayRuntimeBridge and LiveRuntimeBridge.
+    - |
+      Preserve the existing CombatScreen view-model contract; the fixture
+      conforms to CombatViewModel and is consumed without screen changes.
+    - |
+      Keep default startup/replay behavior working: boot, town, provisioning,
+      expedition, dungeon-map, and result/return loops remain unchanged.
+    - |
+      Guard start-first-combat-demo with the existing canTransition validation
+      in FlowController so it only resolves from town, startup, or loading.
+    - |
+      Record the surface wiring in this artifact and dependencies.yaml for the
+      30% Cartographer checkpoint and pre-merge Quartermaster review.
+
+  out_of_scope:
+    - |
+      Creating frontend/src/demo or any unrelated page/screen.
+    - |
+      Modifying CombatScreen, combat resolution logic, or encounter runtime.
+    - |
+      Substituting or extracting Unity art assets; existing blockers remain.
+    - |
+      Changing the existing dungeon-map enter-room combat transition.
+    - |
+      Modifying the Rust backend or content definitions.
+
+surfaces:
+  - name: RuntimeBridge
+    kind: interface
+    files:
+      - frontend/src/bridge/RuntimeBridge.ts
+    description: |
+      The seam between frontend session and runtime backends. Both replay and
+      live bridges implement dispatchIntent and emit DdgcFrontendSnapshot.
+
+  - name: ReplayRuntimeBridge
+    kind: bridge
+    files:
+      - frontend/src/bridge/ReplayRuntimeBridge.ts
+    description: |
+      Replay-mode backend. start-first-combat-demo now resolves to the M2
+      first-combat fixture (replayFirstCombatViewModel) with flowState=combat
+      and viewModel.kind=combat.
+
+  - name: LiveRuntimeBridge
+    kind: bridge
+    files:
+      - frontend/src/bridge/LiveRuntimeBridge.ts
+    description: |
+      Live-mode backend. start-first-combat-demo resolves to the same M2
+      first-combat fixture, proving the fixture is backend-agnostic at the
+      RuntimeBridge seam.
+
+  - name: FlowController
+    kind: session_guard
+    files:
+      - frontend/src/session/FlowController.ts
+    description: |
+      Existing transition validator. start-first-combat-demo is already
+      whitelisted from town, startup, or loading screens; no new validation
+      rules were required.
+
+  - name: DdgcApp
+    kind: app_shell
+    files:
+      - frontend/src/app/DdgcApp.tsx
+    description: |
+      Existing application shell. The combat Match/Case renders CombatScreen
+      whenever snapshot.viewModel.kind === "combat", so the first-combat demo
+      is displayed through the existing screen surface.
+
+  - name: CombatScreen
+    kind: screen
+    files:
+      - frontend/src/screens/combat/CombatScreen.tsx
+    description: |
+      Existing combat screen contract (CombatViewModel). The first-combat
+      fixture is fully consumable by this screen.
+
+  - name: replayFixtures
+    kind: fixture_source
+    files:
+      - frontend/src/validation/replayFixtures.ts
+    description: |
+      Source of truth for the first-combat fixture introduced in M2.
+
+required_paths:
+  - path: frontend/src/bridge/ReplayRuntimeBridge.ts
+    role: Replay bridge start-first-combat-demo wiring.
+  - path: frontend/src/bridge/LiveRuntimeBridge.ts
+    role: Live bridge start-first-combat-demo wiring.
+  - path: frontend/src/session/FlowController.ts
+    role: Existing transition guard reused for the demo intent.
+  - path: repos/DDGC_newArch/surfaces.yaml
+    role: This runtime surface inventory.
+  - path: repos/DDGC_newArch/dependencies.yaml
+    role: Dependency graph for bridge/runtime wiring.
+
+acceptance_criteria:
+  - |
+    A bridge-level dispatch of start-first-combat-demo enters the first-combat
+    demo snapshot through existing RuntimeBridge surfaces.
+  - |
+    The resulting snapshot has flowState="combat" and viewModel.kind="combat".
+  - |
+    The resulting CombatViewModel remains consumable by the existing
+    CombatScreen without contract changes.
+  - |
+    Focused bridge/runtime tests prove the first-combat intent resolves to
+    combat state in both replay and live bridges.
+
+validation:
+  typecheck_command: cd frontend && npm run typecheck
+  test_command: cd frontend && npm run test
+
+blockers:
+  - id: BLOCKER-001
+    title: Original Unity sprite/texture assets not present in repository
+    scope: Global; affects hero portraits and Spine data in addition to combat sprites.
+    status: unresolved
+
+implementation_evidence:
+  cartographer_30_checkpoint:
+    - Both bridges route start-first-combat-demo to the M2 first-combat fixture.
+    - FlowController canTransition is reused without new rules.
+    - Existing CombatScreen contract is unchanged and consumable.
+    - surfaces.yaml and dependencies.yaml are in place.
+
+  quartermaster_pre_merge:
+    - Typecheck passes.
+    - Bridge/runtime tests pass, including new first-combat demo tests.
+    - No new demo page or unrelated screen created.
+    - Default startup and replay flows remain intact.

@@ -5,6 +5,7 @@ interface StartupScreenProps {
   onLiveBoot: () => void;
   onNewCampaign: () => void;
   onLoadCampaign: () => void;
+  onStartFirstCombatDemo: () => void;
   hasSavedCampaign: boolean;
 }
 
@@ -72,6 +73,14 @@ export const StartupScreen: Component<StartupScreenProps> = (props) => {
             disabled={!props.hasSavedCampaign}
           >
             Load Campaign
+          </button>
+
+          <button
+            class="title-page-button"
+            data-source-sprite="Assets/Sprites/ui/btn_menu_primary.png"
+            onClick={props.onStartFirstCombatDemo}
+          >
+            First Combat Demo
           </button>
 
           <button
