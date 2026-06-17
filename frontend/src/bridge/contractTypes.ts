@@ -23,6 +23,17 @@ export type FrontendLifecycle =
   | "unsupported"
   | "fatal";
 
+/** High-level hero families supported by the H5 demo and later slices.
+ *  Kept as a named union so the contract can express Hunter, Alchemist,
+ *  Diviner, Shaman, and Tank without breaking existing string classLabels.
+ */
+export type HeroClass =
+  | "Hunter"
+  | "Alchemist"
+  | "Diviner"
+  | "Shaman"
+  | "Tank";
+
 export interface BootLoadViewModel {
   kind: "boot-load";
   title: string;
@@ -34,6 +45,8 @@ export interface TownHeroSummary {
   id: string;
   name: string;
   classLabel: string;
+  /** High-level hero family (e.g. Hunter, Alchemist). Optional for backward compatibility. */
+  heroClass?: HeroClass;
   hp: string;
   maxHp: string;
   health: number;
@@ -129,6 +142,8 @@ export interface HeroDetailViewModel {
   heroId: string;
   name: string;
   classLabel: string;
+  /** High-level hero family (e.g. Hunter, Alchemist). Optional for backward compatibility. */
+  heroClass?: HeroClass;
   hp: string;
   maxHp: string;
   stress: string;
@@ -170,6 +185,8 @@ export interface ProvisioningHeroSummary {
   id: string;
   name: string;
   classLabel: string;
+  /** High-level hero family (e.g. Hunter, Alchemist). Optional for backward compatibility. */
+  heroClass?: HeroClass;
   hp: string;
   maxHp: string;
   health: number;
@@ -194,6 +211,8 @@ export interface ExpeditionPlanningHeroSlot {
   heroId: string;
   heroName: string;
   classLabel: string;
+  /** High-level hero family (e.g. Hunter, Alchemist). Optional for backward compatibility. */
+  heroClass?: HeroClass;
   hp: string;
   stress: string;
   level: number;
@@ -203,6 +222,8 @@ export interface DungeonSelectHeroSummary {
   id: string;
   name: string;
   classLabel: string;
+  /** High-level hero family (e.g. Hunter, Alchemist). Optional for backward compatibility. */
+  heroClass?: HeroClass;
   hp: string;
   maxHp: string;
   health: number;
@@ -285,6 +306,8 @@ export interface ExpeditionHeroSummary {
   id: string;
   name: string;
   classLabel: string;
+  /** High-level hero family (e.g. Hunter, Alchemist). Optional for backward compatibility. */
+  heroClass?: HeroClass;
   hp: string;
   maxHp: string;
   stress: string;
@@ -353,6 +376,8 @@ export interface DungeonAssistHero {
   id: string;
   name: string;
   classLabel: string;
+  /** High-level hero family (e.g. Hunter, Alchemist). Optional for backward compatibility. */
+  heroClass?: HeroClass;
   hp: string;
   maxHp: string;
   stress: string;
@@ -399,6 +424,8 @@ export interface DungeonMapHero {
   id: string;
   name: string;
   classLabel: string;
+  /** High-level hero family (e.g. Hunter, Alchemist). Optional for backward compatibility. */
+  heroClass?: HeroClass;
   hp: string;
   maxHp: string;
   stress: string;
@@ -437,6 +464,8 @@ export interface ExpeditionResultViewModel {
     heroId: string;
     heroName: string;
     classLabel: string;
+    /** High-level hero family (e.g. Hunter, Alchemist). Optional for backward compatibility. */
+    heroClass?: HeroClass;
     status: "alive" | "dead" | "stressed";
     hpChange: string;
     stressChange: string;
@@ -458,6 +487,8 @@ export interface ReturnViewModel {
     heroId: string;
     heroName: string;
     classLabel: string;
+    /** High-level hero family (e.g. Hunter, Alchemist). Optional for backward compatibility. */
+    heroClass?: HeroClass;
     hp: string;
     stress: string;
   }>;
@@ -493,10 +524,14 @@ export interface CombatHero {
   id: string;
   name: string;
   classLabel: string;
+  /** High-level hero family (e.g. Hunter, Alchemist). Optional for backward compatibility. */
+  heroClass?: HeroClass;
   hp: string;
   maxHp: string;
   stress: string;
   maxStress: string;
+  /** Hero level exposed for the H5 demo and later slices. Optional for backward compatibility. */
+  level?: number;
   position: number;
   isActive: boolean;
   isAlive: boolean;
@@ -568,6 +603,7 @@ export interface DdgcFrontendSnapshot {
 
 export type DdgcFrontendIntent =
   | { type: "boot"; mode: RuntimeMode }
+  | { type: "start-first-combat-demo" }
   | { type: "open-hero"; heroId: string }
   | { type: "open-building"; buildingId: string }
   | { type: "building-action"; actionId: string }
