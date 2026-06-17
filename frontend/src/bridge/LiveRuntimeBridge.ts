@@ -1,4 +1,5 @@
 import type { RuntimeMode } from "../app/runtimeMode";
+import { replayFirstCombatViewModel } from "../validation/replayFixtures";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
 import { canTransition } from "../session/FlowController";
 import type {
@@ -794,7 +795,7 @@ export class LiveRuntimeBridge implements RuntimeBridge {
         this.snapshot = {
           ...this.snapshot,
           flowState: "combat",
-          viewModel: createLiveCombatViewModel(),
+          viewModel: replayFirstCombatViewModel as CombatViewModel,
           debugMessage: "Live: started first-combat demo."
         };
         break;
