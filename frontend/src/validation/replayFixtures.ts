@@ -16,6 +16,7 @@ import type {
   TownHeroSummary,
   TownViewModel,
   UnsupportedViewModel,
+  CombatViewModel,
   FlowState,
   FrontendLifecycle
 } from "../bridge/contractTypes";
@@ -1053,6 +1054,156 @@ export const replayCombatSnapshot: DdgcFrontendSnapshot = {
 };
 
 export const combatSnapshot = replayCombatSnapshot;
+
+// ── First combat encounter fixture (DDGC H5 Demo M2) ─────────────────────────────
+// Uses the 5 original recruitable hero families and QingLong mantis flower enemies.
+
+export const replayFirstCombatViewModel: CombatViewModel = {
+  kind: "combat",
+  title: "初战：苍灯林地",
+  dungeonName: "QingLong Depths",
+  roundLabel: "Round 1",
+  phase: "player-turn",
+  round: 1,
+  turnPhase: "player",
+  activeHeroId: "hero-hunter-01",
+  party: [
+    {
+      id: "hero-hunter-01",
+      name: "Shen",
+      classLabel: "Hunter",
+      heroClass: "Hunter",
+      hp: "38 / 42",
+      maxHp: "42",
+      stress: "17",
+      maxStress: "200",
+      level: 2,
+      position: 1,
+      isActive: true,
+      isAlive: true,
+      portrait: "/original/heroes/hunter_portrait_roster.png",
+      skills: [
+        { id: "hunter-mark", name: "Hunter's Mark", description: "Mark a target to take increased damage.", target: "Enemy", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 0 },
+        { id: "hunter-pull", name: "Grappling Shot", description: "Pull an enemy forward and deal light damage.", target: "Enemy", hitRating: "85%", critRating: "5%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "hunter-aoe", name: "Volley", description: "Attack all enemies with reduced damage.", target: "All Enemies", hitRating: "75%", critRating: "3%", cooldown: 2, cooldownRemaining: 1 },
+        { id: "hunter-stun", name: "Stunning Shot", description: "Stun an enemy for one turn.", target: "Enemy", hitRating: "80%", critRating: "2%", cooldown: 2, cooldownRemaining: 0 },
+        { id: "hunter-ignore", name: "Penetrating Arrow", description: "Ignore enemy defense and deal direct damage.", target: "Enemy", hitRating: "85%", critRating: "8%", cooldown: 1, cooldownRemaining: 0 }
+      ]
+    },
+    {
+      id: "hero-alchemist-01",
+      name: "Lian",
+      classLabel: "Alchemist",
+      heroClass: "Alchemist",
+      hp: "35 / 38",
+      maxHp: "38",
+      stress: "22",
+      maxStress: "200",
+      level: 2,
+      position: 2,
+      isActive: false,
+      isAlive: true,
+      skills: [
+        { id: "alchemist-heal-multi", name: "Healing Mist", description: "Restore health to the whole party.", target: "Party", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 0 },
+        { id: "alchemist-heal-single", name: "Restorative Draught", description: "Restore health to a single ally.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "alchemist-miss", name: "Blinding Flask", description: "Reduce an enemy's accuracy.", target: "Enemy", hitRating: "80%", critRating: "0%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "alchemist-stress", name: "Soothing Vapor", description: "Reduce stress for the party.", target: "Party", hitRating: "100%", critRating: "0%", cooldown: 3, cooldownRemaining: 1 },
+        { id: "alchemist-burn", name: "Fire Bomb", description: "Deal burn damage to an enemy.", target: "Enemy", hitRating: "85%", critRating: "6%", cooldown: 1, cooldownRemaining: 0 }
+      ]
+    },
+    {
+      id: "hero-diviner-01",
+      name: "Yun",
+      classLabel: "Diviner",
+      heroClass: "Diviner",
+      hp: "32 / 36",
+      maxHp: "36",
+      stress: "28",
+      maxStress: "200",
+      level: 2,
+      position: 3,
+      isActive: false,
+      isAlive: true,
+      skills: [
+        { id: "diviner-duality", name: "Duality of Fate", description: "Bless an ally or curse an enemy with fickle fortune.", target: "Any", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 0 },
+        { id: "diviner-repel", name: "Warding Sign", description: "Push an enemy back and protect the party.", target: "Enemy", hitRating: "80%", critRating: "0%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "diviner-bless", name: "Blessed Evasion", description: "Increase an ally's dodge.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 0 },
+        { id: "diviner-survive", name: "Foresee Pain", description: "Reduce incoming damage for one ally.", target: "Ally", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 1 },
+        { id: "diviner-pull", name: "Tugging Threads", description: "Pull an enemy out of position.", target: "Enemy", hitRating: "85%", critRating: "0%", cooldown: 1, cooldownRemaining: 0 }
+      ]
+    },
+    {
+      id: "hero-shaman-01",
+      name: "Wu",
+      classLabel: "Shaman",
+      heroClass: "Shaman",
+      hp: "40 / 44",
+      maxHp: "44",
+      stress: "19",
+      maxStress: "200",
+      level: 1,
+      position: 4,
+      isActive: false,
+      isAlive: true,
+      skills: [
+        { id: "shaman-frozen", name: "Frozen Curse", description: "Deal frozen damage and slow an enemy.", target: "Enemy", hitRating: "85%", critRating: "4%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "shaman-burn", name: "Spirit Fire", description: "Deal burn damage over time.", target: "Enemy", hitRating: "80%", critRating: "5%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "shaman-bleed", name: "Rending Spirits", description: "Apply bleeding to an enemy.", target: "Enemy", hitRating: "85%", critRating: "6%", cooldown: 1, cooldownRemaining: 0 },
+        { id: "shaman-direct", name: "Spirit Strike", description: "Direct magic damage to an enemy.", target: "Enemy", hitRating: "90%", critRating: "3%", cooldown: 0, cooldownRemaining: 0 },
+        { id: "shaman-buff", name: "Ancestral Favor", description: "Buff self for increased damage.", target: "Self", hitRating: "100%", critRating: "0%", cooldown: 2, cooldownRemaining: 0 }
+      ]
+    }
+  ],
+  enemies: [
+    {
+      id: "enemy-mantis-magic-01",
+      name: "Magic Mantis Flower",
+      hp: "88 / 88",
+      maxHp: "88",
+      position: 1,
+      isAlive: true,
+      isTargeted: true,
+      size: "medium"
+    },
+    {
+      id: "enemy-mantis-spiny-01",
+      name: "Spiny Mantis Flower",
+      hp: "88 / 88",
+      maxHp: "88",
+      position: 2,
+      isAlive: true,
+      isTargeted: false,
+      size: "medium"
+    },
+    {
+      id: "enemy-mantis-walking-01",
+      name: "Walking Mantis Flower",
+      hp: "88 / 88",
+      maxHp: "88",
+      position: 3,
+      isAlive: true,
+      isTargeted: false,
+      size: "medium"
+    }
+  ],
+  selectedSkillId: undefined,
+  combatLog: [
+    "Encounter started in QingLong Depths.",
+    "The mantis flowers stir as the party enters the clearing.",
+    "Round 1 — select a hero skill and target."
+  ],
+  isPlayerTurn: true,
+  canFlee: true,
+  turnCount: 1,
+  settingsLabel: "设置"
+};
+
+export const firstCombatSnapshot: DdgcFrontendSnapshot = {
+  lifecycle: "ready",
+  flowState: "combat",
+  viewModel: replayFirstCombatViewModel,
+  debugMessage: "First combat replay fixture: original DDGC hero families vs QingLong mantis flower enemies."
+};
 
 export const replayReadySnapshot: DdgcFrontendSnapshot = {
   lifecycle: "ready",

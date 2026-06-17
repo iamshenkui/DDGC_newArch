@@ -1,0 +1,196 @@
+# DDGC H5 Demo M4 — Architecture Boundary
+# Task: HB-iamshenkui-DDGC-newArch-127
+# Title: DDGC H5 Demo M4: Existing startup entry for first combat demo
+#
+# This file preserves the architecture boundary from the upstream plan artifact.
+# It is the source of truth for what is in scope, what is explicitly out of scope,
+# and how the implementation evidence is organized for the 30% Cartographer
+# checkpoint and pre-merge Quartermaster review.
+
+metadata:
+  task_id: HB-iamshenkui-DDGC-newArch-127
+  title: DDGC H5 Demo M4 - Existing startup entry for first combat demo
+  base_branch: master
+  generated: "2026-06-18"
+  plan_artifact_version: "1.0"
+
+scope:
+  in_scope:
+    - |
+      Add a first-combat demo entry to the existing startup/main-menu flow in
+      frontend/src/screens/startup/StartupScreen.tsx.
+    - |
+      Wire the entry in frontend/src/app/DdgcApp.tsx so it creates/subscribes
+      the replay bridge and dispatches the start-first-combat-demo intent.
+    - |
+      Route the intent through the existing replay bridge path in
+      frontend/src/bridge/ReplayRuntimeBridge.ts (added in M3) so the app
+      transitions to the combat flowState and renders the migrated CombatScreen.
+    - |
+      Preserve default startup behavior: New Campaign, Load Campaign,
+      Boot Replay, and Boot Live continue to work unchanged.
+    - |
+      Keep the first-combat demo inside the normal app state transition;
+      no isolated /demo route or separate page is introduced.
+    - |
+      Update this architecture boundary artifact at
+      repos/DDGC_newArch/architecture.yaml.
+
+  out_of_scope:
+    - |
+      Modifying the first-combat fixture itself (replayFirstCombatViewModel in
+      frontend/src/validation/replayFixtures.ts) beyond what the bridge consumes.
+    - |
+      Changing combat resolution logic, encounter runtime, or Rust backend content.
+    - |
+      Adding new art, placeholder sprites, or asset extractions.
+    - |
+      Modifying screens beyond StartupScreen, DdgcApp, and the bridge dispatch path.
+    - |
+      Live bridge boot wiring for the demo shortcut; the entry uses replay mode
+      because the fixture is replay-backed.
+
+architecture_boundary:
+  layers:
+    - name: startup_screen
+      description: Main-menu page rewritten from the original DDGC MainMenuWindow prefab.
+      files:
+        - frontend/src/screens/startup/StartupScreen.tsx
+      rules:
+        - Demo entry must be a normal menu button alongside existing options.
+        - Existing startup callbacks remain available and unchanged in signature.
+
+    - name: app_shell
+      description: Root Solid component that owns bridge lifecycle and screen routing.
+      files:
+        - frontend/src/app/DdgcApp.tsx
+      rules:
+        - The demo handler must create/subscribe a replay bridge before dispatch.
+        - The demo handler must transition app state so resolveScreen renders combat.
+        - Default boot, new/load campaign, and fatal/unsupported recovery paths stay intact.
+
+    - name: replay_bridge
+      description: RuntimeBridge implementation that replay-runs fixture snapshots.
+      files:
+        - frontend/src/bridge/ReplayRuntimeBridge.ts
+        - frontend/src/session/FlowController.ts
+      rules:
+        - start-first-combat-demo intent must be accepted from startup/loading/town.
+        - Intent must set flowState=combat and viewModel=replayFirstCombatViewModel.
+        - FlowController canTransition must allow the startup transition.
+
+    - name: combat_screen
+      description: Existing migrated combat UI rendered through normal screen resolution.
+      files:
+        - frontend/src/screens/combat/CombatScreen.tsx
+      rules:
+        - Must render without new props or special demo branching.
+        - Must be reached through the existing Switch/Resolve screen wiring.
+
+    - name: architecture_plan
+      description: Checked-in architecture boundary from the upstream plan artifact.
+      files:
+        - repos/DDGC_newArch/architecture.yaml
+      rules:
+        - Must enumerate in-scope and out-of-scope items.
+        - Must map required paths and acceptance criteria.
+
+source_of_truth:
+  hero_families:
+    reference: HERO_CLASS_FAMILIES.md
+    families:
+      - alchemist
+      - diviner
+      - hunter
+      - shaman
+      - tank
+    variants:
+      - base
+      - white
+      - black
+    note: |
+      First combat fixture uses base variants of four families (Hunter,
+      Alchemist, Diviner, Shaman) to demonstrate high-level original DDGC
+      party composition.
+
+  enemies:
+    reference: MONSTER_FAMILIES.md
+    first_combat_encounter:
+      dungeon: QingLong
+      families:
+        - mantis_magic_flower
+        - mantis_spiny_flower
+        - mantis_walking_flower
+      tier: common
+      hp_t1: 88
+      size: medium
+
+required_paths:
+  - path: frontend/src/app/DdgcApp.tsx
+    role: App shell wiring for the first-combat demo startup entry.
+  - path: frontend/src/screens/startup/StartupScreen.tsx
+    role: Main-menu entry that exposes the first-combat demo button.
+  - path: frontend/src/bridge/ReplayRuntimeBridge.ts
+    role: Existing replay bridge path that resolves start-first-combat-demo to combat.
+  - path: repos/DDGC_newArch/architecture.yaml
+    role: This architecture boundary artifact.
+
+acceptance_criteria:
+  - |
+    Starting the frontend shows an entry to launch the first-combat demo from
+    the existing app/startup flow.
+  - |
+    Activating the entry routes through the bridge and renders the existing
+    migrated CombatScreen.
+  - |
+    No unrelated isolated demo route appears.
+  - |
+    Existing startup behavior still works.
+
+validation:
+  typecheck_command: cd frontend && npm run typecheck
+  test_command: cd frontend && npm run test
+
+blockers:
+  - id: BLOCKER-001
+    title: Original Unity sprite/texture assets not present in repository
+    scope: Global; affects hero portraits and Spine data in addition to combat sprites.
+    status: unresolved
+
+  - id: BLOCKER-005
+    title: Original monster combat sprites not extracted
+    scope: combat_assets/monster_sprites
+    assets:
+      - mantis_magic_flower.png
+      - mantis_spiny_flower.png
+      - mantis_walking_flower.png
+    source: Assets/Resources/Data/Monsters/Sprites/
+    status: unresolved
+
+  - id: BLOCKER-006
+    title: Combat UI chrome sprites not extracted
+    scope: combat_assets/combat_ui_chrome
+    assets:
+      - combat_turn_banner.png
+      - combat_target_reticle.png
+      - combat_action_bar_bg.png
+      - combat_log_bg.png
+      - combat_hp_bar_frame.png
+      - combat_stress_bar_frame.png
+    source: Assets/Sprites/ui/
+    status: unresolved
+
+implementation_evidence:
+  cartographer_30_checkpoint:
+    - StartupScreen exposes a First Combat Demo menu button.
+    - DdgcApp wires the entry to a replay bridge and dispatches start-first-combat-demo.
+    - ReplayRuntimeBridge resolves the intent to replayFirstCombatViewModel (flowState=combat).
+    - FlowController allows the transition from startup/loading/town.
+    - architecture.yaml in place with M4 scope and boundary.
+
+  quartermaster_pre_merge:
+    - Typecheck passes.
+    - Full test suite passes.
+    - Default startup/replay/live/campaign flows remain intact.
+    - No isolated demo route or unrelated art introduced.
+    - Blockers explicitly recorded rather than hidden.

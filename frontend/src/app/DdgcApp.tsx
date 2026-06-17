@@ -99,6 +99,30 @@ export function DdgcApp() {
     }
   };
 
+  const handleStartFirstCombatDemo = async () => {
+    // Ensure a replay bridge is subscribed before dispatching the demo intent.
+    // Startup is not booted yet, so we wire the bridge directly and transition
+    // into combat without flashing the town snapshot.
+    if (unsubscribeBridge) {
+      unsubscribeBridge();
+      unsubscribeBridge = null;
+    }
+
+    setActiveMode("replay");
+    bridge = createBridge("replay");
+    unsubscribeBridge = bridge.subscribe((snapshot) => {
+      session.replace(snapshot);
+    });
+
+    try {
+      await bridge.dispatchIntent({ type: "start-first-combat-demo" });
+      setBooted(true);
+    } catch (error) {
+      session.fail(error instanceof Error ? error.message : "first-combat demo failed");
+      setBooted(true);
+    }
+  };
+
   const snapshot = createMemo(() => session.snapshot());
   const screen = createMemo(() => (booted() ? resolveScreen(snapshot()) : "startup"));
 
@@ -111,6 +135,7 @@ export function DdgcApp() {
             onLiveBoot={() => runBoot("live")}
             onNewCampaign={handleNewCampaign}
             onLoadCampaign={handleLoadCampaign}
+            onStartFirstCombatDemo={handleStartFirstCombatDemo}
             hasSavedCampaign={saveLoad.hasSavedCampaign()}
           />
         </Match>

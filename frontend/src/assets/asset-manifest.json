@@ -1,12 +1,12 @@
 {
-  "manifest_version": "1.1.0",
-  "task": "UIR-005B",
+  "manifest_version": "1.2.0",
+  "task": "UIR-008",
   "title": "DDGC Unity Original Asset Manifest",
-  "description": "Maps original Unity assets and GUIDs to frontend usage for DDGC heroes, buildings, items, provisions, icons, and UI chrome. Updated for UIR-005B: staged 5 deferred building sprites and 10 shell chrome sprites (nameplate, buttons, embark, gold, label backgrounds) from Unity source into frontend/public/original/.",
+  "description": "Maps original Unity assets and GUIDs to frontend usage for DDGC heroes, buildings, items, provisions, icons, UI chrome, and combat assets. Updated for UIR-008 (H5 Demo M2): added first-combat replay fixture source metadata for original DDGC hero families and QingLong mantis flower enemies, with extraction blockers recorded for deferred monster sprites and combat UI chrome.",
   "source_root": "DreamDeveloperGame-Crossover/Assets",
   "inventory_anchor": "fixtures/ui_inventory/index.json",
   "inventory_targets": 28,
-  "generated": "2026-05-05",
+  "generated": "2026-06-18",
 
   "sections": {
     "building_sprites": {
@@ -235,6 +235,140 @@
           "spine_variant_resolution": "chaos-driven: base_id for Normal (stored 50-149), white_id for White (stored >=150), black_id for Black (stored <50)",
           "frontend_resolution": "resolveHeroPortrait({ heroId, classLabel }) in originalAssetPaths.ts — currently only hunter variants mapped",
           "notes": "Full portrait inventory requires scanning all 5 families x 3 variants. Marked as deferred enumeration for non-hunter families. Hunter portraits are in repository."
+        }
+      }
+    },
+
+    "combat_assets": {
+      "description": "Combat screen assets referenced by the first-combat replay fixture and future CombatScreen implementation: hero battle portraits/Spine sources, QingLong mantis flower enemy sprites, and combat UI chrome.",
+      "task": "UIR-008",
+      "first_combat_fixture": {
+        "description": "Source metadata for the H5 Demo M2 first-combat replay fixture (frontend/src/validation/replayFixtures.ts).",
+        "dungeon": "QingLong Depths",
+        "party": [
+          { "hero_id": "hero-hunter-01", "name": "Shen", "family": "hunter", "variant": "base", "level": 2 },
+          { "hero_id": "hero-alchemist-01", "name": "Lian", "family": "alchemist", "variant": "base", "level": 2 },
+          { "hero_id": "hero-diviner-01", "name": "Yun", "family": "diviner", "variant": "base", "level": 2 },
+          { "hero_id": "hero-shaman-01", "name": "Wu", "family": "shaman", "variant": "base", "level": 1 }
+        ],
+        "enemies": [
+          { "family": "mantis_magic_flower", "name": "Magic Mantis Flower", "position": 1, "hp_t1": 88 },
+          { "family": "mantis_spiny_flower", "name": "Spiny Mantis Flower", "position": 2, "hp_t1": 88 },
+          { "family": "mantis_walking_flower", "name": "Walking Mantis Flower", "position": 3, "hp_t1": 88 }
+        ],
+        "source_files": [
+          "Assets/Resources/Data/Monsters/mantis_magic_flower_1.txt",
+          "Assets/Resources/Data/Monsters/mantis_spiny_flower_1.txt",
+          "Assets/Resources/Data/Monsters/mantis_walking_flower_1.txt",
+          "Assets/Resources/Data/Heroes/Alchemist.bytes",
+          "Assets/Resources/Data/Heroes/Diviner.bytes",
+          "Assets/Resources/Data/Heroes/Hunter.bytes",
+          "Assets/Resources/Data/Heroes/Shaman.bytes"
+        ]
+      },
+      "hero_combat_sources": {
+        "description": "Spine skeleton data and combat/portrait sprites for the 5 recruitable hero families. Roster portraits are covered in hero_assets.hero_portraits; this section tracks combat-specific sources.",
+        "spine_root": "Assets/Spines/Heroes",
+        "battle_portrait_root": "Assets/Resources/Data/Heroes/Sprites",
+        "by_family": {
+          "hunter": {
+            "spine_data": "Assets/Spines/Heroes/hunter/lieren_SkeletonData.asset",
+            "spine_guid": "1193cdd9a277e0440ba4ce83bfbad0a9",
+            "battle_portrait_pattern": "Assets/Resources/Data/Heroes/Sprites/hunter/A/hunter_portrait_roster.png",
+            "repo_status": "roster portrait extracted; Spine data and battle portrait not converted for web"
+          },
+          "alchemist": {
+            "spine_data": "Assets/Spines/Heroes/alchemist/yaoshi_SkeletonData.asset",
+            "spine_guid": null,
+            "battle_portrait_pattern": "Assets/Resources/Data/Heroes/Sprites/alchemist/A/alchemist_portrait_roster.png",
+            "repo_status": "none extracted (BLOCKER-001)"
+          },
+          "diviner": {
+            "spine_data": "Assets/Spines/Heroes/diviner/wenzhenren_SkeletonData.asset",
+            "spine_guid": null,
+            "battle_portrait_pattern": "Assets/Resources/Data/Heroes/Sprites/diviner/A/diviner_portrait_roster.png",
+            "repo_status": "none extracted (BLOCKER-001)"
+          },
+          "shaman": {
+            "spine_data": "Assets/Spines/Heroes/shaman/wuzhu_SkeletonData.asset",
+            "spine_guid": null,
+            "battle_portrait_pattern": "Assets/Resources/Data/Heroes/Sprites/shaman/A/shaman_portrait_roster.png",
+            "repo_status": "none extracted (BLOCKER-001)"
+          },
+          "tank": {
+            "spine_data": "Assets/Spines/Heroes/tank/yukanguan_SkeletonData.asset",
+            "spine_guid": "a78eb2e5e4461a444a6d97f46faf9728",
+            "battle_portrait_pattern": "Assets/Resources/Data/Heroes/Sprites/tank/A/tank_portrait_roster.png",
+            "repo_status": "none extracted (BLOCKER-001)"
+          }
+        }
+      },
+      "monster_sprites": {
+        "description": "Enemy battle sprites for the first-combat fixture (QingLong mantis flower families). Expected in frontend/public/original/combat/ once extracted.",
+        "inventory_status": "not staged",
+        "sprite_root": "Assets/Resources/Data/Monsters/Sprites",
+        "by_family": {
+          "mantis_magic_flower": {
+            "asset_path": "Assets/Resources/Data/Monsters/Sprites/mantis_magic_flower.png",
+            "guid": null,
+            "frontend_usage": "screens/combat/CombatScreen.tsx — enemy battle sprite",
+            "frontend_status": "not in repository (BLOCKER-005)"
+          },
+          "mantis_spiny_flower": {
+            "asset_path": "Assets/Resources/Data/Monsters/Sprites/mantis_spiny_flower.png",
+            "guid": null,
+            "frontend_usage": "screens/combat/CombatScreen.tsx — enemy battle sprite",
+            "frontend_status": "not in repository (BLOCKER-005)"
+          },
+          "mantis_walking_flower": {
+            "asset_path": "Assets/Resources/Data/Monsters/Sprites/mantis_walking_flower.png",
+            "guid": null,
+            "frontend_usage": "screens/combat/CombatScreen.tsx — enemy battle sprite",
+            "frontend_status": "not in repository (BLOCKER-005)"
+          }
+        }
+      },
+      "combat_ui_chrome": {
+        "description": "Combat screen UI chrome: turn banner, target reticle, action bar, combat log, HP/stress bar frames.",
+        "inventory_status": "not staged",
+        "chrome_root": "Assets/Sprites/ui",
+        "items": {
+          "turn_order_banner": {
+            "asset_path": "Assets/Sprites/ui/combat_turn_banner.png",
+            "guid": null,
+            "frontend_usage": "screens/combat/CombatScreen.tsx — turn order / round banner",
+            "frontend_status": "not in repository (BLOCKER-006)"
+          },
+          "target_reticle": {
+            "asset_path": "Assets/Sprites/ui/combat_target_reticle.png",
+            "guid": null,
+            "frontend_usage": "screens/combat/CombatScreen.tsx — selected target indicator",
+            "frontend_status": "not in repository (BLOCKER-006)"
+          },
+          "action_bar_bg": {
+            "asset_path": "Assets/Sprites/ui/combat_action_bar_bg.png",
+            "guid": null,
+            "frontend_usage": "screens/combat/CombatScreen.tsx — skill action bar background",
+            "frontend_status": "not in repository (BLOCKER-006)"
+          },
+          "combat_log_bg": {
+            "asset_path": "Assets/Sprites/ui/combat_log_bg.png",
+            "guid": null,
+            "frontend_usage": "screens/combat/CombatScreen.tsx — combat log panel background",
+            "frontend_status": "not in repository (BLOCKER-006)"
+          },
+          "hp_bar_frame": {
+            "asset_path": "Assets/Sprites/ui/combat_hp_bar_frame.png",
+            "guid": null,
+            "frontend_usage": "screens/combat/CombatScreen.tsx — HP bar frame",
+            "frontend_status": "not in repository (BLOCKER-006)"
+          },
+          "stress_bar_frame": {
+            "asset_path": "Assets/Sprites/ui/combat_stress_bar_frame.png",
+            "guid": null,
+            "frontend_usage": "screens/combat/CombatScreen.tsx — stress bar frame",
+            "frontend_status": "not in repository (BLOCKER-006)"
+          }
         }
       }
     },
@@ -812,6 +946,24 @@
           "impact": "Asset pipeline cannot resolve GUID → file path automatically. Manual path-based asset extraction from the Unity project is required.",
           "resolution": "Maintain the path-based references in this manifest. The actual asset extraction is a manual/copy step from the original Unity project, not an automated resolution.",
           "resolved": false
+        },
+        {
+          "id": "BLOCKER-005",
+          "title": "Original monster combat sprites not extracted",
+          "severity": "high",
+          "description": "The QingLong mantis flower enemy sprites (mantis_magic_flower.png, mantis_spiny_flower.png, mantis_walking_flower.png) referenced by the first-combat replay fixture are not present in frontend/public/original/combat/. The Unity source paths are recorded in this manifest and originalAssetPaths.ts, but the actual PNG files have not been copied from DreamDeveloperGame-Crossover.",
+          "impact": "CombatScreen renders placeholder silhouettes or CSS stand-ins instead of original mantis flower art until the sprites are extracted.",
+          "resolution": "Extract the three mantis flower PNGs from Assets/Resources/Data/Monsters/Sprites/ and copy to frontend/public/original/combat/. Update originalAssetPaths.ts extractedMonsterSprites once staged.",
+          "resolved": false
+        },
+        {
+          "id": "BLOCKER-006",
+          "title": "Combat UI chrome sprites not extracted",
+          "severity": "medium",
+          "description": "Turn banner, target reticle, action bar, combat log, and HP/stress bar frame sprites for the combat screen are not present in the repository. Expected paths are documented but not staged.",
+          "impact": "CombatScreen uses CSS-only styling for combat chrome until original sprites are extracted.",
+          "resolution": "Extract combat UI sprites from Assets/Sprites/ui/ into frontend/public/original/combat/ and update originalAssetPaths.ts.",
+          "resolved": false
         }
       ]
     },
@@ -888,14 +1040,16 @@
     "staged_building_sprites": 11,
     "staged_chrome_sprites": 10,
     "total_inventoried_prefabs": 29,
-    "blockers": 4,
+    "blockers": 6,
     "blocker_items": [
       "BLOCKER-001: Original Unity .png/.asset files not in repository",
       "BLOCKER-002: Spine runtime integration not configured for web",
       "BLOCKER-003: GUID-to-asset-path resolution requires Unity source project",
-      "BLOCKER-004: Menu background and button PNG sprites not extracted (new)"
+      "BLOCKER-004: Menu background and button PNG sprites not extracted",
+      "BLOCKER-005: Original monster combat sprites not extracted",
+      "BLOCKER-006: Combat UI chrome sprites not extracted"
     ],
-    "deferred_items": 9,
+    "deferred_items": 10,
     "deferred_topics": [
       "hero_portrait_full_enumeration (non-hunter families)",
       "stress_pip_sprites (3 PNGs — CSS fallback on HeroDetailScreen)",
@@ -905,10 +1059,41 @@
       "dungeon_map_assets",
       "intro_video_and_logo_splash",
       "custom_game_cursor",
-      "original_font_extraction"
+      "original_font_extraction",
+      "combat_ui_chrome_sprites (6 PNGs — CSS fallback on CombatScreen)"
     ],
-    "blocker_summary": "Town/base shell chrome and building sprites staged by UIR-005B (11 buildings, 10 chrome sprites). BLOCKER-001 partially resolved for town/view. Remaining gaps: non-hunter hero portraits (12 PNGs exist in source), Spine runtime integration (BLOCKER-002), menu background/button sprites (BLOCKER-004), provisioner building has no source sprite. GUID resolution requires manual path mapping (BLOCKER-003).",
-    "next_action": "Wire staged shell chrome sprites into TownShellScreen CSS (nameplate, embark button, currency icon). Extract non-hunter hero portrait PNGs (12 sprites from Assets/Resources/Data/Heroes/Sprites/). Extract menu background/button sprites for StartupScreen parity (BLOCKER-004).",
+    "blocker_summary": "Town/base shell chrome and building sprites staged by UIR-005B (11 buildings, 10 chrome sprites). H5 Demo M2 (UIR-008) added first-combat replay fixture source metadata for original DDGC hero families and QingLong mantis flower enemies. BLOCKER-001 partially resolved for town/view. Remaining gaps: non-hunter hero portraits (12 PNGs exist in source), Spine runtime integration (BLOCKER-002), menu background/button sprites (BLOCKER-004), mantis flower combat sprites (BLOCKER-005), combat UI chrome (BLOCKER-006), provisioner building has no source sprite. GUID resolution requires manual path mapping (BLOCKER-003).",
+    "next_action": "Extract mantis flower combat sprites (BLOCKER-005) and combat UI chrome (BLOCKER-006) for CombatScreen parity. Continue extracting non-hunter hero portrait PNGs (12 sprites from Assets/Resources/Data/Heroes/Sprites/). Extract menu background/button sprites for StartupScreen parity (BLOCKER-004).",
+    "uir_008_completed": {
+      "description": "UIR-008: DDGC H5 Demo M2 — First combat replay fixture and original asset source manifest. Added a contract-valid combat replay fixture using the 5 original DDGC hero families and QingLong mantis flower enemies, and recorded Unity source paths plus extraction blockers for combat assets.",
+      "changes": [
+        {
+          "target": "frontend/src/validation/replayFixtures.ts",
+          "change": "Added replayFirstCombatViewModel (CombatViewModel) and firstCombatSnapshot (DdgcFrontendSnapshot) expressing a round-1 player-turn encounter in QingLong Depths. Party uses Hunter, Alchemist, Diviner, and Shaman families with original DDGC skill IDs mapped to display names. Enemies are Magic Mantis Flower, Spiny Mantis Flower, and Walking Mantis Flower."
+        },
+        {
+          "target": "frontend/src/validation/replayFixtures.test.ts",
+          "change": "Added focused tests for the first combat fixture: encounter start state, original hero family usage, mantis flower enemy usage, skill/target validity, and included firstCombatSnapshot in the snapshot contract validation suite."
+        },
+        {
+          "target": "frontend/src/assets/originalAssetPaths.ts",
+          "change": "Added resolveMonsterSprite() for QingLong mantis flower enemy sprite paths, resolveCombatChromeAsset() with typed CombatChromeAssetKey for combat UI chrome, and exported extractionBlockers metadata for BLOCKER-005 and BLOCKER-006."
+        },
+        {
+          "target": "frontend/src/assets/asset-manifest.json",
+          "change": "Added combat_assets section with first_combat_fixture metadata, hero_combat_sources, monster_sprites, and combat_ui_chrome. Updated blockers list with BLOCKER-005 and BLOCKER-006. Bumped manifest_version to 1.2.0 and task to UIR-008."
+        }
+      ],
+      "available_assets": {
+        "first_combat_fixture": "Contract-valid replay fixture in replayFixtures.ts with original DDGC hero families and mantis flower enemies",
+        "combat_source_metadata": "Unity source paths documented for hero combat sources, mantis flower sprites, and combat UI chrome"
+      },
+      "deferred_assets": {
+        "mantis_flower_sprites": "3 PNGs in Assets/Resources/Data/Monsters/Sprites/ — BLOCKER-005",
+        "combat_ui_chrome": "6 PNGs in Assets/Sprites/ui/ — BLOCKER-006",
+        "non_hunter_hero_portraits": "12 PNGs across alchemist/diviner/shaman/tank families — BLOCKER-001"
+      }
+    },
     "uir_006_complete": "Roster and hero detail screens now have full prefab hierarchy annotations (HeroSlot/CharacterWindow), game-style panel styling with HP/ST labels, 5-tab layout matching Unity tab order, and documented missing asset paths.",
     "uir_007_complete": {
       "description": "UIR-007: Town building UI migrated with original building sprites and Unity prefab hierarchy references.",
