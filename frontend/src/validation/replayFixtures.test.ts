@@ -7,6 +7,7 @@ import {
   replayProvisioningViewModel,
   replayExpeditionViewModel,
   replayCombatViewModel,
+  replayFirstCombatViewModel,
   replayResultViewModel,
   replayFailureResultViewModel,
   replayPartialResultViewModel,
@@ -25,6 +26,7 @@ import {
   provisioningSnapshot,
   expeditionSnapshot,
   combatSnapshot,
+  firstCombatSnapshot,
   resultSnapshot,
   failureResultSnapshot,
   partialResultSnapshot,
@@ -350,6 +352,68 @@ describe("replay fixtures — hero and campaign state consistency", () => {
     });
   });
 
+  describe("first combat fixture", () => {
+    it("represents the start of a combat encounter", () => {
+      const vm = replayFirstCombatViewModel;
+      expect(vm.title).toBeTruthy();
+      expect(vm.dungeonName).toBe("QingLong Depths");
+      expect(vm.round).toBe(1);
+      expect(vm.turnPhase).toBe("player");
+      expect(vm.phase).toBe("player-turn");
+      expect(vm.isPlayerTurn).toBe(true);
+      expect(vm.activeHeroId).toBe("hero-hunter-01");
+      expect(vm.selectedSkillId).toBeUndefined();
+    });
+
+    it("uses original DDGC hero families for the party", () => {
+      const classLabels = replayFirstCombatViewModel.party.map((h) => h.classLabel);
+      expect(classLabels).toContain("Hunter");
+      expect(classLabels).toContain("Alchemist");
+      expect(classLabels).toContain("Diviner");
+      expect(classLabels).toContain("Shaman");
+      for (const hero of replayFirstCombatViewModel.party) {
+        expect(hero.heroClass).toBe(hero.classLabel);
+        expect(hero.level).toBeGreaterThan(0);
+        expect(hero.isAlive).toBe(true);
+      }
+    });
+
+    it("uses mantis flower enemies from QingLong", () => {
+      const enemyNames = replayFirstCombatViewModel.enemies.map((e) => e.name);
+      expect(enemyNames).toContain("Magic Mantis Flower");
+      expect(enemyNames).toContain("Spiny Mantis Flower");
+      expect(enemyNames).toContain("Walking Mantis Flower");
+      for (const enemy of replayFirstCombatViewModel.enemies) {
+        expect(enemy.isAlive).toBe(true);
+        expect(enemy.size).toBe("medium");
+      }
+    });
+
+    it("has at least one targeted enemy", () => {
+      expect(replayFirstCombatViewModel.enemies.some((e) => e.isTargeted)).toBe(true);
+    });
+
+    it("has skills for each party member", () => {
+      for (const hero of replayFirstCombatViewModel.party) {
+        expect(hero.skills.length).toBeGreaterThan(0);
+        for (const skill of hero.skills) {
+          expect(skill.id).toBeTruthy();
+          expect(skill.name).toBeTruthy();
+          expect(skill.target).toBeTruthy();
+          expect(typeof skill.cooldown).toBe("number");
+          expect(typeof skill.cooldownRemaining).toBe("number");
+        }
+      }
+    });
+
+    it("has a non-empty combat log describing the encounter", () => {
+      expect(replayFirstCombatViewModel.combatLog.length).toBeGreaterThan(0);
+      const log = replayFirstCombatViewModel.combatLog.join(" ");
+      expect(log).toContain("QingLong");
+      expect(log).toContain("mantis");
+    });
+  });
+
   describe("result fixtures", () => {
     it("success result has loot and positive resources", () => {
       expect(replayResultViewModel.outcome).toBe("success");
@@ -432,6 +496,7 @@ const allSnapshots: NamedSnapshot[] = [
   { name: "provisioningSnapshot", snapshot: provisioningSnapshot },
   { name: "expeditionSnapshot", snapshot: expeditionSnapshot },
   { name: "combatSnapshot", snapshot: combatSnapshot },
+  { name: "firstCombatSnapshot", snapshot: firstCombatSnapshot },
   { name: "resultSnapshot", snapshot: resultSnapshot },
   { name: "failureResultSnapshot", snapshot: failureResultSnapshot },
   { name: "partialResultSnapshot", snapshot: partialResultSnapshot },
@@ -529,6 +594,11 @@ describe("type discrimination", () => {
     expect(combatSnapshot.viewModel.kind).toBe("combat");
   });
 
+  it("first combat snapshot sets flowState and kind to combat", () => {
+    expect(firstCombatSnapshot.flowState).toBe("combat");
+    expect(firstCombatSnapshot.viewModel.kind).toBe("combat");
+  });
+
   it("return snapshot sets flowState and kind to return", () => {
     expect(returnSnapshot.flowState).toBe("return");
     expect(returnSnapshot.viewModel.kind).toBe("return");
@@ -581,9 +651,21 @@ describe("HP string format consistency across fixtures", () => {
     }
   });
 
+  it("first combat party heroes have valid HP strings", () => {
+    for (const ch of replayFirstCombatViewModel.party) {
+      checkHpFormat(ch.hp, `first combat hero ${ch.id}`);
+    }
+  });
+
   it("combat enemies have valid HP strings", () => {
     for (const ce of replayCombatViewModel.enemies) {
       checkHpFormat(ce.hp, `combat enemy ${ce.id}`);
+    }
+  });
+
+  it("first combat enemies have valid HP strings", () => {
+    for (const ce of replayFirstCombatViewModel.enemies) {
+      checkHpFormat(ce.hp, `first combat enemy ${ce.id}`);
     }
   });
 

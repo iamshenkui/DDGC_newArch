@@ -783,6 +783,21 @@ export class LiveRuntimeBridge implements RuntimeBridge {
       case "boot":
         this.snapshot = createLiveTownSnapshot();
         break;
+      case "start-first-combat-demo":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: start-first-combat-demo rejected from current state."
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "combat",
+          viewModel: createLiveCombatViewModel(),
+          debugMessage: "Live: started first-combat demo."
+        };
+        break;
       case "open-hero": {
         const townVm = this.snapshot.viewModel as TownViewModel;
         const hero = townVm.heroes.find((h) => h.id === intent.heroId) ?? townVm.heroes[0];

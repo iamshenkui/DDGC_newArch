@@ -573,6 +573,12 @@ export function canTransition(
     case "boot":
       return { allowed: true };
 
+    case "start-first-combat-demo":
+      if (screen !== "town" && screen !== "startup" && screen !== "loading") {
+        return { allowed: false, reason: "start-first-combat-demo is only valid from town, startup, or loading" };
+      }
+      return { allowed: true };
+
     default:
       return { allowed: true };
   }
