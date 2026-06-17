@@ -86,6 +86,8 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
       class={`combat-viewport${isCharacterHitPhase() ? " combat-viewport--character-hit" : ""}`}
       data-source-scene="UI_Combat/CombatScene"
       data-source-prefab="Assets/Prefabs/UI/CombatWindow.prefab"
+      data-selected-skill-id={props.viewModel.selectedSkillId}
+      data-active-hero-id={props.viewModel.activeHeroId}
     >
       {/* ── Top HUD ─────────────────────────────────────── */}
       <header class="combat-hud">
@@ -318,12 +320,12 @@ export const CombatScreen: Component<CombatScreenProps> = (props) => {
               <div class="combat-skill-slots">
                 <For each={displayHero()?.skills}>
                   {(skill) => {
-                    const isSelected = skill.id === props.viewModel.selectedSkillId;
                     const isOnCooldown = skill.cooldownRemaining > 0;
                     const isDisabled = isCharacterHitPhase() || isOnCooldown;
                     return (
                       <button
-                        class={`combat-skill-slot${isSelected ? " combat-skill-slot--selected" : ""}${isOnCooldown ? " combat-skill-slot--cooldown" : ""}`}
+                        class={`combat-skill-slot${props.viewModel.selectedSkillId === skill.id ? " combat-skill-slot--selected" : ""}${isOnCooldown ? " combat-skill-slot--cooldown" : ""}`}
+                        data-skill-id={skill.id}
                         onClick={() => !isDisabled && props.onSelectSkill(skill.id)}
                         onMouseEnter={() => setHoveredSkillId(skill.id)}
                         onMouseLeave={() => setHoveredSkillId(null)}

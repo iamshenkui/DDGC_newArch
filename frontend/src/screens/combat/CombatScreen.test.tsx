@@ -5,7 +5,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ReplayRuntimeBridge } from "../../bridge/ReplayRuntimeBridge";
 import type { CombatViewModel } from "../../bridge/contractTypes";
-import { replayAttackCombatViewModel, replayCombatViewModel } from "../../validation/replayFixtures";
+import {
+  replayAttackCombatViewModel,
+  replayCombatViewModel,
+  replayFirstCombatViewModel
+} from "../../validation/replayFixtures";
 import { CombatScreen } from "./CombatScreen";
 
 describe("CombatScreen skill interactions", () => {
@@ -157,5 +161,102 @@ describe("CombatScreen skill interactions", () => {
 
     acknowledgeBtn?.click();
     expect(onContinueCombat).toHaveBeenCalledOnce();
+  });
+});
+
+describe("CombatScreen first-combat demo fixture", () => {
+  let dispose: (() => void) | undefined;
+
+  afterEach(() => {
+    dispose?.();
+    dispose = undefined;
+    document.body.innerHTML = "";
+  });
+
+  it("renders the first-combat encounter title and QingLong mantis flower enemies", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    dispose = render(
+      () => (
+        <CombatScreen
+          viewModel={replayFirstCombatViewModel}
+          onSelectSkill={vi.fn()}
+          onSelectTarget={vi.fn()}
+          onConfirmAttack={vi.fn()}
+          onFleeCombat={vi.fn()}
+          onEndTurn={vi.fn()}
+        />
+      ),
+      root
+    );
+
+    const title = root.querySelector(".combat-title");
+    expect(title?.textContent).toBe("初战：苍灯林地");
+
+    expect(root.querySelectorAll(".combat-hero-stand").length).toBe(4);
+    expect(root.querySelectorAll(".combat-enemy-stand").length).toBe(3);
+
+    expect(root.textContent).toContain("Magic Mantis Flower");
+    expect(root.textContent).toContain("Spiny Mantis Flower");
+    expect(root.textContent).toContain("Walking Mantis Flower");
+  });
+
+  it("keeps skill selection usable for the first-combat active hero", () => {
+    const onSelectSkill = vi.fn();
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    dispose = render(
+      () => (
+        <CombatScreen
+          viewModel={replayFirstCombatViewModel}
+          onSelectSkill={onSelectSkill}
+          onSelectTarget={vi.fn()}
+          onConfirmAttack={vi.fn()}
+          onFleeCombat={vi.fn()}
+          onEndTurn={vi.fn()}
+        />
+      ),
+      root
+    );
+
+    const skillButton = root.querySelector<HTMLButtonElement>(
+      '.combat-skill-slot[title="Hunter\'s Mark"]'
+    );
+    expect(skillButton).not.toBeNull();
+    expect(skillButton?.disabled).toBe(false);
+
+    skillButton?.click();
+    expect(onSelectSkill).toHaveBeenCalledWith("hunter-mark");
+  });
+
+  it("keeps target selection usable for the first-combat enemies", () => {
+    const onSelectTarget = vi.fn();
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    dispose = render(
+      () => (
+        <CombatScreen
+          viewModel={replayFirstCombatViewModel}
+          onSelectSkill={vi.fn()}
+          onSelectTarget={onSelectTarget}
+          onConfirmAttack={vi.fn()}
+          onFleeCombat={vi.fn()}
+          onEndTurn={vi.fn()}
+        />
+      ),
+      root
+    );
+
+    const targetButton = Array.from(
+      root.querySelectorAll<HTMLButtonElement>(".combat-target-cell")
+    ).find((b) => b.textContent?.includes("Spiny Mantis Flower"));
+    expect(targetButton).not.toBeUndefined();
+    expect(targetButton?.disabled).toBe(false);
+
+    targetButton?.click();
+    expect(onSelectTarget).toHaveBeenCalledWith("enemy-mantis-spiny-01");
   });
 });
