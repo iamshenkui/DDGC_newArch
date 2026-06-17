@@ -1,6 +1,6 @@
-# DDGC H5 Demo M4 — Architecture Boundary
-# Task: HB-iamshenkui-DDGC-newArch-127
-# Title: DDGC H5 Demo M4: Existing startup entry for first combat demo
+# DDGC H5 Demo M5 — Architecture Boundary
+# Task: HB-iamshenkui-DDGC-newArch-128
+# Title: DDGC H5 Demo M5: First combat tests and browser smoke
 #
 # This file preserves the architecture boundary from the upstream plan artifact.
 # It is the source of truth for what is in scope, what is explicitly out of scope,
@@ -8,8 +8,8 @@
 # checkpoint and pre-merge Quartermaster review.
 
 metadata:
-  task_id: HB-iamshenkui-DDGC-newArch-127
-  title: DDGC H5 Demo M4 - Existing startup entry for first combat demo
+  task_id: HB-iamshenkui-DDGC-newArch-128
+  title: DDGC H5 Demo M5 - First combat tests and browser smoke
   base_branch: master
   generated: "2026-06-18"
   plan_artifact_version: "1.0"
@@ -17,38 +17,37 @@ metadata:
 scope:
   in_scope:
     - |
-      Add a first-combat demo entry to the existing startup/main-menu flow in
-      frontend/src/screens/startup/StartupScreen.tsx.
+      Add focused unit tests in frontend/src/screens/startup/StartupScreen.test.tsx
+      that prove the First Combat Demo startup entry can be triggered.
     - |
-      Wire the entry in frontend/src/app/DdgcApp.tsx so it creates/subscribes
-      the replay bridge and dispatches the start-first-combat-demo intent.
+      Extend frontend/src/screens/combat/CombatScreen.test.tsx to validate the
+      first-combat fixture renders the existing migrated CombatScreen and that a
+      combat interaction (select skill → confirm attack) remains usable.
     - |
-      Route the intent through the existing replay bridge path in
-      frontend/src/bridge/ReplayRuntimeBridge.ts (added in M3) so the app
-      transitions to the combat flowState and renders the migrated CombatScreen.
+      Keep the validation path inside the existing app surfaces: StartupScreen
+      dispatches through the replay bridge, CombatScreen renders from the same
+      Switch/Match wiring used by the full meta-loop.
     - |
-      Preserve default startup behavior: New Campaign, Load Campaign,
-      Boot Replay, and Boot Live continue to work unchanged.
-    - |
-      Keep the first-combat demo inside the normal app state transition;
-      no isolated /demo route or separate page is introduced.
+      Add a focused browser smoke test (frontend/smoke/firstCombatDemo.spec.ts)
+      that proves the first-combat demo renders non-blank through the existing app.
     - |
       Update this architecture boundary artifact at
-      repos/DDGC_newArch/architecture.yaml.
+      repos/DDGC_newArch/architecture.yaml to record the exact validation commands.
 
   out_of_scope:
     - |
       Modifying the first-combat fixture itself (replayFirstCombatViewModel in
-      frontend/src/validation/replayFixtures.ts) beyond what the bridge consumes.
+      frontend/src/validation/replayFixtures.ts) beyond what validation consumes.
     - |
       Changing combat resolution logic, encounter runtime, or Rust backend content.
     - |
       Adding new art, placeholder sprites, or asset extractions.
     - |
-      Modifying screens beyond StartupScreen, DdgcApp, and the bridge dispatch path.
+      Modifying screens beyond StartupScreen, CombatScreen, and the bridge dispatch
+      path.
     - |
-      Live bridge boot wiring for the demo shortcut; the entry uses replay mode
-      because the fixture is replay-backed.
+      Expanding the existing meta-loop browser smoke beyond a focused first-combat
+      demo scenario.
 
 architecture_boundary:
   layers:
@@ -56,9 +55,10 @@ architecture_boundary:
       description: Main-menu page rewritten from the original DDGC MainMenuWindow prefab.
       files:
         - frontend/src/screens/startup/StartupScreen.tsx
+        - frontend/src/screens/startup/StartupScreen.test.tsx
       rules:
         - Demo entry must be a normal menu button alongside existing options.
-        - Existing startup callbacks remain available and unchanged in signature.
+        - Unit test must render StartupScreen and invoke onStartFirstCombatDemo.
 
     - name: app_shell
       description: Root Solid component that owns bridge lifecycle and screen routing.
@@ -83,9 +83,31 @@ architecture_boundary:
       description: Existing migrated combat UI rendered through normal screen resolution.
       files:
         - frontend/src/screens/combat/CombatScreen.tsx
+        - frontend/src/screens/combat/CombatScreen.test.tsx
       rules:
         - Must render without new props or special demo branching.
         - Must be reached through the existing Switch/Resolve screen wiring.
+
+    - name: validation_surface
+      description: Deterministic runtime bridge and fixture validation tests.
+      files:
+        - frontend/src/validation/replayFixtures.ts
+        - frontend/src/validation/replayFixtures.test.ts
+        - frontend/src/validation/runtimeBridge.test.ts
+        - frontend/src/build-run/smoke.test.ts
+      rules:
+        - Existing fixtures and bridge tests remain the authoritative contract.
+        - First-combat demo shortcut must be covered by runtimeBridge.test.ts.
+
+    - name: browser_smoke
+      description: Focused Playwright smoke proving the demo renders in a real browser.
+      files:
+        - frontend/smoke/firstCombatDemo.spec.ts
+        - frontend/playwright.config.ts
+      rules:
+        - Test must launch the existing app, click First Combat Demo, and assert
+          the existing .combat-viewport renders with the first-combat title.
+        - Must exercise at least one combat interaction end-to-end.
 
     - name: architecture_plan
       description: Checked-in architecture boundary from the upstream plan artifact.
@@ -93,7 +115,7 @@ architecture_boundary:
         - repos/DDGC_newArch/architecture.yaml
       rules:
         - Must enumerate in-scope and out-of-scope items.
-        - Must map required paths and acceptance criteria.
+        - Must map required paths, acceptance criteria, and validation commands.
 
 source_of_truth:
   hero_families:
@@ -126,30 +148,38 @@ source_of_truth:
       size: medium
 
 required_paths:
-  - path: frontend/src/app/DdgcApp.tsx
-    role: App shell wiring for the first-combat demo startup entry.
-  - path: frontend/src/screens/startup/StartupScreen.tsx
-    role: Main-menu entry that exposes the first-combat demo button.
-  - path: frontend/src/bridge/ReplayRuntimeBridge.ts
-    role: Existing replay bridge path that resolves start-first-combat-demo to combat.
+  - path: frontend/src/screens/startup/StartupScreen.test.tsx
+    role: Unit validation that the first-combat demo entry launches from startup.
+  - path: frontend/src/screens/combat/CombatScreen.test.tsx
+    role: Unit validation that the first-combat fixture renders the migrated combat screen and stays interactive.
+  - path: frontend/src/bridge
+    role: RuntimeBridge seam used by the demo entry and combat interactions.
+  - path: frontend/src/validation
+    role: Fixture and bridge contract validation surfaces used by tests.
   - path: repos/DDGC_newArch/architecture.yaml
     role: This architecture boundary artifact.
 
 acceptance_criteria:
   - |
-    Starting the frontend shows an entry to launch the first-combat demo from
-    the existing app/startup flow.
+    cd frontend && npm run typecheck passes with no TypeScript errors.
   - |
-    Activating the entry routes through the bridge and renders the existing
-    migrated CombatScreen.
+    cd frontend && npm run test passes the full Vitest suite, including the new
+    StartupScreen and CombatScreen first-combat fixture tests.
   - |
-    No unrelated isolated demo route appears.
+    cd frontend && npm run build produces a production bundle.
   - |
-    Existing startup behavior still works.
+    A focused browser smoke command proves the first-combat demo renders non-blank
+    through the existing app:
+      cd frontend && npm run build && npx playwright test smoke/firstCombatDemo.spec.ts
+  - |
+    Test evidence confirms the rendered view is the existing migrated combat screen
+    (.combat-viewport with title "初战：苍灯林地") and not a new isolated page.
 
 validation:
   typecheck_command: cd frontend && npm run typecheck
   test_command: cd frontend && npm run test
+  build_command: cd frontend && npm run build
+  browser_smoke_command: cd frontend && npm run build && npx playwright test smoke/firstCombatDemo.spec.ts
 
 blockers:
   - id: BLOCKER-001
@@ -182,15 +212,16 @@ blockers:
 
 implementation_evidence:
   cartographer_30_checkpoint:
-    - StartupScreen exposes a First Combat Demo menu button.
-    - DdgcApp wires the entry to a replay bridge and dispatches start-first-combat-demo.
-    - ReplayRuntimeBridge resolves the intent to replayFirstCombatViewModel (flowState=combat).
-    - FlowController allows the transition from startup/loading/town.
-    - architecture.yaml in place with M4 scope and boundary.
+    - StartupScreen.test.tsx asserts the First Combat Demo button is present and clickable.
+    - CombatScreen.test.tsx asserts the first-combat fixture renders party, enemies, skills, and a usable Confirm Attack interaction.
+    - firstCombatDemo.spec.ts provides a browser-level proof that the demo renders the existing CombatScreen end-to-end.
+    - architecture.yaml records scope, required paths, acceptance criteria, and exact validation commands.
 
   quartermaster_pre_merge:
     - Typecheck passes.
-    - Full test suite passes.
+    - Full Vitest suite passes.
+    - Production build succeeds.
+    - Focused browser smoke command is documented and runnable.
     - Default startup/replay/live/campaign flows remain intact.
     - No isolated demo route or unrelated art introduced.
     - Blockers explicitly recorded rather than hidden.

@@ -5,7 +5,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ReplayRuntimeBridge } from "../../bridge/ReplayRuntimeBridge";
 import type { CombatViewModel } from "../../bridge/contractTypes";
-import { replayAttackCombatViewModel, replayCombatViewModel } from "../../validation/replayFixtures";
+import {
+  replayAttackCombatViewModel,
+  replayCombatViewModel,
+  replayFirstCombatViewModel,
+} from "../../validation/replayFixtures";
 import { CombatScreen } from "./CombatScreen";
 
 describe("CombatScreen skill interactions", () => {
@@ -157,5 +161,124 @@ describe("CombatScreen skill interactions", () => {
 
     acknowledgeBtn?.click();
     expect(onContinueCombat).toHaveBeenCalledOnce();
+  });
+});
+
+describe("CombatScreen first-combat fixture", () => {
+  let dispose: (() => void) | undefined;
+
+  afterEach(() => {
+    dispose?.();
+    dispose = undefined;
+    document.body.innerHTML = "";
+  });
+
+  it("renders the migrated combat screen with the first-combat fixture", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    dispose = render(
+      () => (
+        <CombatScreen
+          viewModel={replayFirstCombatViewModel}
+          onSelectSkill={vi.fn()}
+          onSelectTarget={vi.fn()}
+          onConfirmAttack={vi.fn()}
+          onFleeCombat={vi.fn()}
+          onEndTurn={vi.fn()}
+        />
+      ),
+      root
+    );
+
+    expect(root.querySelector(".combat-viewport")).not.toBeNull();
+    expect(root.querySelector(".combat-title")?.textContent).toBe("初战：苍灯林地");
+
+    const heroes = root.querySelectorAll(".combat-hero-stand");
+    expect(heroes.length).toBe(replayFirstCombatViewModel.party.length);
+
+    const enemies = root.querySelectorAll(".combat-enemy-stand");
+    expect(enemies.length).toBe(replayFirstCombatViewModel.enemies.length);
+
+    const skillSlots = root.querySelectorAll(".combat-skill-slot");
+    expect(skillSlots.length).toBe(
+      replayFirstCombatViewModel.party.find((h) => h.id === replayFirstCombatViewModel.activeHeroId)
+        ?.skills.length ?? 0
+    );
+
+    const confirmButton = root.querySelector<HTMLButtonElement>(".combat-attack-btn");
+    expect(confirmButton?.textContent).toContain("Confirm Attack");
+    expect(confirmButton?.disabled).toBe(true);
+
+    const selectedTarget = root.querySelector(".combat-target-cell--selected");
+    expect(selectedTarget).not.toBeNull();
+  });
+
+  it("selects a skill and keeps confirm attack usable through the replay bridge", async () => {
+    const bridge = new ReplayRuntimeBridge();
+    await bridge.boot();
+
+    const demoSnapshot = await bridge.dispatchIntent({ type: "start-first-combat-demo" });
+    expect(demoSnapshot.viewModel.kind).toBe("combat");
+
+    const afterSkill = await bridge.dispatchIntent({ type: "select-skill", skillId: "hunter-mark" });
+    const skillVm = afterSkill.viewModel as CombatViewModel;
+    expect(skillVm.selectedSkillId).toBe("hunter-mark");
+
+    const onConfirmAttack = vi.fn();
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    dispose = render(
+      () => (
+        <CombatScreen
+          viewModel={skillVm}
+          onSelectSkill={vi.fn()}
+          onSelectTarget={vi.fn()}
+          onConfirmAttack={onConfirmAttack}
+          onFleeCombat={vi.fn()}
+          onEndTurn={vi.fn()}
+        />
+      ),
+      root
+    );
+
+    const confirmButton = root.querySelector<HTMLButtonElement>(".combat-attack-btn");
+    expect(confirmButton?.textContent).toContain("Confirm Attack");
+    expect(confirmButton?.disabled).toBe(false);
+
+    const selectedSkill = root.querySelector(".combat-skill-slot--selected");
+    expect(selectedSkill, "selected skill should be highlighted").not.toBeNull();
+
+    confirmButton?.click();
+    expect(onConfirmAttack).toHaveBeenCalledOnce();
+  });
+
+  it("selects a target cell on the first-combat fixture", () => {
+    const onSelectTarget = vi.fn();
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    dispose = render(
+      () => (
+        <CombatScreen
+          viewModel={replayFirstCombatViewModel}
+          onSelectSkill={vi.fn()}
+          onSelectTarget={onSelectTarget}
+          onConfirmAttack={vi.fn()}
+          onFleeCombat={vi.fn()}
+          onEndTurn={vi.fn()}
+        />
+      ),
+      root
+    );
+
+    const targetButton = root.querySelector<HTMLButtonElement>(
+      '[data-testid="combat-enemy-enemy-mantis-spiny-01"]'
+    );
+    expect(targetButton).not.toBeNull();
+
+    targetButton?.click();
+    expect(onSelectTarget).toHaveBeenCalledWith("enemy-mantis-spiny-01");
   });
 });
