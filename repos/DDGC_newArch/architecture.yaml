@@ -1,0 +1,189 @@
+# DDGC H5 Demo M2 — Architecture Boundary
+# Task: HB-iamshenkui-DDGC-newArch-125
+# Title: DDGC H5 Demo M2: First combat fixture and original asset source manifest
+#
+# This file preserves the architecture boundary from the upstream plan artifact.
+# It is the source of truth for what is in scope, what is explicitly out of scope,
+# and how the implementation evidence is organized for the 30% Cartographer
+# checkpoint and pre-merge Quartermaster review.
+
+metadata:
+  task_id: HB-iamshenkui-DDGC-newArch-125
+  title: DDGC H5 Demo M2 - First combat fixture and original asset source manifest
+  base_branch: master
+  generated: "2026-06-18"
+  plan_artifact_version: "1.0"
+
+scope:
+  in_scope:
+    - |
+      Add a new first-combat replay fixture using existing migrated replay patterns
+      in frontend/src/validation/replayFixtures.ts.
+    - |
+      Express a first combat encounter with high-level original DDGC hero families
+      (Hunter, Alchemist, Diviner, Shaman, Tank) and QingLong mantis flower enemies
+      (mantis_magic_flower, mantis_spiny_flower, mantis_walking_flower).
+    - |
+      Preserve existing replay fixtures and keep them contract-valid.
+    - |
+      Record original Unity source paths and extraction blockers in metadata form:
+      frontend/src/assets/originalAssetPaths.ts and
+      frontend/src/assets/asset-manifest.json.
+    - |
+      Add focused fixture tests for the new combat fixture if required by repo
+      pattern (replayFixtures.test.ts).
+    - |
+      Create this architecture boundary artifact at
+      repos/DDGC_newArch/architecture.yaml.
+
+  out_of_scope:
+    - |
+      Runtime or startup wiring. The fixture is replay-only and is not hooked into
+      live bridge boot, FlowController transitions, or StartupScreen.
+    - |
+      Substituting unrelated art. No placeholder PNGs, generated images, or art from
+      outside DreamDeveloperGame-Crossover may be invented.
+    - |
+      Extracting actual Unity binary assets. Only paths, GUIDs, and blocker metadata
+      are recorded.
+    - |
+      Changing combat resolution logic, encounter runtime, or Rust backend content.
+    - |
+      Modifying screens beyond the existing fixture and metadata contracts.
+
+architecture_boundary:
+  layers:
+    - name: contract
+      description: TypeScript view-model contracts shared by bridge and UI.
+      files:
+        - frontend/src/bridge/contractTypes.ts
+      rules:
+        - Fixtures must conform to DdgcViewModel and DdgcFrontendSnapshot.
+        - New fields are optional; existing fields remain backward compatible.
+
+    - name: replay_fixtures
+      description: Immutable view-model snapshots used by the replay bridge.
+      files:
+        - frontend/src/validation/replayFixtures.ts
+        - frontend/src/validation/replayFixtures.test.ts
+      rules:
+        - Each fixture must pass validateSnapshotContract().
+        - New fixtures are exported and added to focused tests.
+        - Existing fixtures are not mutated in ways that break downstream tests.
+
+    - name: asset_metadata
+      description: Resolvers and manifest documenting original Unity asset sources.
+      files:
+        - frontend/src/assets/originalAssetPaths.ts
+        - frontend/src/assets/asset-manifest.json
+      rules:
+        - Resolvers return undefined for assets that are not extracted.
+        - Blockers are explicit, severed, and include resolution steps.
+        - Manifest inventories are updated to match resolver state.
+
+    - name: architecture_plan
+      description: Checked-in architecture boundary from the upstream plan artifact.
+      files:
+        - repos/DDGC_newArch/architecture.yaml
+      rules:
+        - Must enumerate in-scope and out-of-scope items.
+        - Must map required paths and acceptance criteria.
+
+source_of_truth:
+  hero_families:
+    reference: HERO_CLASS_FAMILIES.md
+    families:
+      - alchemist
+      - diviner
+      - hunter
+      - shaman
+      - tank
+    variants:
+      - base
+      - white
+      - black
+    note: |
+      First combat fixture uses base variants of four families (Hunter, Alchemist,
+      Diviner, Shaman) to demonstrate high-level original DDGC party composition.
+
+  enemies:
+    reference: MONSTER_FAMILIES.md
+    first_combat_encounter:
+      dungeon: QingLong
+      families:
+        - mantis_magic_flower
+        - mantis_spiny_flower
+        - mantis_walking_flower
+      tier: common
+      hp_t1: 88
+      size: medium
+
+required_paths:
+  - path: frontend/src/validation/replayFixtures.ts
+    role: First-combat replay fixture and existing fixture preservation.
+  - path: frontend/src/assets/originalAssetPaths.ts
+    role: Resolvers and extraction blockers for combat assets.
+  - path: frontend/src/assets/asset-manifest.json
+    role: Original Unity source paths and inventory for combat assets.
+  - path: repos/DDGC_newArch/architecture.yaml
+    role: This architecture boundary artifact.
+
+acceptance_criteria:
+  - |
+    The fixture expresses a first combat encounter with high-level original DDGC
+    hero families and mantis flower enemies.
+  - |
+    Original Unity source paths from the issue are preserved in metadata or
+    manifest form.
+  - |
+    Existing replay fixtures remain valid.
+  - |
+    Focused fixture tests pass if present or required by repo pattern.
+
+validation:
+  typecheck_command: cd frontend && npm run typecheck
+  test_command: cd frontend && npm test -- replayFixtures.test.ts
+
+blockers:
+  - id: BLOCKER-001
+    title: Original Unity sprite/texture assets not present in repository
+    scope: Global; affects hero portraits and Spine data in addition to combat sprites.
+    status: unresolved
+
+  - id: BLOCKER-005
+    title: Original monster combat sprites not extracted
+    scope: combat_assets/monster_sprites
+    assets:
+      - mantis_magic_flower.png
+      - mantis_spiny_flower.png
+      - mantis_walking_flower.png
+    source: Assets/Resources/Data/Monsters/Sprites/
+    status: unresolved
+
+  - id: BLOCKER-006
+    title: Combat UI chrome sprites not extracted
+    scope: combat_assets/combat_ui_chrome
+    assets:
+      - combat_turn_banner.png
+      - combat_target_reticle.png
+      - combat_action_bar_bg.png
+      - combat_log_bg.png
+      - combat_hp_bar_frame.png
+      - combat_stress_bar_frame.png
+    source: Assets/Sprites/ui/
+    status: unresolved
+
+implementation_evidence:
+  cartographer_30_checkpoint:
+    - New replay fixture exported from replayFixtures.ts.
+    - New fixture included in validateSnapshotContract() test suite.
+    - originalAssetPaths.ts exposes resolveMonsterSprite() and resolveCombatChromeAsset().
+    - asset-manifest.json records first_combat_fixture, monster_sprites, and combat_ui_chrome.
+    - architecture.yaml in place with scope and boundary.
+
+  quartermaster_pre_merge:
+    - Typecheck passes.
+    - replayFixtures tests pass.
+    - No runtime/startup wiring changes.
+    - No unrelated art substituted.
+    - Blockers explicitly recorded rather than hidden.

@@ -1,8 +1,8 @@
 /**
  * Original Unity asset path resolvers.
  *
- * Maps building IDs, hero class labels, and shell chrome elements to the
- * physical PNG sprites extracted from the DreamDeveloperGame-Crossover
+ * Maps building IDs, hero class labels, shell chrome elements, and combat
+ * assets to the physical PNG sprites extracted from the DreamDeveloperGame-Crossover
  * Unity project.
  *
  * Current repo status (frontend/public/original/):
@@ -11,6 +11,8 @@
  *               building label/icon backgrounds)
  *   heroes/     3 hunter family portraits (base, white, black variants)
  *   All other hero families (alchemist, diviner, shaman, tank) — not yet extracted
+ *   combat/     No combat sprites extracted yet (monster sprites, combat UI,
+ *               hero battle portraits deferred — see asset-manifest.json blockers)
  *
  * See asset-manifest.json for the full inventory with GUIDs and deferred items.
  */
@@ -144,11 +146,95 @@ function variantKey(baseId: string, variant?: string | null): string {
   return `${baseId}${variant}`;
 }
 
+// ── Combat enemy sprites (H5 Demo M2) ─────────────────────────────────────
+// QingLong mantis flower enemies used in the first-combat replay fixture.
+// None of these sprites are present in the repository yet; they are documented
+// here with expected Unity source paths so extraction can proceed when assets
+// are available. All resolve to undefined until staged.
+
+/** Monster sprite root in the Unity project. */
+const MONSTER_SPRITE_ROOT = "Assets/Resources/Data/Monsters/Sprites";
+
+/** Expected monster sprite paths by family ID. */
+const monsterSpritePaths: Record<string, string> = {
+  mantis_magic_flower: `${MONSTER_SPRITE_ROOT}/mantis_magic_flower.png`,
+  mantis_spiny_flower: `${MONSTER_SPRITE_ROOT}/mantis_spiny_flower.png`,
+  mantis_walking_flower: `${MONSTER_SPRITE_ROOT}/mantis_walking_flower.png`
+};
+
+/** Blocker note for monster sprite extraction. */
+const MONSTER_SPRITE_BLOCKER = {
+  id: "BLOCKER-005",
+  title: "Original monster combat sprites not extracted",
+  severity: "high" as const,
+  description:
+    "The QingLong mantis flower enemy sprites referenced by the first-combat " +
+    "replay fixture are not present in frontend/public/original/combat/. The " +
+    "Unity source paths are recorded in this resolver and asset-manifest.json, " +
+    "but the actual PNG files have not been copied from DreamDeveloperGame-Crossover.",
+  impact:
+    "CombatScreen renders placeholder silhouettes or CSS stand-ins instead of " +
+    "original mantis flower art until the sprites are extracted.",
+  resolution:
+    "Extract mantis_magic_flower.png, mantis_spiny_flower.png, and " +
+    "mantis_walking_flower.png from the Unity project into " +
+    "frontend/public/original/combat/ and update extractedMonsterSprites.",
+  resolved: false
+};
+
+// ── Combat UI chrome (H5 Demo M2) ─────────────────────────────────────────
+// Turn order banner, target reticle, action bar, and combat log chrome.
+// Deferred extraction; paths are documented for future staging.
+
+const combatChromePaths = {
+  turnOrderBanner: `${MONSTER_SPRITE_ROOT}/../ui/combat_turn_banner.png`,
+  targetReticle: `${MONSTER_SPRITE_ROOT}/../ui/combat_target_reticle.png`,
+  actionBarBg: `${MONSTER_SPRITE_ROOT}/../ui/combat_action_bar_bg.png`,
+  combatLogBg: `${MONSTER_SPRITE_ROOT}/../ui/combat_log_bg.png`,
+  hpBarFrame: `${MONSTER_SPRITE_ROOT}/../ui/combat_hp_bar_frame.png`,
+  stressBarFrame: `${MONSTER_SPRITE_ROOT}/../ui/combat_stress_bar_frame.png`
+} as const;
+
+export type CombatChromeAssetKey = keyof typeof combatChromePaths;
+
+export function resolveCombatChromeAsset(key: CombatChromeAssetKey): string {
+  return combatChromePaths[key];
+}
+
+/** Blocker note for combat UI chrome extraction. */
+const COMBAT_CHROME_BLOCKER = {
+  id: "BLOCKER-006",
+  title: "Combat UI chrome sprites not extracted",
+  severity: "medium" as const,
+  description:
+    "Turn banner, target reticle, action bar, combat log, and HP/stress bar " +
+    "frame sprites for the combat screen are not present in the repository. " +
+    "Expected paths are documented but not staged.",
+  impact:
+    "CombatScreen uses CSS-only styling for combat chrome until original " +
+    "sprites are extracted.",
+  resolution:
+    "Extract combat UI sprites from Assets/Sprites/ui/ or " +
+    "Assets/Resources/Sprites/ui/ into frontend/public/original/combat/ and " +
+    "update this resolver.",
+  resolved: false
+};
+
 // ── Public resolvers ──────────────────────────────────────────────────────
 
 export function resolveBuildingImage(buildingId: string): string | undefined {
   return buildingImageById[normalizeKey(buildingId)];
 }
+
+export function resolveMonsterSprite(monsterFamilyId: string): string | undefined {
+  return monsterSpritePaths[normalizeKey(monsterFamilyId)];
+}
+
+/** Exported extraction blockers for consumers that need to surface missing assets. */
+export const extractionBlockers = {
+  monsterSprites: MONSTER_SPRITE_BLOCKER,
+  combatChrome: COMBAT_CHROME_BLOCKER
+} as const;
 
 export interface HeroPortraitOptions {
   /** Unique hero ID from the view model. May include variant suffix. */

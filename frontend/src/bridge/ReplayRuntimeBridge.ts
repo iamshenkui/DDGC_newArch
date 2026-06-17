@@ -12,6 +12,7 @@ import {
   replayDungeonAssistViewModel,
   replayDungeonMapViewModel,
   replayAttackCombatViewModel,
+  replayFirstCombatViewModel,
   replayResultViewModel,
   replayReturnViewModel
 } from "../validation/replayFixtures";
@@ -710,6 +711,21 @@ export class ReplayRuntimeBridge implements RuntimeBridge {
         break;
       case "boot":
         this.snapshot = replayReadySnapshot;
+        break;
+      case "start-first-combat-demo":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Replay: start-first-combat-demo rejected from current state."
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "combat",
+          viewModel: replayFirstCombatViewModel as CombatViewModel,
+          debugMessage: "Replay: started first-combat demo."
+        };
         break;
       case "continue-from-result":
         if (!canTransition(this.snapshot, intent).allowed) {

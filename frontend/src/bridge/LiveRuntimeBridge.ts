@@ -1,4 +1,5 @@
 import type { RuntimeMode } from "../app/runtimeMode";
+import { replayFirstCombatViewModel } from "../validation/replayFixtures";
 import type { RuntimeBridge, RuntimeBridgeListener } from "./RuntimeBridge";
 import { canTransition } from "../session/FlowController";
 import type {
@@ -782,6 +783,21 @@ export class LiveRuntimeBridge implements RuntimeBridge {
     switch (intent.type) {
       case "boot":
         this.snapshot = createLiveTownSnapshot();
+        break;
+      case "start-first-combat-demo":
+        if (!canTransition(this.snapshot, intent).allowed) {
+          this.snapshot = {
+            ...this.snapshot,
+            debugMessage: "Live: start-first-combat-demo rejected from current state."
+          };
+          break;
+        }
+        this.snapshot = {
+          ...this.snapshot,
+          flowState: "combat",
+          viewModel: replayFirstCombatViewModel as CombatViewModel,
+          debugMessage: "Live: started first-combat demo."
+        };
         break;
       case "open-hero": {
         const townVm = this.snapshot.viewModel as TownViewModel;
